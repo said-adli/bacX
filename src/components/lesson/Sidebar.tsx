@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { cn } from "@/lib/utils";
-import { MessageSquare, BookOpen, Send, CheckCircle2, Lock, Ghost, FileQuestion } from "lucide-react";
+import { MessageSquare, BookOpen, Send, CheckCircle2, Lock, FileQuestion } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -13,13 +13,12 @@ import { useRouter } from "next/navigation";
 export function Sidebar() {
     const [activeTab, setActiveTab] = useState<'chat' | 'syllabus'>('chat');
     const { user, role } = useAuth();
-    const [shakeKey, setShakeKey] = useState(0); // Key to trigger re-render for shake
     const router = useRouter();
 
     // Determine if user has access (Admin or Subscribed)
     // NOTE: In a real app, 'isSubscribed' would be a direct property of the User object context or fetched
     // We assume the context populates user.isSubscribed as discussed in previous steps
-    const hasAccess = role === 'admin' || (user as any)?.isSubscribed;
+    const hasAccess = role === 'admin' || (user as { isSubscribed?: boolean } | null)?.isSubscribed;
 
     const handleItemClick = (i: number) => {
         // Allow first lesson as Free Sample
@@ -29,7 +28,7 @@ export function Sidebar() {
         }
 
         if (!hasAccess) {
-            setShakeKey(prev => prev + 1); // Trigger shake
+            // Trigger shake (visual feedback handled by motion)
             toast.error("هذا الدرس متاح للمشتركين فقط", {
                 icon: <Lock className="w-4 h-4" />,
                 action: {

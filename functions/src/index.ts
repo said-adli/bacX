@@ -7,7 +7,24 @@ admin.initializeApp();
 // ============================================================================
 // HELPER: App Check Verification (Fail-Closed)
 // ============================================================================
-function verifyAppCheck(context: any): void {
+// ============================================================================
+// HELPER: App Check Verification (Fail-Closed)
+// ============================================================================
+interface CallableContext {
+    app?: {
+        appId: string;
+        token: admin.appCheck.DecodedAppCheckToken;
+        alreadyConsumed?: boolean;
+    };
+    auth?: {
+        uid: string;
+        token: admin.auth.DecodedIdToken;
+    };
+    instanceIdToken?: string;
+    rawRequest?: unknown;
+}
+
+function verifyAppCheck(context: CallableContext): void {
     // In production, context.app will be set if App Check token is valid
     // Fail-closed: deny if not present
     if (process.env.NODE_ENV === 'production' && !context.app) {
@@ -26,7 +43,7 @@ async function logAuditAction(
     action: string,
     actorId: string,
     targetId?: string,
-    details?: Record<string, any>
+    details?: Record<string, unknown>
 ): Promise<void> {
     try {
         await db.collection('audit_logs').add({
@@ -44,7 +61,15 @@ async function logAuditAction(
 // ============================================================================
 // APPROVE PAYMENT - Sets subscriptionEnd instead of isSubscribed
 // ============================================================================
-export const approvePayment = functions.https.onCall(async (data: any, context: any) => {
+// APPROVE PAYMENT - Sets subscriptionEnd instead of isSubscribed
+// ============================================================================
+interface ApprovePaymentData {
+    paymentId: string;
+    userId: string;
+    durationDays?: number;
+}
+
+export const approvePayment = functions.https.onCall(async (data: ApprovePaymentData, context: CallableContext) => {
     verifyAppCheck(context);
 
     if (!context.auth) {
@@ -109,7 +134,12 @@ export const approvePayment = functions.https.onCall(async (data: any, context: 
 // ============================================================================
 // REJECT PAYMENT
 // ============================================================================
-export const rejectPayment = functions.https.onCall(async (data: any, context: any) => {
+interface RejectPaymentData {
+    paymentId: string;
+    reason?: string;
+}
+
+export const rejectPayment = functions.https.onCall(async (data: RejectPaymentData, context: CallableContext) => {
     verifyAppCheck(context);
 
     if (!context.auth) {
@@ -162,7 +192,16 @@ export const rejectPayment = functions.https.onCall(async (data: any, context: a
 // ============================================================================
 // REGISTER DEVICE - Server-side enforcement with strict limit
 // ============================================================================
-export const registerDevice = functions.https.onCall(async (data: any, context: any) => {
+// ============================================================================
+// REGISTER DEVICE - Server-side enforcement with strict limit
+// ============================================================================
+interface DeviceData {
+    deviceId: string;
+    deviceName: string;
+}
+
+
+export const registerDevice = functions.https.onCall(async (data: DeviceData, context: CallableContext) => {
     verifyAppCheck(context);
 
     if (!context.auth) {
@@ -186,10 +225,10 @@ export const registerDevice = functions.https.onCall(async (data: any, context: 
             }
 
             const userData = userSnap.data();
-            const currentDevices: any[] = userData?.activeDevices || [];
+            const currentDevices: DeviceData[] = (userData?.activeDevices as DeviceData[]) || [];
 
             // Check if device already exists
-            const existingIndex = currentDevices.findIndex((d: any) => d.deviceId === deviceId);
+            const existingIndex = currentDevices.findIndex((d: DeviceData) => d.deviceId === deviceId);
             if (existingIndex !== -1) {
                 // Update last seen
                 currentDevices[existingIndex].lastSeen = new Date().toISOString();
@@ -234,7 +273,7 @@ export const registerDevice = functions.https.onCall(async (data: any, context: 
 // ============================================================================
 // UNREGISTER DEVICE - Called on logout
 // ============================================================================
-export const unregisterDevice = functions.https.onCall(async (data: any, context: any) => {
+export const unregisterDevice = functions.https.onCall(async (data: DeviceData, context: CallableContext) => {
     verifyAppCheck(context);
 
     if (!context.auth) {
@@ -257,10 +296,10 @@ export const unregisterDevice = functions.https.onCall(async (data: any, context
             }
 
             const userData = userSnap.data();
-            const currentDevices: any[] = userData?.activeDevices || [];
+            const currentDevices: DeviceData[] = (userData?.activeDevices as DeviceData[]) || [];
 
             // Find and remove the device
-            const updatedDevices = currentDevices.filter((d: any) => d.deviceId !== deviceId);
+            const updatedDevices = currentDevices.filter((d: DeviceData) => d.deviceId !== deviceId);
 
             if (updatedDevices.length !== currentDevices.length) {
                 t.update(userRef, { activeDevices: updatedDevices });
@@ -278,7 +317,14 @@ export const unregisterDevice = functions.https.onCall(async (data: any, context
 // ============================================================================
 // SUBMIT PAYMENT - Enforces userId and status
 // ============================================================================
-export const submitPayment = functions.https.onCall(async (data: any, context: any) => {
+interface SubmitPaymentData {
+    amount: number | string;
+    method: string;
+    receiptUrl: string;
+    notes?: string;
+}
+
+export const submitPayment = functions.https.onCall(async (data: SubmitPaymentData, context: CallableContext) => {
     verifyAppCheck(context);
 
     if (!context.auth) {
@@ -323,19 +369,27 @@ export const submitPayment = functions.https.onCall(async (data: any, context: a
 // ============================================================================
 // DELETE USER DATA - GDPR Compliance (with Storage cleanup)
 // ============================================================================
-export const deleteUserData = functions.https.onCall(async (data: any, context: any) => {
-    verifyAppCheck(context);
+// ============================================================================
+// DELETE USER DATA - GDPR Compliance (with Storage cleanup)
+// ============================================================================
+interface UserDataRequest {
+    targetUserId?: string;
+}
 
+export const deleteUserData = functions.https.onCall(async (data: UserDataRequest, context: CallableContext) => {
+    verifyAppCheck(context);
+    // ... rest of implementation ...
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
     }
 
     const { targetUserId } = data;
+    // ...
+    // Using simple approach to preserve logic while changing signature
     const requesterId = context.auth.uid;
     const db = admin.firestore();
     const storage = admin.storage().bucket();
 
-    // Can only delete own data, or admin can delete any
     const callerRef = db.collection('users').doc(requesterId);
     const callerSnap = await callerRef.get();
     const isAdmin = callerSnap.data()?.role === 'admin';
@@ -349,17 +403,14 @@ export const deleteUserData = functions.https.onCall(async (data: any, context: 
     try {
         const batch = db.batch();
 
-        // Delete user document
         batch.delete(db.collection('users').doc(userIdToDelete));
 
-        // Delete user's payments
         const paymentsSnap = await db.collection('payments')
             .where('userId', '==', userIdToDelete)
             .get();
 
         paymentsSnap.docs.forEach(doc => batch.delete(doc.ref));
 
-        // Delete user's hand raises
         const raisesSnap = await db.collection('hand_raises')
             .where('userId', '==', userIdToDelete)
             .get();
@@ -368,24 +419,20 @@ export const deleteUserData = functions.https.onCall(async (data: any, context: 
 
         await batch.commit();
 
-        // Delete Storage files (receipts)
         try {
             const [files] = await storage.getFiles({ prefix: `receipts/${userIdToDelete}_` });
             await Promise.all(files.map(file => file.delete()));
             console.log(`Deleted ${files.length} storage files for user ${userIdToDelete}`);
         } catch (storageError) {
             console.error('Storage cleanup error:', storageError);
-            // Don't fail the whole operation for storage errors
         }
 
-        // Revoke custom claims
         try {
             await admin.auth().setCustomUserClaims(userIdToDelete, {});
         } catch (claimsError) {
             console.error('Failed to revoke claims:', claimsError);
         }
 
-        // Audit log
         await logAuditAction(db, 'DELETE_USER_DATA', requesterId, userIdToDelete, {
             selfRequest: userIdToDelete === requesterId,
             storageCleanup: true
@@ -432,7 +479,7 @@ export const syncUserClaims = functions.firestore
         }
 
         // Build custom claims
-        const claims: Record<string, any> = {};
+        const claims: Record<string, string | number | boolean> = {};
 
         if (newData.role === 'admin') {
             claims.admin = true;
@@ -463,7 +510,7 @@ export const syncUserClaims = functions.firestore
 // ============================================================================
 // EXPORT USER DATA - GDPR Compliance
 // ============================================================================
-export const exportUserData = functions.https.onCall(async (data: any, context: any) => {
+export const exportUserData = functions.https.onCall(async (data: UserDataRequest, context: CallableContext) => {
     verifyAppCheck(context);
 
     if (!context.auth) {
@@ -474,7 +521,6 @@ export const exportUserData = functions.https.onCall(async (data: any, context: 
     const requesterId = context.auth.uid;
     const db = admin.firestore();
 
-    // Can only export own data, or admin can export any
     const callerRef = db.collection('users').doc(requesterId);
     const callerSnap = await callerRef.get();
     const isAdmin = callerSnap.data()?.role === 'admin';
@@ -486,28 +532,24 @@ export const exportUserData = functions.https.onCall(async (data: any, context: 
     }
 
     try {
-        const exportData: Record<string, any> = {
+        const exportData: Record<string, unknown> = {
             exportedAt: new Date().toISOString(),
             userId: userIdToExport
         };
 
-        // User profile
         const userSnap = await db.collection('users').doc(userIdToExport).get();
         exportData.profile = userSnap.exists ? userSnap.data() : null;
 
-        // Payments
         const paymentsSnap = await db.collection('payments')
             .where('userId', '==', userIdToExport)
             .get();
         exportData.payments = paymentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Hand raises
         const raisesSnap = await db.collection('hand_raises')
             .where('userId', '==', userIdToExport)
             .get();
         exportData.handRaises = raisesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Audit log
         await logAuditAction(db, 'EXPORT_USER_DATA', requesterId, userIdToExport, {
             selfRequest: userIdToExport === requesterId
         });

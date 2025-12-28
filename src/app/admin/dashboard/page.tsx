@@ -5,8 +5,8 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import {
-    CheckCircle2, XCircle, Upload, Search, Smartphone,
-    CreditCard, LayoutDashboard, FileText, User, Loader2
+    XCircle, Upload, Search, Smartphone,
+    CreditCard, User, Loader2, FileText, Video
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,6 @@ import { db } from "@/lib/firebase";
 
 // Mock Data (Removed in favor of real component)
 import { PendingPaymentsView } from "@/components/admin/PendingPaymentsView";
-import { approvePayment, rejectPayment } from "@/lib/payment-service"; // Wired up real service
 
 
 export default function AdminDashboard() {
@@ -47,44 +46,6 @@ export default function AdminDashboard() {
         );
     }
 
-    const handleApprovePayment = async (id: number) => {
-       // Note: passed ID is 'number' in mock but 'string' in real DB. 
-       // We assume the component will pass the string ID correctly.
-       // This is a placeholder fix logic assuming PendingPaymentsView triggers this.
-       // Actually, looking at the code, these handlers are unused in the current file 
-       // because PendingPaymentsView handles its own internal state or triggers this parent?
-       // Wait, PendingPaymentsView is imported. Let's see if we pass props to it.
-       // The current file doesn't pass props to PendingPaymentsView.
-       // If PendingPaymentsView is self-contained, I need to check THAT file.
-       // However, the instructions say "Open src/app/admin/dashboard/page.tsx... Issue: The handleApprovePayment function currently uses a setTimeout mock."
-       // So I will update this function in case it IS passed or used later.
-       // But wait, if it's not passed to <PendingPaymentsView />, then updating it does nothing if the view uses its own logic.
-       // I'll assume for now I should update it here, but I must also check if I need to pass it down.
-       // The read file showed: {activeTab === 'payments' && (<PendingPaymentsView />)} without props.
-       // This suggests PendingPaymentsView might have its OWN mock logic or is incomplete.
-       // I will update this function AND would theoretically pass it, but if I can't see PendingPaymentsView I might miss the connection.
-       // Let's assume the user wants me to fix THIS file's logic.
-       
-       // REAL LOGIC:
-       // We need the paymentID (string) and userID (string). 
-       // The current signature `(id: number)` suggests the mock data used numbers.
-       // I will update the signature to `(paymentId: string, userId: string)`.
-       
-       toast.promise(
-            approvePayment(String(id), "user_id_placeholder"), // We likely need the actual userID. 
-            // Since we can't fully fix the signature without changing the Caller (which I can't see), 
-            // I will implement a generic wrapper that WOULD work if connected.
-            {
-                loading: 'جاري تفعيل الاشتراك...',
-                success: 'تم تفعيل حساب الطالب بنجاح',
-                error: 'حدث خطأ أثناء التفعيل',
-            }
-        );
-    };
-
-    const handleRejectPayment = async (id: number) => {
-        toast.error("تم رفض طلب الاشتراك");
-    };
 
     const handleResetDevices = (studentName: string) => {
         toast.promise(
@@ -195,7 +156,7 @@ export default function AdminDashboard() {
                                 <form onSubmit={handleUploadLesson} className="space-y-4">
                                     <Input name="title" placeholder="عنوان الدرس" required />
                                     <Input name="module" placeholder="الوحدة (folder name)" required />
-                                    <Input name="videoId" placeholder="رابط فيديو يوتيوب (ID)" icon={LayoutDashboard} required />
+                                    <Input name="videoId" placeholder="رابط فيديو يوتيوب (ID)" icon={Video} required />
 
                                     <div className="bg-surface-highlight border border-border rounded-xl p-3 flex items-center gap-3 active:scale-[0.99] transition-transform">
                                         <FileText className="w-5 h-5 text-zinc-500" />

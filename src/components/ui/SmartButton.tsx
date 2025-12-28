@@ -4,7 +4,6 @@ import { forwardRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { motion } from "framer-motion";
-import type { LucideIcon } from "lucide-react";
 
 interface SmartButtonProps extends React.ComponentProps<typeof Button> {
     href?: string;

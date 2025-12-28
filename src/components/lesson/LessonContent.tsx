@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import EncodedVideoPlayer from "@/components/lesson/VideoPlayer";
 import { Sidebar } from "@/components/lesson/Sidebar";
 
@@ -12,7 +11,7 @@ interface LessonContentProps {
 }
 
 const SALT = process.env.NEXT_PUBLIC_VIDEO_SALT || "SECRET_SALT_V1";
-export default function LessonContent({ id, title, description, videoUrl }: LessonContentProps) {
+export default function LessonContent({ title, description, videoUrl }: LessonContentProps) {
     const videoId = videoUrl;
     const cleanId = videoId.length > 20 ? "dQw4w9WgXcQ" : videoId;
 

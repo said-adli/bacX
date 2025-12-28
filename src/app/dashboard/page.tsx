@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLiveStatus } from "@/hooks/useLiveStatus";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
-import { BookOpen, Radio, Calendar, ArrowLeft, LogOut, LayoutDashboard, Disc3, Loader2 } from "lucide-react";
+import { BookOpen, Radio, Calendar, ArrowLeft, LogOut, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";

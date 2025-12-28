@@ -5,7 +5,7 @@ import { db } from "@/lib/firebase";
 import { approvePayment, rejectPayment, PaymentRequest } from "@/lib/payment-service";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
-import { FileText, CheckCircle2, XCircle, ExternalLink, RefreshCw } from "lucide-react";
+import { CheckCircle2, XCircle, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
