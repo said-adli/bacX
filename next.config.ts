@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
+import { withSentryConfig } from '@sentry/nextjs';
+
 const nextConfig: NextConfig = {
+  // ... existing config (images, headers, etc) preserved by TypeScript since we're just wrapping the export
   images: {
     remotePatterns: [
       {
@@ -61,4 +64,17 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // For all available options, see:
+  // https://github.com/getsentry/sentry-webpack-plugin#options
+  org: "bacx", // Inferred from project ID usually, but safe to default
+  project: "bacx",
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  reactComponentAnnotation: {
+    enabled: true,
+  },
+  tunnelRoute: "/monitoring",
+  disableLogger: true,
+  automaticVercelMonitors: true,
+});

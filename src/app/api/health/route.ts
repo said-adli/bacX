@@ -1,16 +1,5 @@
 import { NextResponse } from 'next/server';
-import * as admin from 'firebase-admin';
-
-// Initialize admin if not already done
-if (!admin.apps.length) {
-    try {
-        admin.initializeApp({
-            credential: admin.credential.applicationDefault(),
-        });
-    } catch (e) {
-        console.error("Firebase Admin init error in health route:", e);
-    }
-}
+import { admin, db } from '@/lib/firebase-admin'; // Use centralized init
 
 export async function GET() {
     const timestamp = new Date().toISOString();
@@ -19,7 +8,7 @@ export async function GET() {
 
     try {
         const start = Date.now();
-        const db = admin.firestore();
+        // db is already imported from lib/firebase-admin
 
         // Simple read to verify connectivity
         await db.collection('config').doc('health_check').get();

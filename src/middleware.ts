@@ -66,7 +66,41 @@ async function verifySessionCookie(cookie: string) {
     }
 }
 
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+// Initialize Redis from Environment (Safe fallback to null if env missing during build)
+const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+    ? new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+    : null;
+
+// Global Rate Limiter: 50 requests per 10 seconds (Higher guardrails for global middleware)
+const ratelimit = redis
+    ? new Ratelimit({
+        redis: redis,
+        limiter: Ratelimit.slidingWindow(50, "10 s"),
+        analytics: true,
+    })
+    : null;
+
 export async function middleware(request: NextRequest) {
+    // --- GLOBAL RATE LIMITING (EDGE) ---
+    // Skip static files and internal Next.js paths
+    if (ratelimit && !request.nextUrl.pathname.startsWith('/_next') && !request.nextUrl.pathname.startsWith('/static') && !request.nextUrl.pathname.startsWith('/favicon.ico')) {
+        const ip = request.ip ?? '127.0.0.1';
+        try {
+            const { success } = await ratelimit.limit(ip);
+            if (!success) {
+                return new NextResponse('Too Many Requests', { status: 429 });
+            }
+        } catch (error) {
+            console.error('Rate limit failed (fail-open):', error);
+        }
+    }
+
     // --- MAINTENANCE MODE CHECK ---
     const isMaintenance = process.env.MAINTENANCE_MODE === 'true';
     if (isMaintenance) {

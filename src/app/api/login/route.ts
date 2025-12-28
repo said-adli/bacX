@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import * as admin from "firebase-admin";
+import { admin } from "@/lib/firebase-admin"; // Use centralized init
 import {
     checkRateLimitDistributed,
     loginRateLimiter,
@@ -7,16 +7,7 @@ import {
     createRateLimitResponse
 } from "@/lib/rate-limit";
 
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-    try {
-        admin.initializeApp({
-            credential: admin.credential.applicationDefault(),
-        });
-    } catch (e: any) {
-        console.error("Firebase admin init error: ", e);
-    }
-}
+// Firebase Admin already initialized in @/lib/firebase-admin
 
 export async function POST(request: Request) {
     // 1. RATE LIMITING - Prevent credential stuffing
