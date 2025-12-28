@@ -65,7 +65,7 @@ export default function AdminDashboard() {
 
         const formData = new FormData(e.currentTarget);
         const title = formData.get('title') as string;
-        const module = formData.get('module') as string;
+        const moduleName = formData.get('module') as string;
         const videoId = formData.get('videoId') as string;
         const pdfFile = (formData.get('pdf') as File);
         const description = formData.get('description') as string;
@@ -75,12 +75,12 @@ export default function AdminDashboard() {
             if (pdfFile && pdfFile.size > 0) {
                 if (pdfFile.size > 5 * 1024 * 1024) throw new Error("حجم الملف يجب ألا يتجاوز 5 ميغابايت");
 
-                pdfUrl = await uploadFile(pdfFile, `lessons/${module}/${Date.now()}_${pdfFile.name}`, (p) => setUploadProgress(p));
+                pdfUrl = await uploadFile(pdfFile, `lessons/${moduleName}/${Date.now()}_${pdfFile.name}`, (p) => setUploadProgress(p));
             }
 
             await addDoc(collection(db, "lessons"), {
                 title,
-                module,
+                module: moduleName,
                 videoId,
                 pdfUrl,
                 description,

@@ -77,7 +77,7 @@ export default function LivePage() {
                     </div>
                     <h1 className="text-2xl font-bold text-white mb-2 font-tajawal">محتوى حصري</h1>
                     <p className="text-zinc-400 mb-8 font-tajawal">
-                        هذا البث المباشر متاح فقط للمشتركين في باقة "النخبة".
+                        هذا البث المباشر متاح فقط للمشتركين في باقة &quot;النخبة&quot;.
                     </p>
                     <Button className="w-full bg-red-600 hover:bg-red-700 text-white">
                         اشترك الآن

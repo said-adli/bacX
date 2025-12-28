@@ -37,14 +37,6 @@ async function verifySessionCookie(cookie: string) {
     if (!keys) return null; // Fail safe if we can't get keys
 
     try {
-        // Create a function that selects the key based on the 'kid' in the header
-        const JWKS = jose.createLocalJWKSet({
-            keys: Object.entries(keys).map(([kid, pem]) => ({
-                kid,
-                ...jose.importX509(pem, 'RS256') // Logic to import if needed, but jose.createLocalJWKSet expects JSON Web Key Set format usually.
-                // Actually, simpler approach for x509 certs with Jose and dynamic keys:
-            }))
-        } as any);
 
         // Better approach for Google's x509 endpoint with jose:
         // We need to find the correct key for the token's header.kid

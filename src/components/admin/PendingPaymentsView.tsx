@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { CheckCircle2, XCircle, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 interface PaymentDoc extends PaymentRequest {
     id: string;
@@ -75,8 +76,8 @@ export function PendingPaymentsView() {
                         <div className="flex items-center gap-4">
                             {/* Receipt Preview Thumbnail */}
                             <a href={payment.receiptUrl} target="_blank" rel="noopener noreferrer" className="group relative w-16 h-16 rounded-lg bg-zinc-800 overflow-hidden border border-white/10 flex-shrink-0">
-                                <img src={payment.receiptUrl} alt="Receipt" className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Image src={payment.receiptUrl} alt="Receipt" fill className="object-cover" unoptimized />
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                     <ExternalLink className="w-4 h-4 text-white" />
                                 </div>
                             </a>
