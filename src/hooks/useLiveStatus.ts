@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, Timestamp, FirestoreError } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 interface LiveStatus {
     isLive: boolean;
     youtubeId: string;
     title: string;
-    startedAt?: any;
+    startedAt?: Timestamp | null;
 }
 
 export function useLiveStatus() {
     const [status, setStatus] = useState<LiveStatus>({
         isLive: false,
         youtubeId: "",
-        title: ""
+        title: "",
+        startedAt: null
     });
     const [loading, setLoading] = useState(true);
 
@@ -22,14 +23,14 @@ export function useLiveStatus() {
         const unsubConfig = onSnapshot(doc(db, "config", "live_stream"), (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                setStatus(prev => ({ ...prev, ...data }));
+                setStatus(prev => ({ ...prev, ...(data as Partial<LiveStatus>) }));
 
                 // If not live, clear ID immediately
                 if (!data.isLive) {
                     setStatus(prev => ({ ...prev, youtubeId: "" }));
                 }
             } else {
-                setStatus({ isLive: false, youtubeId: "", title: "" });
+                setStatus({ isLive: false, youtubeId: "", title: "", startedAt: null });
             }
             setLoading(false);
         });
@@ -40,10 +41,10 @@ export function useLiveStatus() {
             (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    setStatus(prev => ({ ...prev, youtubeId: data.youtubeId || "" }));
+                    setStatus((prev: LiveStatus) => ({ ...prev, youtubeId: data.youtubeId || "" }));
                 }
             },
-            (error) => {
+            (error: FirestoreError) => {
                 // Permission Denied or Not Logged In - Expected for free users
                 // Just verify we don't have a stale ID
                 if (error.code === 'permission-denied') {

@@ -17,8 +17,12 @@ export function useIsLowEndDevice() {
         }
 
         // 2. Hardware Heuristics
+        interface NavigatorWithMemory extends Navigator {
+            deviceMemory?: number;
+        }
+
         const hardwareConcurrency = navigator.hardwareConcurrency || 4;
-        const deviceMemory = (navigator as any).deviceMemory || 4;
+        const deviceMemory = (navigator as NavigatorWithMemory).deviceMemory || 4;
 
         // Thresholds: Less than 4 cores OR less than 4GB RAM 
         if (hardwareConcurrency < 4 || deviceMemory < 4) {

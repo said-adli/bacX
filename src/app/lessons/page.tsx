@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { PlayCircle, Lock, Search, Filter, Clock } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
+import { collection, getDocs, query, where, orderBy, limit, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { LessonSkeleton } from "@/components/skeletons/LessonSkeleton";
 import { useRouter } from "next/navigation";
@@ -16,7 +16,7 @@ interface LessonSummary {
     title: string;
     subject: string;
     duration: string;
-    createdAt: any;
+    createdAt: Timestamp; // More specific than any
     isLocked?: boolean;
 }
 
@@ -72,8 +72,8 @@ export default function LessonsIndexPage() {
                             key={subject}
                             onClick={() => setFilter(subject)}
                             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${filter === subject
-                                    ? "bg-primary text-white"
-                                    : "bg-white/5 text-zinc-400 hover:bg-white/10"
+                                ? "bg-primary text-white"
+                                : "bg-white/5 text-zinc-400 hover:bg-white/10"
                                 }`}
                         >
                             {subject === "All" ? "الكل" : subject}

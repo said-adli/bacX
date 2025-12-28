@@ -36,7 +36,7 @@ export function ReauthModal({ isOpen, onClose, onSuccess }: ReauthModalProps) {
             toast.success("تم تأكيد الهوية بنجاح");
             onSuccess();
             onClose();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
             toast.error("كلمة المرور غير صحيحة", {
                 description: "يرجى المحاولة مرة أخرى لتأكيد هويتك."

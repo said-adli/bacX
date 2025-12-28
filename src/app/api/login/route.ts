@@ -24,10 +24,11 @@ export async function POST(request: Request) {
     }
 
     try {
-        const { idToken } = await request.json();
+        const body = await request.json() as unknown;
+        const idToken = (body && typeof body === 'object' && 'idToken' in body) ? (body as Record<string, unknown>).idToken : null;
 
-        if (!idToken) {
-            return NextResponse.json({ error: "Missing ID token" }, { status: 400 });
+        if (!idToken || typeof idToken !== 'string') {
+            return NextResponse.json({ error: "Missing or invalid ID token" }, { status: 400 });
         }
 
         // Set session expiration to 5 days
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
         });
 
         return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Login API Error:", error);
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

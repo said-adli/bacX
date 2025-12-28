@@ -22,7 +22,7 @@ interface AuditEntry {
     actorEmail?: string;
     targetId?: string;
     targetType?: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
     ip?: string;
     userAgent?: string;
 }
@@ -54,7 +54,7 @@ export async function logAdminAction(entry: AuditEntry): Promise<string | null> 
  */
 export async function logCriticalError(
     error: Error | string,
-    context: Record<string, any> = {}
+    context: Record<string, unknown> = {}
 ): Promise<void> {
     try {
         const db = admin.firestore();

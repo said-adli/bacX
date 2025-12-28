@@ -38,9 +38,10 @@ export default function AuthPage() {
                 await createUserWithEmailAndPassword(auth, email, password);
             }
             router.push('/dashboard');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            alert("حدث خطأ: " + error.message);
+            const message = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
+            alert("حدث خطأ: " + message);
         } finally {
             setIsLoading(false);
         }

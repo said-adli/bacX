@@ -78,13 +78,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                     deviceName: navigator.userAgent.slice(0, 50)
                                 });
 
-                                const response = result.data as any;
+                                interface RegisterDeviceResponse {
+                                    success: boolean;
+                                    message?: string;
+                                }
+
+                                const response = result.data as RegisterDeviceResponse;
                                 if (!response.success) {
                                     throw new Error(response.message || 'Device registration failed');
                                 }
-                            } catch (deviceError: any) {
+                            } catch (deviceError: unknown) {
                                 // Device limit exceeded
-                                if (deviceError.code === 'functions/resource-exhausted') {
+                                const errorCode = (typeof deviceError === 'object' && deviceError !== null && 'code' in deviceError)
+                                    ? (deviceError as { code: string }).code
+                                    : '';
+
+                                if (errorCode === 'functions/resource-exhausted') {
                                     await firebaseSignOut(auth);
                                     alert("تم تجاوز حد الأجهزة المسموح به (2).");
                                     setUser(null);
@@ -111,17 +120,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 const functions = getFunctions();
                                 const registerDevice = httpsCallable(functions, 'registerDevice');
                                 await registerDevice({ deviceId, deviceName: navigator.userAgent.slice(0, 50) });
-                            } catch (e) {
+                            } catch (e: unknown) {
                                 console.error("Initial device registration:", e);
                             }
                         }
                         setUser(currentUser);
                         document.cookie = "bacx_auth=1; path=/; max-age=2592000";
 
-                    } catch (error: any) {
+                    } catch (error: unknown) {
                         console.error("Auth Error:", error);
                         // Only retry if it looks like a network error
-                        if (error.code === 'unavailable' || error.message.includes('offline')) {
+                        const errorMessage = error instanceof Error ? error.message : String(error);
+                        const errorCode = (typeof error === 'object' && error !== null && 'code' in error)
+                            ? (error as { code: string }).code
+                            : '';
+
+                        if (errorCode === 'unavailable' || errorMessage.includes('offline')) {
                             setConnectionStatus('reconnecting');
                             toast("جاري إعادة الاتصال...", { icon: <WifiOff className="w-4 h-4" /> });
                             retries--;

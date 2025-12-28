@@ -90,9 +90,11 @@ export default function AdminDashboard() {
             toast.success("تم نشر الدرس بنجاح");
             (e.target as HTMLFormElement).reset();
             setUploadProgress(0);
-        } catch (error: any) {
+            setUploadProgress(0);
+        } catch (error: unknown) {
             console.error(error);
-            toast.error(error.message || "حدث خطأ أثناء الرفع");
+            const message = error instanceof Error ? error.message : "حدث خطأ أثناء الرفع";
+            toast.error(message);
         } finally {
             setIsLoading(false);
         }
@@ -122,7 +124,7 @@ export default function AdminDashboard() {
                     ].map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
+                            onClick={() => setActiveTab(tab.id as 'payments' | 'content' | 'devices')}
                             className={cn(
                                 "flex-1 py-3 rounded-lg flex flex-col items-center gap-1 transition-all text-xs font-medium relative outline-none",
                                 activeTab === tab.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-zinc-500 hover:text-zinc-300"

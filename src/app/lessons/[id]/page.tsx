@@ -61,9 +61,13 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
                 toast.error("الدرس غير موجود");
                 router.push("/lessons");
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            if (err.code === 'permission-denied') {
+            const errorCode = (typeof err === 'object' && err !== null && 'code' in err)
+                ? (err as { code: string }).code
+                : '';
+
+            if (errorCode === 'permission-denied') {
                 setDenied(true);
             } else {
                 setError("فشل في تحميل الدرس. يرجى التحقق من الاتصال.");
