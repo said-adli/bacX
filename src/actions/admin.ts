@@ -2,20 +2,15 @@
 
 import { db, auth } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
+import { requireAdmin } from "@/lib/auth-server";
 
 export async function approvePayment(paymentId: string, userId: string, durationDays: number = 365) {
     if (!paymentId || !userId) {
         throw new Error('Missing paymentId or userId');
     }
 
-    // Verify caller is admin?
-    // In Server Actions, we should check the current user's session/token.
-    // However, verifyAppCheck is hard without the raw request.
-    // We will rely on Middleware protection for the route, 
-    // BUT for extra security, we should check the current user's role here if possible.
-    // Since we don't have easy access to the client's ID token in a Server Action without passing it,
-    // we might assume the layout/page is protected.
-    // To be safe, let's just proceed. The admin dashboard is protected.
+    // Verify caller is admin
+    await requireAdmin();
 
     try {
         await db.runTransaction(async (t) => {
@@ -85,6 +80,8 @@ export async function approvePayment(paymentId: string, userId: string, duration
 import * as admin from 'firebase-admin';
 
 export async function rejectPayment(paymentId: string, userId: string, reason: string = "No reason provided") {
+    // Verify caller is admin
+    await requireAdmin();
     try {
         await db.runTransaction(async (t) => {
             const paymentRef = db.collection('payments').doc(paymentId);

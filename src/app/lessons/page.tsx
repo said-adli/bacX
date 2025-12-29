@@ -24,7 +24,9 @@ export default function LessonsIndexPage() {
     const router = useRouter();
     const [lessons, setLessons] = useState<LessonSummary[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState("All");
+    const searchParams = useSearchParams();
+    const initialFilter = searchParams.get("filter") || "All";
+    const [filter, setFilter] = useState(initialFilter);
 
     useEffect(() => {
         if (!authLoading && !user) router.replace("/auth");

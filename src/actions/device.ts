@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
+import { requireAuth } from "@/lib/auth-server";
 
 interface DeviceData {
     deviceId: string;
@@ -16,6 +17,13 @@ interface RegisteredDevice {
 }
 
 export async function registerDevice(userId: string, data: DeviceData) {
+    // Security: Verify session
+    const claims = await requireAuth();
+    // Allow if admin, OR if operating on own profile
+    if (claims.role !== 'admin' && claims.uid !== userId) {
+        throw new Error("Unauthorized: Cannot modify another user's devices");
+    }
+
     if (!userId) throw new Error("User ID required");
 
     const userRef = db.collection('users').doc(userId);
@@ -75,6 +83,12 @@ export async function registerDevice(userId: string, data: DeviceData) {
 }
 
 export async function unregisterDevice(userId: string, deviceId: string) {
+    // Security: Verify session
+    const claims = await requireAuth();
+    if (claims.role !== 'admin' && claims.uid !== userId) {
+        throw new Error("Unauthorized: Cannot modify another user's devices");
+    }
+
     if (!userId) throw new Error("User ID required");
 
     const userRef = db.collection('users').doc(userId);
