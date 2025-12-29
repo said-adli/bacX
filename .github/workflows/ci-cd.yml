@@ -133,8 +133,7 @@ jobs:
       - name: Deploy Firestore Rules
         run: firebase deploy --only firestore:rules --token ${{ secrets.FIREBASE_TOKEN }}
       
-      - name: Deploy Storage Rules
-        run: firebase deploy --only storage --token ${{ secrets.FIREBASE_TOKEN }}
+
       
       - name: Deploy Cloud Functions
         run: firebase deploy --only functions --token ${{ secrets.FIREBASE_TOKEN }}
