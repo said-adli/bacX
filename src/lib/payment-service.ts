@@ -1,5 +1,5 @@
-import { db } from "@/lib/firebase";
-import { collection, doc, serverTimestamp, writeBatch } from "firebase/firestore";
+import { submitPayment as submitPaymentAction } from "@/actions/payment";
+import { approvePayment as approvePaymentAction, rejectPayment as rejectPaymentAction } from "@/actions/admin";
 
 export interface PaymentRequest {
     userId: string;
@@ -11,66 +11,27 @@ export interface PaymentRequest {
 }
 
 export const submitPayment = async (data: PaymentRequest) => {
-    // Create a new document in 'payments' collection
-    const paymentRef = doc(collection(db, "payments"));
+    // Map to the shape expected by Server Action if needed
+    // The types match mostly.
+    // Server action expects { ... status: 'pending' }
 
-    // Also update user status to 'pending' to show UI feedback
-    const batch = writeBatch(db);
-
-    batch.set(paymentRef, {
+    // Server Action returns { success: true, paymentId: ... }
+    const result = await submitPaymentAction({
         ...data,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        status: 'pending' // Ensure status is explicitly pending
     });
 
-    const userRef = doc(db, "users", data.userId);
-    batch.update(userRef, {
-        subscriptionStatus: 'pending'
-    });
-
-    await batch.commit();
-    return paymentRef.id;
+    return result.paymentId;
 };
 
 export const approvePayment = async (paymentId: string, userId: string) => {
-    const batch = writeBatch(db);
-
-    // 1. Update Payment Status
-    const paymentRef = doc(db, "payments", paymentId);
-    batch.update(paymentRef, {
-        status: 'approved',
-        processedAt: serverTimestamp()
-    });
-
-    // 2. Update User Profile (Unlock content)
-    const userRef = doc(db, "users", userId);
-
-    // Calculate Expiry (e.g., 1 Year from now)
-    const expiryDate = new Date();
-    expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-
-    batch.update(userRef, {
-        subscriptionStatus: 'premium',
-        isSubscribed: true,
-        subscriptionExpiry: expiryDate
-    });
-
-    await batch.commit();
+    const result = await approvePaymentAction(paymentId, userId);
+    if (!result.success) throw new Error(result.message);
+    return result;
 };
 
 export const rejectPayment = async (paymentId: string, userId: string) => {
-    const batch = writeBatch(db);
-
-    const paymentRef = doc(db, "payments", paymentId);
-    batch.update(paymentRef, {
-        status: 'rejected',
-        processedAt: serverTimestamp()
-    });
-
-    const userRef = doc(db, "users", userId);
-    batch.update(userRef, {
-        subscriptionStatus: 'free' // Revert to free
-    });
-
-    await batch.commit();
+    const result = await rejectPaymentAction(paymentId, userId);
+    if (!result.success) throw new Error(result.message);
+    return result;
 };

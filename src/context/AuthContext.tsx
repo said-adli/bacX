@@ -3,11 +3,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { getFunctions, httpsCallable } from "firebase/functions";
 import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { WifiOff, Loader2 } from "lucide-react";
+import { registerDevice, unregisterDevice } from "@/actions/device";
 
 // Stable Fingerprinting
 const getStableDeviceId = () => {
@@ -69,31 +69,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             const data = userSnap.data();
                             setRole(data.role || 'student');
 
-                            // Use Cloud Function for device registration (server-side enforcement)
+                            // Use Server Action for device registration (server-side enforcement)
                             try {
-                                const functions = getFunctions();
-                                const registerDevice = httpsCallable(functions, 'registerDevice');
-                                const result = await registerDevice({
+                                const result: any = await registerDevice(currentUser.uid, {
                                     deviceId,
                                     deviceName: navigator.userAgent.slice(0, 50)
                                 });
 
-                                interface RegisterDeviceResponse {
-                                    success: boolean;
-                                    message?: string;
+                                if (!result.success) {
+                                    throw new Error(result.message || 'Device registration failed');
                                 }
-
-                                const response = result.data as RegisterDeviceResponse;
-                                if (!response.success) {
-                                    throw new Error(response.message || 'Device registration failed');
-                                }
-                            } catch (deviceError: unknown) {
+                            } catch (deviceError: any) {
                                 // Device limit exceeded
-                                const errorCode = (typeof deviceError === 'object' && deviceError !== null && 'code' in deviceError)
-                                    ? (deviceError as { code: string }).code
-                                    : '';
+                                const errorMessage = deviceError.message || '';
 
-                                if (errorCode === 'functions/resource-exhausted') {
+                                if (errorMessage.includes('Device limit') || errorMessage.includes('resource-exhausted')) {
+
                                     await firebaseSignOut(auth);
                                     alert("تم تجاوز حد الأجهزة المسموح به (2).");
                                     setUser(null);
@@ -115,11 +106,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             });
                             setRole('student');
 
-                            // Register device via Cloud Function
+                            // Register device via Server Action
                             try {
-                                const functions = getFunctions();
-                                const registerDevice = httpsCallable(functions, 'registerDevice');
-                                await registerDevice({ deviceId, deviceName: navigator.userAgent.slice(0, 50) });
+                                await registerDevice(currentUser.uid, {
+                                    deviceId,
+                                    deviceName: navigator.userAgent.slice(0, 50)
+                                });
                             } catch (e: unknown) {
                                 console.error("Initial device registration:", e);
                             }
@@ -176,14 +168,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         document.cookie = "bacx_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
         document.cookie = "bacx_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
 
-        // Call unregisterDevice Cloud Function to remove device from activeDevices
-        try {
-            const functions = getFunctions();
-            const unregisterDevice = httpsCallable(functions, 'unregisterDevice');
-            await unregisterDevice({ deviceId });
-        } catch (error) {
-            // Don't block logout if unregister fails
-            console.error("Failed to unregister device:", error);
+        // Call unregisterDevice Server Action
+        if (user) {
+            try {
+                await unregisterDevice(user.uid, deviceId);
+            } catch (error) {
+                // Don't block logout if unregister fails
+                console.error("Failed to unregister device:", error);
+            }
         }
 
         // Clear server session
