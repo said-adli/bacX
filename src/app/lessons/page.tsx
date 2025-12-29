@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { collection, getDocs, query, orderBy, limit, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { LessonSkeleton } from "@/components/skeletons/LessonSkeleton";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface LessonSummary {
     id: string;
