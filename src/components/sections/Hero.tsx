@@ -4,8 +4,6 @@ import Link from "next/link";
 // import Image from "next/image";
 import { ArrowLeft, PlayCircle, Star } from "lucide-react";
 
-import { ArrowLeft, PlayCircle, Star } from "lucide-react";
-
 interface HeroProps {
     stats?: {
         usersCount: number;
