@@ -4,7 +4,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, PlayCircle, Star } from "lucide-react";
 
-export function Hero() {
+import { ArrowLeft, PlayCircle, Star } from "lucide-react";
+
+interface HeroProps {
+    stats?: {
+        usersCount: number;
+        lessonsCount: number;
+    }
+}
+
+export function Hero({ stats }: HeroProps) {
     return (
         <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden bg-background">
             {/* Background Decor */}
@@ -60,7 +69,7 @@ export function Hero() {
                                     </div>
                                 ))}
                             </div>
-                            <span className="font-medium">+5,000 طالب يثقون بنا</span>
+                            <span className="font-medium">+{stats?.usersCount ? stats.usersCount.toLocaleString() : "5,000"} طالب يثقون بنا</span>
                         </div>
                         <div className="flex items-center gap-1">
                             <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />

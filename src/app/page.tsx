@@ -1,16 +1,40 @@
 import { Hero } from "@/components/sections/Hero";
 import { Features } from "@/components/sections/Features";
 import { Pricing } from "@/components/sections/Pricing";
-import { TopNav } from "@/components/layout/TopNav"; // We can reuse TopNav or create a specific LandingTopNav. Using TopNav for now as it looks good.
+import { TopNav } from "@/components/layout/TopNav";
+import { collection, getCountFromServer } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-export default function Page() {
+// Force dynamic rendering since we are fetching data
+export const dynamic = 'force-dynamic';
+
+async function getServerSideStats() {
+  try {
+    // We use getCountFromServer for cost-efficiency (doesn't read documents)
+    const usersColl = collection(db, "users");
+    const lessonsColl = collection(db, "lessons");
+
+    const [usersSnapshot, lessonsSnapshot] = await Promise.all([
+      getCountFromServer(usersColl),
+      getCountFromServer(lessonsColl)
+    ]);
+
+    return {
+      usersCount: usersSnapshot.data().count,
+      lessonsCount: lessonsSnapshot.data().count
+    };
+  } catch (error) {
+    console.error("Error fetching stats:", error);
+    return { usersCount: 1000, lessonsCount: 50 }; // Fallback
+  }
+}
+
+export default async function Page() {
+  const stats = await getServerSideStats();
+
   return (
     <div dir="rtl" className="min-h-screen bg-background font-sans selection:bg-primary/30">
-      {/* We generally put TopNav in the layout or here. Since AppShell has TopNav, and AppShell handles generic layout, 
-            we need to verify if the Home page uses AppShell. 
-            The AppShell component excludes '/' (Home) from the dashboard layout.
-            So we need to add a Navbar here for the Landing Page.
-        */}
+      {/* Header code ... */}
       <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
           <div className="text-2xl font-black tracking-tight text-foreground">
@@ -32,7 +56,7 @@ export default function Page() {
       </header>
 
       <main className="pt-20">
-        <Hero />
+        <Hero stats={stats} />
         <Features />
         <Pricing />
 
@@ -46,6 +70,7 @@ export default function Page() {
               <a href="#" className="hover:text-foreground">تواصل معنا</a>
               <a href="#" className="hover:text-foreground">الأحكام والشروط</a>
               <a href="#" className="hover:text-foreground">الخصوصية</a>
+              <a href="/about" className="hover:text-primary">عن المنصة</a>
             </div>
             <p className="text-sm text-muted-foreground">
               © 2024 BacX. جميع الحقوق محفوظة.

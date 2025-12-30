@@ -2,83 +2,56 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { VideoCard } from "@/components/dashboard/VideoCard";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { LessonSkeleton } from "@/components/skeletons/LessonSkeleton"; // Reuse skeleton if available
 
 const categories = ["الكل", "الرياضيات", "الفيزياء", "العلوم", "اللغات", "الفلسفة"];
 
-const mockVideos = [
-    {
-        id: "1",
-        title: "دراسة شاملة للدوال الأسية واللوغاريتمية",
-        subject: "الرياضيات",
-        instructor: "أستاذ نور الدين",
-        duration: "45:00",
-        thumbnail: "/thumbnails/math1.jpg", // Ensure placeholders exist or handle missing images
-        href: "/lessons/math/1",
-        progress: 60
-    },
-    {
-        id: "2",
-        title: "الميكانيك: قوانين نيوتن وتطبيقاتها",
-        subject: "الفيزياء",
-        instructor: "أستاذ شريفي",
-        duration: "01:20:00",
-        thumbnail: "/thumbnails/physics1.jpg",
-        href: "/lessons/physics/2",
-        progress: 0
-    },
-    {
-        id: "3",
-        title: "ملخص المناعة: الذات واللاذات",
-        subject: "العلوم",
-        instructor: "أستاذ بوالريش",
-        duration: "30:00",
-        thumbnail: "/thumbnails/science1.jpg",
-        href: "/lessons/science/3",
-        progress: 10
-    },
-    {
-        id: "4",
-        title: "النثر في عصر الضعف والانحطاط",
-        subject: "الأدب",
-        instructor: "أستاذ حيقون",
-        duration: "55:00",
-        thumbnail: "/thumbnails/arabic1.jpg",
-        href: "/lessons/arabic/4",
-        progress: 0
-    },
-    {
-        id: "5",
-        title: "الأعداد المركبة - الجزء الأول",
-        subject: "الرياضيات",
-        instructor: "أستاذ نور الدين",
-        duration: "15:00",
-        thumbnail: "/thumbnails/math2.jpg",
-        href: "/lessons/math/5",
-        progress: 100
-    },
-    {
-        id: "6",
-        title: "الوحدة 2: التحولات النووية",
-        subject: "الفيزياء",
-        instructor: "أستاذ شريفي",
-        duration: "50:00",
-        thumbnail: "/thumbnails/physics2.jpg",
-        href: "/lessons/physics/6",
-        progress: 5
-    }
-];
+interface Lesson {
+    id: string;
+    title: string;
+    subject: string;
+    instructor?: string; // Optional in DB?
+    duration?: string;
+    thumbnail?: string; // YouTube thumbnail usually derived from ID, but maybe stored
+    videoUrl: string; // YouTube ID
+    createdAt: any;
+}
 
 export default function DashboardPage() {
-    const { user, loading } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const [activeCategory, setActiveCategory] = useState("الكل");
+    const [lessons, setLessons] = useState<Lesson[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    if (loading) return null; // handled by layout or loading.tsx usually
+    useEffect(() => {
+        async function fetchLessons() {
+            try {
+                // Fetch latest lessons
+                const q = query(collection(db, "lessons"), orderBy("createdAt", "desc"), limit(10));
+                const querySnapshot = await getDocs(q);
+                const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lesson));
+                setLessons(data);
+            } catch (error) {
+                console.error("Error fetching lessons:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        if (user) {
+            fetchLessons();
+        }
+    }, [user]);
+
+    if (authLoading || loading) return <div className="p-8"><LessonSkeleton /></div>;
 
     const filteredVideos = activeCategory === "الكل"
-        ? mockVideos
-        : mockVideos.filter(v => v.subject === activeCategory);
+        ? lessons
+        : lessons.filter(v => v.subject === activeCategory);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -92,10 +65,6 @@ export default function DashboardPage() {
                         جاهز لمواصلة التحضير للبكالوريا؟
                     </p>
                 </div>
-
-                {/* Search Bar could go here if not global, but request said 'Sidebar layout with search bar'. Global Sidebar usually doesn't have search unless collapsed.
-                    We put Search in TopNav. We can add a filter search here too if needed.
-                */}
             </div>
 
             {/* Categories */}
@@ -118,21 +87,27 @@ export default function DashboardPage() {
 
             {/* Video Grid */}
             <div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredVideos.map((video) => (
-                        <VideoCard
-                            key={video.id}
-                            title={video.title}
-                            subject={video.subject}
-                            instructor={video.instructor}
-                            duration={video.duration}
-                            // Use a placeholder if image fails, handled by Image usually or we provide specific placeholder
-                            thumbnail={video.thumbnail.startsWith('/') ? `https://placehold.co/600x400/EEE/31343C.png?text=${video.subject}` : video.thumbnail}
-                            href={video.href}
-                            progress={video.progress}
-                        />
-                    ))}
-                </div>
+                {filteredVideos.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredVideos.map((video) => (
+                            <VideoCard
+                                key={video.id}
+                                title={video.title}
+                                subject={video.subject}
+                                instructor={video.instructor || "BacX Instructor"}
+                                duration={video.duration || "20:00"}
+                                // Generate YouTube thumbnail if not provided
+                                thumbnail={video.thumbnail || `https://img.youtube.com/vi/${video.videoUrl}/hqdefault.jpg`}
+                                href={`/lessons/${video.id}`} // Correct Routing Logic
+                                progress={0} // Future: fetch user progress
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                        لا توجد دروس متاحة في هذا القسم حالياً.
+                    </div>
+                )}
             </div>
         </div>
     );
