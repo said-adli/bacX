@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, CreditCard, FileVideo, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, FileVideo, LogOut, Shield, BookOpen, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
 const adminNavItems = [
     { href: "/admin", label: "نظرة عامة", icon: LayoutDashboard },
+    { href: "/admin/academic", label: "المسار الدراسي", icon: BookOpen },
+    { href: "/admin/plans", label: "برامج الاشتراك", icon: Tag },
     { href: "/admin/payments", label: "المدفوعات", icon: CreditCard },
     { href: "/admin/users", label: "المستخدمين", icon: Users },
     { href: "/admin/content", label: "المحتوى والبث", icon: FileVideo },
