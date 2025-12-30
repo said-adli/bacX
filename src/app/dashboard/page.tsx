@@ -1,120 +1,95 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { VideoCard } from "@/components/dashboard/VideoCard";
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, limit, getDocs, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { LessonSkeleton } from "@/components/skeletons/LessonSkeleton";
+import { BacCountdown, ProgressWidget, AnnouncementsFeed, UpcomingLives } from "@/components/dashboard/Widgets";
+import { BookOpen, ChevronRight, Zap } from "lucide-react";
 import Link from "next/link";
-import { PlayCircle, BookOpen, ChevronRight } from "lucide-react";
+import { LessonSkeleton } from "@/components/skeletons/LessonSkeleton";
 
 const subjects = [
-    { id: "الرياضيات", name: "الرياضيات", icon: "📐", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
-    { id: "الفيزياء", name: "الفيزياء", icon: "⚡", color: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" },
-    { id: "العلوم", name: "العلوم", icon: "🧬", color: "bg-green-500/10 text-green-500 border-green-500/20" },
-    { id: "اللغات", name: "اللغات", icon: "🌍", color: "bg-purple-500/10 text-purple-500 border-purple-500/20" },
-    { id: "الفلسفة", name: "الفلسفة", icon: "🤔", color: "bg-rose-500/10 text-rose-500 border-rose-500/20" },
+    { id: "الرياضيات", name: "الرياضيات", icon: "📐", color: "from-blue-500/20 to-blue-600/5 border-blue-500/20 hover:border-blue-500/40" },
+    { id: "الفيزياء", name: "الفيزياء", icon: "⚡", color: "from-yellow-500/20 to-yellow-600/5 border-yellow-500/20 hover:border-yellow-500/40" },
+    { id: "العلوم", name: "العلوم", icon: "🧬", color: "from-green-500/20 to-green-600/5 border-green-500/20 hover:border-green-500/40" },
+    { id: "اللغات", name: "اللغات", icon: "🌍", color: "from-purple-500/20 to-purple-600/5 border-purple-500/20 hover:border-purple-500/40" },
+    { id: "الفلسفة", name: "الفلسفة", icon: "🤔", color: "from-rose-500/20 to-rose-600/5 border-rose-500/20 hover:border-rose-500/40" },
 ];
 
-interface Lesson {
-    id: string;
-    title: string;
-    subject: string;
-    instructor?: string;
-    duration?: string;
-    thumbnail?: string;
-    videoUrl: string;
-    createdAt: Timestamp;
-}
-
 export default function DashboardPage() {
-    const { user, loading: authLoading } = useAuth();
-    const [continueWatching, setContinueWatching] = useState<Lesson | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { user, loading } = useAuth();
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        async function fetchLastWatched() {
-            try {
-                // Ideally fetch from user profile 'lastWatched'
-                // For now, just fetch the most recent lesson as a suggestion
-                const q = query(collection(db, "lessons"), orderBy("createdAt", "desc"), limit(1));
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    const doc = querySnapshot.docs[0];
-                    setContinueWatching({ id: doc.id, ...doc.data() } as Lesson);
-                }
-            } catch (error) {
-                console.error("Error fetching suggestions:", error);
-            } finally {
-                setLoading(false);
-            }
-        }
+        setMounted(true);
+    }, []);
 
-        if (user) {
-            fetchLastWatched();
-        }
-    }, [user]);
+    if (loading || !mounted) return <div className="p-8"><LessonSkeleton /></div>;
 
-    if (authLoading || loading) return <div className="p-8"><LessonSkeleton /></div>;
+    const firstName = user?.displayName?.split(' ')[0] || "يا بطل";
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500 p-8">
-            {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                    صباح الخير، {user?.displayName?.split(' ')[0] || "يا بطل"} 👋
-                </h1>
-                <p className="text-muted-foreground mt-2">
-                    جاهز لمواصلة التحضير للبكالوريا؟
-                </p>
+        <div className="space-y-8 animate-in fade-in duration-500 p-6 md:p-8 max-w-7xl mx-auto">
+
+            {/* 1. Header & Greeting */}
+            <div className="flex flex-col md:flex-row justify-between md:items-end gap-4">
+                <div>
+                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                        صباح الخير، <span className="text-transparent bg-clip-text bg-gradient-to-l from-blue-400 to-purple-500">{firstName}</span> 👋
+                    </h1>
+                    <p className="text-zinc-400 text-lg">
+                        لديك <span className="text-white font-bold">3 مهام</span> اليوم، واصل التركيز!
+                    </p>
+                </div>
+                {/* Could add a specific CTA here later */}
             </div>
 
-            {/* Continue Watching Section */}
-            {continueWatching && (
-                <div>
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-bold flex items-center gap-2">
-                            <PlayCircle className="w-5 h-5 text-primary" />
-                            متابعة المشاهدة
-                        </h2>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <VideoCard
-                            key={continueWatching.id}
-                            title={continueWatching.title}
-                            subject={continueWatching.subject}
-                            instructor={continueWatching.instructor || "BacX Instructor"}
-                            duration={continueWatching.duration || "20:00"}
-                            thumbnail={continueWatching.thumbnail || `https://img.youtube.com/vi/${continueWatching.videoUrl}/hqdefault.jpg`}
-                            href={`/video/${continueWatching.id}`} // Correct Routing to /video
-                            progress={45} // Mock progress
-                        />
-                    </div>
-                </div>
-            )}
+            {/* 2. Top Widgets (Countdown & Progress) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <BacCountdown />
+                <ProgressWidget progress={35} /> {/* Mock progress for now */}
+            </div>
 
-            {/* My Subjects Grid */}
-            <div>
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                        <BookOpen className="w-5 h-5 text-primary" />
-                        موادي
-                    </h2>
+            {/* 3. Middle Section (Feeds) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-80">
+                <div className="lg:col-span-1 h-full">
+                    <AnnouncementsFeed />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="lg:col-span-2 h-full">
+                    <UpcomingLives />
+                </div>
+            </div>
+
+            {/* 4. Subjects Refined Grid */}
+            <div>
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold flex items-center gap-2 text-white">
+                        <Zap className="w-5 h-5 text-yellow-500" />
+                        مساحة العمل
+                    </h2>
+                    <span className="text-xs text-zinc-500 bg-zinc-900 border border-white/10 px-3 py-1 rounded-full">
+                        اختر المادة للمتابعة
+                    </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     {subjects.map((subject) => (
                         <Link
                             key={subject.id}
                             href={`/subject/${subject.id}`}
-                            className="group relative overflow-hidden bg-card border border-border rounded-2xl p-6 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5 block"
+                            className={`group relative overflow-hidden bg-gradient-to-br ${subject.color} border rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg`}
                         >
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl mb-4 ${subject.color}`}>
-                                {subject.icon}
+                            <div className="flex flex-col items-center text-center gap-3 relative z-10">
+                                <div className="text-3xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-300">
+                                    {subject.icon}
+                                </div>
+                                <h3 className="font-bold text-white text-sm md:text-base group-hover:text-white/90 transition-colors">
+                                    {subject.name}
+                                </h3>
                             </div>
-                            <div className="flex justify-between items-center">
-                                <h3 className="font-bold text-lg group-hover:text-primary transition-colors">{subject.name}</h3>
-                                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-[-4px] group-hover:text-primary transition-transform" />
+
+                            {/* Hover Arrow */}
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
+                                <ChevronRight className="w-4 h-4 text-white/50" />
                             </div>
                         </Link>
                     ))}
@@ -123,3 +98,4 @@ export default function DashboardPage() {
         </div>
     );
 }
+
