@@ -1,101 +1,98 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
-import { useState, useEffect } from "react";
+import { Suspense } from "react";
+import { TopNav } from "@/components/layout/TopNav";
 import { BacCountdown, ProgressWidget, AnnouncementsFeed, UpcomingLives } from "@/components/dashboard/Widgets";
-import { BookOpen, ChevronRight, Zap } from "lucide-react";
+import { Atom, Divide, Globe, Calculator, BookOpen, ChevronRight } from "lucide-react"; // Updated Icons
 import Link from "next/link";
-import { LessonSkeleton } from "@/components/skeletons/LessonSkeleton";
+import { cn } from "@/lib/utils";
 
+// Mock Subjects Data (Replaced Emojis with Lucide Icons)
 const subjects = [
-    { id: "الرياضيات", name: "الرياضيات", icon: "📐", color: "from-blue-500/20 to-blue-600/5 border-blue-500/20 hover:border-blue-500/40" },
-    { id: "الفيزياء", name: "الفيزياء", icon: "⚡", color: "from-yellow-500/20 to-yellow-600/5 border-yellow-500/20 hover:border-yellow-500/40" },
-    { id: "العلوم", name: "العلوم", icon: "🧬", color: "from-green-500/20 to-green-600/5 border-green-500/20 hover:border-green-500/40" },
-    { id: "اللغات", name: "اللغات", icon: "🌍", color: "from-purple-500/20 to-purple-600/5 border-purple-500/20 hover:border-purple-500/40" },
-    { id: "الفلسفة", name: "الفلسفة", icon: "🤔", color: "from-rose-500/20 to-rose-600/5 border-rose-500/20 hover:border-rose-500/40" },
+    { id: "math", name: "الرياضيات", icon: <Calculator className="w-8 h-8 text-blue-600" />, color: "border-blue-100" },
+    { id: "physics", name: "الفيزياء", icon: <Atom className="w-8 h-8 text-blue-600" />, color: "border-blue-100" },
+    { id: "science", name: "العلوم", icon: <Divide className="w-8 h-8 text-blue-600" />, color: "border-blue-100" }, // Using Divide as generic science/bio placeholder or DNA if available
+    { id: "philosophy", name: "الفلسفة", icon: <BookOpen className="w-8 h-8 text-blue-600" />, color: "border-blue-100" },
+    { id: "english", name: "الإنجليزية", icon: <Globe className="w-8 h-8 text-blue-600" />, color: "border-blue-100" },
 ];
 
 export default function DashboardPage() {
-    const { user, loading } = useAuth();
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    if (loading || !mounted) return <div className="p-8"><LessonSkeleton /></div>;
-
-    const firstName = user?.displayName?.split(' ')[0] || "يا بطل";
-
     return (
-        <div className="space-y-8 animate-in fade-in duration-500 p-6 md:p-8 max-w-7xl mx-auto">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50/50">
+            <div className="flex flex-col h-full">
+                {/* Header Section */}
+                <header className="px-6 py-6 pb-2">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="flex flex-col gap-1">
+                            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+                                صباح الخير، <span className="text-blue-600">سعيد</span> 👋
+                            </h1>
+                            <p className="text-slate-500 text-lg">جاهز لتحقيق أهدافك اليوم؟</p>
+                        </div>
+                    </div>
+                </header>
 
-            {/* 1. Header & Greeting */}
-            <div className="flex flex-col md:flex-row justify-between md:items-end gap-4">
-                <div>
-                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                        صباح الخير، <span className="text-transparent bg-clip-text bg-gradient-to-l from-blue-400 to-purple-500">{firstName}</span> 👋
-                    </h1>
-                    <p className="text-zinc-400 text-lg">
-                        لديك <span className="text-white font-bold">3 مهام</span> اليوم، واصل التركيز!
-                    </p>
-                </div>
-                {/* Could add a specific CTA here later */}
-            </div>
+                <main className="flex-1 px-6 py-6 space-y-8 max-w-7xl mx-auto w-full">
 
-            {/* 2. Top Widgets (Countdown & Progress) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <BacCountdown />
-                <ProgressWidget progress={35} /> {/* Mock progress for now */}
-            </div>
+                    {/* TOP ROW: Urgent Widgets */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Countdown */}
+                        <div className="md:col-span-1 h-44">
+                            <BacCountdown />
+                        </div>
+                        {/* Progress */}
+                        <div className="md:col-span-1 h-44">
+                            <ProgressWidget />
+                        </div>
+                        {/* Quick Stats or Quote (Placeholder for visual balance) */}
+                        <div className="md:col-span-1 h-44 bg-white/70 backdrop-blur-md border border-white/40 shadow-sm rounded-2xl p-6 flex items-center justify-center text-center">
+                            <p className="text-slate-600 font-medium italic">"النجاح هو مجموع مجهودات صغيرة تتكرر يوماً بعد يوم."</p>
+                        </div>
+                    </div>
 
-            {/* 3. Middle Section (Feeds) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-80">
-                <div className="lg:col-span-1 h-full">
-                    <AnnouncementsFeed />
-                </div>
-                <div className="lg:col-span-2 h-full">
-                    <UpcomingLives />
-                </div>
-            </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* MAIN COLUMN: Feeds */}
+                        <div className="lg:col-span-2 space-y-8">
+                            {/* Announcements */}
+                            <section className="h-80">
+                                <AnnouncementsFeed />
+                            </section>
 
-            {/* 4. Subjects Refined Grid */}
-            <div>
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold flex items-center gap-2 text-white">
-                        <Zap className="w-5 h-5 text-yellow-500" />
-                        مساحة العمل
-                    </h2>
-                    <span className="text-xs text-zinc-500 bg-zinc-900 border border-white/10 px-3 py-1 rounded-full">
-                        اختر المادة للمتابعة
-                    </span>
-                </div>
+                            {/* Live Sessions */}
+                            <section className="h-64">
+                                <UpcomingLives />
+                            </section>
+                        </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {subjects.map((subject) => (
-                        <Link
-                            key={subject.id}
-                            href={`/subject/${subject.id}`}
-                            className={`group relative overflow-hidden bg-gradient-to-br ${subject.color} border rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg`}
-                        >
-                            <div className="flex flex-col items-center text-center gap-3 relative z-10">
-                                <div className="text-3xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-300">
-                                    {subject.icon}
-                                </div>
-                                <h3 className="font-bold text-white text-sm md:text-base group-hover:text-white/90 transition-colors">
-                                    {subject.name}
-                                </h3>
+                        {/* SIDE COLUMN: Subjects Grid (Now Vertical-ish for sidebar feel or kept as grid) */}
+                        <div className="lg:col-span-1">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-xl text-slate-800">مواد تخصصك</h3>
+                                <Link href="/subjects" className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                                    عرض الكل <ChevronRight className="w-4 h-4" />
+                                </Link>
                             </div>
 
-                            {/* Hover Arrow */}
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
-                                <ChevronRight className="w-4 h-4 text-white/50" />
+                            <div className="grid grid-cols-2 gap-4">
+                                {subjects.map((subject) => (
+                                    <Link
+                                        key={subject.id}
+                                        href={`/subject/${subject.id}`}
+                                        className={`group relative bg-white/60 hover:bg-white/90 backdrop-blur-md border border-blue-100/50 hover:border-blue-400/50 rounded-2xl p-4 transition-all duration-300 hover:shadow-lg hover:shadow-blue-200/50 flex flex-col items-center gap-3 text-center`}
+                                    >
+                                        <div className="p-3 bg-blue-50 rounded-full group-hover:scale-110 transition-transform duration-300">
+                                            {subject.icon}
+                                        </div>
+                                        <h3 className="font-bold text-slate-800 text-sm">
+                                            {subject.name}
+                                        </h3>
+                                    </Link>
+                                ))}
                             </div>
-                        </Link>
-                    ))}
-                </div>
+                        </div>
+                    </div>
+                </main>
             </div>
         </div>
     );
 }
-

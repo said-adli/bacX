@@ -20,13 +20,13 @@ export function AdminSidebar() {
     const { logout } = useAuth();
 
     return (
-        <aside className="fixed right-0 top-0 h-screen w-64 bg-[#0a0a0a] border-l border-white/10 flex flex-col z-50 transition-transform duration-300 shadow-2xl">
+        <aside className="fixed right-0 top-0 h-screen w-64 bg-white/90 backdrop-blur-xl border-l border-blue-100/50 flex flex-col z-50 transition-transform duration-300 shadow-xl shadow-blue-900/5">
             {/* Logo */}
-            <div className="h-20 flex items-center justify-center border-b border-white/5 bg-red-500/5">
-                <div className="flex items-center gap-2 text-red-500">
+            <div className="h-20 flex items-center justify-center border-b border-blue-50/50 bg-blue-50/20">
+                <div className="flex items-center gap-2 text-blue-600">
                     <Shield className="w-6 h-6" />
                     <h1 className="text-2xl font-bold font-sans tracking-tight">
-                        ADMIN<span className="text-white">PANEL</span>
+                        ADMIN<span className="text-slate-900">PANEL</span>
                     </h1>
                 </div>
             </div>
@@ -43,31 +43,34 @@ export function AdminSidebar() {
                             className={cn(
                                 "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group font-sans text-sm font-medium",
                                 isActive
-                                    ? "bg-red-500 text-white shadow-lg shadow-red-500/20"
-                                    : "text-zinc-400 hover:text-white hover:bg-white/5"
+                                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 translate-x-[-2px]"
+                                    : "text-slate-500 hover:text-blue-600 hover:bg-blue-50"
                             )}
                         >
-                            <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-zinc-500 group-hover:text-white")} />
+                            <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-400 group-hover:text-blue-600")} />
                             {item.label}
                         </Link>
                     );
                 })}
             </nav>
 
-            {/* Footer / Logout */}
-            <div className="p-4 border-t border-white/5 bg-red-500/5">
-                <Link href="/dashboard" className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 transition-all font-sans text-sm font-medium mb-2">
-                    <LayoutDashboard className="w-5 h-5" />
-                    العودة للمنصة
-                </Link>
-                <button
-                    onClick={() => logout()}
-                    className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all font-sans text-sm font-medium"
-                >
-                    <LogOut className="w-5 h-5" />
-                    تسجيل الخروج
-                </button>
-            </div>
-        </aside>
+                })}
+        </nav>
+
+            {/* Footer / Logout */ }
+    <div className="p-4 border-t border-blue-50/50 bg-blue-50/10">
+        <Link href="/dashboard" className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-white transition-all font-medium text-sm mb-2">
+            <LayoutDashboard className="w-5 h-5" />
+            العودة للمنصة
+        </Link>
+        <button
+            onClick={() => logout()}
+            className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-all font-medium text-sm"
+        >
+            <LogOut className="w-5 h-5" />
+            تسجيل الخروج
+        </button>
+    </div>
+        </aside >
     );
 }
