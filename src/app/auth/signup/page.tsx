@@ -7,7 +7,6 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { saveStudentData } from "@/lib/user";
 import { ALGERIAN_WILAYAS } from "@/lib/data/wilayas";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { User, Mail, Lock, MapPin, BookOpen, Eye, EyeOff } from "lucide-react";
@@ -83,20 +82,21 @@ export default function SignupPage() {
     if (loading) return null;
 
     return (
-        <main className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-white via-slate-50 to-blue-50 relative overflow-hidden font-tajawal direction-rtl text-right">
+        <main className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-white to-slate-100 relative overflow-hidden font-tajawal direction-rtl text-right">
 
-            {/* Background Ambience */}
+            {/* Background Ambience - Light Only */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-100/40 blur-[100px] rounded-full" />
-                <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-100/40 blur-[100px] rounded-full" />
+                <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-200/30 blur-[100px] rounded-full" />
+                <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-200/30 blur-[100px] rounded-full" />
             </div>
 
-            <GlassCard className="w-full max-w-[480px] p-8 md:p-10 relative z-10 border-blue-100/50 bg-white/80 backdrop-blur-md shadow-xl rounded-3xl">
+            {/* White Glass Card - Explicit Light Styles */}
+            <div className="w-full max-w-[480px] p-8 md:p-10 relative z-10 bg-white/80 backdrop-blur-xl border border-blue-100/50 shadow-2xl shadow-blue-100/20 rounded-3xl">
                 <div className="text-center mb-8">
                     <h1 className="font-bold text-3xl text-slate-900 mb-2">
                         إنشاء حساب
                     </h1>
-                    <p className="text-slate-600 text-sm">
+                    <p className="text-slate-500 text-sm">
                         ابدأ رحلتك نحو التفوق ولا تضيع الفرصة
                     </p>
                 </div>
@@ -108,7 +108,7 @@ export default function SignupPage() {
                         icon={User}
                         value={formData.fullName}
                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                        className="bg-white border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-900 placeholder:text-slate-400 text-right h-12"
+                        className="bg-white border text-slate-900 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-400 text-right h-12"
                         iconClassName="text-slate-400"
                     />
 
@@ -119,7 +119,7 @@ export default function SignupPage() {
                             <select
                                 value={formData.wilaya}
                                 onChange={(e) => setFormData({ ...formData, wilaya: e.target.value })}
-                                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 pr-11 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer h-12"
+                                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 pr-11 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer h-12 shadow-sm"
                             >
                                 <option value="" className="text-slate-400">أي ولاية؟</option>
                                 {ALGERIAN_WILAYAS.map(w => (
@@ -136,7 +136,7 @@ export default function SignupPage() {
                             <select
                                 value={formData.major}
                                 onChange={(e) => setFormData({ ...formData, major: e.target.value })}
-                                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 pr-11 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer h-12"
+                                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 pr-11 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer h-12 shadow-sm"
                             >
                                 {MAJORS.map(m => (
                                     <option key={m} value={m}>
@@ -154,7 +154,7 @@ export default function SignupPage() {
                         icon={Mail}
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="bg-white border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-900 placeholder:text-slate-400 text-right h-12"
+                        className="bg-white border text-slate-900 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-400 text-right h-12"
                         iconClassName="text-slate-400"
                     />
 
@@ -166,7 +166,7 @@ export default function SignupPage() {
                             icon={Lock}
                             value={formData.password}
                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            className="bg-white border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-900 placeholder:text-slate-400 text-right pl-12 h-12"
+                            className="bg-white border text-slate-900 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-400 text-right pl-12 h-12"
                             iconClassName="text-slate-400"
                         />
                         <button
@@ -192,7 +192,7 @@ export default function SignupPage() {
                         </Link>
                     </div>
                 </form>
-            </GlassCard>
+            </div>
         </main>
     );
 }
