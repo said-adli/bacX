@@ -21,6 +21,7 @@
     "@upstash/ratelimit": "^2.0.7",
     "@upstash/redis": "^1.36.0",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "firebase": "^12.7.0",
     "firebase-admin": "^13.6.0",
     "firebase-functions": "^7.0.2",
