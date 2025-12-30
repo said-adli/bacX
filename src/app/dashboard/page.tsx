@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { VideoCard } from "@/components/dashboard/VideoCard";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { LessonSkeleton } from "@/components/skeletons/LessonSkeleton"; // Reuse skeleton if available
 
@@ -18,7 +18,7 @@ interface Lesson {
     duration?: string;
     thumbnail?: string; // YouTube thumbnail usually derived from ID, but maybe stored
     videoUrl: string; // YouTube ID
-    createdAt: any;
+    createdAt: Timestamp;
 }
 
 export default function DashboardPage() {

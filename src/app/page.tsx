@@ -1,7 +1,7 @@
 import { Hero } from "@/components/sections/Hero";
 import { Features } from "@/components/sections/Features";
 import { Pricing } from "@/components/sections/Pricing";
-import { TopNav } from "@/components/layout/TopNav";
+// import { TopNav } from "@/components/layout/TopNav";
 import { collection, getCountFromServer } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 

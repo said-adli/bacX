@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { PlayCircle, Clock, User } from "lucide-react";
-import { cn } from "@/lib/utils";
+// import { cn } from "@/lib/utils"; 
 
 interface VideoCardProps {
     title: string;
@@ -13,7 +13,6 @@ interface VideoCardProps {
     thumbnail: string;
     href: string;
     progress?: number;
-    isLocked?: boolean;
 }
 
 export function VideoCard({
@@ -23,8 +22,7 @@ export function VideoCard({
     duration,
     thumbnail,
     href,
-    progress,
-    isLocked
+    progress
 }: VideoCardProps) {
     return (
         <Link href={href} className="group block">

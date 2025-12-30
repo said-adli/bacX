@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, BookOpen, Radio, Users, Settings, LogOut, Library } from "lucide-react";
+import { LayoutDashboard, BookOpen, Radio, Users, LogOut, Library } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
