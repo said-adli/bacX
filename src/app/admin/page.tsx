@@ -1,9 +1,8 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Using Shadcn UI if available, else standard HTML/Tailwind
 import { Users, CreditCard, TrendingUp, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { collection, getCountFromServer, query, where, getDocs } from "firebase/firestore";
+import { collection, getCountFromServer } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export default function AdminDashboard() {

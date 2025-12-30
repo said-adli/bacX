@@ -3,7 +3,6 @@
 import { useAuth } from "@/context/AuthContext";
 import { VideoCard } from "@/components/dashboard/VideoCard";
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
 import { collection, query, orderBy, limit, getDocs, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { LessonSkeleton } from "@/components/skeletons/LessonSkeleton";

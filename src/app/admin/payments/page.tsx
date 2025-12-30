@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp, setDoc, getDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { CheckCircle, XCircle, Search, Eye, Loader2 } from "lucide-react";
+import { XCircle, Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/Button"; // Reusing UI
 import Image from "next/image";
 
 interface PaymentRequest {

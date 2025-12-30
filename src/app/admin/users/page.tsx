@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, limit, getDocs, doc, updateDoc, startAfter, where } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Search, MoreVertical, Smartphone, Ban, CheckCircle, ShieldAlert, MonitorX } from "lucide-react";
+import { Search, Ban, CheckCircle, MonitorX } from "lucide-react";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
-import { arMA } from "date-fns/locale";
 
 interface UserData {
     id: string; // firebase uid
@@ -14,9 +12,9 @@ interface UserData {
     email: string;
     role: 'admin' | 'student' | 'guest';
     isSubscribed?: boolean;
-    subscriptionExpiry?: any; // Timestamp
+    subscriptionExpiry?: { toDate: () => Date } | Date | null;
     banned?: boolean;
-    lastLogin?: any;
+    lastLogin?: { toDate: () => Date } | Date | null;
     deviceCount?: number; // Approximate from an array if we had one, otherwise mock or leave empty for now
 }
 
@@ -99,7 +97,7 @@ export default function UsersPage() {
                 activeDevices: []
             });
             toast.success("Devices reset");
-        } catch (error) {
+        } catch {
             toast.error("Failed to reset devices");
         }
     }

@@ -6,21 +6,28 @@ import { useState, useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { arMA } from "date-fns/locale";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+// Removed unused useRouter since it was unused in logic
+
+interface Device {
+    id: string;
+    name: string;
+    lastActive: Date;
+    current: boolean;
+}
 
 export default function SubscriptionPage() {
-    const { user, role, logout } = useAuth();
-    const router = useRouter();
-    const [devices, setDevices] = useState<any[]>([]);
+    const { user, role } = useAuth(); // Removed unused logout
+    const [devices, setDevices] = useState<Device[]>([]);
 
     // Mock data for payments until real collection exists
-    const [payments, setPayments] = useState([
+    const [payments] = useState([
         { id: 1, date: new Date(), amount: "4500 DZD", status: "approved", method: "CCP" },
         // { id: 2, date: new Date(Date.now() - 86400000 * 30), amount: "2000 DZD", status: "expired", method: "BaridiMob" },
     ]);
 
     useEffect(() => {
-        if (user) {
+        if (user && typeof window !== "undefined") {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
             setDevices([
                 { id: "device_current", name: window.navigator.userAgent.slice(0, 20) + "...", lastActive: new Date(), current: true },
                 { id: "device_old", name: "iPhone 13 - Safari", lastActive: new Date(Date.now() - 86400000 * 2), current: false }
@@ -29,10 +36,10 @@ export default function SubscriptionPage() {
     }, [user]);
 
     const handleLogoutDevice = (deviceId: string) => {
-        setDevices(devices.filter(d => d.id !== deviceId));
+        setDevices(prev => prev.filter(d => d.id !== deviceId));
     };
 
-    const isSubscribed = role === 'admin' || (user as any)?.isSubscribed; // Assuming isSubscribed on user object or role
+    const isSubscribed = role === 'admin' || (user as { isSubscribed?: boolean })?.isSubscribed;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 p-4 md:p-8 max-w-5xl mx-auto font-sans">
@@ -113,8 +120,8 @@ export default function SubscriptionPage() {
                                                 <td className="py-4 text-muted-foreground">{payment.method}</td>
                                                 <td className="py-4">
                                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${payment.status === 'approved' ? 'bg-green-500/10 text-green-500' :
-                                                            payment.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500' :
-                                                                'bg-muted text-muted-foreground'
+                                                        payment.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500' :
+                                                            'bg-muted text-muted-foreground'
                                                         }`}>
                                                         {payment.status === 'approved' ? 'مقبول' : payment.status === 'pending' ? 'قيد المراجعة' : 'منتهي'}
                                                     </span>

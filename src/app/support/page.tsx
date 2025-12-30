@@ -1,8 +1,6 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
 import { Mail, MessageCircle, Phone, HelpCircle } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard"; // Assuming this exists or falls back
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 

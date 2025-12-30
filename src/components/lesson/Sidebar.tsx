@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { PlayCircle, Lock, Layout, MessageSquare, BookOpen, GraduationCap, Send } from "lucide-react";
+import { Lock, MessageSquare, BookOpen, GraduationCap, Send } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";

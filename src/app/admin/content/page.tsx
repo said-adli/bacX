@@ -1,11 +1,8 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { collection, addDoc, doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "sonner";
-import { CheckCircle, Radio, Video, FileText, Loader2, Save } from "lucide-react";
-import { Input } from "@/components/ui/Input"; // Assuming these exist, else standard HTML input
+import { Radio, Video, Loader2, Save } from "lucide-react";
 
 export default function ContentPage() {
     const [activeTab, setActiveTab] = useState<'lessons' | 'live'>('lessons');
@@ -68,7 +65,7 @@ export default function ContentPage() {
             });
             toast.success("تمت إضافة الدرس بنجاح");
             setLessonForm({ ...lessonForm, title: "", videoUrl: "" }); // Reset some fields
-        } catch (error) {
+        } catch {
             toast.error("فشل إضافة الدرس");
         } finally {
             setLoading(false);
