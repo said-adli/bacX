@@ -124,18 +124,18 @@ export function TopNav() {
     };
 
     return (
-        <header className="fixed top-0 left-0 right-0 lg:right-[240px] h-12 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-white/10 dark:border-white/5 flex items-center justify-between px-4 z-40 transition-all duration-300">
+        <header className="w-full h-full flex items-center justify-between px-4 lg:px-6 transition-all duration-300">
             {/* Breadcrumbs */}
-            <nav className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
+            <nav className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                 {breadcrumbs.map((crumb, index) => (
                     <span key={index} className="flex items-center">
-                        {index > 0 && <span className="mx-1 opacity-50">/</span>}
+                        {index > 0 && <ChevronDown className="w-3 h-3 mx-1 opacity-30 -rotate-90" />}
                         {crumb.href ? (
-                            <Link href={crumb.href} className="hover:text-primary transition-colors">
+                            <Link href={crumb.href} className="hover:text-primary transition-colors hover:bg-white/5 px-2 py-1 rounded-md">
                                 {crumb.label}
                             </Link>
                         ) : (
-                            <span className="font-medium text-slate-900 dark:text-white">{crumb.label}</span>
+                            <span className="font-medium text-slate-900 dark:text-white px-2 py-1">{crumb.label}</span>
                         )}
                     </span>
                 ))}
@@ -207,9 +207,8 @@ export function TopNav() {
                             <motion.div
                                 initial={{ opacity: 0, y: 4, scale: 0.98 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: 4, scale: 0.98 }}
                                 transition={{ duration: 0.15 }}
-                                className="absolute left-0 mt-2 w-48 bg-white border border-[var(--border)] rounded-lg shadow-[var(--shadow-dropdown)] overflow-hidden z-50"
+                                className="absolute left-0 mt-2 w-56 glass-panel rounded-2xl shadow-xl overflow-hidden z-50 ring-1 ring-white/10"
                             >
                                 <div className="p-3 border-b border-[var(--border)]">
                                     <p className="text-sm font-medium text-[var(--foreground)]">

@@ -19,19 +19,22 @@ const config: Config = {
                 "primary-glow": "rgba(41, 151, 255, 0.15)",
                 "text-main": "var(--foreground)",
                 "text-muted": "var(--muted-foreground)",
-                // Luxury Palette
-                "obsidian": "#020202",
+                // Luxury Palette - Refined
+                "obsidian": "#050505", // Slightly lighter than pure black for depth
                 "gold": "#D4AF37",
                 "gold-dim": "#AA8C2C",
-                "dark-bg": "#020617", // Deep Space (preserving for backward compatibility if needed)
-                "glass": "rgba(255, 255, 255, 0.05)",
-                "glass-heavy": "rgba(255, 255, 255, 0.05)",
+                "glass": "var(--glass-surface)",
+                "glass-border": "var(--glass-border)",
             },
             fontFamily: {
                 sans: ["var(--font-sans)", "sans-serif"],
+                serif: ["var(--font-serif)", "serif"],
             },
             borderRadius: {
-                '3xl': '1.5rem',
+                '3xl': '2rem', // Increased for luxurious curves
+                '2xl': '1.5rem',
+                'xl': '1rem',
+                'lg': '0.75rem',
             },
             animation: {
                 shimmer: "shimmer 2s linear infinite",

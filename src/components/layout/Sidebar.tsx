@@ -26,25 +26,20 @@ export function Sidebar() {
     const [subjectsExpanded, setSubjectsExpanded] = useState(true);
 
     return (
-        <motion.aside
-            className="sidebar-notion"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
-        >
+        <div className="w-full h-full flex flex-col bg-transparent">
             {/* Logo */}
-            <div className="sidebar-header border-b border-[var(--border)]">
-                <Link href="/" className="sidebar-logo">
-                    <div className="w-5 h-5 bg-[var(--foreground)] rounded flex items-center justify-center">
-                        <Brain className="w-3 h-3 text-white" />
+            <div className="h-16 flex items-center px-6 border-b border-white/5 mx-2">
+                <Link href="/" className="flex items-center gap-3 group">
+                    <div className="w-8 h-8 bg-gradient-to-br from-gold to-gold-dim rounded-xl flex items-center justify-center shadow-lg shadow-gold/10 group-hover:scale-105 transition-transform duration-300">
+                        <Brain className="w-5 h-5 text-black" />
                     </div>
-                    <span>Brainy</span>
+                    <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 tracking-wide">Brainy</span>
                 </Link>
             </div>
 
             {/* Main Navigation */}
-            <div className="flex-1 overflow-y-auto py-2">
-                <div className="sidebar-section">
+            <div className="flex-1 overflow-y-auto py-6 px-3 space-y-6">
+                <div className="space-y-1">
                     {mainNavItems.map((item) => {
                         const isActive = pathname === item.href;
                         const Icon = item.icon;
@@ -140,6 +135,6 @@ export function Sidebar() {
                     <p className="text-[10px] text-[var(--foreground-tertiary)]">وصول كامل للمحتوى</p>
                 </Link>
             </div>
-        </motion.aside>
+        </div>
     );
 }

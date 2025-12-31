@@ -8,39 +8,53 @@
 
 :root {
   /* Typography */
-  --font-sans: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-serif: 'Amiri', serif;
 
   /* Cinematic Palette — Dark Mode (Default) */
-  --background: #020202;
-  /* Deep Obsidian */
-  --foreground: #FFFFFF;
+  --background: #030303;
+  /* Deep Obsidian, almost Void */
+  --foreground: #F8F8F8;
+  /* Bright White-Grey for readability */
 
   --gold: #D4AF37;
-  --gold-dim: #AA8C2C;
-  --gold-glow: rgba(212, 175, 55, 0.3);
+  --gold-dim: #997F29;
+  --gold-glow: rgba(212, 175, 55, 0.2);
 
   --silver: #C0C0C0;
   --silver-dim: #8A8A8A;
 
-  --glass-surface: rgba(255, 255, 255, 0.05);
-  /* Frosted Glass */
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-highlight: rgba(255, 255, 255, 0.08);
+  --glass-surface: rgba(255, 255, 255, 0.03);
+  /* Ultra Clean Glass */
+  --glass-border: rgba(255, 255, 255, 0.06);
+  /* Subtle Border */
+  --glass-highlight: rgba(255, 255, 255, 0.1);
 
   --primary: #D4AF37;
   --primary-foreground: #000000;
 
   --accent: #D4AF37;
 
-  --radius-xl: 40px;
-  /* Hyper-fluid curvature */
-  --radius-lg: 24px;
-  --radius-md: 16px;
+  /* Spacing & Radius */
+  --radius-xl: 32px;
+  /* Slightly tighter than 40px for "Professional" look */
+  --radius-lg: 20px;
+  --radius-md: 12px;
 
-  /* Shadows — Cinematic */
-  --shadow-glow: 0 0 20px var(--gold-glow);
-  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  /* Layout Dimensions */
+  --sidebar-width: 280px;
+  --header-height: 4rem;
+
+  /* Z-Index Layering */
+  --z-sidebar: 50;
+  --z-header: 40;
+  --z-modal: 100;
+  --z-overlay: 90;
+
+  /* Shadows — Cinematic & Clean */
+  --shadow-glow: 0 0 24px var(--gold-glow);
+  --shadow-glass: 0 4px 24px -2px rgba(0, 0, 0, 0.4);
+  --shadow-dropdown: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
 }
 
 /* Light Mode — Champagne/Silk (Optional Override) */
@@ -54,6 +68,8 @@
 
   --primary: #D4AF37;
   --gold-glow: rgba(212, 175, 55, 0.15);
+
+  --shadow-glass: 0 4px 24px -2px rgba(0, 0, 0, 0.05);
 }
 
 @layer base {
@@ -66,7 +82,11 @@
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
-    transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
+    line-height: 1.6;
+    /* Increased breathing room */
+    transition: background-color 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
+    /* Prevent horizontal scroll */
   }
 
   h1,
@@ -76,7 +96,8 @@
   h5,
   h6 {
     font-family: var(--font-serif);
-    line-height: 1.4;
+    line-height: 1.3;
+    font-weight: 700;
   }
 
   /* Custom Scrollbar */
@@ -116,7 +137,7 @@
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid var(--glass-border);
-    border-radius: 40px;
+    border-radius: var(--radius-xl);
     transition: all 500ms;
   }
 
