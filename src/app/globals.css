@@ -18,8 +18,8 @@
   --popover: #FFFFFF;
   --popover-foreground: #111827;
 
-  /* Primary: Deep Blue */
-  --primary: #1E40AF;
+  /* Primary: Electric Blue (bacX Brand) */
+  --primary: #2563EB;
   --primary-foreground: #FFFFFF;
 
   /* Secondary: Professional Green (used as secondary or success) or Neutral */
@@ -41,7 +41,7 @@
   /* Borders & Inputs */
   --border: #E5E7EB;
   --input: #E5E7EB;
-  --ring: #1E40AF;
+  --ring: #2563EB;
   /* Matches Primary */
 
   /* Radius */
