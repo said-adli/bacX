@@ -20,8 +20,11 @@ const config: Config = {
                 "text-main": "var(--foreground)",
                 "text-muted": "var(--muted-foreground)",
                 // Luxury Palette
-                "dark-bg": "#020617", // Deep Space
-                "glass": "rgba(255, 255, 255, 0.03)",
+                "obsidian": "#020202",
+                "gold": "#D4AF37",
+                "gold-dim": "#AA8C2C",
+                "dark-bg": "#020617", // Deep Space (preserving for backward compatibility if needed)
+                "glass": "rgba(255, 255, 255, 0.05)",
                 "glass-heavy": "rgba(255, 255, 255, 0.05)",
             },
             fontFamily: {

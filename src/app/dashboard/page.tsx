@@ -1,357 +1,200 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
-import { Clock, Calendar, Bell, Radio, ChevronRight, Sparkles, BookOpen, ChevronLeft } from "lucide-react";
-import Link from "next/link";
-import { differenceInDays, format } from "date-fns";
-import { ar } from "date-fns/locale";
-import { collection, query, orderBy, limit, onSnapshot, doc, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { cn } from "@/lib/utils";
+import {
+    Play, BookOpen, Calendar, Clock, Star,
+    ChevronLeft, Sparkles, Trophy, Flame
+} from "lucide-react";
+import Link from 'next/link';
 
-// Animation variants
+// Animation Variants
 const container = {
     hidden: { opacity: 0 },
-    visible: {
+    show: {
         opacity: 1,
         transition: {
             staggerChildren: 0.1,
-            delayChildren: 0.2
+            delayChildren: 0.3
         }
     }
 };
 
 const item = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as "easeOut" } }
+    hidden: { opacity: 0, y: 30 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 50 } }
 };
 
 export default function DashboardPage() {
-    const { user } = useAuth();
-    const displayName = user?.displayName?.split(' ')[0] || 'طالب';
+    const subjects = [
+        { title: "الرياضيات", level: "المستوى: متقدم", progress: 75, color: "from-blue-600 to-blue-900" },
+        { title: "الفيزياء", level: "المستوى: متوسط", progress: 45, color: "from-purple-600 to-purple-900" },
+        { title: "العلوم", level: "المستوى: بداية", progress: 10, color: "from-emerald-600 to-emerald-900" },
+        { title: "الفلسفة", level: "المستوى: متقدم", progress: 90, color: "from-rose-600 to-rose-900" },
+    ];
 
     return (
         <motion.div
-            className="max-w-5xl mx-auto space-y-8"
             variants={container}
             initial="hidden"
-            animate="visible"
+            animate="show"
+            className="max-w-[1600px] mx-auto p-6 lg:p-10 space-y-12 pb-32"
         >
-            {/* PILLAR 1: Hero Area (Mesh Gradient & Poetry) */}
-            <motion.div variants={item}>
-                <HeroSection displayName={displayName} />
-            </motion.div>
 
-            {/* PILLAR 2: BAC Timeline Block */}
-            <motion.div variants={item}>
-                <TimelineBlock />
-            </motion.div>
+            {/* 1. CINEMATIC HERO BANNER */}
+            <motion.section
+                variants={item}
+                className="relative h-[400px] w-full rounded-[40px] overflow-hidden group"
+            >
+                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-center transition-transform duration-[20s] ease-linear group-hover:scale-110"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+                <div className="absolute inset-0 bg-gold/5 mix-blend-overlay"></div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* PILLAR 3: Study Agenda (Notion Style) */}
-                <div className="lg:col-span-7 space-y-8">
-                    <motion.div variants={item}>
-                        <AgendaBlock />
-                    </motion.div>
-                </div>
+                <div className="absolute bottom-0 left-0 w-full p-10 md:p-16 flex flex-col md:flex-row items-end justify-between gap-6">
+                    <div>
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.5 }}
+                            className="flex items-center gap-2 mb-4 text-gold"
+                        >
+                            <Sparkles className="w-5 h-5 animate-pulse" />
+                            <span className="uppercase tracking-[0.2em] text-sm font-medium">Daily Inspiration</span>
+                        </motion.div>
 
-                {/* PILLAR 4: Official Newsroom */}
-                <div className="lg:col-span-5 space-y-8">
-                    <motion.div variants={item}>
-                        <NewsroomBlock />
-                    </motion.div>
-                </div>
-            </div>
-        </motion.div>
-    );
-}
-
-// =============================================================================
-// PILLAR 1: HERO SECTION
-// =============================================================================
-function HeroSection({ displayName }: { displayName: string }) {
-    return (
-        <div className="relative overflow-hidden rounded-3xl p-8 lg:p-12">
-            {/* Mesh Gradient Background */}
-            <div className="absolute inset-0 bg-mesh-gradient-light dark:bg-mesh-gradient opacity-60 dark:opacity-100 transition-opacity duration-500" />
-            <div className="absolute inset-0 bg-white/40 dark:bg-black/20 backdrop-blur-3xl" />
-
-            <div className="relative z-10 flex flex-col items-center text-center space-y-6">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 dark:bg-white/5 border border-white/20 dark:border-white/10 backdrop-blur-md">
-                    <Sparkles className="w-4 h-4 text-amber-500" />
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                        مرحباً، {displayName}
-                    </span>
-                </div>
-
-                <div className="space-y-4 max-w-2xl">
-                    <p className="text-2xl md:text-4xl font-light leading-relaxed text-slate-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-slate-100 dark:to-slate-400 font-sans">
-                        "العِلمُ يَرفَعُ بَيْتاً لا عِمادَ لَهُ<br />
-                        والجَهلُ يَهدِمُ بَيْتَ العِزِّ والشَّرَفِ"
-                    </p>
-                    <p className="text-sm md:text-base text-slate-500 dark:text-amber-500/80 font-medium tracking-wide">
-                        — الإمام علي بن أبي طالب
-                    </p>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// =============================================================================
-// PILLAR 2: TIMELINE BLOCK
-// =============================================================================
-function TimelineBlock() {
-    const [daysLeft, setDaysLeft] = useState<number | null>(null);
-    const bacDate = new Date("2025-06-01T08:00:00");
-    const startDate = new Date("2024-09-01"); // Academic year start
-
-    useEffect(() => {
-        setDaysLeft(Math.max(0, differenceInDays(bacDate, new Date())));
-    }, []);
-
-    // Skeleton
-    if (daysLeft === null) {
-        return (
-            <div className="h-32 rounded-3xl bg-slate-100 dark:bg-white/5 animate-pulse" />
-        );
-    }
-
-    const totalDays = differenceInDays(bacDate, startDate);
-    const daysElapsed = totalDays - daysLeft;
-    const progress = Math.min(Math.max((daysElapsed / totalDays) * 100, 0), 100);
-
-    return (
-        <div className="group relative overflow-hidden rounded-3xl bg-white dark:bg-glass border border-slate-200 dark:border-white/5 p-6 md:p-8 transition-all duration-300 hover:shadow-lg dark:hover:bg-glass-heavy">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-6">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                            <Clock className="w-5 h-5" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">العد التنازلي للبكالوريا</h3>
+                        <h1 className="text-4xl md:text-6xl font-serif text-white leading-tight max-w-2xl drop-shadow-2xl">
+                            "العلم نورٌ يقذفه الله <br /> <span className="text-gold italic">في قلب من يشاء"</span>
+                        </h1>
                     </div>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">
-                        تذكر أن كل دقيقة تستثمرها اليوم تقربك خطوة نحو حلمك
-                    </p>
-                </div>
-                <div className="text-right">
-                    <span className="block text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">
-                        {daysLeft}
-                    </span>
-                    <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">يوم متبقي</span>
-                </div>
-            </div>
 
-            {/* Progress Bar */}
-            <div className="relative h-4 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
-                <motion.div
-                    className="absolute top-0 right-0 h-full bg-gradient-to-l from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 shadow-[0_0_20px_rgba(59,130,246,0.3)]"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress}%` }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
-                >
-                    <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]" />
-                </motion.div>
-            </div>
-
-            <div className="flex justify-between mt-3 text-xs font-medium text-slate-400 dark:text-slate-500">
-                <span>سبتمبر 2024</span>
-                <span>{Math.round(progress)}% مكتمل</span>
-                <span>جوان 2025</span>
-            </div>
-        </div>
-    );
-}
-
-// =============================================================================
-// PILLAR 3: AGENDA BLOCK
-// =============================================================================
-const weeklySchedule = [
-    { day: "الأحد", time: "17:00", subject: "الرياضيات", topic: "الدوال العددية", status: "upcoming", color: "blue" },
-    { day: "الإثنين", time: "17:00", subject: "الفيزياء", topic: "التحولات النووية", status: "upcoming", color: "purple" },
-    { day: "الثلاثاء", time: "18:00", subject: "العلوم", topic: "التركيب الضوئي", status: "completed", color: "green" },
-    { day: "الأربعاء", time: "17:00", subject: "الرياضيات", topic: "الأعداد المركبة", status: "upcoming", color: "blue" },
-    { day: "الخميس", time: "17:00", subject: "الفيزياء", topic: "الظواهر الكهربائية", status: "upcoming", color: "purple" },
-];
-
-function AgendaBlock() {
-    return (
-        <div className="rounded-3xl bg-white dark:bg-glass border border-slate-200 dark:border-white/5 overflow-hidden">
-            <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                        <Calendar className="w-5 h-5" />
+                    <div className="flex gap-4">
+                        <button className="glass-card px-8 py-4 flex items-center gap-3 text-white hover:bg-white/10">
+                            <Play className="w-5 h-5 fill-white" />
+                            <span>استرخي (Focus Mode)</span>
+                        </button>
                     </div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">جدول الأسبوع</h3>
                 </div>
-            </div>
+            </motion.section>
 
-            <div className="divide-y divide-slate-100 dark:divide-white/5">
-                {weeklySchedule.map((item, index) => (
-                    <div
-                        key={index}
-                        className="group p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 transition-all duration-200 cursor-default"
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className="flex flex-col items-center justify-center w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 group-hover:bg-white dark:group-hover:bg-white/10 shadow-sm transition-colors">
-                                <span className="text-xs font-bold">{item.day}</span>
-                                <span className="text-[10px] opacity-70">{item.time}</span>
+            {/* 2. THE NEON TIMELINE */}
+            <motion.section variants={item} className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <div className="lg:col-span-3 glass-card p-8 relative overflow-hidden">
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                            <Trophy className="w-6 h-6 text-gold" />
+                            الطريق إلى البكالوريا
+                        </h2>
+                        <span className="text-gold font-mono text-xl">154 يوم</span>
+                    </div>
+
+                    <div className="relative h-2 bg-white/5 rounded-full overflow-hidden">
+                        {/* Glowing Progress Line */}
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: "45%" }}
+                            transition={{ duration: 1.5, ease: "circOut" }}
+                            className="absolute top-0 left-0 h-full bg-gold shadow-[0_0_20px_rgba(212,175,55,0.8)]"
+                        />
+                    </div>
+
+                    <div className="mt-6 flex justify-between text-sm text-white/40 font-mono">
+                        <span>البداية</span>
+                        <span className="text-gold">أنت هنا (45%)</span>
+                        <span>الهدف</span>
+                    </div>
+                </div>
+
+                <div className="glass-card p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-transparent pointer-events-none"></div>
+                    <Flame className="w-10 h-10 text-orange-500 mb-4 animate-pulse" />
+                    <div className="text-4xl font-bold text-white mb-1">12</div>
+                    <p className="text-white/50 text-sm">يوم حماسة متواصلة</p>
+                </div>
+            </motion.section>
+
+            {/* 3. MOVIE POSTER SUBJECTS */}
+            <motion.section variants={item}>
+                <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-serif text-white">المواد الدراسية</h2>
+                    <Link href="/subjects" className="text-white/50 hover:text-gold transition-colors flex items-center gap-2">
+                        عرض الكل <ChevronLeft className="w-4 h-4" />
+                    </Link>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {subjects.map((sub, i) => (
+                        <motion.div
+                            key={i}
+                            whileHover={{ y: -10, scale: 1.02 }}
+                            className="group relative aspect-[2/3] rounded-[30px] overflow-hidden cursor-pointer"
+                        >
+                            <div className={`absolute inset-0 bg-gradient-to-br ${sub.color} mix-blend-multiply opacity-80 group-hover:opacity-100 transition-opacity duration-500`}></div>
+
+                            {/* Content Overlay */}
+                            <div className="absolute inset-0 p-8 flex flex-col justify-end">
+                                <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                                    <div className="flex items-center gap-2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100">
+                                        <span className="text-xs font-bold bg-white/20 text-white px-2 py-1 rounded-lg backdrop-blur-md">{sub.progress}% مكتمل</span>
+                                    </div>
+                                    <h3 className="text-3xl font-bold text-white mb-1">{sub.title}</h3>
+                                    <p className="text-white/70 text-sm">{sub.level}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h4 className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
-                                    {item.subject}
-                                    <span className="hidden sm:inline-block w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-                                    <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{item.topic}</span>
-                                </h4>
-                            </div>
-                        </div>
 
-                        <div>
-                            <span className={cn(
-                                "hidden sm:inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors",
-                                item.status === 'completed'
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
-                                    : "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20"
-                            )}>
-                                {item.status === 'completed' ? 'تمت المراجعة' : 'قادمة'}
-                            </span>
-                            <div className={cn(
-                                "sm:hidden w-2 h-2 rounded-full",
-                                item.status === 'completed' ? "bg-emerald-500" : "bg-blue-500"
-                            )} />
-                        </div>
+                            {/* Glossy sheen */}
+                            <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        </motion.div>
+                    ))}
+                </div>
+            </motion.section>
+
+            {/* 4. AGENDA & LIVE (Split Layout) */}
+            <motion.section variants={item} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Live Now */}
+                <div className="p-8 rounded-[40px] bg-gradient-to-br from-red-900/40 to-black border border-red-500/20 relative overflow-hidden group cursor-pointer hover:border-red-500/40 transition-colors">
+                    <div className="absolute top-6 right-6 flex items-center gap-2">
+                        <span className="relative flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                        </span>
+                        <span className="text-red-400 text-xs font-bold tracking-widest uppercase">Live Now</span>
                     </div>
-                ))}
-            </div>
-            <div className="p-4 border-t border-slate-100 dark:border-white/5">
-                <Link
-                    href="/schedule"
-                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
-                >
-                    عرض الجدول الكامل
-                    <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
-                </Link>
-            </div>
-        </div>
-    );
-}
 
-// =============================================================================
-// PILLAR 4: NEWSROOM BLOCK
-// =============================================================================
-interface Announcement {
-    id: string;
-    content: string;
-    createdAt: { toDate: () => Date };
-}
-
-interface LiveSession {
-    id: string;
-    title: string;
-    date: { toDate: () => Date };
-}
-
-function NewsroomBlock() {
-    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-    const [lives, setLives] = useState<LiveSession[]>([]);
-
-    useEffect(() => {
-        const announcementsQuery = query(collection(db, "announcements"), orderBy("createdAt", "desc"), limit(3));
-        const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => {
-            setAnnouncements(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Announcement)));
-        });
-
-        const livesQuery = query(collection(db, "lives"), where("date", ">=", new Date()), orderBy("date", "asc"), limit(2));
-        const unsubLives = onSnapshot(livesQuery, (snapshot) => {
-            setLives(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as LiveSession)));
-        });
-
-        return () => { unsubAnnouncements(); unsubLives(); };
-    }, []);
-
-    return (
-        <div className="space-y-6">
-            {/* Live Sessions Card */}
-            <div className="rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 p-6 text-white shadow-lg overflow-hidden relative">
-                <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-4">
-                        <div className="p-2 rounded-xl bg-white/20 backdrop-blur-md">
-                            <Radio className="w-5 h-5" />
-                        </div>
-                        <h3 className="font-semibold">الحصص المباشرة</h3>
+                    <div className="mt-12">
+                        <h3 className="text-2xl font-bold text-white mb-2">مراجعة الدوال الأسية</h3>
+                        <p className="text-white/60 mb-6">مع الأستاذ نور الدين • منذ 15 دقيقة</p>
+                        <button className="w-full py-4 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-bold transition-colors flex items-center justify-center gap-2">
+                            <Play className="w-4 h-4 fill-white" />
+                            انضم للبث
+                        </button>
                     </div>
+                </div>
+
+                {/* Next Up */}
+                <div className="lg:col-span-2 glass-card p-8">
+                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-gold" />
+                        الأجندة القادمة
+                    </h3>
 
                     <div className="space-y-4">
-                        {lives.length === 0 ? (
-                            <p className="text-white/70 text-sm">لا توجد حصص مجدولة قريباً</p>
-                        ) : (
-                            lives.map((live) => (
-                                <Link
-                                    key={live.id}
-                                    href="/live"
-                                    className="flex items-start gap-4 p-3 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-colors border border-white/10"
-                                >
-                                    <div className="flex-shrink-0 w-10 text-center">
-                                        <div className="text-xs font-bold text-white/60 uppercase">
-                                            {format(live.date.toDate(), "MMM", { locale: ar })}
-                                        </div>
-                                        <div className="text-lg font-bold">
-                                            {format(live.date.toDate(), "d")}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h4 className="font-medium text-sm line-clamp-2 leading-snug">{live.title}</h4>
-                                        <span className="text-xs text-white/60 mt-1 block">
-                                            {format(live.date.toDate(), "HH:mm", { locale: ar })}
-                                        </span>
-                                    </div>
-                                </Link>
-                            ))
-                        )}
-                    </div>
-                </div>
-                {/* Decorative background circles */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
-            </div>
-
-            {/* Announcements Card */}
-            <div className="rounded-3xl bg-white dark:bg-glass border border-slate-200 dark:border-white/5 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                        <Bell className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">آخر المستجدات</h3>
-                </div>
-
-                <div className="relative">
-                    {/* Timeline Line */}
-                    <div className="absolute top-2 bottom-2 right-[9px] w-[2px] bg-slate-100 dark:bg-white/10" />
-
-                    <div className="space-y-6">
-                        {announcements.length === 0 ? (
-                            <p className="text-slate-400 text-sm text-center py-4">لا توجد إعلانات</p>
-                        ) : (
-                            announcements.map((ann) => (
-                                <div key={ann.id} className="relative flex gap-4 mr-0.5">
-                                    <div className="flex-shrink-0 w-4 h-4 rounded-full bg-white dark:bg-[#020617] border-2 border-amber-500 z-10 mt-1" />
-                                    <div className="flex-1 -mt-0.5">
-                                        <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed mb-1">
-                                            {ann.content}
-                                        </p>
-                                        <span className="text-[10px] text-slate-400 font-medium">
-                                            {ann.createdAt?.toDate ? format(ann.createdAt.toDate(), "d MMM، HH:mm", { locale: ar }) : "الآن"}
-                                        </span>
-                                    </div>
+                        {[1, 2, 3].map((_, i) => (
+                            <div key={i} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer group">
+                                <div className="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center text-white/50 group-hover:text-gold group-hover:bg-gold/10 transition-colors">
+                                    <Clock className="w-6 h-6" />
                                 </div>
-                            ))
-                        )}
+                                <div>
+                                    <h4 className="text-white font-medium">حصـة الفلسفة - مقالة المقارنة</h4>
+                                    <p className="text-white/40 text-sm">غداً • 18:00 - 20:00</p>
+                                </div>
+                                <div className="mr-auto">
+                                    <ChevronLeft className="w-5 h-5 text-white/20 group-hover:text-white transition-colors" />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
-            </div>
-        </div>
+            </motion.section>
+
+        </motion.div>
     );
 }

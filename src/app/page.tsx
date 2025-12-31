@@ -1,206 +1,177 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowLeft, Check, Video, Users, BookOpen, Trophy, Shield, Zap, Brain } from "lucide-react";
-import { getPlatformStats, formatStatDisplay } from "@/lib/stats-service";
+import { ArrowLeft, Check, Play, Star, Sparkles, BookOpen, Crown } from "lucide-react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 
-export const dynamic = 'force-dynamic';
+export default function LandingPage() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
+  });
 
-export default async function Page() {
-  const stats = await getPlatformStats();
-
-  // Format stats with zero-state handling
-  const studentsDisplay = stats.totalStudents === 0
-    ? 'انضم أولاً!'
-    : `${stats.totalStudents.toLocaleString()}+`;
-
-  const lessonsDisplay = stats.totalLessons === 0
-    ? 'قريباً...'
-    : `${stats.totalLessons}+`;
+  const yHero = useTransform(scrollYProgress, [0, 0.2], [0, -100]);
+  const opacityHero = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
 
   return (
-    <div dir="rtl" className="min-h-screen bg-white font-sans">
-      {/* Header — Notion Style */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-[rgba(55,53,47,0.09)]">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-[#37352F] rounded flex items-center justify-center">
-              <Brain className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-base font-bold text-[#37352F]">Brainy</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-6 text-sm text-[#787774]">
-            <a href="#features" className="hover:text-[#37352F] transition-colors">المميزات</a>
-            <a href="#pricing" className="hover:text-[#37352F] transition-colors">الباقات</a>
-            <a href="/about" className="hover:text-[#37352F] transition-colors">عن المنصة</a>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link href="/auth?mode=login" className="text-sm text-[#787774] hover:text-[#37352F] px-3 py-1.5 rounded hover:bg-[#F7F7F5] transition-colors">
-              الدخول
+    <div ref={containerRef} className="bg-background min-h-screen selection:bg-gold/30 overflow-hidden">
+
+      {/* 1. HERO SECTION (The Masterpiece) */}
+      <motion.section
+        className="relative h-screen flex flex-col items-center justify-center text-center px-6 overflow-hidden mesh-bg"
+        style={{ y: yHero, opacity: opacityHero }}
+      >
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 pointer-events-none mix-blend-overlay"></div>
+
+        {/* Animated Floating Elements */}
+        <motion.div
+          animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-20 right-20 w-64 h-64 bg-gold/10 rounded-full blur-[100px]"
+        />
+        <motion.div
+          animate={{ y: [0, 30, 0], rotate: [0, -5, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-20 left-20 w-96 h-96 bg-purple-900/20 rounded-full blur-[120px]"
+        />
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+          className="relative z-10 max-w-4xl mx-auto"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.8 }}
+            className="flex items-center justify-center gap-2 mb-6"
+          >
+            <Sparkles className="w-5 h-5 text-gold animate-pulse" />
+            <span className="text-gold/80 text-sm tracking-[0.2em] font-medium uppercase">Baccalaureate 2025</span>
+            <Sparkles className="w-5 h-5 text-gold animate-pulse" />
+          </motion.div>
+
+          <h1 className="text-6xl md:text-8xl font-serif text-white mb-8 leading-tight drop-shadow-2xl">
+            منصة <span className="text-gradient-gold">التفوق</span> <br />
+            الأكاديمي
+          </h1>
+
+          <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto mb-12 font-light leading-relaxed font-sans">
+            رحلة سينمائية نحو النجاح، مصممة للنخبة الطموحة.
+            محتوى تعليمي يتجاوز التوقعات.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <Link href="/auth?mode=signup" className="group relative px-8 py-4 bg-gold rounded-[40px] text-black font-bold text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-glow">
+              <span className="relative z-10 flex items-center gap-2">
+                ابدأ رحلتك مجاناً
+                <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+              </span>
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
             </Link>
-            <Link href="/auth?mode=signup" className="btn-notion btn-primary text-sm">
-              ابدأ مجاناً
+
+            <Link href="#masterclass" className="group flex items-center gap-3 px-8 py-4 bg-white/5 backdrop-blur-md rounded-[40px] text-white/90 border border-white/10 hover:bg-white/10 transition-all">
+              <Play className="w-5 h-5 fill-current" />
+              <span>شاهد العرض</span>
             </Link>
+          </div>
+        </motion.div>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, y: [0, 10, 0] }}
+          transition={{ delay: 2, duration: 2, repeat: Infinity }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/50"
+        >
+          <span className="text-xs uppercase tracking-widest">اكتشف المزيد</span>
+          <div className="w-px h-12 bg-gradient-to-b from-transparent via-gold/50 to-transparent"></div>
+        </motion.div>
+      </motion.section>
+
+      {/* 2. THE MASTERCLASS EXPERIENCES (Parallax Cards) */}
+      <section id="masterclass" className="py-32 px-6 relative z-10">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-24"
+          >
+            <h2 className="text-4xl md:text-5xl font-serif text-white mb-6">تجربة تعليمية لا مثيل لها</h2>
+            <div className="w-24 h-1 bg-gold mx-auto rounded-full"></div>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { title: "جودة سينمائية", desc: "دروس بدقة 4K مع مونتاج احترافي يسهل الفهم.", icon: Play, delay: 0 },
+              { title: "نخبة الأساتذة", desc: "تعلم من أفضل المصححين والأساتذة في الجزائر.", icon: Star, delay: 0.2 },
+              { title: "منهجية دقيقة", desc: "محتوى منظم يتوافق تماماً مع التدرج السنوي.", icon: BookOpen, delay: 0.4 },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: item.delay, duration: 0.8 }}
+                className="glass-card p-10 flex flex-col items-center text-center group cursor-pointer"
+              >
+                <div className="w-20 h-20 bg-gold/10 rounded-full flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500">
+                  <item.icon className="w-10 h-10 text-gold" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">{item.title}</h3>
+                <p className="text-white/60 leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
-      </header>
+      </section>
 
-      <main>
-        {/* Hero — Clean & Minimal */}
-        <section className="py-24 lg:py-32">
-          <div className="max-w-3xl mx-auto px-6 text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#37352F] leading-tight mb-6">
-              منصة التفوق <br />الأكاديمي
-            </h1>
-
-            <p className="text-lg text-[#787774] max-w-xl mx-auto mb-10 leading-relaxed">
-              محتوى تعليمي منظم ومتكامل لطلاب البكالوريا،
-              بإشراف نخبة من الأساتذة المتخصصين.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link href="/auth?mode=signup" className="btn-notion btn-blue px-6 py-2.5">
-                ابدأ الآن مجاناً
-                <ArrowLeft className="w-4 h-4" />
-              </Link>
-              <Link href="#features" className="btn-notion btn-ghost px-6 py-2.5">
-                اكتشف المزيد
-              </Link>
+      {/* 3. PRICING (The Prestige) */}
+      <section className="py-32 px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-tr from-gold/5 via-transparent to-purple-900/10 pointer-events-none"></div>
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="glass-card p-12 md:p-20 text-center relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 p-12 opacity-10">
+              <Crown className="w-64 h-64 text-gold rotate-12" />
             </div>
 
-            {/* Stats - Real data only, no fake success rate */}
-            <div className="flex items-center justify-center gap-8 mt-16 pt-8 border-t border-[rgba(55,53,47,0.09)]">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-[#37352F]">{studentsDisplay}</div>
-                <div className="text-sm text-[#9B9A97]">طالب</div>
-              </div>
-              <div className="w-px h-8 bg-[rgba(55,53,47,0.09)]" />
-              <div className="text-center">
-                <div className="text-2xl font-bold text-[#37352F]">{lessonsDisplay}</div>
-                <div className="text-sm text-[#9B9A97]">درس</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features — Block Style */}
-        <section id="features" className="py-20 bg-[#F7F7F5]">
-          <div className="max-w-5xl mx-auto px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl font-bold text-[#37352F] mb-3">
-                لماذا Brainy؟
-              </h2>
-              <p className="text-[#787774]">
-                كل ما تحتاجه للتفوق في البكالوريا
+            <div className="relative z-10">
+              <h2 className="text-4xl md:text-6xl font-serif text-white mb-8">استثمر في مستقبلك</h2>
+              <p className="text-xl text-white/70 mb-12 max-w-2xl mx-auto">
+                احصل على وصول كامل لجميع الدروس، الملخصات، والحصص المباشرة.
+                انضم إلى النخبة اليوم.
               </p>
-            </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { icon: Video, title: "محتوى مرئي", desc: "دروس مسجلة بدقة عالية" },
-                { icon: Users, title: "أساتذة نخبة", desc: "مصححون معتمدون" },
-                { icon: BookOpen, title: "منهج منظم", desc: "وفق البرنامج الرسمي" },
-                { icon: Trophy, title: "تمارين محلولة", desc: "مع التصحيح النموذجي" },
-                { icon: Zap, title: "حصص مباشرة", desc: "للمراجعة والأسئلة" },
-                { icon: Shield, title: "دعم مستمر", desc: "فريق متاح للمساعدة" }
-              ].map((feature, i) => (
-                <div key={i} className="p-5 bg-white rounded-xl hover:shadow-[var(--shadow-md)] transition-shadow">
-                  <div className="w-9 h-9 rounded-lg bg-[#F7F7F5] flex items-center justify-center mb-3">
-                    <feature.icon className="w-5 h-5 text-[#37352F]" />
-                  </div>
-                  <h3 className="font-semibold text-[#37352F] mb-1">{feature.title}</h3>
-                  <p className="text-sm text-[#787774]">{feature.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Pricing — Notion Table Style */}
-        <section id="pricing" className="py-20">
-          <div className="max-w-4xl mx-auto px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl font-bold text-[#37352F] mb-3">
-                خطط بسيطة وواضحة
-              </h2>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-4">
-              {/* Free */}
-              <div className="p-6 border border-[rgba(55,53,47,0.09)] rounded-xl">
-                <h3 className="font-semibold text-[#37352F] mb-1">المجاني</h3>
-                <p className="text-sm text-[#9B9A97] mb-4">للتجربة</p>
-                <div className="text-3xl font-bold text-[#37352F] mb-6">0 دج</div>
-                <ul className="space-y-2 mb-6">
-                  {["دروس تجريبية", "جودة HD", "ملخصات"].map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-[#787774]">
-                      <Check className="w-4 h-4 text-[#0F7B6C]" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/auth?mode=signup" className="btn-notion btn-ghost w-full justify-center border border-[rgba(55,53,47,0.16)]">
-                  ابدأ مجاناً
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <Link href="/auth?mode=signup" className="w-full sm:w-auto px-10 py-5 bg-gold rounded-[40px] text-black font-bold text-xl hover:scale-105 transition-transform shadow-glow">
+                  اشتراك سنوي (15,000 دج)
+                </Link>
+                <Link href="/pricing" className="text-white/80 hover:text-gold transition-colors underline underline-offset-8">
+                  عرض بـاقي الخطط
                 </Link>
               </div>
 
-              {/* Monthly */}
-              <div className="p-6 border-2 border-[#2383E2] rounded-xl relative">
-                <div className="absolute -top-3 right-4 px-2 py-0.5 bg-[#2383E2] text-white text-xs rounded">
-                  الأكثر مرونة
-                </div>
-                <h3 className="font-semibold text-[#37352F] mb-1">الشهري</h3>
-                <p className="text-sm text-[#9B9A97] mb-4">دفع مرن</p>
-                <div className="text-3xl font-bold text-[#37352F] mb-6">2,500 <span className="text-base font-normal">دج/شهر</span></div>
-                <ul className="space-y-2 mb-6">
-                  {["جميع الدروس", "الحصص المباشرة", "التمارين", "دعم VIP"].map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-[#787774]">
-                      <Check className="w-4 h-4 text-[#0F7B6C]" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/subscription" className="btn-notion btn-blue w-full justify-center">
-                  اختيار
-                </Link>
-              </div>
-
-              {/* Yearly */}
-              <div className="p-6 bg-[#37352F] text-white rounded-xl">
-                <h3 className="font-semibold mb-1">السنوي</h3>
-                <p className="text-sm text-[#9B9A97] mb-4">توفير شهرين</p>
-                <div className="text-3xl font-bold mb-6">15,000 <span className="text-base font-normal">دج/سنة</span></div>
-                <ul className="space-y-2 mb-6">
-                  {["كل الشهري +", "توفير 5000 دج", "أولوية دعم", "مراجعة نهائية"].map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-white/70">
-                      <Check className="w-4 h-4 text-white/70" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/subscription" className="btn-notion bg-white text-[#37352F] w-full justify-center hover:bg-white/90">
-                  اختيار
-                </Link>
+              <div className="mt-12 flex items-center justify-center gap-8 text-white/50 text-sm">
+                <span className="flex items-center gap-2"><Check className="w-4 h-4 text-gold" /> ضمان استرجاع الأموال</span>
+                <span className="flex items-center gap-2"><Check className="w-4 h-4 text-gold" /> دعم فني 24/7</span>
               </div>
             </div>
-          </div>
-        </section>
-      </main>
-
-      {/* Footer — Minimal */}
-      <footer className="py-8 border-t border-[rgba(55,53,47,0.09)]">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 bg-[#37352F] rounded flex items-center justify-center">
-              <Brain className="w-3 h-3 text-white" />
-            </div>
-            <span className="font-bold text-[#37352F]">Brainy</span>
-          </div>
-          <div className="flex items-center gap-6 text-sm text-[#9B9A97]">
-            <Link href="/about" className="hover:text-[#37352F]">عن المنصة</Link>
-            <a href="#" className="hover:text-[#37352F]">الشروط</a>
-            <a href="#" className="hover:text-[#37352F]">الخصوصية</a>
-          </div>
-          <p className="text-sm text-[#9B9A97]">© 2024 Brainy</p>
+          </motion.div>
         </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-12 text-center text-white/30 border-t border-white/5">
+        <p>&copy; 2025 Brainy. Crafted for Excellence.</p>
       </footer>
     </div>
   );

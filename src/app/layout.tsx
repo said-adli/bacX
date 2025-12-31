@@ -59,10 +59,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl">
-      <body className={`${ibmPlexSansArabic.variable} antialiased bg-background text-foreground font-sans`}>
+    <html lang="ar" dir="rtl" className="scroll-smooth">
+      <body className={`${ibmPlexSansArabic.variable} antialiased bg-background text-foreground font-sans selection:bg-gold/30`}>
         <NextTopLoader
-          color="#1E40AF"
+          color="#D4AF37"
           initialPosition={0.08}
           crawlSpeed={200}
           height={3}
@@ -70,7 +70,7 @@ export default function RootLayout({
           showSpinner={false}
           easing="ease"
           speed={200}
-          shadow="0 0 10px #1E40AF,0 0 5px #1E40AF"
+          shadow="0 0 10px #D4AF37,0 0 5px #D4AF37"
         />
         <AuthProvider>
           <ErrorBoundary>
@@ -81,11 +81,14 @@ export default function RootLayout({
             <Toaster
               position="bottom-center"
               richColors
-              theme="light"
+              theme="dark"
               toastOptions={{
-                className: "glass-premium font-sans",
+                className: "bg-glass border-glass-border text-foreground font-sans backdrop-blur-xl",
                 style: {
                   fontFamily: 'var(--font-sans)',
+                  background: 'rgba(2, 2, 2, 0.8)',
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                  color: '#FFF'
                 }
               }}
             />

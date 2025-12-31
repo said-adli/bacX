@@ -1,79 +1,46 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Home, Library, Radio, User } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { usePathname } from "next/navigation";
+import { Home, BookOpen, Radio, User } from "lucide-react";
 
 export function BottomNav() {
     const pathname = usePathname();
 
     const navItems = [
-        {
-            label: "الرئيسية",
-            href: "/dashboard",
-            icon: Home
-        },
-        {
-            label: "المكتبة",
-            href: "/subjects",
-            icon: Library
-        },
-        {
-            label: "مباشر",
-            href: "/live",
-            icon: Radio
-        },
-        {
-            label: "الملف",
-            href: "/profile",
-            icon: User
-        }
+        { href: "/dashboard", icon: Home, label: "الرئيسية" },
+        { href: "/subjects", icon: BookOpen, label: "المكتبة" },
+        { href: "/live", icon: Radio, label: "مباشر" },
+        { href: "/profile", icon: User, label: "حسابي" },
     ];
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
-            {/* Glass Container */}
-            <div className="mx-4 mb-4 rounded-3xl bg-glass backdrop-blur-xl border border-white/10 shadow-lg">
-                <div className="flex items-center justify-around p-2">
-                    {navItems.map((item) => {
-                        const isActive = pathname === item.href;
-                        const Icon = item.icon;
+        <div className="lg:hidden fixed bottom-6 left-6 right-6 z-50">
+            <nav className="bg-glass/90 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-full px-6 py-4 flex items-center justify-between relative overflow-hidden">
+                {/* Shine Effect */}
+                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none"></div>
 
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className="relative flex flex-col items-center gap-1 p-2 rounded-2xl transition-all duration-300"
-                            >
-                                {/* Active Indicator Background (Glow) */}
-                                {isActive && (
-                                    <div className="absolute inset-0 bg-primary/10 dark:bg-primary/20 rounded-2xl blur-sm" />
-                                )}
+                {navItems.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`relative flex flex-col items-center justify-center transition-all duration-300 ${isActive ? "text-gold -translate-y-1" : "text-white/50 hover:text-white"
+                                }`}
+                        >
+                            {isActive && (
+                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-10 h-10 bg-gold/30 blur-xl rounded-full pointer-events-none"></div>
+                            )}
 
-                                <Icon
-                                    className={cn(
-                                        "w-6 h-6 transition-all duration-300",
-                                        isActive
-                                            ? "text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.5)] scale-110"
-                                            : "text-slate-500 dark:text-slate-400"
-                                    )}
-                                />
-                                <span
-                                    className={cn(
-                                        "text-[10px] font-medium transition-colors duration-300",
-                                        isActive
-                                            ? "text-primary"
-                                            : "text-slate-500 dark:text-slate-400"
-                                    )}
-                                >
-                                    {item.label}
-                                </span>
-                            </Link>
-                        );
-                    })}
-                </div>
-            </div>
+                            <item.icon
+                                className={`w-6 h-6 mb-1 ${isActive ? "drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]" : ""
+                                    }`}
+                            />
+                        </Link>
+                    );
+                })}
+            </nav>
         </div>
     );
 }
