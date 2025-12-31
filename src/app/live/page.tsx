@@ -12,6 +12,21 @@ import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+// Separate component for redirect to avoid hydration issues
+function RedirectToAuth() {
+    const router = useRouter();
+
+    useEffect(() => {
+        router.push('/auth');
+    }, [router]);
+
+    return (
+        <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        </div>
+    );
+}
+
 export default function LivePage() {
     const { isLive, youtubeId, title, loading: statusLoading } = useLiveStatus();
     const { user, loading: authLoading } = useAuth();
@@ -62,9 +77,9 @@ export default function LivePage() {
     }
 
     // --- GUARD: NOT AUTHENTICATED ---
+    // Use a component with useEffect for redirect to avoid hydration issues
     if (!user) {
-        router.push('/auth');
-        return null;
+        return <RedirectToAuth />;
     }
 
     // --- GUARD: NOT SUBSCRIBED ---

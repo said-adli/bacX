@@ -94,7 +94,8 @@ function PoetryBlock() {
 // PILLAR 2: TIMELINE BLOCK
 // =============================================================================
 function TimelineBlock() {
-    const [daysLeft, setDaysLeft] = useState(0);
+    // Initialize to null to detect first client-side render (prevents hydration mismatch)
+    const [daysLeft, setDaysLeft] = useState<number | null>(null);
     const bacDate = new Date("2025-06-01T08:00:00");
     const startDate = new Date("2024-09-01");
 
@@ -104,6 +105,25 @@ function TimelineBlock() {
         const now = new Date();
         setDaysLeft(Math.max(0, differenceInDays(bacDate, now)));
     }, []);
+
+    // Show skeleton during SSR and initial client render
+    if (daysLeft === null) {
+        return (
+            <div className="block">
+                <div className="block-header">
+                    <Clock className="block-header-icon" />
+                    <span>العد التنازلي</span>
+                </div>
+                <div className="animate-pulse">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="h-8 w-32 bg-slate-200 rounded" />
+                        <div className="h-4 w-24 bg-slate-200 rounded" />
+                    </div>
+                    <div className="h-2 w-full bg-slate-200 rounded-full" />
+                </div>
+            </div>
+        );
+    }
 
     const daysElapsed = totalDays - daysLeft;
     const progressPercent = Math.min(Math.max((daysElapsed / totalDays) * 100, 0), 100);
