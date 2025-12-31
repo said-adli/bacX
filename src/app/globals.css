@@ -103,7 +103,8 @@
     color: var(--gold);
   }
 
-  .bg-glass {
+  /* Renamed to avoid 'bg-glass' color utility collision */
+  .glass-panel {
     background: var(--glass-surface);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -111,7 +112,12 @@
   }
 
   .glass-card {
-    @apply bg-glass rounded-[40px] transition-all duration-500;
+    background: var(--glass-surface);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--glass-border);
+    border-radius: 40px;
+    transition: all 500ms;
   }
 
   .glass-card:hover {
