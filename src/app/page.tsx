@@ -1,29 +1,20 @@
-import { collection, getCountFromServer } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import Link from "next/link";
 import { ArrowLeft, Check, Video, Users, BookOpen, Trophy, Shield, Zap, Brain } from "lucide-react";
+import { getPlatformStats, formatStatDisplay } from "@/lib/stats-service";
 
 export const dynamic = 'force-dynamic';
 
-async function getServerSideStats() {
-  try {
-    const usersColl = collection(db, "users");
-    const lessonsColl = collection(db, "lessons");
-    const [usersSnapshot, lessonsSnapshot] = await Promise.all([
-      getCountFromServer(usersColl),
-      getCountFromServer(lessonsColl)
-    ]);
-    return {
-      usersCount: usersSnapshot.data().count,
-      lessonsCount: lessonsSnapshot.data().count
-    };
-  } catch {
-    return { usersCount: 1000, lessonsCount: 50 };
-  }
-}
-
 export default async function Page() {
-  const stats = await getServerSideStats();
+  const stats = await getPlatformStats();
+
+  // Format stats with zero-state handling
+  const studentsDisplay = stats.totalStudents === 0
+    ? 'انضم أولاً!'
+    : `${stats.totalStudents.toLocaleString()}+`;
+
+  const lessonsDisplay = stats.totalLessons === 0
+    ? 'قريباً...'
+    : `${stats.totalLessons}+`;
 
   return (
     <div dir="rtl" className="min-h-screen bg-white font-sans">
@@ -75,21 +66,16 @@ export default async function Page() {
               </Link>
             </div>
 
-            {/* Stats */}
+            {/* Stats - Real data only, no fake success rate */}
             <div className="flex items-center justify-center gap-8 mt-16 pt-8 border-t border-[rgba(55,53,47,0.09)]">
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#37352F]">{stats.usersCount.toLocaleString()}+</div>
+                <div className="text-2xl font-bold text-[#37352F]">{studentsDisplay}</div>
                 <div className="text-sm text-[#9B9A97]">طالب</div>
               </div>
               <div className="w-px h-8 bg-[rgba(55,53,47,0.09)]" />
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#37352F]">{stats.lessonsCount}+</div>
+                <div className="text-2xl font-bold text-[#37352F]">{lessonsDisplay}</div>
                 <div className="text-sm text-[#9B9A97]">درس</div>
-              </div>
-              <div className="w-px h-8 bg-[rgba(55,53,47,0.09)]" />
-              <div className="text-center">
-                <div className="text-2xl font-bold text-[#37352F]">98%</div>
-                <div className="text-sm text-[#9B9A97]">نجاح</div>
               </div>
             </div>
           </div>

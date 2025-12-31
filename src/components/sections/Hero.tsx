@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-// import Image from "next/image";
-import { ArrowLeft, PlayCircle, Star } from "lucide-react";
+import { ArrowLeft, PlayCircle, Users } from "lucide-react";
 
 interface HeroProps {
     stats?: {
@@ -12,6 +11,12 @@ interface HeroProps {
 }
 
 export function Hero({ stats }: HeroProps) {
+    // Zero-state handling - show honest message if no users yet
+    const hasUsers = stats?.usersCount && stats.usersCount > 0;
+    const studentsDisplay = hasUsers
+        ? `+${stats.usersCount.toLocaleString()} طالب يثقون بنا`
+        : 'انضم كأول طالب!';
+
     return (
         <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden bg-background">
             {/* Background Decor */}
@@ -58,20 +63,19 @@ export function Hero({ stats }: HeroProps) {
                         </Link>
                     </div>
 
-                    <div className="pt-6 flex items-center justify-center md:justify-start gap-6 text-sm text-muted-foreground">
+                    {/* Social proof - real data only */}
+                    <div className="pt-6 flex items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
-                            <div className="flex -space-x-2 space-x-reverse">
-                                {[1, 2, 3, 4].map((i) => (
-                                    <div key={i} className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px] font-bold overflow-hidden">
-                                        <div className="w-full h-full bg-gray-200" />
-                                    </div>
-                                ))}
-                            </div>
-                            <span className="font-medium">+{stats?.usersCount ? stats.usersCount.toLocaleString() : "5,000"} طالب يثقون بنا</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                            <span className="font-bold text-foreground">4.9/5</span>
+                            {hasUsers && (
+                                <div className="flex -space-x-2 space-x-reverse">
+                                    {[1, 2, 3, 4].map((i) => (
+                                        <div key={i} className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px] font-bold overflow-hidden">
+                                            <div className="w-full h-full bg-gray-200" />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <span className="font-medium">{studentsDisplay}</span>
                         </div>
                     </div>
                 </div>
@@ -79,7 +83,6 @@ export function Hero({ stats }: HeroProps) {
                 {/* Hero Image/Visual */}
                 <div className="flex-1 w-full max-w-xl relative">
                     <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/20 bg-white/50 backdrop-blur-sm aspect-video sm:aspect-square md:aspect-[4/3]">
-                        {/* Placeholder for Hero Image - using a gradient/pattern for now if image missing */}
                         <div className="absolute inset-0 bg-gradient-to-tr from-blue-50 to-white flex items-center justify-center">
                             <div className="text-center p-8">
                                 <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
@@ -89,18 +92,21 @@ export function Hero({ stats }: HeroProps) {
                                 <p className="text-muted-foreground mt-2">محتوى عالي الجودة بدقة 4K</p>
                             </div>
                         </div>
-                        {/* If an image exists, we would use it here. Keeping placeholder for safety as requested "use generate_image if needed" but I'll stick to CSS for speed unless requested */}
                     </div>
 
-                    {/* Floating Cards */}
-                    <div className="absolute -bottom-6 -right-6 bg-white p-4 rounded-xl shadow-xl border border-border animate-bounce duration-[3000ms]">
+                    {/* Floating Card - Shows lessons count (real data) */}
+                    <div className="absolute -bottom-6 -right-6 bg-white p-4 rounded-xl shadow-xl border border-border">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                                <Star className="w-5 h-5 fill-current" />
+                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                <Users className="w-5 h-5" />
                             </div>
                             <div>
-                                <div className="text-sm font-bold text-foreground">نتائج مبهرة</div>
-                                <div className="text-xs text-muted-foreground">98% نسبة النجاح</div>
+                                <div className="text-sm font-bold text-foreground">مجتمع متنامي</div>
+                                <div className="text-xs text-muted-foreground">
+                                    {stats?.lessonsCount
+                                        ? `${stats.lessonsCount} درس متاح`
+                                        : 'ابدأ معنا اليوم'}
+                                </div>
                             </div>
                         </div>
                     </div>
