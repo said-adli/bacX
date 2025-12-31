@@ -38,17 +38,17 @@ export default async function Page() {
       <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
           <div className="text-2xl font-black tracking-tight text-foreground">
-            BAC<span className="text-primary">X</span>
+            BAC<span className="text-blue-600">X</span>
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <a href="#" className="hover:text-primary transition-colors">الرئيسية</a>
-            <a href="#features" className="hover:text-primary transition-colors">المميزات</a>
-            <a href="#pricing" className="hover:text-primary transition-colors">الأسعار</a>
-            <a href="/about" className="hover:text-primary transition-colors">من نحن</a>
+            <a href="#" className="hover:text-blue-600 transition-colors">الرئيسية</a>
+            <a href="#features" className="hover:text-blue-600 transition-colors">المميزات</a>
+            <a href="#pricing" className="hover:text-blue-600 transition-colors">الأسعار</a>
+            <a href="/about" className="hover:text-blue-600 transition-colors">من نحن</a>
           </nav>
           <div className="flex items-center gap-4">
             <a href="/auth?mode=login" className="text-sm font-medium text-muted-foreground hover:text-foreground">تسجيل الدخول</a>
-            <a href="/auth?mode=signup" className="px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-bold shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all">
+            <a href="/auth?mode=signup" className="px-5 py-2.5 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-bold shadow-lg shadow-blue-600/25 hover:from-blue-700 hover:to-blue-600 transition-all">
               ابدأ مجاناً
             </a>
           </div>
@@ -64,7 +64,7 @@ export default async function Page() {
         <footer className="py-12 bg-muted/30 border-t border-border mt-20">
           <div className="container mx-auto px-6 text-center">
             <div className="text-2xl font-black tracking-tight text-foreground mb-6">
-              BAC<span className="text-primary">X</span>
+              BAC<span className="text-blue-600">X</span>
             </div>
             <div className="flex justify-center gap-6 mb-8 text-muted-foreground">
               <a href="#" className="hover:text-foreground">تواصل معنا</a>

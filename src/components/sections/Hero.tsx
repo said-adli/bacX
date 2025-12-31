@@ -23,16 +23,16 @@ export function Hero({ stats }: HeroProps) {
             <div className="container px-4 md:px-6 mx-auto relative z-10 flex flex-col md:flex-row items-center gap-12">
                 {/* Text Content */}
                 <div className="flex-1 text-center md:text-right space-y-8">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium border border-primary/20">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-sm font-medium border border-blue-200">
                         <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-600 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
                         </span>
                         المنصة الأولى لطلاب البكالوريا في الجزائر
                     </div>
 
                     <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.2]">
-                        حقّق حلم <span className="text-primary">البكالوريا</span>
+                        حقّق حلم <span className="text-blue-600">البكالوريا</span>
                         <br />
                         بامتياز وتفوق.
                     </h1>
@@ -44,7 +44,7 @@ export function Hero({ stats }: HeroProps) {
                     <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
                         <Link
                             href="/auth?mode=signup"
-                            className="w-full sm:w-auto px-8 py-4 bg-primary text-primary-foreground rounded-xl font-bold text-lg hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 flex items-center justify-center gap-2 group"
+                            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl font-bold text-lg hover:from-blue-700 hover:to-blue-600 transition-all shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 group"
                         >
                             ابدأ رحلتك مجاناً
                             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
@@ -53,7 +53,7 @@ export function Hero({ stats }: HeroProps) {
                             href="#features"
                             className="w-full sm:w-auto px-8 py-4 bg-white text-foreground border border-input rounded-xl font-bold text-lg hover:bg-muted/50 transition-all flex items-center justify-center gap-2"
                         >
-                            <PlayCircle className="w-5 h-5 text-primary" />
+                            <PlayCircle className="w-5 h-5 text-blue-600" />
                             شاهد كيف نعمل
                         </Link>
                     </div>
@@ -82,7 +82,7 @@ export function Hero({ stats }: HeroProps) {
                         {/* Placeholder for Hero Image - using a gradient/pattern for now if image missing */}
                         <div className="absolute inset-0 bg-gradient-to-tr from-blue-50 to-white flex items-center justify-center">
                             <div className="text-center p-8">
-                                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 text-primary">
+                                <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
                                     <PlayCircle className="w-10 h-10" />
                                 </div>
                                 <h3 className="text-xl font-bold text-foreground">تجربة تعليمية سينمائية</h3>

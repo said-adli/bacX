@@ -74,12 +74,12 @@ export function Pricing() {
                             className={cn(
                                 "relative p-8 rounded-3xl border flex flex-col",
                                 plan.popular
-                                    ? "bg-background border-primary shadow-2xl scale-105 z-10"
+                                    ? "bg-background border-blue-500 shadow-2xl scale-105 z-10"
                                     : "bg-background border-border shadow-sm hover:shadow-lg transition-shadow"
                             )}
                         >
                             {plan.popular && (
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-bold shadow-lg">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-600 to-blue-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
                                     الأكثر مبيعاً
                                 </div>
                             )}
@@ -109,7 +109,7 @@ export function Pricing() {
                                 className={cn(
                                     "w-full py-3 rounded-xl font-bold text-center transition-all",
                                     plan.popular
-                                        ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25"
+                                        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 shadow-lg shadow-blue-600/25"
                                         : "bg-muted text-foreground hover:bg-muted/80"
                                 )}
                             >
