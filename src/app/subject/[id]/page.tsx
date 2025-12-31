@@ -78,7 +78,7 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
                             key={video.id}
                             title={video.title}
                             subject={video.subject}
-                            instructor={video.instructor || "BacX Instructor"}
+                            instructor={video.instructor || "Brainy Instructor"}
                             duration={video.duration || "20:00"}
                             thumbnail={video.thumbnail || `https://img.youtube.com/vi/${video.videoUrl}/hqdefault.jpg`}
                             href={`/video/${video.id}`} // New Route

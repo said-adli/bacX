@@ -47,7 +47,7 @@ export default function SupportPage() {
                         <Mail className="w-6 h-6" />
                     </div>
                     <h3 className="font-bold mb-2">البريد الإلكتروني</h3>
-                    <p className="text-sm text-muted-foreground mb-4">support@bacx.dz</p>
+                    <p className="text-sm text-muted-foreground mb-4">support@brainy.dz</p>
                     <span className="text-purple-500 text-sm font-bold">ارسل رسالة</span>
                 </div>
             </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, User, Crown, Settings } from "lucide-react";
+import { Home, BookOpen, User, Crown, Settings, Brain } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -25,9 +25,13 @@ export function Sidebar() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 25, delay: 0.2 }}
         >
-            {/* Logo */}
-            <Link href="/" className="nav-item mb-4 bg-blue-500 text-white !w-12 !h-12">
-                <span className="text-lg font-bold">B</span>
+            {/* Brainy Logo */}
+            <Link
+                href="/"
+                className="nav-item mb-4 !w-12 !h-12 bg-gradient-to-br from-blue-500 to-purple-500 text-white"
+                title="Brainy"
+            >
+                <Brain className="w-6 h-6" />
             </Link>
 
             {/* Divider */}

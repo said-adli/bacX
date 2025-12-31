@@ -26,25 +26,25 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: {
-    default: "BacX - منصة النخبة التعليمية",
-    template: "%s | BacX",
+    default: "Brainy - Where Intelligence Meets Excellence",
+    template: "%s | Brainy",
   },
-  description: "المنصة التعليمية الأولى لطلاب البكالوريا في الجزائر. تجربة دراسية سينمائية تجمع بين التقنية المتقدمة والمحتوى الأكاديمي الرصين.",
-  keywords: ["bac dz", "bac algeria", "تعليم", "بكالوريا", "دروس", "منصة تعليمية"],
-  authors: [{ name: "BacX Team" }],
+  description: "منصة Brainy التعليمية الذكية لطلاب البكالوريا في الجزائر. تجربة دراسية متميزة تجمع بين التقنية المتقدمة والمحتوى الأكاديمي الراقي.",
+  keywords: ["brainy", "bac dz", "bac algeria", "تعليم", "بكالوريا", "دروس", "منصة تعليمية"],
+  authors: [{ name: "Brainy Team" }],
   openGraph: {
     type: "website",
     locale: "ar_DZ",
-    url: "https://bacx-dz.vercel.app",
-    siteName: "BacX",
-    title: "BacX - منصة النخبة التعليمية",
-    description: "استعد للبكالوريا مع أفضل الأساتذة في بيئة تعليمية متطورة.",
+    url: "https://brainy-dz.vercel.app",
+    siteName: "Brainy",
+    title: "Brainy - منصة التفوق الأكاديمي",
+    description: "استعد للبكالوريا مع أفضل الأساتذة في بيئة تعليمية ذكية.",
     images: ["/og-image.jpg"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "BacX - منصة النخبة التعليمية",
-    description: "استعد للبكالوريا مع أفضل الأساتذة في بيئة تعليمية متطورة.",
+    title: "Brainy - منصة التفوق الأكاديمي",
+    description: "استعد للبكالوريا مع أفضل الأساتذة في بيئة تعليمية ذكية.",
     images: ["/og-image.jpg"],
   },
   robots: {
@@ -85,7 +85,7 @@ export default function RootLayout({
               toastOptions={{
                 className: "glass-premium font-sans",
                 style: {
-                    fontFamily: 'var(--font-sans)',
+                  fontFamily: 'var(--font-sans)',
                 }
               }}
             />

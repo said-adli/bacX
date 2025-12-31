@@ -17,7 +17,7 @@ export const DynamicWatermark = memo(({ user }: DynamicWatermarkProps) => {
         if (user) {
             hashUID(user.uid).then(hash => {
                 const id = user.email ? user.email.split('@')[0] : hash;
-                setWatermarkStr(`${id} • ${hash} • BACX PROTECTED`);
+                setWatermarkStr(`${id} • ${hash} • BRAINY PROTECTED`);
             });
         }
     }, [user]);

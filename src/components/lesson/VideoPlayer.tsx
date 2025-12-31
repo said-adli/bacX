@@ -91,7 +91,7 @@ export default function EncodedVideoPlayer({ encodedVideoId }: EncodedVideoPlaye
             <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden opacity-30">
                 <div className="absolute top-10 left-10 text-[10px] text-white/10 -rotate-12 whitespace-nowrap">{user?.email} • ID: {user?.uid.substring(0, 8)}</div>
                 <div className="absolute bottom-20 right-20 text-[10px] text-white/10 -rotate-12 whitespace-nowrap">{user?.email} • {sessionIp}</div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[14px] font-bold text-white/5 -rotate-45 whitespace-nowrap">BACX PROTECTION • {user?.email}</div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[14px] font-bold text-white/5 -rotate-45 whitespace-nowrap">BRAINY • {user?.email}</div>
             </div>
         </div>
     );

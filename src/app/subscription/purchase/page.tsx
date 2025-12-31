@@ -35,12 +35,12 @@ export default function PurchasePage() {
         CCP: {
             title: "DZD (CCP)",
             icon: Landmark,
-            details: "CCP: 0000000000 00 | CLE: 00 | NOM: BACX EDTECH"
+            details: "CCP: 0000000000 00 | CLE: 00 | NOM: BRAINY EDTECH"
         },
         BaridiMob: {
             title: "BaridiMob",
             icon: Smartphone,
-            details: "RIP: 00799999000000000000 | NOM: BACX EDTECH"
+            details: "RIP: 00799999000000000000 | NOM: BRAINY EDTECH"
         }
     };
 

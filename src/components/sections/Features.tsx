@@ -41,7 +41,7 @@ export function Features() {
             <div className="container px-4 md:px-6 mx-auto">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-                        لماذا تختار <span className="text-primary">BacX</span>؟
+                        لماذا تختار <span className="text-primary">Brainy</span>؟
                     </h2>
                     <p className="text-xl text-muted-foreground">
                         نقدم لك كل ما تحتاجه للتميز في البكالوريا في مكان واحد.
