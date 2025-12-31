@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { Bell, Search, LogOut, Radio, ChevronDown } from "lucide-react";
+import { Bell, Search, LogOut, Radio, ChevronDown, Sun, Moon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -98,19 +98,44 @@ export function TopNav() {
         return () => unsub();
     }, [user]);
 
+    const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+    // Theme Logic
+    useEffect(() => {
+        const stored = localStorage.getItem('theme');
+        if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            setTheme('dark');
+            document.documentElement.classList.add('dark');
+        } else {
+            setTheme('light');
+            document.documentElement.classList.remove('dark');
+        }
+    }, []);
+
+    const toggleTheme = () => {
+        const newTheme = theme === 'light' ? 'dark' : 'light';
+        setTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+        if (newTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    };
+
     return (
-        <header className="topnav-notion">
+        <header className="fixed top-0 left-0 right-0 lg:right-[240px] h-12 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-white/10 dark:border-white/5 flex items-center justify-between px-4 z-40 transition-all duration-300">
             {/* Breadcrumbs */}
-            <nav className="breadcrumb">
+            <nav className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
                 {breadcrumbs.map((crumb, index) => (
                     <span key={index} className="flex items-center">
-                        {index > 0 && <span className="breadcrumb-separator">/</span>}
+                        {index > 0 && <span className="mx-1 opacity-50">/</span>}
                         {crumb.href ? (
-                            <Link href={crumb.href} className="breadcrumb-link">
+                            <Link href={crumb.href} className="hover:text-primary transition-colors">
                                 {crumb.label}
                             </Link>
                         ) : (
-                            <span className="breadcrumb-current">{crumb.label}</span>
+                            <span className="font-medium text-slate-900 dark:text-white">{crumb.label}</span>
                         )}
                     </span>
                 ))}
@@ -118,27 +143,49 @@ export function TopNav() {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
+                {/* Theme Toggle */}
+                <button
+                    onClick={toggleTheme}
+                    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                >
+                    <AnimatePresence mode="wait" initial={false}>
+                        <motion.div
+                            key={theme}
+                            initial={{ y: -20, opacity: 0, rotate: -90 }}
+                            animate={{ y: 0, opacity: 1, rotate: 0 }}
+                            exit={{ y: 20, opacity: 0, rotate: 90 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            {theme === 'light' ? (
+                                <Sun className="w-5 h-5 text-orange-500" />
+                            ) : (
+                                <Moon className="w-5 h-5 text-blue-400" />
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
+                </button>
+
                 {/* Search */}
                 <Link
                     href="/search"
-                    className="btn-notion btn-ghost"
+                    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 transition-colors"
                 >
-                    <Search className="w-4 h-4" />
+                    <Search className="w-5 h-5" />
                 </Link>
 
                 {/* Live Indicator */}
                 {isLiveActive && (
-                    <Link href="/live" className="flex items-center gap-1.5 px-2 py-1 text-red-500 text-xs font-medium">
-                        <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                    <Link href="/live" className="flex items-center gap-1.5 px-2 py-1 bg-red-500/10 text-red-500 text-xs font-medium rounded-full">
+                        <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
                         مباشر
                     </Link>
                 )}
 
                 {/* Notifications */}
-                <button className="btn-notion btn-ghost relative">
-                    <Bell className="w-4 h-4" />
+                <button className="relative p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 transition-colors">
+                    <Bell className="w-5 h-5" />
                     {unreadCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full" />
+                        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-black" />
                     )}
                 </button>
 
