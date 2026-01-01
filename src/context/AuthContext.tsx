@@ -249,7 +249,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return (
         <AuthContext.Provider value={{ user, userProfile, loading, logout, role, connectionStatus, isLoggingOut }}>
             {children}
-            {loading && <LoadingSpinner fullScreen />}
+            {/* {loading && <LoadingSpinner fullScreen />} */}
         </AuthContext.Provider>
     );
 }
