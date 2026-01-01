@@ -25,8 +25,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     // During auth loading
     if (loading) {
         return (
-            <div className="min-h-screen bg-white flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-[var(--foreground)] border-t-transparent rounded-full animate-spin" />
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
@@ -36,13 +36,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         return <>{children}</>;
     }
 
-    // Authenticated user — Notion-style layout
-    // Authenticated user — Notion-style layout
+    // Authenticated user — Premium Dashboard Layout
     return (
-        <div className="flex h-screen w-full bg-background font-sans overflow-hidden text-[var(--foreground)] selection:bg-gold/30">
+        <div className="flex h-screen w-full bg-background font-sans overflow-hidden text-foreground selection:bg-primary/30">
             {/* Sidebar — Desktop Wrapper */}
             <aside className="hidden lg:block w-[280px] h-full shrink-0 relative z-50">
-                <div className="h-full w-full border-l border-white/5 bg-black/40 backdrop-blur-xl">
+                <div className="h-full w-full glass-nav border-l border-glass-border">
                     <Sidebar />
                 </div>
             </aside>
@@ -50,7 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-full relative min-w-0">
                 {/* Top Navigation */}
-                <header className="h-16 w-full z-40 shrink-0 border-b border-white/5 bg-background/80 backdrop-blur-md sticky top-0">
+                <header className="h-16 w-full z-40 shrink-0 glass-nav border-b border-glass-border sticky top-0">
                     <TopNav />
                 </header>
 
@@ -59,7 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <AnimatePresence mode="wait">
                         <motion.main
                             key={pathname}
-                            className="w-full min-h-full p-4 lg:p-8 max-w-[1600px] mx-auto"
+                            className="w-full min-h-full p-6 lg:p-12 max-w-[1600px] mx-auto"
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}

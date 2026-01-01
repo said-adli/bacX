@@ -57,7 +57,7 @@ export default function ProfilePage() {
     if (loading || isFetching) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
         );
     }
@@ -78,16 +78,16 @@ export default function ProfilePage() {
     return (
         <div className="max-w-4xl mx-auto">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-xs text-slate-400 mb-6">
-                <Link href="/dashboard" className="hover:text-slate-600">الرئيسية</Link>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
+                <Link href="/dashboard" className="hover:text-foreground transition-colors">الرئيسية</Link>
                 <ChevronLeft className="w-3 h-3" />
-                <span className="text-slate-700">الملف الشخصي</span>
+                <span className="text-foreground">الملف الشخصي</span>
             </div>
 
             {/* Header */}
             <header className="mb-8">
-                <h1 className="text-2xl font-bold text-slate-900 mb-1">الملف الشخصي</h1>
-                <p className="text-sm text-slate-500">معلوماتك الشخصية والأكاديمية</p>
+                <h1 className="text-2xl font-bold text-foreground mb-1">الملف الشخصي</h1>
+                <p className="text-sm text-muted-foreground">معلوماتك الشخصية والأكاديمية</p>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -101,14 +101,14 @@ export default function ProfilePage() {
                         </div>
                         <div className="panel-body">
                             <div className="flex items-center gap-4 mb-6">
-                                <div className="w-14 h-14 rounded bg-slate-900 flex items-center justify-center text-white text-xl font-bold">
+                                <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center text-white text-xl font-bold">
                                     {userData?.fullName?.[0]?.toUpperCase() || user.displayName?.[0]?.toUpperCase() || "U"}
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-bold text-slate-900">
+                                    <h2 className="text-lg font-bold text-foreground">
                                         {userData?.fullName || user.displayName || "المستخدم"}
                                     </h2>
-                                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                         <Mail className="w-4 h-4" />
                                         {userData?.email || user.email}
                                     </div>
@@ -129,26 +129,26 @@ export default function ProfilePage() {
                     {/* Academic Info */}
                     <section className="panel">
                         <div className="panel-header flex items-center gap-2">
-                            <GraduationCap className="w-4 h-4 text-slate-400" />
+                            <GraduationCap className="w-4 h-4 text-muted-foreground" />
                             <span className="panel-title">المعلومات الأكاديمية</span>
                         </div>
                         <div className="panel-body">
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 bg-slate-50 rounded border border-slate-100">
-                                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">الشعبة</div>
-                                    <div className="font-semibold text-slate-800">{userData?.major || "غير محدد"}</div>
+                                <div className="p-4 bg-background-subtle rounded-xl border border-glass-border">
+                                    <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">الشعبة</div>
+                                    <div className="font-semibold text-foreground">{userData?.major || "غير محدد"}</div>
                                 </div>
-                                <div className="p-4 bg-slate-50 rounded border border-slate-100">
-                                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">الولاية</div>
-                                    <div className="font-semibold text-slate-800">{userData?.wilaya || "غير محدد"}</div>
+                                <div className="p-4 bg-background-subtle rounded-xl border border-glass-border">
+                                    <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">الولاية</div>
+                                    <div className="font-semibold text-foreground">{userData?.wilaya || "غير محدد"}</div>
                                 </div>
-                                <div className="p-4 bg-slate-50 rounded border border-slate-100">
-                                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">تاريخ التسجيل</div>
-                                    <div className="font-semibold text-slate-800">{formatDate(userData?.createdAt)}</div>
+                                <div className="p-4 bg-background-subtle rounded-xl border border-glass-border">
+                                    <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">تاريخ التسجيل</div>
+                                    <div className="font-semibold text-foreground">{formatDate(userData?.createdAt)}</div>
                                 </div>
-                                <div className="p-4 bg-slate-50 rounded border border-slate-100">
-                                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">حالة الاشتراك</div>
-                                    <div className="font-semibold text-slate-800">{userData?.isSubscribed ? "نشط" : "مجاني"}</div>
+                                <div className="p-4 bg-background-subtle rounded-xl border border-glass-border">
+                                    <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">حالة الاشتراك</div>
+                                    <div className="font-semibold text-foreground">{userData?.isSubscribed ? "نشط" : "مجاني"}</div>
                                 </div>
                             </div>
                         </div>
@@ -161,43 +161,43 @@ export default function ProfilePage() {
                         <div className="panel-header">
                             <span className="panel-title">إجراءات</span>
                         </div>
-                        <div className="divide-y divide-slate-100">
+                        <div className="divide-y divide-glass-border">
                             <Link
                                 href="/profile/settings"
-                                className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors"
+                                className="flex items-center gap-3 p-4 hover:bg-glass-surface-hover transition-colors"
                             >
-                                <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center">
-                                    <Settings className="w-4 h-4 text-slate-500" />
+                                <div className="w-8 h-8 rounded-lg bg-background-subtle flex items-center justify-center">
+                                    <Settings className="w-4 h-4 text-muted-foreground" />
                                 </div>
                                 <div>
-                                    <div className="text-sm font-medium text-slate-700">الإعدادات</div>
-                                    <div className="text-xs text-slate-400">تعديل البيانات</div>
+                                    <div className="text-sm font-medium text-foreground">الإعدادات</div>
+                                    <div className="text-xs text-muted-foreground">تعديل البيانات</div>
                                 </div>
                             </Link>
 
                             <Link
                                 href="/subscription"
-                                className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors"
+                                className="flex items-center gap-3 p-4 hover:bg-glass-surface-hover transition-colors"
                             >
-                                <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center">
-                                    <CreditCard className="w-4 h-4 text-slate-500" />
+                                <div className="w-8 h-8 rounded-lg bg-background-subtle flex items-center justify-center">
+                                    <CreditCard className="w-4 h-4 text-muted-foreground" />
                                 </div>
                                 <div>
-                                    <div className="text-sm font-medium text-slate-700">الاشتراك</div>
-                                    <div className="text-xs text-slate-400">إدارة الباقة</div>
+                                    <div className="text-sm font-medium text-foreground">الاشتراك</div>
+                                    <div className="text-xs text-muted-foreground">إدارة الباقة</div>
                                 </div>
                             </Link>
 
                             <Link
                                 href="/profile/payments"
-                                className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors"
+                                className="flex items-center gap-3 p-4 hover:bg-glass-surface-hover transition-colors"
                             >
-                                <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center">
-                                    <Shield className="w-4 h-4 text-slate-500" />
+                                <div className="w-8 h-8 rounded-lg bg-background-subtle flex items-center justify-center">
+                                    <Shield className="w-4 h-4 text-muted-foreground" />
                                 </div>
                                 <div>
-                                    <div className="text-sm font-medium text-slate-700">سجل المدفوعات</div>
-                                    <div className="text-xs text-slate-400">عرض التاريخ</div>
+                                    <div className="text-sm font-medium text-foreground">سجل المدفوعات</div>
+                                    <div className="text-xs text-muted-foreground">عرض التاريخ</div>
                                 </div>
                             </Link>
                         </div>
@@ -205,13 +205,13 @@ export default function ProfilePage() {
 
                     {/* Upgrade CTA */}
                     {!userData?.isSubscribed && (
-                        <section className="panel bg-slate-900 text-white border-slate-900">
+                        <section className="panel bg-primary/10 border-primary/30">
                             <div className="p-6">
-                                <h3 className="text-lg font-bold mb-2">ترقية الحساب</h3>
-                                <p className="text-sm text-slate-300 mb-4">
+                                <h3 className="text-lg font-bold mb-2 text-foreground">ترقية الحساب</h3>
+                                <p className="text-sm text-muted-foreground mb-4">
                                     وصول كامل لجميع المحتوى الأكاديمي
                                 </p>
-                                <Link href="/subscription" className="btn bg-white text-slate-900 hover:bg-slate-100 w-full">
+                                <Link href="/subscription" className="btn btn-primary w-full">
                                     عرض الباقات
                                 </Link>
                             </div>

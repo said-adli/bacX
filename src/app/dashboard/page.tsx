@@ -37,7 +37,7 @@ export default function DashboardPage() {
             variants={container}
             initial="hidden"
             animate="show"
-            className="max-w-[1600px] mx-auto p-8 lg:p-12 space-y-16 pb-40"
+            className="max-w-[1600px] mx-auto space-y-12 pb-40"
         >
 
             {/* 1. CINEMATIC HERO BANNER */}
@@ -47,7 +47,7 @@ export default function DashboardPage() {
             >
                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-center transition-transform duration-[20s] ease-linear group-hover:scale-110"></div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
-                <div className="absolute inset-0 bg-gold/5 mix-blend-overlay"></div>
+                <div className="absolute inset-0 bg-primary/5 mix-blend-overlay"></div>
 
                 <div className="absolute bottom-0 left-0 w-full p-12 lg:p-20 flex flex-col md:flex-row items-end justify-between gap-8">
                     <div>
@@ -55,14 +55,14 @@ export default function DashboardPage() {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.5 }}
-                            className="flex items-center gap-2 mb-4 text-gold"
+                            className="flex items-center gap-2 mb-4 text-primary"
                         >
                             <Sparkles className="w-5 h-5 animate-pulse" />
                             <span className="uppercase tracking-[0.2em] text-sm font-medium">Daily Inspiration</span>
                         </motion.div>
 
                         <h1 className="text-4xl md:text-6xl font-serif text-white leading-tight max-w-2xl drop-shadow-2xl">
-                            "العلم نورٌ يقذفه الله <br /> <span className="text-gold italic">في قلب من يشاء"</span>
+                            "العلم نورٌ يقذفه الله <br /> <span className="text-primary italic">في قلب من يشاء"</span>
                         </h1>
                     </div>
 
@@ -77,33 +77,33 @@ export default function DashboardPage() {
 
             {/* 2. THE NEON TIMELINE */}
             <motion.section variants={item} className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <div className="lg:col-span-3 glass-card p-10 relative overflow-hidden rounded-[40px] border border-white/5 shadow-lg shadow-black/20">
+                <div className="lg:col-span-3 glass-card p-10 relative overflow-hidden">
                     <div className="flex items-center justify-between mb-10">
                         <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                            <Trophy className="w-7 h-7 text-gold" />
+                            <Trophy className="w-7 h-7 text-primary" />
                             الطريق إلى البكالوريا
                         </h2>
-                        <span className="text-gold font-mono text-2xl font-bold">154 يوم</span>
+                        <span className="text-primary font-mono text-2xl font-bold">154 يوم</span>
                     </div>
 
                     <div className="relative h-3 bg-white/5 rounded-full overflow-hidden">
-                        {/* Glowing Progress Line */}
+                        {/* Glowing Progress Line — Electric Blue */}
                         <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: "45%" }}
                             transition={{ duration: 1.5, ease: "circOut" }}
-                            className="absolute top-0 left-0 h-full bg-gold shadow-[0_0_20px_rgba(212,175,55,0.8)]"
+                            className="absolute top-0 left-0 h-full bg-primary shadow-[0_0_20px_rgba(37,99,235,0.8)]"
                         />
                     </div>
 
                     <div className="mt-8 flex justify-between text-sm text-white/50 font-mono">
                         <span>البداية</span>
-                        <span className="text-gold font-medium">أنت هنا (45%)</span>
+                        <span className="text-primary font-medium">أنت هنا (45%)</span>
                         <span>الهدف</span>
                     </div>
                 </div>
 
-                <div className="glass-card p-8 flex flex-col items-center justify-center text-center relative overflow-hidden rounded-[40px] border border-white/5 shadow-lg shadow-black/20 group">
+                <div className="glass-card p-8 flex flex-col items-center justify-center text-center relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-transparent pointer-events-none group-hover:from-purple-900/30 transition-colors"></div>
                     <Flame className="w-12 h-12 text-orange-500 mb-4 animate-pulse" />
                     <div className="text-5xl font-bold text-white mb-2">12</div>
@@ -115,7 +115,7 @@ export default function DashboardPage() {
             <motion.section variants={item}>
                 <div className="flex items-center justify-between mb-8">
                     <h2 className="text-3xl font-serif text-white">المواد الدراسية</h2>
-                    <Link href="/subjects" className="text-white/50 hover:text-gold transition-colors flex items-center gap-2">
+                    <Link href="/subjects" className="text-white/50 hover:text-primary transition-colors flex items-center gap-2">
                         عرض الكل <ChevronLeft className="w-4 h-4" />
                     </Link>
                 </div>
@@ -170,16 +170,16 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Next Up */}
-                <div className="lg:col-span-2 glass-card p-10 rounded-[40px] border border-white/5 shadow-lg shadow-black/20">
+                <div className="lg:col-span-2 glass-card p-10">
                     <h3 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
-                        <Calendar className="w-6 h-6 text-gold" />
+                        <Calendar className="w-6 h-6 text-primary" />
                         الأجندة القادمة
                     </h3>
 
                     <div className="space-y-4">
                         {[1, 2, 3].map((_, i) => (
                             <div key={i} className="flex items-center gap-6 p-5 rounded-3xl hover:bg-white/5 transition-colors cursor-pointer group border border-transparent hover:border-white/5">
-                                <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center text-white/50 group-hover:text-gold group-hover:bg-gold/10 transition-colors shrink-0">
+                                <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center text-white/50 group-hover:text-primary group-hover:bg-primary/10 transition-colors shrink-0">
                                     <Clock className="w-7 h-7" />
                                 </div>
                                 <div className="flex-1">

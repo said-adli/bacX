@@ -45,17 +45,17 @@ export default function SubscriptionPage() {
     return (
         <div className="max-w-4xl mx-auto">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-xs text-slate-400 mb-6">
-                <Link href="/dashboard" className="hover:text-slate-600">الرئيسية</Link>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
+                <Link href="/dashboard" className="hover:text-foreground transition-colors">الرئيسية</Link>
                 <ChevronLeft className="w-3 h-3" />
-                <span className="text-slate-700">الاشتراك</span>
+                <span className="text-foreground">الاشتراك</span>
             </div>
 
             {/* Header */}
             <div className="flex justify-between items-start mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 mb-1">إدارة الحساب</h1>
-                    <p className="text-sm text-slate-500">معلومات الاشتراك والأجهزة المتصلة</p>
+                    <h1 className="text-2xl font-bold text-foreground mb-1">إدارة الحساب</h1>
+                    <p className="text-sm text-muted-foreground">معلومات الاشتراك والأجهزة المتصلة</p>
                 </div>
                 <Link href="/subscription/purchase" className="btn btn-primary text-sm">
                     تجديد الاشتراك
@@ -77,21 +77,21 @@ export default function SubscriptionPage() {
                         <div className="panel-body">
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">الباقة</div>
-                                    <div className="font-semibold text-slate-800">
+                                    <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">الباقة</div>
+                                    <div className="font-semibold text-foreground">
                                         {isSubscribed ? "الاشتراك السنوي" : "الباقة المجانية"}
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">الأيام المتبقية</div>
-                                    <div className="font-semibold text-slate-800">
+                                    <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">الأيام المتبقية</div>
+                                    <div className="font-semibold text-foreground">
                                         {isSubscribed ? "365 يوم" : "—"}
                                     </div>
                                 </div>
                             </div>
 
                             {isSubscribed && (
-                                <div className="flex items-center gap-2 text-xs text-slate-500 p-3 bg-slate-50 rounded border border-slate-100">
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground p-3 bg-background-subtle rounded-xl border border-glass-border">
                                     <Clock className="w-4 h-4" />
                                     ينتهي الاشتراك في {new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('ar-MA')}
                                 </div>
@@ -102,7 +102,7 @@ export default function SubscriptionPage() {
                     {/* Payment History */}
                     <section className="panel">
                         <div className="panel-header flex items-center gap-2">
-                            <CreditCard className="w-4 h-4 text-slate-400" />
+                            <CreditCard className="w-4 h-4 text-muted-foreground" />
                             <span className="panel-title">سجل المدفوعات</span>
                         </div>
 
@@ -124,7 +124,7 @@ export default function SubscriptionPage() {
                                             <td>{payment.method}</td>
                                             <td>
                                                 <span className={`badge ${payment.status === 'approved' ? 'badge-success' :
-                                                        payment.status === 'pending' ? 'badge-warning' : 'badge-neutral'
+                                                    payment.status === 'pending' ? 'badge-warning' : 'badge-neutral'
                                                     }`}>
                                                     {payment.status === 'approved' ? 'مقبول' :
                                                         payment.status === 'pending' ? 'قيد المراجعة' : 'منتهي'}
@@ -135,7 +135,7 @@ export default function SubscriptionPage() {
                                 </tbody>
                             </table>
                         ) : (
-                            <div className="panel-body text-center text-sm text-slate-400">
+                            <div className="panel-body text-center text-sm text-muted-foreground">
                                 لا يوجد سجل دفعات
                             </div>
                         )}
@@ -146,30 +146,30 @@ export default function SubscriptionPage() {
                 <section className="panel h-fit">
                     <div className="panel-header">
                         <div className="flex items-center gap-2">
-                            <Monitor className="w-4 h-4 text-slate-400" />
+                            <Monitor className="w-4 h-4 text-muted-foreground" />
                             <span className="panel-title">الأجهزة المتصلة</span>
                         </div>
                     </div>
-                    <div className="panel-body text-xs text-slate-400 mb-4">
+                    <div className="panel-body text-xs text-muted-foreground mb-4">
                         الحد الأقصى: 2 أجهزة
                     </div>
 
-                    <div className="divide-y divide-slate-100">
+                    <div className="divide-y divide-glass-border">
                         {devices.map(device => (
                             <div key={device.id} className="p-4 flex items-start justify-between">
                                 <div className="flex gap-3">
-                                    <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center">
+                                    <div className="w-8 h-8 rounded-lg bg-background-subtle flex items-center justify-center">
                                         {device.name.toLowerCase().includes('phone') ?
-                                            <Smartphone className="w-4 h-4 text-slate-400" /> :
-                                            <Monitor className="w-4 h-4 text-slate-400" />
+                                            <Smartphone className="w-4 h-4 text-muted-foreground" /> :
+                                            <Monitor className="w-4 h-4 text-muted-foreground" />
                                         }
                                     </div>
                                     <div>
-                                        <div className="text-sm font-medium text-slate-700 truncate max-w-[120px]">
+                                        <div className="text-sm font-medium text-foreground truncate max-w-[120px]">
                                             {device.name}
                                         </div>
-                                        <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                                            {device.current && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                                        <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                            {device.current && <span className="w-1.5 h-1.5 rounded-full bg-success" />}
                                             {device.current ? "الجهاز الحالي" : formatDistanceToNow(device.lastActive, { addSuffix: true, locale: arMA })}
                                         </div>
                                     </div>
@@ -177,7 +177,7 @@ export default function SubscriptionPage() {
                                 {!device.current && (
                                     <button
                                         onClick={() => handleLogoutDevice(device.id)}
-                                        className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors"
+                                        className="p-1.5 text-danger hover:bg-danger/10 rounded-lg transition-colors"
                                     >
                                         <LogOutIcon className="w-4 h-4" />
                                     </button>

@@ -15,14 +15,19 @@ const config: Config = {
                 surface: "var(--card)",
                 "surface-highlight": "var(--accent)",
                 border: "var(--border)",
+                // Electric Blue Palette — The New Primary
                 primary: "var(--primary)",
-                "primary-glow": "rgba(41, 151, 255, 0.15)",
+                "primary-foreground": "var(--primary-foreground)",
+                "primary-glow": "rgba(37, 99, 235, 0.15)",
+                accent: "var(--accent)",
+                "accent-foreground": "var(--accent-foreground)",
+                // Text Colors
                 "text-main": "var(--foreground)",
                 "text-muted": "var(--muted-foreground)",
-                // Luxury Palette - Refined
-                "obsidian": "#050505", // Slightly lighter than pure black for depth
-                "gold": "#D4AF37",
-                "gold-dim": "#AA8C2C",
+                // Luxury Dark Palette
+                "charcoal": "#0A0A0F",
+                "charcoal-light": "#12121A",
+                // Glassmorphism
                 "glass": "var(--glass-surface)",
                 "glass-border": "var(--glass-border)",
             },
@@ -31,28 +36,40 @@ const config: Config = {
                 serif: ["var(--font-serif)", "serif"],
             },
             borderRadius: {
-                '3xl': '2rem', // Increased for luxurious curves
+                '4xl': '2.5rem',
+                '3xl': '2rem',
                 '2xl': '1.5rem',
                 'xl': '1rem',
                 'lg': '0.75rem',
             },
+            spacing: {
+                '18': '4.5rem',
+                '22': '5.5rem',
+            },
             animation: {
                 shimmer: "shimmer 2s linear infinite",
                 'spin-slow': 'spin 3s linear infinite',
+                'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
             },
             keyframes: {
                 shimmer: {
-                    from: {
-                        backgroundPosition: "0 0",
-                    },
-                    to: {
-                        backgroundPosition: "-200% 0",
-                    },
+                    from: { backgroundPosition: "0 0" },
+                    to: { backgroundPosition: "-200% 0" },
+                },
+                'pulse-glow': {
+                    '0%, 100%': { opacity: '1' },
+                    '50%': { opacity: '0.5' },
                 },
             },
             backgroundImage: {
-                'mesh-gradient': 'radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%)',
-                'mesh-gradient-light': 'radial-gradient(at 0% 0%, hsla(215, 100%, 96%, 1) 0, transparent 50%), radial-gradient(at 50% 100%, hsla(215, 100%, 96%, 1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(215, 100%, 96%, 1) 0, transparent 50%)',
+                'mesh-gradient': 'radial-gradient(at 0% 0%, hsla(220, 70%, 10%, 0.8) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(220, 60%, 20%, 0.5) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(220, 50%, 15%, 0.6) 0, transparent 50%)',
+                'mesh-gradient-blue': 'radial-gradient(at 0% 0%, hsla(220, 80%, 20%, 0.3) 0, transparent 50%), radial-gradient(at 100% 100%, hsla(220, 70%, 25%, 0.2) 0, transparent 50%)',
+            },
+            boxShadow: {
+                'glow': '0 0 24px var(--primary-glow)',
+                'glow-lg': '0 0 40px var(--primary-glow)',
+                'glass': '0 4px 24px -2px rgba(0, 0, 0, 0.4)',
+                'dropdown': '0 10px 40px -10px rgba(0, 0, 0, 0.5)',
             },
         },
     },

@@ -17,7 +17,7 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
 
 // --- SEO & VIEWPORT ---
 export const viewport: Viewport = {
-  themeColor: '#1E40AF',
+  themeColor: '#2563EB', // Electric Blue
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -60,9 +60,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className="scroll-smooth">
-      <body className={`${ibmPlexSansArabic.variable} antialiased bg-background text-foreground font-sans selection:bg-gold/30`}>
+      <body className={`${ibmPlexSansArabic.variable} antialiased bg-background text-foreground font-sans selection:bg-primary/30`}>
         <NextTopLoader
-          color="#D4AF37"
+          color="#2563EB"
           initialPosition={0.08}
           crawlSpeed={200}
           height={3}
@@ -70,7 +70,7 @@ export default function RootLayout({
           showSpinner={false}
           easing="ease"
           speed={200}
-          shadow="0 0 10px #D4AF37,0 0 5px #D4AF37"
+          shadow="0 0 10px #2563EB,0 0 5px #3B82F6"
         />
         <AuthProvider>
           <ErrorBoundary>
@@ -83,10 +83,10 @@ export default function RootLayout({
               richColors
               theme="dark"
               toastOptions={{
-                className: "bg-glass border-glass-border text-foreground font-sans backdrop-blur-xl",
+                className: "glass-panel text-foreground font-sans",
                 style: {
                   fontFamily: 'var(--font-sans)',
-                  background: 'rgba(2, 2, 2, 0.8)',
+                  background: 'rgba(10, 10, 15, 0.9)',
                   borderColor: 'rgba(255, 255, 255, 0.1)',
                   color: '#FFF'
                 }

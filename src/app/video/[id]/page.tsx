@@ -100,24 +100,24 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
     // --- ACCESS DENIED STATE ---
     if (denied) {
         return (
-            <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
-                <GlassCard className="max-w-md w-full p-8 text-center border-red-500/20">
-                    <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-6 relative">
-                        <Lock className="w-10 h-10 text-red-500" />
-                        <div className="absolute inset-0 border border-red-500/20 rounded-full animate-ping" />
+            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <GlassCard className="max-w-md w-full p-8 text-center border-danger/20">
+                    <div className="w-20 h-20 rounded-full bg-danger/10 flex items-center justify-center mx-auto mb-6 relative">
+                        <Lock className="w-10 h-10 text-danger" />
+                        <div className="absolute inset-0 border border-danger/20 rounded-full animate-ping" />
                     </div>
-                    <h1 className="text-2xl font-bold text-white mb-2 font-tajawal">عذراً، هذا المحتوى مغلق</h1>
-                    <p className="text-zinc-400 mb-8 font-tajawal leading-relaxed">
+                    <h1 className="text-2xl font-bold text-foreground mb-2 font-sans">عذراً، هذا المحتوى مغلق</h1>
+                    <p className="text-muted-foreground mb-8 font-sans leading-relaxed">
                         هذا الدرس متاح حصرياً للمشتركين في الباقة الذهبية. اشترك الآن لتتمكن من الوصول إلى جميع الدروس والملفات.
                     </p>
                     <div className="space-y-3">
                         <Link href="/subscription">
-                            <Button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold h-12">
+                            <Button className="w-full bg-primary hover:bg-primary-hover text-white font-bold h-12">
                                 ترقية الحساب (Upgrade)
                             </Button>
                         </Link>
                         <Link href="/dashboard">
-                            <Button variant="ghost" className="w-full text-zinc-400 hover:text-white">
+                            <Button variant="ghost" className="w-full text-muted-foreground hover:text-foreground">
                                 العودة للرئيسية
                             </Button>
                         </Link>
@@ -131,10 +131,10 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
 
     // --- SUCCESS STATE (THE PLAYER) ---
     return (
-        <main className="min-h-screen bg-[#050505] text-white font-tajawal">
+        <main className="min-h-screen bg-background text-foreground font-sans">
             {/* Header / Nav Back */}
             <div className="p-6">
-                <Link href="/dashboard" className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">
+                <Link href="/dashboard" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
                     <ChevronLeft className="w-5 h-5" />
                     <span>العودة للرئيسية</span>
                 </Link>
@@ -144,7 +144,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
 
                 {/* --- MAIN PLAYER (Left/Top) --- */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="aspect-video w-full bg-black rounded-2xl overflow-hidden border border-white/10 relative shadow-2xl shadow-primary/5 group">
+                    <div className="aspect-video w-full bg-black rounded-3xl overflow-hidden border border-glass-border relative shadow-2xl shadow-primary/5 group">
                         <iframe
                             src={`https://www.youtube.com/embed/${lesson.videoUrl}?modestbranding=1&rel=0&controls=1`}
                             className="w-full h-full object-cover"
@@ -156,9 +156,9 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
                     </div>
 
                     <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">{lesson.title}</h1>
-                        <div className="flex items-center gap-4 text-sm text-zinc-400">
-                            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">{lesson.subject}</span>
+                        <h1 className="text-3xl font-bold text-foreground mb-2">{lesson.title}</h1>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span className="px-2 py-0.5 rounded bg-glass-surface border border-glass-border">{lesson.subject}</span>
                             <span>• {lesson.duration || "25 min"}</span>
                         </div>
                     </div>
@@ -177,21 +177,21 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
                                 href={lesson.pdfUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-colors group cursor-pointer"
+                                className="flex items-center justify-between p-4 rounded-xl bg-glass-surface hover:bg-glass-surface-hover border border-glass-border hover:border-primary/30 transition-colors group cursor-pointer"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-                                        <FileText className="w-5 h-5 text-red-500" />
+                                    <div className="w-10 h-10 rounded-lg bg-danger/10 flex items-center justify-center">
+                                        <FileText className="w-5 h-5 text-danger" />
                                     </div>
                                     <div>
-                                        <div className="font-bold text-sm text-zinc-200 group-hover:text-white">ملخص الدرس (PDF)</div>
-                                        <div className="text-xs text-zinc-500">2.5 MB</div>
+                                        <div className="font-bold text-sm text-foreground/80 group-hover:text-foreground">ملخص الدرس (PDF)</div>
+                                        <div className="text-xs text-muted-foreground">2.5 MB</div>
                                     </div>
                                 </div>
-                                <Download className="w-5 h-5 text-zinc-500 group-hover:text-primary" />
+                                <Download className="w-5 h-5 text-muted-foreground group-hover:text-primary" />
                             </a>
                         ) : (
-                            <div className="text-center py-8 text-zinc-500 text-sm border border-dashed border-white/10 rounded-xl">
+                            <div className="text-center py-8 text-muted-foreground text-sm border border-dashed border-glass-border rounded-xl">
                                 لا توجد ملفات مرفقة لهذا الدرس
                             </div>
                         )}
@@ -199,7 +199,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
 
                     <GlassCard className="p-6">
                         <h3 className="font-bold text-lg mb-4">وصف الدرس</h3>
-                        <p className="text-zinc-400 text-sm leading-relaxed whitespace-pre-line">
+                        <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
                             {lesson.description || "لا يوجد وصف متاح."}
                         </p>
                     </GlassCard>
