@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { auth, db } from "@/lib/firebase";
+
 import { registerDevice, unregisterDevice } from "@/actions/device";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 displayName: currentUser.displayName || "",
                                 photoURL: currentUser.photoURL || "",
                                 subscriptionStatus: 'free' // Default fallback
-                            };
+                            } as UserProfile;
                             await setDoc(userRef, newData);
                             setRole('student');
                             setUserProfile(newData);

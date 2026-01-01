@@ -3,7 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { Bell, Search, LogOut, ChevronDown, X, BookOpen, Crown, User as UserIcon } from "lucide-react";
 
-import { Bell, Search, LogOut, ChevronDown, X, BookOpen, Crown, User as UserIcon } from "lucide-react";
+
 
 import Link from "next/link";
 import Image from "next/image";
