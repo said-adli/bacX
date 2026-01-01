@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Check, Play, Star, Sparkles, BookOpen, Crown } from "lucide-react";
+import { ArrowLeft, Check, Play, Star, BookOpen, Crown } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
+import { Logo } from "@/components/ui/Logo";
+import { NeuralBackground } from "@/components/ui/NeuralBackground";
 
 export default function LandingPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -18,12 +20,30 @@ export default function LandingPage() {
   return (
     <div ref={containerRef} className="bg-background min-h-screen selection:bg-primary/30 overflow-hidden">
 
+      {/* HEADER / NAVIGATION */}
+      <motion.header
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex items-center justify-between backdrop-blur-xl bg-background/5 border-b border-white/5"
+      >
+        <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
+          <Logo />
+          <Link href="/auth?mode=login" className="px-5 py-2 rounded-full border border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition-all text-sm font-medium backdrop-blur-md">
+            تسجيل الدخول
+          </Link>
+        </div>
+      </motion.header>
+
       {/* 1. HERO SECTION (The Masterpiece) */}
       <motion.section
         className="relative h-screen flex flex-col items-center justify-center text-center px-6 overflow-hidden mesh-bg"
         style={{ y: yHero, opacity: opacityHero }}
       >
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 pointer-events-none mix-blend-overlay"></div>
+
+        {/* Neural Background Effects */}
+        <NeuralBackground />
 
         {/* Animated Floating Elements — Electric Blue */}
         <motion.div
@@ -49,9 +69,10 @@ export default function LandingPage() {
             transition={{ delay: 0.5, duration: 0.8 }}
             className="flex items-center justify-center gap-2 mb-6"
           >
-            <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-            <span className="text-primary/80 text-sm tracking-[0.2em] font-medium uppercase">Baccalaureate 2025</span>
-            <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+            {/* Replaced Sparkles with Logo Icon for consistency if desired, or keep as is. Keeping subtle "2026" badge */}
+            <span className="px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs tracking-[0.2em] font-medium uppercase backdrop-blur-sm">
+              Baccalaureate 2026
+            </span>
           </motion.div>
 
           <h1 className="text-6xl md:text-8xl font-serif text-white mb-8 leading-tight drop-shadow-2xl">
@@ -65,7 +86,7 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <Link href="/auth?mode=signup" className="group relative px-8 py-4 bg-primary rounded-[40px] text-white font-bold text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-glow">
+            <Link href="/auth?mode=signup" className="group relative px-8 py-4 bg-primary rounded-[40px] text-white font-bold text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)]">
               <span className="relative z-10 flex items-center gap-2">
                 ابدأ رحلتك مجاناً
                 <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
@@ -152,7 +173,7 @@ export default function LandingPage() {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                <Link href="/auth?mode=signup" className="w-full sm:w-auto px-10 py-5 bg-primary rounded-[40px] text-white font-bold text-xl hover:scale-105 transition-transform shadow-glow">
+                <Link href="/auth?mode=signup" className="w-full sm:w-auto px-10 py-5 bg-primary rounded-[40px] text-white font-bold text-xl hover:scale-105 transition-transform shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)]">
                   اشتراك سنوي (15,000 دج)
                 </Link>
                 <Link href="/pricing" className="text-white/80 hover:text-primary transition-colors underline underline-offset-8">
@@ -171,7 +192,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="py-12 text-center text-white/30 border-t border-white/5">
-        <p>&copy; 2025 Brainy. Crafted for Excellence.</p>
+        <p>&copy; 2026 Brainy. Crafted for Excellence.</p>
       </footer>
     </div>
   );
