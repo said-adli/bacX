@@ -25,7 +25,7 @@ const subjects = [
 
 export function Sidebar() {
     const pathname = usePathname();
-    const { userProfile } = useAuth();
+    const { userProfile, role } = useAuth();
     const [isSubjectsOpen, setIsSubjectsOpen] = useState(true);
 
     return (
@@ -82,15 +82,15 @@ export function Sidebar() {
                 {/* Subjects Tree View */}
                 <div>
                     <button
-                        onClick={() => setSubjectsExpanded(!subjectsExpanded)}
+                        onClick={() => setIsSubjectsOpen(!isSubjectsOpen)}
                         className="w-full flex items-center justify-between px-6 py-2 text-xs font-bold uppercase tracking-widest text-white/40 mb-2 hover:text-white/60 transition-colors"
                     >
                         <span>المواد الدراسية</span>
-                        {subjectsExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                        {isSubjectsOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                     </button>
 
                     <AnimatePresence>
-                        {subjectsExpanded && (
+                        {isSubjectsOpen && (
                             <motion.div
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: "auto" }}
