@@ -220,15 +220,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setTimeout(() => setIsLoggingOut(false), 500);
     }, [user, router]);
 
-    // If not mounted yet, show nothing to prevent hydration mismatch
-    // Optionally show the loader here too if you want a splash screen feel immediately
-    if (!hasMounted) {
-        return <LoadingSpinner fullScreen />;
-    }
+    // If not mounted yet, show children to allow hydration to proceed, 
+    // or return null only if strict hydration match is required, but user wants content.
+    // Ideally, for "Optimistic Rendering", we just render children.
+    // However, to avoid hydration mismatch on attributes that depend on auth, we might need a mounted check *inside* components, 
+    // but globally blocking is bad.
+    // The user specifically asked to "never return null".
+    // We will render children wrapped in the provider.
+
+    // NOTE: We don't block on !hasMounted anymore for the main tree.
 
     return (
         <AuthContext.Provider value={{ user, userProfile, loading, logout, role, connectionStatus, isLoggingOut }}>
-            {!loading && children}
+            {children}
             {loading && <LoadingSpinner fullScreen />}
         </AuthContext.Provider>
     );

@@ -23,15 +23,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         return <>{children}</>;
     }
 
-    // During auth loading
-    if (loading) {
-        return <LoadingSpinner fullScreen />;
-    }
+    // Optimistic Rendering:
+    // If loading, we assume we are authenticated (or checking) and show the shell skeleton/structure
+    // to prevent layout shifts or blank screens. 
+    // If eventually !user and !loading, we fall back to children (likely redirecting).
 
-    // If no user after loading
-    if (!user) {
+    // If not loading and no user, likely not authenticated accessing protected route
+    // (Middleware usually handles this, but client-side check fallback)
+    if (!user && !loading) {
         return <>{children}</>;
     }
+
+    // Authenticated user (OR Loading) — Premium Dashboard Layout
+    // We render the shell even while loading to show the UI structure immediately.
 
     // Authenticated user — Premium Dashboard Layout
     return (
