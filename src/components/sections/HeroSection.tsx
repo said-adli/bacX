@@ -5,15 +5,12 @@ import { motion, AnimatePresence, MotionStyle } from "framer-motion";
 import { ArrowLeft, Play } from "lucide-react";
 import Link from "next/link";
 import { NeuralBackground } from "@/components/ui/NeuralBackground";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { useAuth } from "@/context/AuthContext";
 
 interface HeroSectionProps {
     style?: MotionStyle;
 }
 
 export function HeroSection({ style }: HeroSectionProps) {
-    const { loading } = useAuth();
 
     return (
         <motion.section
@@ -38,82 +35,51 @@ export function HeroSection({ style }: HeroSectionProps) {
             />
 
             <div className="relative z-10 max-w-4xl mx-auto mt-16 w-full">
-                <AnimatePresence mode="wait">
-                    {loading ? (
-                        <motion.div
-                            key="skeleton"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.5 }}
-                            className="flex flex-col items-center"
-                        >
-                            {/* Badge Skeleton */}
-                            <Skeleton className="w-32 h-8 rounded-full mb-6" />
+                <motion.div
+                    key="content"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="flex flex-col items-center"
+                >
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5, duration: 0.8 }}
+                        className="flex items-center justify-center gap-2 mb-6"
+                    >
+                        {/* Subtle Badge */}
+                        <span className="px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs tracking-[0.2em] font-medium uppercase backdrop-blur-sm shadow-[0_0_15px_-5px_#2563EB]">
+                            Start Your Journey
+                        </span>
+                    </motion.div>
 
-                            {/* Title Skeleton */}
-                            <div className="space-y-4 mb-8 flex flex-col items-center w-full">
-                                <Skeleton className="w-3/4 h-20 md:h-24 rounded-lg" />
-                                <Skeleton className="w-1/2 h-20 md:h-24 rounded-lg" />
-                            </div>
+                    <h1 className="text-6xl md:text-8xl font-serif text-white mb-8 leading-tight drop-shadow-2xl">
+                        منصة <span className="text-gradient-blue">التفوق</span> <br />
+                        الأكاديمي
+                    </h1>
 
-                            {/* Subtitle Skeleton */}
-                            <Skeleton className="w-full max-w-2xl h-16 rounded-lg mb-12" />
+                    <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto mb-12 font-light leading-relaxed font-sans">
+                        رحلة سينمائية نحو النجاح، مصممة للنخبة الطموحة.
+                        محتوى تعليمي يتجاوز التوقعات.
+                    </p>
 
-                            {/* Buttons Skeleton */}
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full">
-                                <Skeleton className="w-48 h-14 rounded-[40px]" />
-                                <Skeleton className="w-44 h-14 rounded-[40px]" />
-                            </div>
-                        </motion.div>
-                    ) : (
-                        <motion.div
-                            key="content"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ duration: 0.8, ease: "easeOut" }}
-                            className="flex flex-col items-center"
-                        >
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.5, duration: 0.8 }}
-                                className="flex items-center justify-center gap-2 mb-6"
-                            >
-                                {/* Subtle Badge */}
-                                <span className="px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs tracking-[0.2em] font-medium uppercase backdrop-blur-sm shadow-[0_0_15px_-5px_#2563EB]">
-                                    Start Your Journey
-                                </span>
-                            </motion.div>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                        <Link href="/auth?mode=signup" className="group relative px-8 py-4 bg-primary rounded-[40px] text-white font-bold text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)]">
+                            <span className="relative z-10 flex items-center gap-2">
+                                ابدأ رحلتك مجاناً
+                                <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+                            </span>
+                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                        </Link>
 
-                            <h1 className="text-6xl md:text-8xl font-serif text-white mb-8 leading-tight drop-shadow-2xl">
-                                منصة <span className="text-gradient-blue">التفوق</span> <br />
-                                الأكاديمي
-                            </h1>
-
-                            <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto mb-12 font-light leading-relaxed font-sans">
-                                رحلة سينمائية نحو النجاح، مصممة للنخبة الطموحة.
-                                محتوى تعليمي يتجاوز التوقعات.
-                            </p>
-
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                                <Link href="/auth?mode=signup" className="group relative px-8 py-4 bg-primary rounded-[40px] text-white font-bold text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)]">
-                                    <span className="relative z-10 flex items-center gap-2">
-                                        ابدأ رحلتك مجاناً
-                                        <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
-                                    </span>
-                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                                </Link>
-
-                                <Link href="#masterclass" className="group flex items-center gap-3 px-8 py-4 bg-white/5 backdrop-blur-md rounded-[40px] text-white/90 border border-white/10 hover:bg-white/10 hover:border-primary/30 transition-all">
-                                    <Play className="w-5 h-5 fill-current" />
-                                    <span>شاهد العرض</span>
-                                </Link>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                        <Link href="#masterclass" className="group flex items-center gap-3 px-8 py-4 bg-white/5 backdrop-blur-md rounded-[40px] text-white/90 border border-white/10 hover:bg-white/10 hover:border-primary/30 transition-all">
+                            <Play className="w-5 h-5 fill-current" />
+                            <span>شاهد العرض</span>
+                        </Link>
+                    </div>
+                </motion.div>
             </div>
 
             {/* Scroll Indicator */}
