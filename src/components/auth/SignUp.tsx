@@ -55,7 +55,7 @@ export function SignUp({ onToggleLogin }: SignUpProps) {
                 fullName: formData.fullName,
                 wilaya: formData.wilaya,
                 major: formData.major
-            });
+            }, { isNewUser: true });
 
             toast.success("تم إنشاء الحساب بنجاح! جاري التوجيه...");
             router.push("/dashboard");
