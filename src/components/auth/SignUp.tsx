@@ -7,7 +7,7 @@ import { saveStudentData } from "@/lib/user";
 import { ALGERIAN_WILAYAS } from "@/lib/data/wilayas";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { User, Mail, Lock, MapPin, BookOpen, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Lock, MapPin, BookOpen, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -73,14 +73,14 @@ export function SignUp({ onToggleLogin }: SignUpProps) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
+        <form onSubmit={handleSubmit} className="space-y-4">
             {/* Full Name */}
             <Input
                 placeholder="الاسم الكامل"
                 icon={User}
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className="bg-white/5 border-white/10 focus:border-white/20 text-right"
+                className="bg-white/5 border-white/10 focus:border-primary/50 text-right h-12 text-base rounded-2xl"
                 dir="rtl"
             />
 
@@ -90,29 +90,29 @@ export function SignUp({ onToggleLogin }: SignUpProps) {
                 <select
                     value={formData.wilaya}
                     onChange={(e) => setFormData({ ...formData, wilaya: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-zinc-200 outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl h-12 px-4 pr-12 text-zinc-200 outline-none focus:border-primary/50 transition-all appearance-none cursor-pointer text-base"
                     dir="rtl"
                 >
-                    <option value="" className="bg-zinc-900 text-zinc-500">اختر الولاية...</option>
+                    <option value="" className="bg-[#0A0A0F] text-zinc-500">اختر الولاية...</option>
                     {ALGERIAN_WILAYAS.map(w => (
-                        <option key={w.id} value={w.name} className="bg-zinc-900 text-white">
+                        <option key={w.id} value={w.name} className="bg-[#0A0A0F] text-white">
                             {w.name}
                         </option>
                     ))}
                 </select>
             </div>
 
-            {/* Major Select (Radio style for better UX or Select) - Using Select for compactness matching design */}
+            {/* Major Select */}
             <div className="relative">
                 <BookOpen className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 pointer-events-none" />
                 <select
                     value={formData.major}
                     onChange={(e) => setFormData({ ...formData, major: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-zinc-200 outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl h-12 px-4 pr-12 text-zinc-200 outline-none focus:border-primary/50 transition-all appearance-none cursor-pointer text-base"
                     dir="rtl"
                 >
                     {MAJORS.map(m => (
-                        <option key={m} value={m} className="bg-zinc-900 text-white">
+                        <option key={m} value={m} className="bg-[#0A0A0F] text-white">
                             {m}
                         </option>
                     ))}
@@ -126,7 +126,7 @@ export function SignUp({ onToggleLogin }: SignUpProps) {
                 icon={Mail}
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="bg-white/5 border-white/10 focus:border-white/20 text-right"
+                className="bg-white/5 border-white/10 focus:border-primary/50 text-right h-12 text-base rounded-2xl"
                 dir="rtl"
             />
 
@@ -138,7 +138,7 @@ export function SignUp({ onToggleLogin }: SignUpProps) {
                     icon={Lock}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="bg-white/5 border-white/10 focus:border-white/20 text-right pl-12"
+                    className="bg-white/5 border-white/10 focus:border-primary/50 text-right pl-12 h-12 text-base rounded-2xl"
                     dir="rtl"
                 />
                 <button
@@ -151,20 +151,23 @@ export function SignUp({ onToggleLogin }: SignUpProps) {
             </div>
 
             <Button
-                className="w-full mt-6 bg-white text-black hover:bg-zinc-200 font-bold"
+                type="submit"
+                className="w-full h-12 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-blue-900/20 hover:shadow-blue-900/40 transition-all hover:scale-[1.02] mt-2"
                 size="lg"
                 isLoading={isLoading}
             >
                 {isLoading ? "جاري الإنشاء..." : "نحو التفوق 🚀"}
             </Button>
 
-            <div className="mt-4 text-center">
+            <div className="mt-8 text-center text-sm text-slate-400">
+                لديك حساب بالفعل؟{" "}
                 <button
                     type="button"
                     onClick={onToggleLogin}
-                    className="text-sm text-zinc-400 hover:text-white transition-colors font-tajawal"
+                    className="text-primary font-bold hover:text-primary-hover transition-colors inline-flex items-center gap-1 group"
                 >
-                    لديك حساب بالفعل؟ <span className="text-white underline decoration-blue-500/50 underline-offset-4">سجل دخولك</span>
+                    سجل دخولك
+                    <ArrowRight className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                 </button>
             </div>
         </form>
