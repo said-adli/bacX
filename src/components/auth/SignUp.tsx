@@ -58,7 +58,8 @@ export function SignUp({ onToggleLogin }: SignUpProps) {
             }, { isNewUser: true });
 
             toast.success("تم إنشاء الحساب بنجاح! جاري التوجيه...");
-            router.push("/dashboard");
+            // Force full reload to ensure AuthContext fetches the newly created profile (avoid stale skeleton doc)
+            window.location.href = "/dashboard";
         } catch (error) {
             console.error(error);
             // @ts-expect-error: error is unknown typed but we know it has code property in firebase auth

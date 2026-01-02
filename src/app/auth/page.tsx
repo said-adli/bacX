@@ -83,7 +83,8 @@ function AuthContent() {
                     router.replace("/dashboard");
                 } else {
                     // Profile incomplete? Show onboarding
-                    if (view !== 'onboarding') {
+                    // SKip if we are in 'signup' view (Email Signup handles its own data/redirect atomically)
+                    if (view !== 'onboarding' && view !== 'signup') {
                         setOnboardingData(prev => ({
                             ...prev,
                             fullName: user.displayName || (userProfile.fullName as string) || prev.fullName
