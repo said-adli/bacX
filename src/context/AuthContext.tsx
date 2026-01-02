@@ -47,7 +47,7 @@ const clearAllStorage = () => {
     }
 };
 
-interface UserProfile {
+export interface UserProfile {
     role?: 'admin' | 'student';
     subscriptionStatus?: 'free' | 'premium';
     email?: string;
@@ -79,23 +79,29 @@ const AuthContext = createContext<AuthContextType>({
     isLoggingOut: false,
 });
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+export function AuthProvider({
+    children,
+    initialUser,
+    initialProfile
+}: {
+    children: React.ReactNode;
+    initialUser?: Partial<User> | null;
+    initialProfile?: UserProfile | null;
+}) {
+    // HYDRATION: Initialize with server-provided state if available
+    const [user, setUser] = useState<User | null>(() => {
+        if (initialUser) return initialUser as User;
+        return null;
+    });
 
-    const [role, setRole] = useState<'admin' | 'student' | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(() => initialProfile || null);
+    const [role, setRole] = useState<'admin' | 'student' | null>(() => initialProfile?.role || null);
+
+    // If we have initial data, we are NOT loading.
+    const [loading, setLoading] = useState(() => !initialUser);
+
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState<'online' | 'reconnecting' | 'offline'>('online');
-    // Prevent hydration mismatch by only rendering after mount - logic moved to return
-    // Removing the setState in useEffect to fix lint error and performance
-    // Instead we rely on initial null check or simply rendering children immediately if possible
-    // For this context, we initialize logic but don't blocking render via effect state if we can avoid it.
-    // However, the issue is "setHasMounted(true)" triggering re-render.
-    // To fix: We can remove hasMounted if it's unused (Lint said it is unused).
-    // Lint warning: 'hasMounted' is assigned a value but never used.
-    // So we can just remove it.
-
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {

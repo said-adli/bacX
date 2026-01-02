@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from 'next-view-transitions';
 import { usePathname } from "next/navigation";
 import { Home, BookOpen, Radio, User } from "lucide-react";
 
@@ -27,8 +27,8 @@ export function BottomNav() {
                             key={item.href}
                             href={item.href}
                             className={`relative flex flex-col items-center justify-center transition-all duration-300 ${isActive
-                                    ? "text-primary -translate-y-1"
-                                    : "text-white/50 hover:text-white"
+                                ? "text-primary -translate-y-1"
+                                : "text-white/50 hover:text-white"
                                 }`}
                         >
                             {isActive && (

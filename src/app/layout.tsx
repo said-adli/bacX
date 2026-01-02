@@ -7,6 +7,9 @@ import NextTopLoader from "nextjs-toploader";
 import { BackButton } from "@/components/ui/BackButton";
 import { GlobalErrorBoundary as ErrorBoundary } from "@/components/GlobalErrorBoundary";
 import { AppShell } from "@/components/layout/AppShell";
+import { cookies } from "next/headers";
+import { verifySessionCookie } from "@/lib/auth-jwt";
+import { ViewTransitions } from 'next-view-transitions';
 
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic", "latin"],
@@ -59,48 +62,77 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // --- SERVER AUTH HYDRATION ---
+  const cookieStore = cookies();
+  const sessionCookie = cookieStore.get('bacx_session')?.value;
+  let initialUser = null;
+  let initialProfile = null;
+
+  if (sessionCookie) {
+    const payload = await verifySessionCookie(sessionCookie);
+    if (payload) {
+      initialUser = {
+        uid: payload.sub as string,
+        email: payload.email as string,
+        displayName: payload.name as string || '',
+        photoURL: payload.picture as string || '',
+      };
+
+      // Infer basic profile from token to avoid flicker
+      initialProfile = {
+        uid: payload.sub as string,
+        email: payload.email as string,
+        displayName: payload.name as string,
+        photoURL: payload.picture as string,
+        role: (payload.admin || payload.role === 'admin') ? 'admin' : 'student'
+      };
+    }
+  }
+
   return (
-    <html lang="ar" dir="rtl" className="scroll-smooth" suppressHydrationWarning>
-      <body className={`${ibmPlexSansArabic.variable} ${playfairDisplay.variable} antialiased bg-background text-foreground font-sans selection:bg-primary/30`}>
-        <NextTopLoader
-          color="#2563EB"
-          initialPosition={0.08}
-          crawlSpeed={200}
-          height={3}
-          crawl={true}
-          showSpinner={false}
-          easing="ease"
-          speed={200}
-          shadow="0 0 10px #2563EB,0 0 5px #3B82F6"
-        />
-        <AuthProvider>
-          <ErrorBoundary>
-            <AppShell>
-              <BackButton />
-              {children}
-            </AppShell>
-            <Toaster
-              position="bottom-center"
-              richColors
-              theme="dark"
-              toastOptions={{
-                className: "glass-panel text-foreground font-sans",
-                style: {
-                  fontFamily: 'var(--font-sans)',
-                  background: 'rgba(10, 10, 15, 0.9)',
-                  borderColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#FFF'
-                }
-              }}
-            />
-          </ErrorBoundary>
-        </AuthProvider>
-      </body>
-    </html>
+    <ViewTransitions>
+      <html lang="ar" dir="rtl" className="scroll-smooth" suppressHydrationWarning>
+        <body className={`${ibmPlexSansArabic.variable} ${playfairDisplay.variable} antialiased bg-background text-foreground font-sans selection:bg-primary/30`}>
+          <NextTopLoader
+            color="#2563EB"
+            initialPosition={0.08}
+            crawlSpeed={200}
+            height={3}
+            crawl={true}
+            showSpinner={false}
+            easing="ease"
+            speed={200}
+            shadow="0 0 10px #2563EB,0 0 5px #3B82F6"
+          />
+          <AuthProvider initialUser={initialUser} initialProfile={initialProfile}>
+            <ErrorBoundary>
+              <AppShell>
+                <BackButton />
+                {children}
+              </AppShell>
+              <Toaster
+                position="bottom-center"
+                richColors
+                theme="dark"
+                toastOptions={{
+                  className: "glass-panel text-foreground font-sans",
+                  style: {
+                    fontFamily: 'var(--font-sans)',
+                    background: 'rgba(10, 10, 15, 0.9)',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    color: '#FFF'
+                  }
+                }}
+              />
+            </ErrorBoundary>
+          </AuthProvider>
+        </body>
+      </html>
+    </ViewTransitions>
   );
 }

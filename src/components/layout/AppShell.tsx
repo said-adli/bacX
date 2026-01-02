@@ -5,7 +5,11 @@ import { useAuth } from "@/context/AuthContext";
 import { Sidebar } from "./Sidebar";
 import { TopNav } from "./TopNav";
 import { BottomNav } from "./BottomNav";
-import { motion, AnimatePresence } from "framer-motion";
+// ... imports
+import { Sidebar } from "./Sidebar";
+import { TopNav } from "./TopNav";
+import { BottomNav } from "./BottomNav";
+// Removed Framer Motion imports for View Transitions
 
 export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -45,18 +49,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
                 {/* Page Content - Scrollable */}
                 <div className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar relative">
-                    <AnimatePresence mode="wait" initial={false}>
-                        <motion.main
-                            key={pathname}
-                            className="w-full min-h-full p-6 lg:p-12 max-w-[1600px] mx-auto"
-                            initial={false}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.3, ease: "easeOut" }}
-                        >
-                            {children}
-                        </motion.main>
-                    </AnimatePresence>
+                    <main className="w-full min-h-full p-6 lg:p-12 max-w-[1600px] mx-auto">
+                        {children}
+                    </main>
                 </div>
 
                 {/* Bottom Navigation — Mobile Only */}

@@ -5,7 +5,7 @@ import { Bell, Search, LogOut, ChevronDown, X, BookOpen, Crown, User as UserIcon
 
 
 
-import Link from "next/link";
+import { Link } from 'next-view-transitions';
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
