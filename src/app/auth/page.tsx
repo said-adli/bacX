@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Mail, Lock, ArrowRight, ArrowLeft, Chrome, AlertCircle, MapPin, BookOpen, Check } from "lucide-react";
+import { Mail, Lock, ArrowRight, ArrowLeft, AlertCircle, MapPin, BookOpen, Check } from "lucide-react";
 import { signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -16,6 +16,16 @@ import { NeuralBackground } from "@/components/ui/NeuralBackground";
 import { cn } from "@/lib/utils";
 import { saveStudentData } from "@/lib/user";
 import { ALGERIAN_WILAYAS } from "@/lib/data/wilayas";
+
+// --- Google Icon SVG ---
+const GoogleIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.84.81-.6z" fill="#FBBC05" />
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+    </svg>
+);
 
 // --- Types ---
 type AuthView = 'login' | 'signup' | 'forgot-password' | 'onboarding';
@@ -63,10 +73,6 @@ function AuthContent() {
     useEffect(() => {
         if (!loading && user) {
             // Check if profile is complete
-            // We assume userProperties like wilaya/major are in userProfile
-            // Note: AuthContext needs to return these fields. 
-            // If userProfile is null but user exists, we wait (loading usually handles this).
-
             if (userProfile) {
                 const isProfileComplete =
                     Boolean(userProfile.wilaya) &&
@@ -77,7 +83,6 @@ function AuthContent() {
                     router.replace("/dashboard");
                 } else {
                     // Profile incomplete? Show onboarding
-                    // Pre-fill full name from Auth if available
                     if (view !== 'onboarding') {
                         setOnboardingData(prev => ({
                             ...prev,
@@ -98,7 +103,6 @@ function AuthContent() {
         try {
             await signInWithEmailAndPassword(auth, email, password);
             toast.success("تم تسجيل الدخول بنجاح");
-            // Effect will handle redirect
         } catch (error) {
             console.error(error);
             toast.error("فشل تسجيل الدخول: تأكد من البيانات");
@@ -112,7 +116,6 @@ function AuthContent() {
         try {
             const provider = new GoogleAuthProvider();
             await signInWithPopup(auth, provider);
-            // Success! Effect will check profile and redirect or show onboarding
         } catch (error) {
             console.error(error);
             toast.error("فشل تسجيل الدخول عبر Google");
@@ -148,22 +151,14 @@ function AuthContent() {
         try {
             await saveStudentData({
                 uid: user.uid,
-                email: user.email || "", // Fallback
+                email: user.email || "",
                 fullName: onboardingData.fullName,
                 wilaya: onboardingData.wilaya,
                 major: onboardingData.major
-            }, { isNewUser: false }); // Just an update
-
-            // Force reload or just let the effect trigger? 
-            // The effect depends on userProfile. userProfile comes from AuthContext.
-            // AuthContext might not update immediately without a refresh or explicit reload.
-            // We can manually force a router refresh or we trust AuthContext's real-time nature?
-            // AuthContext uses onAuthStateChanged -> getDoc.
-            // Updating doc doesn't re-trigger getDoc in AuthContext automatically unless we have a listener.
-            // But we can just redirect blindly to dashboard now, assuming we saved correctly.
+            }, { isNewUser: false });
 
             toast.success("تم تحديث البيانات بنجاح!");
-            window.location.href = "/dashboard"; // Force full reload to ensure context updates
+            window.location.href = "/dashboard";
 
         } catch (error) {
             console.error(error);
@@ -174,7 +169,7 @@ function AuthContent() {
 
     // --- Renders ---
 
-    if (loading) return null; // Or skeleton
+    if (loading) return null;
 
     return (
         <div className="flex min-h-screen w-full bg-[#050505] overflow-hidden selection:bg-primary/30 text-foreground font-sans">
@@ -221,7 +216,7 @@ function AuthContent() {
                     <Logo />
                 </div>
 
-                <div className="w-full max-w-md mx-auto relative z-10">
+                <div className="w-full max-w-md mx-auto relative z-10 w-full">
                     <AnimatePresence mode="wait">
 
                         {/* VIEW: LOGIN */}
@@ -237,19 +232,20 @@ function AuthContent() {
                                     <p className="text-slate-400">أدخل بياناتك للمتابعة</p>
                                 </div>
 
+                                {/* Pro Google Button */}
                                 <Button
                                     type="button"
                                     onClick={handleGoogleLogin}
-                                    className="w-full h-12 bg-white text-black hover:bg-zinc-200 font-bold flex items-center justify-center gap-2 mb-6 rounded-2xl"
+                                    className="w-full h-12 bg-white text-zinc-900 hover:bg-zinc-200 font-bold flex items-center justify-center gap-3 mb-6 rounded-2xl transition-all shadow-lg hover:shadow-white/10"
                                     disabled={isLoading}
                                 >
-                                    <Chrome className="w-5 h-5" />
+                                    <GoogleIcon />
                                     المتابعة باستخدام Google
                                 </Button>
 
                                 <div className="relative mb-6">
                                     <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
-                                    <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#050505] px-2 text-slate-500">أو عبر البريد</span></div>
+                                    <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#050505] px-2 text-slate-500">أو</span></div>
                                 </div>
 
                                 <form onSubmit={handleLogin} className="space-y-4">
@@ -318,6 +314,22 @@ function AuthContent() {
                                 <div className="mb-10">
                                     <h2 className="text-3xl font-bold text-white mb-2 font-serif">أنشئ حسابك الجديد</h2>
                                     <p className="text-slate-400">ابدأ رحلة التفوق معنا اليوم</p>
+                                </div>
+
+                                {/* Pro Google Button for Signup */}
+                                <Button
+                                    type="button"
+                                    onClick={handleGoogleLogin}
+                                    className="w-full h-12 bg-white text-zinc-900 hover:bg-zinc-200 font-bold flex items-center justify-center gap-3 mb-6 rounded-2xl transition-all shadow-lg hover:shadow-white/10"
+                                    disabled={isLoading}
+                                >
+                                    <GoogleIcon />
+                                    التسجيل باستخدام Google
+                                </Button>
+
+                                <div className="relative mb-6">
+                                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+                                    <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#050505] px-2 text-slate-500">أو عبر البريد</span></div>
                                 </div>
 
                                 <SignUp onToggleLogin={() => setView('login')} />
@@ -404,7 +416,7 @@ function AuthContent() {
                                             placeholder="الاسم الكامل"
                                             value={onboardingData.fullName}
                                             onChange={(e) => setOnboardingData({ ...onboardingData, fullName: e.target.value })}
-                                            className="bg-white/5"
+                                            className="bg-white/5 text-right"
                                             dir="rtl"
                                         />
 
