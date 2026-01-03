@@ -36,7 +36,7 @@ interface Notification {
 }
 
 export function TopNav() {
-    const { user, userProfile, logout } = useAuth();
+    const { user, profile, logout } = useAuth();
     const pathname = usePathname();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -268,7 +268,7 @@ export function TopNav() {
                                     <p className="text-xs text-slate-400 truncate mt-0.5">{user?.email}</p>
                                     <div className="mt-3 flex items-center gap-2">
                                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/20 text-primary border border-primary/20 uppercase tracking-wider">
-                                            {userProfile?.role === 'admin' ? 'Admin' : (userProfile?.subscriptionStatus === 'premium' ? 'Premium' : 'Free')}
+                                            {profile?.role === 'admin' ? 'Admin' : (profile?.subscriptionStatus === 'premium' ? 'Premium' : 'Free')}
                                         </span>
                                     </div>
                                 </div>
