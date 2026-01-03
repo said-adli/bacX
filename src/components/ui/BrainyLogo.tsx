@@ -1,16 +1,15 @@
-"use client";
-
-import React from "react";
-import { cn } from "@/lib/utils";
-import Image from "next/image";
-
-interface BrainyLogoProps {
-    variant?: "full" | "icon" | "hero" | "navbar" | "watermark";
-    className?: string;
-}
+import { StonePyramidIcon } from "./StonePyramidIcon";
 
 export function BrainyLogo({ variant = "full", className, imageSrc }: BrainyLogoProps & { imageSrc?: string }) {
     const isWatermark = variant === "watermark";
+
+    if (variant === "icon") {
+        return (
+            <div className={cn("relative select-none", className)}>
+                <StonePyramidIcon />
+            </div>
+        );
+    }
 
     return (
         <div className={cn("relative select-none", className)}>
