@@ -3,34 +3,23 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { StonePyramidIcon } from "./StonePyramidIcon";
+import { BrainyStoneLogoSVG } from "./BrainyStoneLogoSVG";
 
 interface BrainyLogoProps {
     variant?: "full" | "icon" | "hero" | "navbar" | "watermark";
     className?: string;
+    imageSrc?: string; // Kept for compability but ignored in favor of SVG
 }
 
-export function BrainyLogo({ variant = "full", className, imageSrc }: BrainyLogoProps & { imageSrc?: string }) {
+export function BrainyLogo({ variant = "full", className }: BrainyLogoProps) {
     const isWatermark = variant === "watermark";
-
-    // simplified: always use the high-res image for now as it contains both icon and text in the stone design
-    // The user explicitly wants the "shape + writing" from the image.
 
     return (
         <div className={cn("relative select-none", className)}>
-            <div className="relative w-full h-full">
-                <Image
-                    src={imageSrc || "/brainy-logo-final.png"}
-                    alt="Brainy Logo"
-                    width={512}
-                    height={512}
-                    className={cn(
-                        "object-contain w-full h-full",
-                        className?.includes("drop-shadow") ? "" : (isWatermark ? "opacity-30" : "drop-shadow-[0_0_15px_rgba(0,0,0,0.5)]")
-                    )}
-                    priority
-                />
-            </div>
+            <BrainyStoneLogoSVG className={cn(
+                "w-full h-full",
+                isWatermark ? "opacity-30" : ""
+            )} />
         </div>
     );
 }
