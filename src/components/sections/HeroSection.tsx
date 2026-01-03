@@ -5,6 +5,7 @@ import { motion, MotionStyle } from "framer-motion";
 import { ArrowLeft, Play } from "lucide-react";
 import Link from "next/link";
 import { NeuralBackground } from "@/components/ui/NeuralBackground";
+import { BrainyLogo } from "@/components/ui/BrainyLogo";
 
 interface HeroSectionProps {
     style?: MotionStyle;
@@ -55,7 +56,11 @@ export function HeroSection({ style }: HeroSectionProps) {
                         </span>
                     </motion.div>
 
-                    <h1 className="text-6xl md:text-8xl font-serif text-white mb-8 leading-tight drop-shadow-2xl">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0 pointer-events-none">
+                        <BrainyLogo variant="watermark" className="w-[600px] h-[600px] opacity-[0.03] blur-xl" />
+                    </div>
+
+                    <h1 className="relative z-10 text-6xl md:text-8xl font-serif text-white mb-8 leading-tight drop-shadow-2xl">
                         منصة <span className="text-gradient-blue">التفوق</span> <br />
                         الأكاديمي
                     </h1>

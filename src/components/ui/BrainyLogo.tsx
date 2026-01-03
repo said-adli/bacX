@@ -22,7 +22,7 @@ export function BrainyLogo({ variant = "full", className }: BrainyLogoProps) {
                     height={512}
                     className={cn(
                         "object-contain w-full h-full",
-                        isWatermark ? "opacity-30" : "drop-shadow-[0_0_15px_rgba(0,0,0,0.5)]" // Adjusted shadow for dark theme
+                        className?.includes("drop-shadow") ? "" : (isWatermark ? "opacity-30" : "drop-shadow-[0_0_15px_rgba(0,0,0,0.5)]")
                     )}
                     priority
                 />

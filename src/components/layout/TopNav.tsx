@@ -131,9 +131,13 @@ export function TopNav() {
         <header className="relative w-full h-full flex items-center justify-between px-4 lg:px-8 bg-transparent">
             {/* Breadcrumbs */}
             <nav className="flex items-center gap-2 text-sm text-slate-400">
-                <div className="lg:hidden ml-2">
-                    <Link href="/dashboard">
-                        <BrainyLogo variant="icon" className="w-10 h-10" />
+                <div className="lg:hidden ml-2 flex items-center gap-3">
+                    <Link href="/dashboard" className="flex items-center gap-3 group">
+                        <BrainyLogo
+                            variant="icon"
+                            className="w-14 h-14 drop-shadow-[0_0_8px_rgba(37,99,235,0.5)] transition-all group-hover:drop-shadow-[0_0_12px_rgba(37,99,235,0.7)]"
+                        />
+                        <span className="text-2xl font-sans text-white tracking-wide font-medium">Brainy</span>
                     </Link>
                 </div>
                 {breadcrumbs.map((crumb, index) => (
