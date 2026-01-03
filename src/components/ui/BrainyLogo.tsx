@@ -3,7 +3,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { BrainyStoneLogoSVG } from "./BrainyStoneLogoSVG";
+import { BrainyModernLogo } from "./BrainyModernLogo";
 
 interface BrainyLogoProps {
     variant?: "full" | "icon" | "hero" | "navbar" | "watermark";
@@ -16,7 +16,7 @@ export function BrainyLogo({ variant = "full", className }: BrainyLogoProps) {
 
     return (
         <div className={cn("relative select-none", className)}>
-            <BrainyStoneLogoSVG className={cn(
+            <BrainyModernLogo className={cn(
                 "w-full h-full",
                 isWatermark ? "opacity-30" : ""
             )} />
