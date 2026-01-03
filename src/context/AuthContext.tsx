@@ -151,20 +151,19 @@ export function AuthProvider({
                                 }
                             }
                         } else {
-                            // First Login - create user document
-                            const newData = {
-                                uid: currentUser.uid,
-                                email: currentUser.email,
-                                role: 'student',
-                                createdAt: new Date(),
-                                displayName: currentUser.displayName || "",
-                                photoURL: currentUser.photoURL || "",
-                                subscriptionStatus: 'free' // Default fallback
-                            } as UserProfile;
-                            await setDoc(userRef, newData);
+                            // New user - DON'T create Firestore doc here
+                            // Let the signup flow (SignUp.tsx or onboarding) handle doc creation
+                            // This avoids race condition with email signup which writes complete data
                             setRole('student');
-                            setUserProfile(newData);
+                            setUserProfile({
+                                uid: currentUser.uid,
+                                email: currentUser.email || undefined,
+                                displayName: currentUser.displayName || undefined,
+                                photoURL: currentUser.photoURL || undefined,
+                                role: 'student'
+                            });
 
+                            // Still register device for new users
                             await registerDevice(currentUser.uid, {
                                 deviceId,
                                 deviceName: navigator.userAgent.slice(0, 50)

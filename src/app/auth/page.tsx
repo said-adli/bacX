@@ -81,14 +81,23 @@ function AuthContent() {
                 if (isProfileComplete) {
                     router.replace("/dashboard");
                 } else {
-                    // Profile incomplete? Show onboarding
-                    // SKip if we are in 'signup' view (Email Signup handles its own data/redirect atomically)
+                    // Profile incomplete - determine if we need onboarding
+                    // Skip if we are in 'signup' view (Email Signup handles its own data/redirect atomically)
+                    // Skip if we are already in 'onboarding' view
                     if (view !== 'onboarding' && view !== 'signup') {
-                        setOnboardingData(prev => ({
-                            ...prev,
-                            fullName: user.displayName || (userProfile.fullName as string) || prev.fullName
-                        }));
-                        setView('onboarding');
+                        // Detect Google signup: user has OAuth displayName but no Firestore data (wilaya/major)
+                        // This means they came through Google and need to complete their profile
+                        const isGoogleSignup = Boolean(user.displayName) && !userProfile.wilaya;
+
+                        // Only show onboarding for Google signups or existing users with incomplete profiles
+                        // Email signups redirect to /dashboard directly (their data is guaranteed complete)
+                        if (isGoogleSignup || userProfile.createdAt) {
+                            setOnboardingData(prev => ({
+                                ...prev,
+                                fullName: user.displayName || (userProfile.fullName as string) || prev.fullName
+                            }));
+                            setView('onboarding');
+                        }
                     }
                 }
             }
@@ -154,8 +163,10 @@ function AuthContent() {
                 email: user.email || "",
                 fullName: onboardingData.fullName,
                 wilaya: onboardingData.wilaya,
-                major: onboardingData.major
-            }, { isNewUser: false });
+                major: onboardingData.major,
+                displayName: user.displayName || onboardingData.fullName,
+                photoURL: user.photoURL || ""
+            }, { isNewUser: true }); // true - this creates the full Firestore doc for Google signups
 
             toast.success("تم تحديث البيانات بنجاح!");
             window.location.href = "/dashboard";
