@@ -13,6 +13,7 @@ import {
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { registerDevice, unregisterDevice } from "@/actions/device";
+import { useRouter, usePathname } from "next/navigation";
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -69,9 +70,9 @@ interface AuthContextType extends AuthState {
     connectionStatus: "online" | "reconnecting" | "offline";
     isLoggingOut: boolean;
     refreshProfile: () => Promise<void>;
-
-    // Backward compatibility alias
-    userProfile: UserProfile | null;
+    
+    // Check Profile / Redirection
+    checkProfileStatus: (user: User, profile: UserProfile | null) => AuthStatus;
 }
 
 // ============================================================================
@@ -136,6 +137,7 @@ const setSessionCookie = async (user: User): Promise<void> => {
  */
 const isProfileComplete = (profile: UserProfile | null): boolean => {
     if (!profile) return false;
+    // Check for essential fields
     return Boolean(profile.wilaya) && Boolean(profile.major) && Boolean(profile.fullName || profile.displayName);
 };
 
@@ -158,6 +160,9 @@ export function AuthProvider({
     initialUser?: Partial<User> | null;
     initialProfile?: UserProfile | null;
 }) {
+    const router = useRouter();
+    const pathname = usePathname();
+
     // ----- STATE -----
     const [state, setState] = useState<AuthState>({
         user: initialUser as User | null,
@@ -173,6 +178,15 @@ export function AuthProvider({
     const role = state.profile?.role || null;
 
     // ----- INTERNAL HELPERS -----
+
+    /**
+     * Determine Auth Status based on User and Profile
+     */
+    const checkProfileStatus = useCallback((user: User | null, profile: UserProfile | null): AuthStatus => {
+        if (!user) return "UNAUTHENTICATED";
+        if (isProfileComplete(profile)) return "AUTHENTICATED";
+        return "REQUIRE_ONBOARDING";
+    }, []);
 
     /**
      * Fetch user profile from Firestore with retry logic
@@ -296,12 +310,21 @@ export function AuthProvider({
                 loading: false,
                 error: null,
             });
+            
+            // Redirect based on profile status
+            const status = checkProfileStatus(user, profile);
+            if (status === "REQUIRE_ONBOARDING") {
+                router.replace("/complete-profile");
+            } else {
+                router.replace("/dashboard");
+            }
+
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : "فشل تسجيل الدخول";
             setState((prev) => ({ ...prev, loading: false, error: message }));
             throw error;
         }
-    }, [fetchProfile]);
+    }, [fetchProfile, checkProfileStatus, router]);
 
     /**
      * Sign up with email - ATOMIC FLOW
@@ -329,7 +352,7 @@ export function AuthProvider({
             // Step 4: Register device
             await handleDeviceRegistration(user.uid);
 
-            // Step 5: Update state with complete data (no useEffect needed)
+            // Step 5: Update state with complete data
             setState({
                 user,
                 profile,
@@ -337,17 +360,20 @@ export function AuthProvider({
                 error: null,
             });
 
-            // Profile is complete, redirect will happen in UI
+            // Step 6: Direct redirect to dashboard (Profile is guaranteed complete)
+            router.replace("/dashboard");
+
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : "فشل إنشاء الحساب";
             setState((prev) => ({ ...prev, loading: false, error: message }));
             throw error;
         }
-    }, []);
+    }, [router]);
 
     /**
      * Login with Google - CHECK-GATE FLOW
-     * Returns status indicating if onboarding is needed
+     * If user exists -> Login
+     * If new user -> Redirect to /complete-profile
      */
     const loginWithGoogle = useCallback(async (): Promise<AuthStatus> => {
         setState((prev) => ({ ...prev, loading: true, error: null }));
@@ -382,26 +408,18 @@ export function AuthProvider({
                     error: null,
                 });
 
+                router.replace("/dashboard");
                 return "AUTHENTICATED";
             } else {
                 // Profile missing or incomplete - needs onboarding
-                // Set partial state so UI can show onboarding form
                 setState({
                     user,
-                    profile: existingProfile || {
-                        uid: user.uid,
-                        email: user.email || "",
-                        displayName: user.displayName || "",
-                        photoURL: user.photoURL || "",
-                        fullName: user.displayName || "",
-                        role: "student",
-                        subscriptionStatus: "free",
-                        isSubscribed: false,
-                    },
+                    profile: existingProfile || null, // Don't create synthetic profile yet
                     loading: false,
                     error: null,
                 });
-
+                
+                router.replace("/complete-profile");
                 return "REQUIRE_ONBOARDING";
             }
         } catch (error: unknown) {
@@ -409,7 +427,7 @@ export function AuthProvider({
             setState((prev) => ({ ...prev, loading: false, error: message }));
             throw error;
         }
-    }, [fetchProfile]);
+    }, [fetchProfile, router]);
 
     /**
      * Complete onboarding for Google users
@@ -421,6 +439,7 @@ export function AuthProvider({
         setState((prev) => ({ ...prev, loading: true, error: null }));
 
         try {
+            // Create or Overwrite profile
             const profile = await createProfile(user, {
                 fullName: data.fullName,
                 displayName: data.fullName || user.displayName || "",
@@ -435,12 +454,14 @@ export function AuthProvider({
                 loading: false,
                 error: null,
             });
+            
+            router.replace("/dashboard");
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : "فشل حفظ البيانات";
             setState((prev) => ({ ...prev, loading: false, error: message }));
             throw error;
         }
-    }, [state]);
+    }, [state.user, router]);
 
     /**
      * Logout - Complete cleanup
@@ -482,8 +503,8 @@ export function AuthProvider({
         // Sign out from Firebase
         await firebaseSignOut(auth);
 
-        // Hard redirect to auth page
-        window.location.href = "/auth";
+        // Hard redirect
+        window.location.href = "/auth/login";
 
         // Reset flag after delay
         setTimeout(() => setIsLoggingOut(false), 500);
@@ -504,36 +525,42 @@ export function AuthProvider({
     // ----- EFFECTS -----
 
     /**
-     * Listen to Firebase auth state changes
-     * This is only for: page refresh, tab re-open, token refresh
-     * NOT for login/signup (those set state directly)
+     * Main Auth State Listener
+     * Handles: Page Refresh, Token Updates, Initial Load
      */
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             // Skip if logging out
             if (isLoggingOut) return;
 
-            // Skip if we already have a user in state (set by login/signup methods)
-            if (state.user && currentUser?.uid === state.user.uid) return;
+            // Skip if we already have the same user in state (optimization)
+            // But if we're in "loading" state, we MUST proceed to resolve it.
+            if (state.user && currentUser?.uid === state.user.uid && !state.loading && state.profile) return;
 
             if (currentUser) {
-                // User is signed in - fetch their profile
-                await setSessionCookie(currentUser);
-
-                const profile = await fetchProfile(currentUser.uid);
-
-                // Only update if we don't have state already
-                setState((prev) => {
-                    if (prev.user?.uid === currentUser.uid) return prev;
-                    return {
+                // User is signed in
+                try {
+                    await setSessionCookie(currentUser);
+                    const profile = await fetchProfile(currentUser.uid);
+                    
+                    setState({
                         user: currentUser,
                         profile,
                         loading: false,
-                        error: null,
-                    };
-                });
+                        error: null
+                    });
+
+                } catch (err) {
+                    console.error("Auth state change error:", err);
+                    setState({
+                        user: currentUser,
+                        profile: null,
+                        loading: false,
+                        error: "Failed to load profile"
+                    });
+                }
             } else {
-                // No user - clear state
+                // No user
                 setState({
                     user: null,
                     profile: null,
@@ -544,17 +571,14 @@ export function AuthProvider({
         });
 
         return () => unsubscribe();
-    }, [isLoggingOut, fetchProfile, state.user]);
+    }, [isLoggingOut, fetchProfile, state.user, state.loading, state.profile]);
+
 
     // ----- RENDER -----
 
     const value: AuthContextType = {
         ...state,
-        user: state.user,
-        profile: state.profile,
-        userProfile: state.profile, // Backward compatibility alias
-        loading: state.loading,
-        error: state.error,
+        checkProfileStatus,
         loginWithEmail,
         signupWithEmail,
         loginWithGoogle,

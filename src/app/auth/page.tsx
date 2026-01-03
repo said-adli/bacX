@@ -4,16 +4,15 @@ import { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Mail, Lock, ArrowRight, ArrowLeft, AlertCircle, MapPin, BookOpen, Check } from "lucide-react";
+import { Mail, Lock, ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext"; // Changed from hooks to use context export directly or hooks if consistent
 import { SignUp } from "@/components/auth/SignUp";
 import { toast } from "sonner";
 import { Logo } from "@/components/ui/Logo";
 import { NeuralBackground } from "@/components/ui/NeuralBackground";
-import { ALGERIAN_WILAYAS } from "@/lib/data/wilayas";
 import type { AuthStatus } from "@/context/AuthContext";
 
 // --- Google Icon SVG ---
@@ -27,10 +26,10 @@ const GoogleIcon = () => (
 );
 
 // --- Types ---
-type AuthView = 'login' | 'signup' | 'forgot-password' | 'onboarding';
+type AuthView = 'login' | 'signup' | 'forgot-password';
 
 function AuthContent() {
-    const { user, profile, loading, loginWithEmail, loginWithGoogle, completeOnboarding } = useAuth();
+    const { user, profile, loading, loginWithEmail, loginWithGoogle, checkProfileStatus } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -46,19 +45,6 @@ function AuthContent() {
     const [resetEmail, setResetEmail] = useState("");
     const [resetSent, setResetSent] = useState(false);
 
-    // Onboarding State
-    const [onboardingData, setOnboardingData] = useState({
-        fullName: "",
-        wilaya: "",
-        major: "شعبة علوم تجريبية" // Default
-    });
-
-    const MAJORS = [
-        "شعبة علوم تجريبية",
-        "شعبة رياضيات",
-        "شعبة تقني رياضي"
-    ];
-
     // --- Effects ---
 
     // 1. Initial View from URL
@@ -68,33 +54,19 @@ function AuthContent() {
         else if (mode === 'login') setView('login');
     }, [searchParams]);
 
-    // 2. Redirect / Onboarding Logic
+    // 2. Redirect Logic if Already Logged In
     useEffect(() => {
         if (!loading && user) {
-            // Check if profile is complete
-            if (profile) {
-                const isProfileComplete =
-                    Boolean(profile.wilaya) &&
-                    Boolean(profile.major) &&
-                    Boolean(profile.fullName || profile.displayName);
+            // Use the centralized status check
+            const status = checkProfileStatus(user, profile);
 
-                if (isProfileComplete) {
-                    router.replace("/dashboard");
-                } else {
-                    // Profile incomplete - show onboarding
-                    // Skip if we are in 'signup' view (Email Signup handles its own data/redirect atomically)
-                    // Skip if we are already in 'onboarding' view
-                    if (view !== 'onboarding' && view !== 'signup') {
-                        setOnboardingData(prev => ({
-                            ...prev,
-                            fullName: user.displayName || profile.fullName || prev.fullName
-                        }));
-                        setView('onboarding');
-                    }
-                }
+            if (status === "REQUIRE_ONBOARDING") {
+                router.replace("/complete-profile");
+            } else {
+                router.replace("/dashboard");
             }
         }
-    }, [user, profile, loading, router, view]);
+    }, [user, profile, loading, router, checkProfileStatus]);
 
     // --- Handlers ---
 
@@ -104,7 +76,7 @@ function AuthContent() {
         try {
             await loginWithEmail(email, password);
             toast.success("تم تسجيل الدخول بنجاح");
-            // Redirect handled by useEffect above
+            // Redirect handled by AuthContext internally or the useEffect above
         } catch (error) {
             console.error(error);
             toast.error("فشل تسجيل الدخول: تأكد من البيانات");
@@ -119,15 +91,10 @@ function AuthContent() {
             const status: AuthStatus = await loginWithGoogle();
 
             if (status === "REQUIRE_ONBOARDING") {
-                // Google user needs to complete profile
-                setOnboardingData(prev => ({
-                    ...prev,
-                    fullName: user?.displayName || ""
-                }));
-                setView('onboarding');
+                router.replace("/complete-profile");
             } else {
-                // Fully authenticated - redirect handled by useEffect
                 toast.success("تم تسجيل الدخول بنجاح");
+                router.replace("/dashboard");
             }
         } catch (error) {
             console.error(error);
@@ -154,50 +121,23 @@ function AuthContent() {
         }
     };
 
-    const handleOnboardingSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!user) return;
-        if (!onboardingData.fullName.trim()) return toast.error("الاسم الكامل مطلوب");
-        if (!onboardingData.wilaya) return toast.error("يرجى اختيار الولاية");
-
-        setIsLoading(true);
-        try {
-            await completeOnboarding({
-                fullName: onboardingData.fullName,
-                wilaya: onboardingData.wilaya,
-                major: onboardingData.major,
-            });
-
-            toast.success("تم تحديث البيانات بنجاح!");
-            router.replace("/dashboard");
-
-        } catch (error) {
-            console.error(error);
-            toast.error("فشل حفظ البيانات");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     // --- Renders ---
 
     // Handle go back with fallback
     const handleGoBack = () => {
-        // Check if there's history to go back to
         if (window.history.length > 1) {
             router.back();
         } else {
-            // Fallback to home if opened in new tab
             router.push('/');
         }
     };
 
-    if (loading) return null;
+    if (loading) return null; // Or a loading spinner
 
     return (
         <div className="flex min-h-screen w-full bg-[#050505] overflow-hidden selection:bg-primary/30 text-foreground font-sans">
 
-            {/* Go Back Button - Glassmorphism Style */}
+            {/* Go Back Button */}
             <button
                 onClick={handleGoBack}
                 className="fixed top-6 left-6 z-50 flex items-center gap-2 px-4 py-2.5 
@@ -428,79 +368,6 @@ function AuthContent() {
                                         <ArrowLeft className="w-4 h-4" />
                                         العودة لتسجيل الدخول
                                     </button>
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {/* VIEW: ONBOARDING (Mandatory) */}
-                        {view === 'onboarding' && (
-                            <motion.div
-                                key="onboarding"
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="bg-gradient-to-br from-blue-900/10 to-transparent p-1 rounded-3xl"
-                            >
-                                <div className="bg-[#0A0A0F] border border-blue-500/20 rounded-3xl p-8 relative overflow-hidden">
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
-
-                                    <div className="mb-8 text-center">
-                                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-500/10 text-blue-400 mb-4 ring-1 ring-blue-500/20">
-                                            <AlertCircle className="w-8 h-8" />
-                                        </div>
-                                        <h2 className="text-2xl font-bold text-white mb-2">أكمل ملفك الشخصي</h2>
-                                        <p className="text-slate-400 text-sm">نحتاج لبعض المعلومات الإضافية لتخصيص تجربتك.</p>
-                                    </div>
-
-                                    <form onSubmit={handleOnboardingSubmit} className="space-y-4">
-                                        <Input
-                                            placeholder="الاسم الكامل"
-                                            value={onboardingData.fullName}
-                                            onChange={(e) => setOnboardingData({ ...onboardingData, fullName: e.target.value })}
-                                            className="bg-white/5 text-right"
-                                            dir="rtl"
-                                        />
-
-                                        <div className="relative">
-                                            <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 pointer-events-none" />
-                                            <select
-                                                value={onboardingData.wilaya}
-                                                onChange={(e) => setOnboardingData({ ...onboardingData, wilaya: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-2xl h-12 px-4 pr-12 text-zinc-200 outline-none focus:border-primary/50 appearance-none text-base"
-                                                dir="rtl"
-                                            >
-                                                <option value="" className="bg-[#0A0A0F] text-zinc-500">اختر الولاية...</option>
-                                                {ALGERIAN_WILAYAS.map(w => (
-                                                    <option key={w.id} value={w.name} className="bg-[#0A0A0F] text-white">
-                                                        {w.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="relative">
-                                            <BookOpen className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 pointer-events-none" />
-                                            <select
-                                                value={onboardingData.major}
-                                                onChange={(e) => setOnboardingData({ ...onboardingData, major: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-2xl h-12 px-4 pr-12 text-zinc-200 outline-none focus:border-primary/50 appearance-none text-base"
-                                                dir="rtl"
-                                            >
-                                                {MAJORS.map(m => (
-                                                    <option key={m} value={m} className="bg-[#0A0A0F] text-white">
-                                                        {m}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <Button
-                                            type="submit"
-                                            className="w-full h-12 rounded-2xl bg-primary hover:bg-primary-hover text-white font-bold mt-4"
-                                            isLoading={isLoading}
-                                        >
-                                            حفظ ومتابعة
-                                        </Button>
-                                    </form>
                                 </div>
                             </motion.div>
                         )}

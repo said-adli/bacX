@@ -63,7 +63,7 @@ export async function middleware(request: NextRequest) {
 
     // --- ROUTE CLASSIFICATION ---
     const adminRoutes = ['/admin'];
-    const protectedRoutes = ['/dashboard', '/live', '/video', '/subscription', '/subject', '/profile', '/subjects', ...adminRoutes];
+    const protectedRoutes = ['/dashboard', '/live', '/video', '/subscription', '/subject', '/profile', '/subjects', '/complete-profile', ...adminRoutes];
 
     const isProtected = protectedRoutes.some(p => path.startsWith(p));
     const isAdminRoute = adminRoutes.some(p => path.startsWith(p));

@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 
 export default function SignupPage() {
-    const { user, loading } = useAuth();
+    const { user, profile, loading, checkProfileStatus } = useAuth();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -39,9 +39,14 @@ export default function SignupPage() {
 
     useEffect(() => {
         if (!loading && user) {
-            router.replace("/dashboard");
+            const status = checkProfileStatus(user, profile);
+            if (status === "REQUIRE_ONBOARDING") {
+                router.replace("/complete-profile");
+            } else {
+                router.replace("/dashboard");
+            }
         }
-    }, [user, loading, router]);
+    }, [user, profile, loading, router, checkProfileStatus]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

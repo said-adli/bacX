@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/Input";
 import Link from "next/link";
 
 export default function LoginPage() {
-    const { user, loading } = useAuth();
+    const { user, profile, loading, checkProfileStatus } = useAuth();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [email, setEmail] = useState("");
@@ -20,9 +20,14 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (!loading && user) {
-            router.replace("/dashboard");
+            const status = checkProfileStatus(user, profile);
+            if (status === "REQUIRE_ONBOARDING") {
+                router.replace("/complete-profile");
+            } else {
+                router.replace("/dashboard");
+            }
         }
-    }, [user, loading, router]);
+    }, [user, profile, loading, router, checkProfileStatus]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
