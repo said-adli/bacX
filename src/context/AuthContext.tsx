@@ -13,6 +13,7 @@ import {
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { registerDevice, unregisterDevice } from "@/actions/device";
+import { useRouter } from "next/navigation";
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -150,17 +151,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({
     children,
     initialUser,
-    initialProfile,
+    hydratedProfile, // Renamed from initialProfile for Goal 5
 }: {
     children: ReactNode;
     initialUser?: Partial<User> | null;
-    initialProfile?: UserProfile | null;
+    hydratedProfile?: UserProfile | null;
 }) {
+    const router = useRouter();
 
     // ----- STATE -----
     const [state, setState] = useState<AuthState>({
         user: initialUser as User | null,
-        profile: initialProfile || null,
+        profile: hydratedProfile || null,
         loading: !initialUser, // If we have initial data, skip loading
         error: null,
     });
@@ -183,6 +185,26 @@ export function AuthProvider({
         if (isProfileComplete(profile)) return "AUTHENTICATED";
         return "REQUIRE_ONBOARDING";
     }, []);
+
+    /**
+     * Centralized Navigation Handler (Goal 6)
+     */
+    const handleNavigation = useCallback(async (user: User, profile: UserProfile | null) => {
+        if (!profile) return;
+
+        // Goal 6: Intelligent Redirects
+        if (profile.role === 'admin') {
+            router.replace("/admin");
+            return;
+        }
+
+        // Student Role
+        if (isProfileComplete(profile)) {
+            router.replace("/dashboard");
+        } else {
+            router.replace("/complete-profile");
+        }
+    }, [router]);
 
 
     /**
@@ -314,12 +336,15 @@ export function AuthProvider({
                 error: null,
             });
 
+            // Redirect logic
+            await handleNavigation(user, profile);
+
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : "فشل تسجيل الدخول";
             setState((prev) => ({ ...prev, loading: false, error: message }));
             throw error;
         }
-    }, [fetchProfile, checkProfileStatus]);
+    }, [fetchProfile, checkProfileStatus, handleNavigation]);
 
     /**
      * Sign up with email - ATOMIC FLOW
@@ -360,12 +385,15 @@ export function AuthProvider({
                 error: null,
             });
 
+            // Step 6: Navigation
+            await handleNavigation(user, profile);
+
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : "فشل إنشاء الحساب";
             setState((prev) => ({ ...prev, loading: false, error: message }));
             throw error;
         }
-    }, []);
+    }, [handleNavigation]);
 
     /**
      * Login with Google - CHECK-GATE FLOW
@@ -411,6 +439,7 @@ export function AuthProvider({
                     error: null,
                 });
 
+                await handleNavigation(user, existingProfile);
                 return "AUTHENTICATED";
             } else {
                 // Profile missing or incomplete - needs onboarding
@@ -421,6 +450,7 @@ export function AuthProvider({
                     error: null,
                 });
 
+                router.replace("/complete-profile");
                 return "REQUIRE_ONBOARDING";
             }
         } catch (error: unknown) {
@@ -428,7 +458,7 @@ export function AuthProvider({
             setState((prev) => ({ ...prev, loading: false, error: message }));
             throw error;
         }
-    }, [fetchProfile]);
+    }, [fetchProfile, handleNavigation, router]);
 
     /**
      * Complete onboarding for Google users
@@ -456,12 +486,14 @@ export function AuthProvider({
                 error: null,
             });
 
+            await handleNavigation(user, profile);
+
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : "فشل حفظ البيانات";
             setState((prev) => ({ ...prev, loading: false, error: message }));
             throw error;
         }
-    }, [state.user]);
+    }, [state.user, handleNavigation]);
 
     /**
      * Logout - Complete cleanup
@@ -595,10 +627,6 @@ export function AuthProvider({
                         loading: false,
                         error: "Failed to load profile"
                     });
-
-                    // Fail-safe redirect if profile load fails catastrophically?
-                    // Maybe just let error boundary handle it, or force logout.
-                    // logout(); 
                 }
             } else {
                 // No user

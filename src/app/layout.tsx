@@ -127,7 +127,7 @@ export default async function RootLayout({
             speed={200}
             shadow="0 0 10px #2563EB,0 0 5px #3B82F6"
           />
-          <AuthProvider initialUser={initialUser} initialProfile={initialProfile}>
+          <AuthProvider initialUser={initialUser} hydratedProfile={initialProfile}>
             <ErrorBoundary>
               <AppShell>
                 <BackButton />
