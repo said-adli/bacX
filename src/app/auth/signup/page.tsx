@@ -14,7 +14,30 @@ import { toast } from "sonner";
 import Link from "next/link";
 
 export default function SignupPage() {
-    const { signupWithEmail } = useAuth(); // Destructure signupWithEmail
+    const { signupWithEmail } = useAuth();
+    const router = useRouter(); // Keeping router if needed for anything else, though AuthContext handles nav. Actually, let's keep it clean.
+
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Form State
+    const [formData, setFormData] = useState({
+        fullName: "",
+        email: "",
+        password: "",
+        wilaya: "",
+        major: "شعبة علوم تجريبية" // Default
+    });
+
+    const [showPassword, setShowPassword] = useState(false);
+
+    const MAJORS = [
+        "شعبة علوم تجريبية",
+        "شعبة رياضيات",
+        "شعبة تقني رياضي",
+        "شعبة تسيير واقتصاد",
+        "شعبة آداب وفلسفة",
+        "شعبة لغات أجنبية"
+    ];
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
