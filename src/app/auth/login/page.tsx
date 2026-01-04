@@ -88,7 +88,7 @@ export default function LoginPage() {
                         size="lg"
                         isLoading={loading}
                     >
-                        دخول
+                        {loading ? "جاري الدخول..." : "دخول"}
                     </Button>
 
                     <div className="mt-6 text-center space-y-4">
