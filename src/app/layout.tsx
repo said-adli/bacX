@@ -51,10 +51,10 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: {
-    default: "Brainy - Where Intelligence Meets Excellence",
+    default: "Brainy | بوابة النخبة الأكاديمية",
     template: "%s | Brainy",
   },
-  description: "منصة Brainy التعليمية الذكية لطلاب البكالوريا في الجزائر. تجربة دراسية متميزة تجمع بين التقنية المتقدمة والمحتوى الأكاديمي الراقي.",
+  description: "رحلة سينمائية نحو النجاح في البكالوريا.",
   keywords: ["brainy", "bac dz", "bac algeria", "تعليم", "بكالوريا", "دروس", "منصة تعليمية"],
   authors: [{ name: "Brainy Team" }],
   openGraph: {
