@@ -13,13 +13,13 @@ if (!admin.apps.length) {
                 privateKey: privateKey,
             }),
         });
-        console.log("🔥 Firebase Admin initialized with Cert (Vercel/Production mode)");
+        // console.log("🔥 Firebase Admin initialized with Cert (Vercel/Production mode)");
     } else {
         // Fallback for local development if using GOOGLE_APPLICATION_CREDENTIALS
         // or properly warn if missing in production
         try {
             admin.initializeApp();
-            console.log("🔥 Firebase Admin initialized with Default Credentials (Local/Dev mode)");
+            // console.log("🔥 Firebase Admin initialized with Default Credentials (Local/Dev mode)");
         } catch (e) {
             console.error("❌ Failed to initialize Firebase Admin:", e);
         }

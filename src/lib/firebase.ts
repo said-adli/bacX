@@ -36,10 +36,10 @@ if (typeof window !== "undefined") {
                 provider: new ReCaptchaEnterpriseProvider(siteKey),
                 isTokenAutoRefreshEnabled: true
             });
-            console.log("🛡️ App Check Initialized with Enterprise Provider");
+            // console.log("🛡️ App Check Initialized with Enterprise Provider");
         } else {
-            console.warn("⚠️ App Check skipped: NEXT_PUBLIC_RECAPTCHA_KEY missing");
+            // console.warn("⚠️ App Check skipped: NEXT_PUBLIC_RECAPTCHA_KEY missing");
         }
-        console.log("🛡️ App Check Initialized");
+        // console.log("🛡️ App Check Initialized");
     }).catch(err => console.error("App Check Init Failed", err));
 }

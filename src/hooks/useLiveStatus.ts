@@ -48,9 +48,9 @@ export function useLiveStatus() {
                 // Permission Denied or Not Logged In - Expected for free users
                 // Just verify we don't have a stale ID
                 if (error.code === 'permission-denied') {
-                    console.log("Stream is protected. Upgrade to view.");
+                    // console.log("Stream is protected. Upgrade to view.");
                 } else {
-                    console.error("Secret stream error:", error);
+                    // console.error("Secret stream error:", error);
                 }
             }
         );

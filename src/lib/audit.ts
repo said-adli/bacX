@@ -41,7 +41,7 @@ export async function logAdminAction(entry: AuditEntry): Promise<string | null> 
             environment: process.env.NODE_ENV || 'development'
         });
 
-        console.log(`[AUDIT] ${entry.action} by ${entry.actorId} on ${entry.targetType}/${entry.targetId}`);
+        // console.log(`[AUDIT] ${entry.action} by ${entry.actorId} on ${entry.targetType}/${entry.targetId}`);
         return doc.id;
     } catch (error) {
         console.error('[AUDIT] Failed to log action:', error);

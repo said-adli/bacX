@@ -61,23 +61,44 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url));
     }
 
-    // --- ROUTE CLASSIFICATION ---
-    const adminRoutes = ['/admin'];
-    const protectedRoutes = ['/dashboard', '/live', '/video', '/subscription', '/subject', '/profile', '/subjects', '/complete-profile', ...adminRoutes];
+    // --- ROUTE CLASSIFICATION (FAIL-CLOSED) ---
+    // Define PUBLIC routes (whitelist). All other routes are PROTECTED by default.
+    const publicRoutes = [
+        '/',
+        '/auth',
+        '/auth/login',
+        '/auth/signup',
+        '/about',
+        '/pricing',
+        '/support',
+        '/privacy',
+        '/terms'
+    ];
 
-    const isProtected = protectedRoutes.some(p => path.startsWith(p));
+    const adminRoutes = ['/admin'];
+
+    // Check if the path is exactly a public route or starts with a public prefix
+    // For simple apps, exact match or sub-path match is needed.
+    // e.g. /auth/callback should be public if /auth is public? 
+    // Let's use specific logic:
+    const isPublic = publicRoutes.some(p => path === p || path.startsWith(`${p}/`));
     const isAdminRoute = adminRoutes.some(p => path.startsWith(p));
 
-    // --- PUBLIC ROUTES: FAST PASS THROUGH ---
-    if (!isProtected) {
+    // --- ACCESS CONTROL ---
+
+    if (isPublic) {
+        // Even for public routes, if we have a session, we might want to redirect from /auth to /dashboard
+        // But let's keep it simple for now as per instructions.
         return NextResponse.next();
     }
 
-    // --- PROTECTED ROUTES: CHECK SESSION ---
+    // --- PROTECTED ROUTE LOGIC (DEFAULT) ---
+    // If we are here, the route is NOT public, so it MUST be protected.
+
     const sessionCookie = request.cookies.get('bacx_session')?.value;
 
     if (!sessionCookie) {
-        const loginUrl = new URL('/auth', request.url);
+        const loginUrl = new URL('/auth/login', request.url);
         loginUrl.searchParams.set('redirect', path);
         return NextResponse.redirect(loginUrl);
     }
@@ -88,7 +109,7 @@ export async function middleware(request: NextRequest) {
 
     if (!claims) {
         // Invalid or expired token - redirect to login
-        const response = NextResponse.redirect(new URL('/auth', request.url));
+        const response = NextResponse.redirect(new URL('/auth/login', request.url));
         // Clear the invalid cookie
         response.cookies.delete('bacx_session');
         return response;
@@ -97,13 +118,10 @@ export async function middleware(request: NextRequest) {
     // --- ADMIN ROUTE: CHECK ROLE IN JWT ---
     if (isAdminRoute) {
         // Check JWT claims for admin role
-        // NOTE: If role is updated in Firestore after login, user must re-login
-        // This is the performance tradeoff - no DB call in middleware
         const isAdmin = claims.role === 'admin' || claims.admin === true;
 
         if (!isAdmin) {
-            // Check the user's UID exists (they're authenticated but not admin)
-            // Redirect to dashboard instead of home since they're logged in
+            // User is authenticated but not admin
             return NextResponse.redirect(new URL('/dashboard', request.url));
         }
     }

@@ -1,22 +1,31 @@
 "use client";
 
 import React from 'react';
-import { motion, MotionStyle } from "framer-motion";
+import { motion, useScroll, useTransform, MotionStyle } from "framer-motion";
 import { ArrowLeft, Play } from "lucide-react";
 import Link from "next/link";
 import { NeuralBackground } from "@/components/ui/NeuralBackground";
 import { BrainyLogo } from "@/components/ui/BrainyLogo";
 
 interface HeroSectionProps {
-    style?: MotionStyle;
+    // No props needed as scroll logic is internal
 }
 
-export function HeroSection({ style }: HeroSectionProps) {
+export function HeroSection({ }: HeroSectionProps) {
+    const containerRef = React.useRef<HTMLElement>(null);
+    const { scrollYProgress } = useScroll({
+        target: containerRef,
+        offset: ["start start", "end end"]
+    });
+
+    const yHero = useTransform(scrollYProgress, [0, 0.2], [0, -100]);
+    const opacityHero = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
 
     return (
         <motion.section
+            ref={containerRef}
             className="relative h-screen flex flex-col items-center justify-center text-center px-6 overflow-hidden mesh-bg"
-            style={style}
+            style={{ y: yHero, opacity: opacityHero }}
         >
             <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 pointer-events-none mix-blend-overlay"></div>
 
