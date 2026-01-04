@@ -14,39 +14,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 
 export default function SignupPage() {
-    const { user, profile, loading, checkProfileStatus } = useAuth();
-    const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
-
-    // Form State
-    const [formData, setFormData] = useState({
-        fullName: "",
-        email: "",
-        password: "",
-        wilaya: "",
-        major: "شعبة علوم تجريبية" // Default
-    });
-    const [showPassword, setShowPassword] = useState(false);
-
-    const MAJORS = [
-        "شعبة علوم تجريبية",
-        "شعبة رياضيات",
-        "شعبة تقني رياضي",
-        "شعبة تسيير واقتصاد",
-        "شعبة آداب وفلسفة",
-        "شعبة لغات أجنبية"
-    ];
-
-    useEffect(() => {
-        if (!loading && user) {
-            const status = checkProfileStatus(user, profile);
-            if (status === "REQUIRE_ONBOARDING") {
-                router.replace("/complete-profile");
-            } else {
-                router.replace("/dashboard");
-            }
-        }
-    }, [user, profile, loading, router, checkProfileStatus]);
+    const { signupWithEmail } = useAuth(); // Destructure signupWithEmail
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -58,21 +26,16 @@ export default function SignupPage() {
 
         setIsLoading(true);
         try {
-            // 1. Create Auth User
-            const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-
-            // 2. Save Firestore Data
-            await saveStudentData({
-                uid: userCredential.user.uid,
+            await signupWithEmail({
                 email: formData.email,
+                password: formData.password,
                 fullName: formData.fullName,
                 wilaya: formData.wilaya,
                 major: formData.major
             });
 
-            toast.success("تم إنشاء الحساب بنجاح! جاري التوجيه...");
-            toast.success("تم إنشاء الحساب بنجاح! جاري التوجيه...");
-            // Removed: router.push("/dashboard"); as AuthContext handles it via signupWithEmail calling handleRedirect
+            toast.success("تم إنشاء الحساب بنجاح!");
+            // Navigation handled by AuthContext
         } catch (error) {
             console.error(error);
             if ((error as { code?: string }).code === 'auth/email-already-in-use') {
