@@ -1,14 +1,12 @@
 import { db } from "@/lib/firebase-admin";
+import { UserProfile } from "@/context/AuthContext";
 
 export interface DashboardData {
     announcement: {
         content: string;
         createdAt: Date;
     } | null;
-    userProfile: {
-        displayName?: string;
-        firstName?: string; // Derived from display/full name
-    } | null;
+    userProfile: UserProfile | null;
 }
 
 /**
@@ -34,14 +32,14 @@ export async function getDashboardData(uid: string): Promise<DashboardData> {
         };
     }
 
-    let userProfile = null;
+    let userProfile: UserProfile | null = null;
     if (userSnap.exists) {
-        const data = userSnap.data();
-        const fullName = data?.fullName || data?.displayName || "Student";
-        userProfile = {
-            displayName: fullName,
-            firstName: fullName.split(" ")[0],
-        };
+        // Cast the data to UserProfile. 
+        // Note: Firestore Admin SDK returns standard JS objects, which matches the interface roughly.
+        // We might need to handle Timestamp conversion if we strictly used Date in UserProfile, 
+        // but UserProfile uses 'unknown' for dates in the definition I saw earlier:
+        // createdAt?: unknown; lastLogin?: unknown; -> This is safe.
+        userProfile = userSnap.data() as UserProfile;
     }
 
     return {

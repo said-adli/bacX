@@ -36,7 +36,10 @@ export async function middleware(request: NextRequest) {
     }
 
     // --- GLOBAL RATE LIMITING (EDGE) ---
-    if (ratelimit) {
+    // Optimization: Only rate limit sensitive AUTH routes to save Redis Quota
+    const isAuthApi = path.startsWith('/api/auth') || path === '/api/login' || path === '/api/register';
+
+    if (ratelimit && isAuthApi) {
         const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ||
             request.headers.get("x-real-ip") ||
             "127.0.0.1";
@@ -111,9 +114,9 @@ export async function middleware(request: NextRequest) {
     if (!claims) {
         // Invalid or expired token
         if (isApiRoute) {
-             const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-             response.cookies.delete('bacx_session');
-             return response;
+            const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            response.cookies.delete('bacx_session');
+            return response;
         }
 
         const response = NextResponse.redirect(new URL('/auth/login', request.url));
@@ -128,7 +131,7 @@ export async function middleware(request: NextRequest) {
         const isAdmin = claims.role === 'admin' || claims.admin === true;
 
         if (!isAdmin) {
-             if (isApiRoute) {
+            if (isApiRoute) {
                 return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
             }
             // User is authenticated but not admin

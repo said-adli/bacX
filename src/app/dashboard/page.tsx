@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { verifySessionCookie } from "@/lib/auth-jwt";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { DashboardView } from "@/components/dashboard/DashboardView";
+import { AuthHydrator } from "@/components/auth/AuthHydrator";
 
 export default async function DashboardPage() {
     const cookieStore = await cookies();
@@ -22,5 +23,12 @@ export default async function DashboardPage() {
     // Fetch data on the server
     const data = await getDashboardData((claims.uid as string) || (claims.sub as string));
 
-    return <DashboardView initialData={data} />;
+    // Hydrate the client immediately to save a Firestore read
+    // Pass the profile to the Client Component
+    return (
+        <>
+            <AuthHydrator profile={data.userProfile} />
+            <DashboardView initialData={data} />
+        </>
+    );
 }

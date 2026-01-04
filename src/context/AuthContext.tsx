@@ -70,9 +70,12 @@ interface AuthContextType extends AuthState {
     connectionStatus: "online" | "reconnecting" | "offline";
     isLoggingOut: boolean;
     refreshProfile: () => Promise<void>;
-    
+
     // Check Profile / Redirection
     checkProfileStatus: (user: User, profile: UserProfile | null) => AuthStatus;
+
+    // DEDUPLICATION
+    hydrateProfile: (profile: UserProfile) => void;
 }
 
 // ============================================================================
@@ -310,7 +313,7 @@ export function AuthProvider({
                 loading: false,
                 error: null,
             });
-            
+
             // Redirect based on profile status
             const status = checkProfileStatus(user, profile);
             if (status === "REQUIRE_ONBOARDING") {
@@ -418,7 +421,7 @@ export function AuthProvider({
                     loading: false,
                     error: null,
                 });
-                
+
                 router.replace("/complete-profile");
                 return "REQUIRE_ONBOARDING";
             }
@@ -454,7 +457,7 @@ export function AuthProvider({
                 loading: false,
                 error: null,
             });
-            
+
             router.replace("/dashboard");
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : "فشل حفظ البيانات";
@@ -522,6 +525,23 @@ export function AuthProvider({
         }
     }, [state.user, fetchProfile]);
 
+    /**
+     * Hydrate profile from server data (avoids double fetch)
+     */
+    const hydrateProfile = useCallback((profile: UserProfile) => {
+        // Only update if we don't have a profile or if the IDs match
+        setState((prev) => {
+            if (prev.profile?.uid === profile.uid) return prev; // Already have it.
+            // If we have a user but no profile, or if we are just setting up
+            return {
+                ...prev,
+                profile,
+                // If we have the profile, we are technically not loading that part anymore
+                // But be careful not to override 'loading' if we are confirming auth status
+            };
+        });
+    }, []);
+
     // ----- EFFECTS -----
 
     /**
@@ -542,7 +562,7 @@ export function AuthProvider({
                 try {
                     await setSessionCookie(currentUser);
                     const profile = await fetchProfile(currentUser.uid);
-                    
+
                     setState({
                         user: currentUser,
                         profile,
@@ -588,6 +608,7 @@ export function AuthProvider({
         connectionStatus,
         isLoggingOut,
         refreshProfile,
+        hydrateProfile,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
