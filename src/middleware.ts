@@ -68,9 +68,9 @@ export async function middleware(request: NextRequest) {
     // Define PUBLIC routes (whitelist). All other routes are PROTECTED by default.
     const publicRoutes = [
         '/',
-        '/auth',
-        '/auth/login',
-        '/auth/signup',
+        // '/auth',
+        // '/auth/login',
+        // '/auth/signup',
         '/about',
         '/pricing',
         '/support',
@@ -99,17 +99,24 @@ export async function middleware(request: NextRequest) {
     const sessionCookie = request.cookies.get('bacx_session')?.value;
 
     // --- REDIRECT AUTHENTICATED USERS AWAY FROM PUBLIC AUTH ROUTES ---
-    if (sessionCookie && (path.startsWith('/auth/login') || path.startsWith('/auth/signup'))) {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
+    // if (sessionCookie && (path.startsWith('/auth/login') || path.startsWith('/auth/signup'))) {
+    //     return NextResponse.redirect(new URL('/dashboard', request.url));
+    // }
 
     if (!sessionCookie) {
         if (isApiRoute) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
-        const loginUrl = new URL('/auth/login', request.url);
-        loginUrl.searchParams.set('redirect', path);
-        return NextResponse.redirect(loginUrl);
+        // Redirect to nowhere? Or maybe a dedicated 404 page?
+        // Since routes are deleted, let's just let it fall through or redirect to root/custom 404
+        // For now, redirect to root -> which might need handling if root is public
+        // BUT user asked to avoid redirect loops.
+        // If we redirect to /auth/login, it will 404. That's what they want.
+        // So keeping it might be okay if the goal is to show the 404.
+        // However, "avoid redirect loops".
+        // Let's comment out the redirect to login.
+        // return NextResponse.redirect(new URL('/auth/login', request.url));
+        return NextResponse.redirect(new URL('/', request.url));
     }
 
     // For admin routes, do full validation including checking claims
@@ -124,7 +131,8 @@ export async function middleware(request: NextRequest) {
             return response;
         }
 
-        const response = NextResponse.redirect(new URL('/auth/login', request.url));
+        // const response = NextResponse.redirect(new URL('/auth/login', request.url));
+        const response = NextResponse.redirect(new URL('/', request.url));
         // Clear the invalid cookie
         response.cookies.delete('bacx_session');
         return response;
