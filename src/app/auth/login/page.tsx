@@ -12,9 +12,8 @@ import { Input } from "@/components/ui/Input";
 import Link from "next/link";
 
 export default function LoginPage() {
-    const { user, profile, loading, checkProfileStatus } = useAuth();
+    const { user, profile, loading, checkProfileStatus, loginWithEmail } = useAuth();
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
@@ -31,16 +30,13 @@ export default function LoginPage() {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            await loginWithEmail(email, password);
             toast.success("تم تسجيل الدخول بنجاح");
-            router.push('/dashboard');
+            // No router.push here - handled by loginWithEmail
         } catch (error) {
             console.error(error);
             toast.error("فشل تسجيل الدخول: تأكد من البيانات");
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -90,7 +86,7 @@ export default function LoginPage() {
                     <Button
                         className="w-full mt-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold h-12 shadow-lg shadow-blue-600/20 transition-all hover:-translate-y-0.5"
                         size="lg"
-                        isLoading={isLoading}
+                        isLoading={loading}
                     >
                         دخول
                     </Button>

@@ -98,6 +98,11 @@ export async function middleware(request: NextRequest) {
 
     const sessionCookie = request.cookies.get('bacx_session')?.value;
 
+    // --- REDIRECT AUTHENTICATED USERS AWAY FROM PUBLIC AUTH ROUTES ---
+    if (sessionCookie && (path.startsWith('/auth/login') || path.startsWith('/auth/signup'))) {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+
     if (!sessionCookie) {
         if (isApiRoute) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
