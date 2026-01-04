@@ -15,11 +15,13 @@ export function HeroSection({ }: HeroSectionProps) {
     const containerRef = React.useRef<HTMLElement>(null);
     const { scrollYProgress } = useScroll({
         target: containerRef,
-        offset: ["start start", "end end"]
+        offset: ["start start", "end start"]
     });
 
-    const yHero = useTransform(scrollYProgress, [0, 0.2], [0, -100]);
-    const opacityHero = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+    // Parallax Effect: Move text down slightly as user scrolls
+    const yHero = useTransform(scrollYProgress, [0, 1], [0, 200]);
+    // Opacity Fade: Fade out as element leaves the viewport
+    const opacityHero = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
     return (
         <motion.section
