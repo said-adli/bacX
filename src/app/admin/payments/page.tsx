@@ -16,7 +16,7 @@ interface PaymentRequest {
     planId?: string; // Optional for backward compatibility
     receiptUrl: string;
     status: 'pending' | 'approved' | 'rejected';
-    createdAt: string | any;
+    createdAt: string;
 }
 
 interface PaymentRecord {

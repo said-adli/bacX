@@ -9,7 +9,7 @@ interface Device {
     lastSeen: string;
 }
 
-export async function registerDevice(userId: string, deviceInfo: { userAgent: string; deviceId?: string }) {
+export async function registerDevice(userId: string, _deviceInfo: { userAgent: string; deviceId?: string }) {
     if (!userId) throw new Error("User ID required");
 
     const supabase = await createClient();
