@@ -1,8 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { approvePayment, rejectPayment, PaymentRequest } from "@/lib/payment-service";
+import { createClient } from "@/utils/supabase/client";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { CheckCircle2, XCircle, ExternalLink, RefreshCw } from "lucide-react";
@@ -10,46 +8,100 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-interface PaymentDoc extends PaymentRequest {
+interface PaymentDoc {
     id: string;
+    user_id: string;
+    full_name: string;
+    amount: string;
+    plan_id: string;
+    method: string;
+    receipt_url: string;
+    status: 'pending' | 'approved' | 'rejected';
+    created_at: string;
 }
 
 export function PendingPaymentsView() {
+    const supabase = createClient();
     const [payments, setPayments] = useState<PaymentDoc[]>([]);
     const [processingId, setProcessingId] = useState<string | null>(null);
 
+    // Initial Fetch + Realtime
     useEffect(() => {
-        const q = query(collection(db, "payments"), where("status", "==", "pending"));
-        const unsub = onSnapshot(q, (snap) => {
-            const list: PaymentDoc[] = [];
-            snap.forEach(doc => {
-                list.push({ id: doc.id, ...doc.data() } as PaymentDoc);
-            });
-            setPayments(list);
-        });
-        return () => unsub();
-    }, []);
+        const fetchPayments = async () => {
+            const { data } = await supabase
+                .from('payments')
+                .select('*')
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
 
-    const handleApprove = async (paymentId: string, userId: string) => {
-        setProcessingId(paymentId);
+            if (data) setPayments(data as PaymentDoc[]);
+        };
+
+        fetchPayments();
+
+        const channel = supabase.channel('pending_payments')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'payments',
+                    filter: 'status=eq.pending'
+                },
+                () => fetchPayments() // Simple refresh on change
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [supabase]);
+
+    const handleApprove = async (payment: PaymentDoc) => {
+        setProcessingId(payment.id);
         try {
-            await approvePayment(paymentId, userId);
+            // Determine duration based on plan (simple logic for now)
+            // Ideally fetch plan from DB
+            const durationDays = payment.plan_id === 'annual' ? 365 : 90;
+
+            const { error } = await supabase.rpc('approve_payment_transaction', {
+                p_payment_id: payment.id,
+                p_user_id: payment.user_id,
+                p_subscription_plan: payment.plan_id,
+                p_duration_days: durationDays
+            });
+
+            if (error) throw error;
+
             toast.success("تم تفعيل الاشتراك بنجاح");
-        } catch (e) {
+
+            // Optimistic update
+            setPayments(prev => prev.filter(p => p.id !== payment.id));
+
+        } catch (e: any) {
             console.error(e);
-            toast.error("حدث خطأ");
+            toast.error("حدث خطأ: " + e.message);
         } finally {
             setProcessingId(null);
         }
     };
 
-    const handleReject = async (paymentId: string, userId: string) => {
+    const handleReject = async (paymentId: string) => {
         if (!confirm("هل أنت متأكد من رفض هذا الطلب؟")) return;
         setProcessingId(paymentId);
         try {
-            await rejectPayment(paymentId, userId);
+            // Simple update for rejection
+            const { error } = await supabase
+                .from('payments')
+                .update({ status: 'rejected' })
+                .eq('id', paymentId);
+
+            if (error) throw error;
+
             toast.success("تم رفض الطلب");
-        } catch (e) {
+            setPayments(prev => prev.filter(p => p.id !== paymentId));
+
+        } catch (e: any) {
             console.error(e);
             toast.error("حدث خطأ");
         } finally {
@@ -75,22 +127,25 @@ export function PendingPaymentsView() {
                     <GlassCard key={payment.id} className="p-4 flex flex-col gap-4">
                         <div className="flex items-center gap-4">
                             {/* Receipt Preview Thumbnail */}
-                            <a href={payment.receiptUrl} target="_blank" rel="noopener noreferrer" className="group relative w-16 h-16 rounded-lg bg-zinc-800 overflow-hidden border border-white/10 flex-shrink-0">
-                                <Image src={payment.receiptUrl} alt="Receipt" fill className="object-cover" unoptimized />
+                            <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer" className="group relative w-16 h-16 rounded-lg bg-zinc-800 overflow-hidden border border-white/10 flex-shrink-0">
+                                <Image src={payment.receipt_url || '/placeholder.png'} alt="Receipt" fill className="object-cover" unoptimized />
                                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                     <ExternalLink className="w-4 h-4 text-white" />
                                 </div>
                             </a>
 
                             <div className="flex-1 min-w-0">
-                                <h3 className="font-bold truncate text-white">{payment.userName}</h3>
-                                <p className="text-xs text-zinc-400 font-mono truncate">{payment.userId}</p>
+                                <h3 className="font-bold truncate text-white">{payment.full_name || 'مستخدم'}</h3>
+                                <p className="text-xs text-zinc-400 font-mono truncate">{payment.user_id}</p>
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
                                         {payment.amount}
                                     </span>
                                     <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">
-                                        {payment.plan}
+                                        {payment.plan_id}
+                                    </span>
+                                    <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">
+                                        {payment.method}
                                     </span>
                                 </div>
                             </div>
@@ -100,7 +155,7 @@ export function PendingPaymentsView() {
                             <Button
                                 variant="ghost"
                                 disabled={processingId === payment.id}
-                                onClick={() => handleReject(payment.id, payment.userId)}
+                                onClick={() => handleReject(payment.id)}
                                 className="flex-1 bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20"
                             >
                                 {processingId === payment.id ? "Processing..." : (
@@ -113,7 +168,7 @@ export function PendingPaymentsView() {
                             <Button
                                 variant="primary"
                                 disabled={processingId === payment.id}
-                                onClick={() => handleApprove(payment.id, payment.userId)}
+                                onClick={() => handleApprove(payment)}
                                 className="flex-1"
                             >
                                 {processingId === payment.id ? "Processing..." : (
