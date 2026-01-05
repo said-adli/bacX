@@ -1,40 +1,33 @@
 'use server';
 
-import { db, auth } from "@/lib/firebase-admin";
+import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export async function deleteUserData(userId: string) {
     if (!userId) throw new Error("User ID required");
 
     try {
-        const batch = db.batch();
+        // Verify Admin (Caller)
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Unauthorized");
 
-        // 1. Delete User Doc
-        batch.delete(db.collection('users').doc(userId));
+        const { data: callerProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (callerProfile?.role !== 'admin') throw new Error("Forbidden");
 
-        // 2. Delete Payments
-        const paymentsSnap = await db.collection('payments')
-            .where('userId', '==', userId)
-            .get();
-        paymentsSnap.docs.forEach(doc => batch.delete(doc.ref));
+        // Privilege Escalation -> Admin Client
+        const adminClient = createAdminClient();
 
-        // 3. Delete Hand Raises
-        const raisesSnap = await db.collection('hand_raises')
-            .where('userId', '==', userId)
-            .get();
-        raisesSnap.docs.forEach(doc => batch.delete(doc.ref));
+        // 1. Delete associated data (Payments, etc.)
+        // Supabase CASCADE delete on foreign keys usually handles this!
+        // If `payments.user_id` has `ON DELETE CASCADE`, we don't need manual delete.
+        // Assuming strict schema. If not, manual delete:
+        await adminClient.from('payments').delete().eq('user_id', userId);
 
-        await batch.commit();
+        // 2. Delete Auth User (and likely Profile via Trigger/Cascade)
+        const { error } = await adminClient.auth.admin.deleteUser(userId);
 
-        // 4. Revoke Claims / Delete Auth (Optional)
-        // Usually we might want to actually delete the Auth user too?
-        // The previous Cloud Function just set claims to {}.
-        try {
-            await auth.setCustomUserClaims(userId, {});
-        } catch (e) {
-            console.error("Failed to revoke claims", e);
-        }
-
-        // NOTE: Cloudinary files are NOT deleted here as we lack Admin API keys.
+        if (error) throw error;
 
         return { success: true, message: 'User data deleted.' };
 

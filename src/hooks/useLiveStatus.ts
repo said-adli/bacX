@@ -65,5 +65,15 @@ export function useLiveStatus() {
         };
     }, [supabase]);
 
-    return { liveSession, loading };
+    const isLive = liveSession?.status === "live";
+    const title = liveSession?.title || "";
+    const youtubeId = liveSession?.youtube_id || "";
+
+    return {
+        liveSession,
+        loading,
+        isLive,
+        title,
+        youtubeId
+    };
 }

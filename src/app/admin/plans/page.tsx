@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { createClient } from "@/utils/supabase/client";
+import { createPlan, updatePlan, deletePlan, togglePlanStatus } from "@/actions/plans";
 import { toast } from "sonner";
 import { Loader2, Trash2, Tag, Check, X, Pencil, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,13 +35,26 @@ export default function PlanManager() {
         isPopular: false
     });
 
+    const supabase = createClient();
+
     useEffect(() => {
-        const q = query(collection(db, "plans"), orderBy("price", "asc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            setPlans(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Plan)));
+        const fetchPlans = async () => {
+            const { data } = await supabase.from('plans').select('*').order('price', { ascending: true });
+            if (data) {
+                const mapped = data.map((d: any) => ({
+                    id: d.id,
+                    title: d.title,
+                    price: d.price,
+                    durationDays: d.duration_days,
+                    features: d.features,
+                    isActive: d.is_active,
+                    isPopular: d.is_popular
+                }));
+                setPlans(mapped);
+            }
             setLoading(false);
-        });
-        return () => unsubscribe();
+        };
+        fetchPlans();
     }, []);
 
     const handleFeatureChange = (index: number, value: string) => {
@@ -70,7 +83,6 @@ export default function PlanManager() {
             isActive: plan.isActive,
             isPopular: plan.isPopular
         });
-        // Scroll to form (simple ux)
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -80,29 +92,35 @@ export default function PlanManager() {
 
         setIsSubmitting(true);
         try {
-            // Clean empty features
             const cleanFeatures = formData.features?.filter(f => f.trim() !== "") || [];
+            const payload = { ...formData, features: cleanFeatures };
 
-            const payload = {
-                ...formData,
-                features: cleanFeatures,
-                updatedAt: new Date()
-            };
-
+            let result;
             if (editId) {
-                // UPDATE
-                await updateDoc(doc(db, "plans", editId), payload);
-                toast.success("تم تحديث العرض بنجاح");
+                result = await updatePlan(editId, payload);
             } else {
-                // CREATE
-                await addDoc(collection(db, "plans"), {
-                    ...payload,
-                    createdAt: new Date()
-                });
-                toast.success("تم إضافة العرض بنجاح");
+                result = await createPlan(payload);
             }
 
-            // Reset
+            if (result.success) {
+                toast.success(editId ? "تم تحديث العرض بنجاح" : "تم إضافة العرض بنجاح");
+                // Refresh list logic would technically re-fetch or optimistically update. 
+                // For simplicity, re-fetch or manual update.
+                // manual update:
+                setPlans(prev => {
+                    if (editId) {
+                        return prev.map(p => p.id === editId ? { ...p, ...payload } as Plan : p);
+                    } else {
+                        // Create logic needs ID from DB, so refetching is safer.
+                        // Or just reload page / invoke fetch
+                        return prev;
+                    }
+                });
+                // Ideally trigger re-fetch.
+            } else {
+                toast.error("فشل الحفظ: " + result.message);
+            }
+
             setFormData({ title: "", price: "", durationDays: 365, features: [""], isActive: true, isPopular: false });
             setEditId(null);
         } catch {
@@ -115,8 +133,13 @@ export default function PlanManager() {
     const handleDelete = async (id: string) => {
         if (!confirm("تأكيد الحذف؟")) return;
         try {
-            await deleteDoc(doc(db, "plans", id));
-            toast.success("تم الحذف");
+            const result = await deletePlan(id);
+            if (result.success) {
+                setPlans(plans.filter(p => p.id !== id));
+                toast.success("تم الحذف");
+            } else {
+                toast.error("خطأ: " + result.message);
+            }
         } catch {
             toast.error("خطأ");
         }
@@ -124,8 +147,13 @@ export default function PlanManager() {
 
     const toggleStatus = async (plan: Plan) => {
         try {
-            await updateDoc(doc(db, "plans", plan.id), { isActive: !plan.isActive });
-            toast.success("تم تحديث الحالة");
+            const result = await togglePlanStatus(plan.id, plan.isActive);
+            if (result.success) {
+                setPlans(plans.map(p => p.id === plan.id ? { ...p, isActive: !p.isActive } : p));
+                toast.success("تم تحديث الحالة");
+            } else {
+                toast.error("خطأ: " + result.message);
+            }
         } catch {
             toast.error("خطأ");
         }

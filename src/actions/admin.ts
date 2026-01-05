@@ -1,74 +1,80 @@
 'use server';
 
-import { db, auth } from "@/lib/firebase-admin";
-import { FieldValue } from "firebase-admin/firestore";
-import { requireAdmin } from "@/lib/auth-server";
+import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
+
+// Helper to verify admin role
+async function requireAdmin() {
+    const supabase = await createClient(); // Authenticated user client
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        throw new Error("Unauthorized: You must be logged in.");
+    }
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (!profile || profile.role !== 'admin') {
+        throw new Error("Forbidden: Admin access required.");
+    }
+
+    // Return admin client for privileged ops
+    const adminClient = createAdminClient();
+    return { adminClient, user };
+}
 
 export async function approvePayment(paymentId: string, userId: string, durationDays: number = 365) {
     if (!paymentId || !userId) {
         throw new Error('Missing paymentId or userId');
     }
 
-    // Verify caller is admin
-    await requireAdmin();
-
     try {
-        await db.runTransaction(async (t) => {
-            const paymentRef = db.collection('payments').doc(paymentId);
-            const userRef = db.collection('users').doc(userId);
+        const { adminClient } = await requireAdmin();
 
-            const paymentDoc = await t.get(paymentRef);
-            if (!paymentDoc.exists) {
-                throw new Error('Payment document not found');
-            }
+        // 1. Verify Payment Exists
+        const { data: payment, error: pError } = await adminClient
+            .from('payments')
+            .select('*')
+            .eq('id', paymentId)
+            .single();
 
-            // Calculate subscription end date
-            const subscriptionEnd = new Date();
-            subscriptionEnd.setDate(subscriptionEnd.getDate() + durationDays);
+        if (pError || !payment) throw new Error('Payment document not found');
 
-            // Update payment status
-            t.update(paymentRef, {
-                status: 'approved',
-                approvedAt: FieldValue.serverTimestamp(),
-            });
-
-            // Update user subscription
-            t.update(userRef, {
-                isSubscribed: true,
-                subscriptionEnd: admin.firestore.Timestamp.fromDate(subscriptionEnd),
-                subscriptionStart: FieldValue.serverTimestamp()
-            });
-
-            // Set Custom Claims directly!
-            // We can't do this inside transaction effectively, but we can try.
-            // Actually claims are external to Firestore transaction.
-            // We'll do it after transaction or optimistically.
-        });
-
-        // Set Custom Claims
+        // 2. Calculate subscription end date
         const subscriptionEnd = new Date();
         subscriptionEnd.setDate(subscriptionEnd.getDate() + durationDays);
+        const now = new Date().toISOString();
 
-        await auth.setCustomUserClaims(userId, {
-            isSubscribed: true,
-            subscriptionEnd: subscriptionEnd.getTime(),
-            role: 'student' // Ensure role is preserved or set
-        });
+        // 3. Update Payment Status (Bypassing RLS)
+        const { error: updateError } = await adminClient
+            .from('payments')
+            .update({
+                status: 'approved',
+                approved_at: now,
+            })
+            .eq('id', paymentId);
 
-        // Consider merging existing claims if any (like admin role).
-        // For safety, let's fetch existing claims first if we want to be careful,
-        // but typically students just have these.
-        // Actually, let's read the user doc to see if they are admin?
-        // safer to just update specific claims if possible, but setCustomUserClaims overwrites.
-        // Let's assume they are students for now or fetch.
+        if (updateError) throw updateError;
 
-        const user = await auth.getUser(userId);
-        const existingClaims = user.customClaims || {};
-        await auth.setCustomUserClaims(userId, {
-            ...existingClaims,
-            isSubscribed: true,
-            subscriptionEnd: subscriptionEnd.getTime()
-        });
+        // 4. Update User Subscription (Profile) (Bypassing RLS)
+        const { error: profileError } = await adminClient
+            .from('profiles')
+            .update({
+                is_subscribed: true,
+                subscription_end: subscriptionEnd.toISOString(),
+                subscription_start: now,
+                updated_at: now
+            })
+            .eq('id', userId);
+
+        if (profileError) {
+            console.error("CRITICAL: Payment approved but profile update failed", profileError);
+            throw new Error("Failed to update user subscription");
+        }
 
         return { success: true, message: 'Payment approved.' };
     } catch (error: unknown) {
@@ -77,31 +83,81 @@ export async function approvePayment(paymentId: string, userId: string, duration
     }
 }
 
-import * as admin from 'firebase-admin';
-
 export async function rejectPayment(paymentId: string, userId: string, reason: string = "No reason provided") {
-    // Verify caller is admin
-    await requireAdmin();
     try {
-        await db.runTransaction(async (t) => {
-            const paymentRef = db.collection('payments').doc(paymentId);
-            t.update(paymentRef, {
-                status: 'rejected',
-                rejectionReason: reason,
-                rejectedAt: FieldValue.serverTimestamp(),
-            });
+        const { adminClient } = await requireAdmin();
 
-            // Revert user status if needed? 
-            // Previous logic didn't really revert much other than keeping them unsubscribed.
-            const userRef = db.collection('users').doc(userId);
-            t.update(userRef, {
-                // subscriptionStatus: 'free' // if we use that field
-            });
-        });
+        const { error } = await adminClient
+            .from('payments')
+            .update({
+                status: 'rejected',
+                rejection_reason: reason,
+                rejected_at: new Date().toISOString(),
+            })
+            .eq('id', paymentId);
+
+        if (error) throw error;
 
         return { success: true, message: 'Payment rejected.' };
     } catch (error: unknown) {
         console.error("Reject Payment Error:", error);
         return { success: false, message: error instanceof Error ? error.message : String(error) };
+    }
+}
+
+// User Management Actions
+export async function toggleBan(userId: string, currentStatus: boolean) {
+    try {
+        const { adminClient } = await requireAdmin();
+        const { error } = await adminClient
+            .from('profiles')
+            .update({ banned: !currentStatus })
+            .eq('id', userId);
+
+        if (error) throw error;
+        return { success: true, message: 'User status updated' };
+    } catch (error) {
+        console.error("Toggle Ban Error:", error);
+        return { success: false, message: 'Failed to update status' };
+    }
+}
+
+export async function manualSubscribe(userId: string) {
+    try {
+        const { adminClient } = await requireAdmin();
+        const expiryDate = new Date();
+        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+        const { error } = await adminClient
+            .from('profiles')
+            .update({
+                is_subscribed: true,
+                subscription_end: expiryDate.toISOString(),
+                subscription_start: new Date().toISOString(),
+                role: 'student'
+            })
+            .eq('id', userId);
+
+        if (error) throw error;
+        return { success: true, message: 'Subscription activated' };
+    } catch (error) {
+        console.error("Manual Subscribe Error:", error);
+        return { success: false, message: 'Failed to activate' };
+    }
+}
+
+export async function resetDevices(userId: string) {
+    try {
+        const { adminClient } = await requireAdmin();
+        const { error } = await adminClient
+            .from('profiles')
+            .update({ active_devices: [] })
+            .eq('id', userId);
+
+        if (error) throw error;
+        return { success: true, message: 'Devices reset' };
+    } catch (error) {
+        console.error("Reset Devices Error:", error);
+        return { success: false, message: 'Failed to reset devices' };
     }
 }

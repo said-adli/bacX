@@ -91,24 +91,20 @@ export default async function RootLayout({
   let initialProfile: UserProfile | null = null;
 
   if (user) {
-    initialUser = {
-      uid: user.id,
-      email: user.email || '',
-      displayName: user.user_metadata?.full_name || '',
-      photoURL: user.user_metadata?.avatar_url || '',
-    };
+    initialUser = user;
 
     // Try fetch profile for role
     const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
     if (profile) {
       initialProfile = {
-        uid: user.id,
+        id: user.id,
         email: user.email || '',
-        displayName: profile.full_name || user.user_metadata?.full_name || '',
-        photoURL: user.user_metadata?.avatar_url || '',
+        full_name: profile.full_name || user.user_metadata?.full_name || '',
+        // wilaya: undefined, // Let it be undefined or fetch if needed
+        // major: undefined,
         role: profile.role || 'student',
-        subscriptionStatus: profile.subscription_plan || 'free',
-        isSubscribed: profile.is_subscribed || false
+        is_profile_complete: profile.is_profile_complete || false,
+        created_at: profile.created_at || new Date().toISOString()
       };
     }
   }

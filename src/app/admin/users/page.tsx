@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, limit, doc, updateDoc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { createClient } from "@/utils/supabase/client";
+import { toggleBan as toggleBanAction, manualSubscribe as manualSubscribeAction, resetDevices as resetDevicesAction } from "@/actions/admin";
 import { Search, Ban, CheckCircle, MonitorX } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,13 +28,30 @@ export default function UsersPage() {
         // fetchUsers(); // This line refers to the old fetchUsers, but the new snippet implies a different fetch mechanism
     }, []);
 
+    const supabase = createClient();
+
     useEffect(() => {
-        const q = query(collection(db, "users"), orderBy("createdAt", "desc"), limit(20));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            setUsers(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as UserData)));
-            // setLoading(false);
-        });
-        return () => unsubscribe();
+        const fetchUsers = async () => {
+            const { data } = await supabase
+                .from('profiles')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(20);
+
+            if (data) {
+                const mapped = data.map((d: any) => ({
+                    id: d.id,
+                    displayName: d.full_name,
+                    email: d.email,
+                    role: d.role,
+                    isSubscribed: d.is_subscribed,
+                    banned: d.banned,
+                    // Add other mappings if needed
+                }));
+                setUsers(mapped as UserData[]);
+            }
+        };
+        fetchUsers();
     }, []);
 
     // async function fetchUsers() {
@@ -71,9 +88,7 @@ export default function UsersPage() {
     const toggleBan = async (user: UserData) => {
         if (!confirm(`Are you sure you want to ${user.banned ? 'unban' : 'ban'} this user?`)) return;
         try {
-            await updateDoc(doc(db, "users", user.id), {
-                banned: !user.banned
-            });
+            await toggleBanAction(user.id, user.banned || false);
             setUsers(users.map(u => u.id === user.id ? { ...u, banned: !u.banned } : u));
             toast.success("User status updated");
         } catch {
@@ -84,13 +99,7 @@ export default function UsersPage() {
     const manualSubscribe = async (user: UserData) => {
         if (!confirm("Activate 1 year subscription for this user?")) return;
         try {
-            const expiryDate = new Date();
-            expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-            await updateDoc(doc(db, "users", user.id), {
-                isSubscribed: true,
-                subscriptionExpiry: expiryDate,
-                role: 'student'
-            });
+            await manualSubscribeAction(user.id);
             setUsers(users.map(u => u.id === user.id ? { ...u, isSubscribed: true } : u));
             toast.success("Subscription activated");
         } catch {
@@ -100,11 +109,8 @@ export default function UsersPage() {
 
     const resetDevices = async (user: UserData) => {
         if (!confirm("Reset active devices for this user?")) return;
-        // Logic depends on where devices are stored. Assuming 'activeDevices' array on user doc per user prompt
         try {
-            await updateDoc(doc(db, "users", user.id), {
-                activeDevices: []
-            });
+            await resetDevicesAction(user.id);
             toast.success("Devices reset");
         } catch {
             toast.error("Failed to reset devices");

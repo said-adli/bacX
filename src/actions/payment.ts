@@ -1,7 +1,6 @@
 'use server';
 
-import { db } from "@/lib/firebase-admin";
-import { FieldValue } from "firebase-admin/firestore";
+import { createClient } from "@/utils/supabase/server";
 
 interface PaymentData {
     userId: string;
@@ -13,27 +12,39 @@ interface PaymentData {
 }
 
 export async function submitPayment(data: PaymentData) {
+    const supabase = await createClient();
+
     try {
-        // Validation could go here
+        // Insert Payment
+        const { data: payment, error } = await supabase
+            .from('payments')
+            .insert({
+                user_id: data.userId, // snake_case mapping
+                user_name: data.userName,
+                receipt_url: data.receiptUrl,
+                amount: data.amount,
+                plan_id: data.plan, // assuming plan is ID
+                status: 'pending',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            })
+            .select() // Return data to get ID?
+            .single();
 
-        const paymentRef = db.collection('payments').doc();
+        if (error) throw error;
 
-        const batch = db.batch();
+        // Update User Profile Status
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+                subscription_status: 'pending' // if column exists
+            })
+            .eq('id', data.userId);
 
-        batch.set(paymentRef, {
-            ...data,
-            createdAt: FieldValue.serverTimestamp(),
-            updatedAt: FieldValue.serverTimestamp()
-        });
+        // Non-critical if profile status update fails? Maybe critical.
+        if (profileError) console.error("Profile status update failed", profileError);
 
-        const userRef = db.collection('users').doc(data.userId);
-        batch.update(userRef, {
-            subscriptionStatus: 'pending'
-        });
-
-        await batch.commit();
-
-        return { success: true, paymentId: paymentRef.id };
+        return { success: true, paymentId: payment?.id };
     } catch (error: unknown) {
         console.error("Submit Payment Error:", error);
         throw new Error(error instanceof Error ? error.message : String(error));

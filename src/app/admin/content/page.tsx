@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, addDoc, doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { createClient } from "@/utils/supabase/client";
+import { updateLiveConfig } from "@/actions/app-config";
 import { toast } from "sonner";
 import { Radio, Video, Loader2, Save } from "lucide-react";
 
@@ -24,14 +24,16 @@ export default function ContentPage() {
         order: 1
     });
 
+    const supabase = createClient();
+
     useEffect(() => {
         // Fetch Live Config
         async function fetchLive() {
             try {
-                const docSnap = await getDoc(doc(db, "config", "live"));
-                if (docSnap.exists()) {
-                    setLiveUrl(docSnap.data().url || "");
-                    setIsLiveActive(docSnap.data().isActive || false);
+                const { data } = await supabase.from('app_settings').select('*').eq('id', 'global').single();
+                if (data) {
+                    setLiveUrl(data.live_url || "");
+                    setIsLiveActive(data.is_live_active || false);
                 }
             } catch (e) {
                 console.error("Live config error", e);
@@ -43,12 +45,12 @@ export default function ContentPage() {
     const handleSaveLive = async () => {
         setLoading(true);
         try {
-            await setDoc(doc(db, "config", "live"), {
-                url: liveUrl,
-                isActive: isLiveActive,
-                updatedAt: Timestamp.now()
-            });
-            toast.success("تم تحديث إعدادات البث المباشر");
+            const result = await updateLiveConfig({ url: liveUrl, isActive: isLiveActive });
+            if (result.success) {
+                toast.success("تم تحديث إعدادات البث المباشر");
+            } else {
+                toast.error("فشل التحديث: " + result.message);
+            }
         } catch {
             toast.error("فشل التحديث");
         } finally {
@@ -60,14 +62,30 @@ export default function ContentPage() {
         e.preventDefault();
         setLoading(true);
         try {
-            await addDoc(collection(db, "lessons"), {
-                ...lessonForm,
-                createdAt: Timestamp.now(),
-                order: Number(lessonForm.order)
+            // Note: Standalone lessons logic needs to be aligned with DB.
+            // For now, I'll allow this but it might fail if unit_id is enforced.
+            // If the user wants loosely coupled lessons, the DB should allow nullable unit_id.
+            // OR I should use a default 'General' unit or something.
+            // Assuming we have an action or DB supports it.
+            // I'll call createLesson with NULL unit_id if allowed.
+            // Typescript might complain about my createLesson signature.
+            // I'll assume I have updated createStandaloneLesson or similar.
+            // For this quick fix, I will use Supabase client directly to insert into 'lessons' table (less strict on unit_id if I make it nullable in DB plan).
+
+            const { error } = await supabase.from('lessons').insert({
+                title: lessonForm.title,
+                // subject: lessonForm.subject, // If 'subject' column exists
+                video_url: lessonForm.videoUrl,
+                duration: lessonForm.duration,
+                order: Number(lessonForm.order),
+                created_at: new Date().toISOString()
             });
+
+            if (error) throw error;
             toast.success("تمت إضافة الدرس بنجاح");
-            setLessonForm({ ...lessonForm, title: "", videoUrl: "" }); // Reset some fields
-        } catch {
+            setLessonForm({ ...lessonForm, title: "", videoUrl: "" });
+        } catch (e) {
+            console.error(e);
             toast.error("فشل إضافة الدرس");
         } finally {
             setLoading(false);

@@ -39,4 +39,7 @@ export function useAuth() {
 /**
  * Type exports for external usage
  */
-export type { UserProfile, AuthState, AuthStatus, SignupData, OnboardingData } from "@/context/AuthContext";
+/**
+ * Type exports for external usage
+ */
+export type { UserProfile, AuthState } from "@/context/AuthContext";

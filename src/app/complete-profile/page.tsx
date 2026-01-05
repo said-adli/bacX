@@ -59,18 +59,19 @@ export default function CompleteProfilePage() {
     // Best fix: Set initial state lazily or check inside effect with a ref? 
     // Simplest: Check condition strictly before setting.
     useEffect(() => {
-        if (user?.displayName) {
+        const userName = user?.user_metadata?.full_name;
+        if (userName) {
             // Defer update to avoid synchronous setState warning and cascading renders
             const timer = setTimeout(() => {
                 setFormData(prev => {
                     // Only auto-fill if currently empty
                     if (prev.fullName !== "") return prev;
-                    return { ...prev, fullName: user.displayName || "" };
+                    return { ...prev, fullName: userName || "" };
                 });
             }, 0);
             return () => clearTimeout(timer);
         }
-    }, [user?.displayName]);
+    }, [user?.user_metadata?.full_name]);
 
     const handleChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));

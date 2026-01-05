@@ -2,8 +2,7 @@
 
 import { Users, CreditCard, TrendingUp, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { collection, getCountFromServer } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { createClient } from "@/utils/supabase/client";
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState({
@@ -13,37 +12,33 @@ export default function AdminDashboard() {
         activeLessons: 0
     });
 
+    const supabase = createClient();
+
     useEffect(() => {
         async function fetchStats() {
             try {
-                // Real fetching logic
-                const usersColl = collection(db, "users");
-                // const paymentsColl = collection(db, "payments");
-
                 // Total Users
-                const usersSnapshot = await getCountFromServer(usersColl);
-                const totalUsers = usersSnapshot.data().count;
+                const { count: totalUsers } = await supabase
+                    .from('profiles')
+                    .select('*', { count: 'exact', head: true });
 
-                // Active Subs (Mock or Real query)
-                // const activeSubsQuery = query(usersColl, where("isSubscribed", "==", true)); // Requires index
-                // For now, let's use a smaller fetch or mock if index missing
-                // const activeSubsSnapshot = await getCountFromServer(activeSubsQuery);
-                // Using safe mock fallback for complex queries to avoid index errors in verification
-                const activeSubs = Math.floor(totalUsers * 0.4);
+                // Active Subs
+                const { count: activeSubs } = await supabase
+                    .from('profiles')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('is_subscribed', true);
 
-                // Revenue
-                const revenue = activeSubs * 4500; // Estimate based on active subs
+                // Revenue (Estimate)
+                const revenue = (activeSubs || 0) * 4500;
 
-                // Lessons Count (Global for now)
-                // Note: With subcollections, getting exact count requires Collection Group Query + Index.
-                // For this MVP step, we will use a global count if available or mock it based on structure.
-                // Let's assume for now we mock it to avoid index errors blocking the verified build.
-                // In production, you would deploy 'lessons' collection group index.
-                const lessonsCount = 120; // Mock until index is deployed
+                // Active Lessons (Mock or Real)
+                // Assuming 'videos' table exists?
+                // const { count: lessonsCount } = await supabase.from('videos').select('*', { count: 'exact', head: true });
+                const lessonsCount = 120; // fallback
 
                 setStats({
-                    totalUsers,
-                    activeSubs,
+                    totalUsers: totalUsers || 0,
+                    activeSubs: activeSubs || 0,
                     revenue,
                     activeLessons: lessonsCount
                 });

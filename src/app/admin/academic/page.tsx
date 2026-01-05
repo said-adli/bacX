@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, addDoc, doc, deleteDoc, query, orderBy, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { createClient } from "@/utils/supabase/client";
+import { createSubject, deleteSubject, createUnit, deleteUnit, createLesson, deleteLesson } from "@/actions/academic";
 import { toast } from "sonner";
 import { Plus, Trash2, Book, Layers, FileVideo } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,66 +28,87 @@ export default function AcademicManager() {
     const [newItemName, setNewItemName] = useState("");
     const [newItemDetails, setNewItemDetails] = useState({ icon: "📚", videoUrl: "", duration: "", isFree: false });
 
+    const supabase = createClient();
+
     // --- FETCH SUBJECTS ---
     useEffect(() => {
-        const q = query(collection(db, "subjects"), orderBy("order", "asc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            setSubjects(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Subject)));
-            // setLoading(false);
-        });
-        return () => unsubscribe();
+        const fetchSubjects = async () => {
+            const { data } = await supabase.from('subjects').select('*').order('order', { ascending: true });
+            if (data) setSubjects(data);
+        };
+        fetchSubjects();
     }, []);
 
     // --- FETCH UNITS (When Subject Selected) ---
     useEffect(() => {
         if (!selectedSubject) { setUnits([]); return; }
-        const q = query(collection(db, "subjects", selectedSubject.id, "units"), orderBy("order", "asc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            setUnits(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Unit)));
-        });
-        return () => unsubscribe();
+        const fetchUnits = async () => {
+            const { data } = await supabase.from('units').select('*').eq('subject_id', selectedSubject.id).order('order', { ascending: true });
+            if (data) setUnits(data);
+        };
+        fetchUnits();
     }, [selectedSubject]);
 
     // --- FETCH LESSONS (When Unit Selected) ---
     useEffect(() => {
-        if (!selectedSubject || !selectedUnit) { setLessons([]); return; }
-        const q = query(collection(db, "subjects", selectedSubject.id, "units", selectedUnit.id, "lessons"), orderBy("order", "asc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            setLessons(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Lesson)));
-        });
-        return () => unsubscribe();
-    }, [selectedUnit, selectedSubject]);
+        if (!selectedUnit) { setLessons([]); return; }
+        const fetchLessons = async () => {
+            // Assuming lessons are linked to units
+            const { data } = await supabase.from('lessons').select('*').eq('unit_id', selectedUnit.id).order('order', { ascending: true });
+
+            if (data) {
+                const mapped = data.map((d: any) => ({
+                    id: d.id,
+                    title: d.title,
+                    videoUrl: d.video_url,
+                    duration: d.duration,
+                    order: d.order,
+                    isFree: d.is_free
+                }));
+                setLessons(mapped);
+            }
+        };
+        fetchLessons();
+    }, [selectedUnit]);
 
     // --- HANDLERS ---
     const handleAdd = async () => {
         if (!newItemName.trim()) return;
         setIsAdding(true);
         try {
+            let result;
             if (selectedUnit) {
                 // Add Lesson
-                await addDoc(collection(db, "subjects", selectedSubject!.id, "units", selectedUnit.id, "lessons"), {
+                result = await createLesson(selectedUnit.id, {
                     title: newItemName,
                     videoUrl: newItemDetails.videoUrl,
                     duration: newItemDetails.duration,
                     isFree: newItemDetails.isFree,
-                    order: lessons.length + 1,
-                    createdAt: new Date()
+                    order: lessons.length + 1
                 });
             } else if (selectedSubject) {
                 // Add Unit
-                await addDoc(collection(db, "subjects", selectedSubject.id, "units"), {
+                result = await createUnit(selectedSubject.id, {
                     name: newItemName,
                     order: units.length + 1
                 });
             } else {
                 // Add Subject
-                await addDoc(collection(db, "subjects"), {
+                result = await createSubject({
                     name: newItemName,
                     icon: newItemDetails.icon,
                     order: subjects.length + 1
                 });
             }
-            toast.success("تمت الإضافة بنجاح");
+
+            if (result.success) {
+                toast.success("تمت الإضافة بنجاح. الرجاء التحديث لرؤية التغييرات (أو سنقوم بالتحديث التلقائي قريباً)");
+                // Trigger re-fetch logic or optimistic update (omitted for brevity)
+                window.location.reload(); // Simple refresh for MVP
+            } else {
+                toast.error("حدث خطأ " + result.message);
+            }
+
             setNewItemName("");
             setNewItemDetails({ icon: "📚", videoUrl: "", duration: "", isFree: false });
         } catch {
@@ -100,16 +121,26 @@ export default function AcademicManager() {
     const handleDelete = async (id: string, type: 'subject' | 'unit' | 'lesson') => {
         if (!confirm("هل أنت متأكد من الحذف؟")) return;
         try {
+            let result;
             if (type === 'lesson') {
-                await deleteDoc(doc(db, "subjects", selectedSubject!.id, "units", selectedUnit!.id, "lessons", id));
+                result = await deleteLesson(id);
             } else if (type === 'unit') {
-                await deleteDoc(doc(db, "subjects", selectedSubject!.id, "units", id));
+                result = await deleteUnit(id);
                 if (selectedUnit?.id === id) setSelectedUnit(null);
             } else {
-                await deleteDoc(doc(db, "subjects", id));
+                result = await deleteSubject(id);
                 if (selectedSubject?.id === id) { setSelectedSubject(null); setSelectedUnit(null); }
             }
-            toast.success("تم الحذف");
+
+            if (result.success) {
+                toast.success("تم الحذف");
+                // Remove from local state
+                if (type === 'subject') setSubjects(subjects.filter(s => s.id !== id));
+                if (type === 'unit') setUnits(units.filter(u => u.id !== id));
+                if (type === 'lesson') setLessons(lessons.filter(l => l.id !== id));
+            } else {
+                toast.error("فشل الحذف");
+            }
         } catch {
             toast.error("فشل الحذف");
         }

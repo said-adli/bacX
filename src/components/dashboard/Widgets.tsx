@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { TrendingUp, Bell, Video, Calendar, ArrowUpRight, Target } from "lucide-react";
 import { differenceInDays, differenceInHours, differenceInMinutes, format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { collection, query, where, orderBy, limit, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { createClient } from "@/utils/supabase/client";
 
 // =============================================================================
 // BAC COUNTDOWN — Sleek Minimalist Timer
@@ -164,14 +163,29 @@ interface Announcement {
 export function AnnouncementsFeed() {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(true);
+    const supabase = createClient();
 
     useEffect(() => {
-        const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"), limit(3));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            setAnnouncements(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Announcement)));
+        const fetchAnnouncements = async () => {
+            const { data } = await supabase
+                .from('announcements')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(3);
+
+            if (data) {
+                const mapped = data.map((d: any) => ({
+                    id: d.id,
+                    content: d.content,
+                    createdAt: d.created_at ? { toDate: () => new Date(d.created_at) } : { toDate: () => new Date() },
+                    isImportant: d.is_important
+                }));
+                // @ts-ignore - Adjusting types for compatibility
+                setAnnouncements(mapped);
+            }
             setLoading(false);
-        });
-        return () => unsubscribe();
+        };
+        fetchAnnouncements();
     }, []);
 
     return (
@@ -239,18 +253,28 @@ interface LiveSession {
 
 export function UpcomingLives() {
     const [lives, setLives] = useState<LiveSession[]>([]);
+    const supabase = createClient();
 
     useEffect(() => {
-        const q = query(
-            collection(db, "lives"),
-            where("date", ">=", new Date()),
-            orderBy("date", "asc"),
-            limit(5)
-        );
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            setLives(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as LiveSession)));
-        });
-        return () => unsubscribe();
+        const fetchLives = async () => {
+            const { data } = await supabase
+                .from('lives')
+                .select('*')
+                .gte('date', new Date().toISOString())
+                .order('date', { ascending: true })
+                .limit(5);
+
+            if (data) {
+                const mapped = data.map((d: any) => ({
+                    id: d.id,
+                    title: d.title,
+                    date: d.date ? { toDate: () => new Date(d.date) } : { toDate: () => new Date() }
+                }));
+                // @ts-ignore
+                setLives(mapped);
+            }
+        };
+        fetchLives();
     }, []);
 
     return (

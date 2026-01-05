@@ -1,115 +1,103 @@
 'use server';
 
-import { db } from "@/lib/firebase-admin";
-import { FieldValue } from "firebase-admin/firestore";
-import { requireAuth } from "@/lib/auth-server";
+import { createClient } from "@/utils/supabase/server";
 
 interface DeviceData {
     deviceId: string;
     deviceName: string;
 }
 
-interface RegisteredDevice {
-    deviceId: string;
-    deviceName: string;
-    registeredAt: string;
-    lastSeen: string;
-}
-
 export async function registerDevice(userId: string, data: DeviceData) {
-    // Security: Verify session
-    const claims = await requireAuth();
-    // Allow if admin, OR if operating on own profile
-    if (claims.role !== 'admin' && claims.uid !== userId) {
-        throw new Error("Unauthorized: Cannot modify another user's devices");
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("Unauthorized");
+    // Only allow self unless admin
+    if (user.id !== userId) {
+        // Optionally check admin role here if needed, but for now strict self-registration
+        // Implementation detail: typically devices are registered by the user logged in.
+        throw new Error("Unauthorized: Mismatched User ID");
     }
 
-    if (!userId) throw new Error("User ID required");
-
-    const userRef = db.collection('users').doc(userId);
-    const MAX_DEVICES = 2;
-
     try {
-        const result = await db.runTransaction(async (t) => {
-            const userSnap = await t.get(userRef);
-            if (!userSnap.exists) {
-                throw new Error("User profile not found.");
-            }
+        // Fetch current profile
+        const { data: profile, error: fetchError } = await supabase
+            .from('profiles')
+            .select('active_devices, role')
+            .eq('id', userId)
+            .single();
 
-            const userData = userSnap.data();
-            const currentDevices: RegisteredDevice[] = (userData?.activeDevices as RegisteredDevice[]) || [];
+        if (fetchError || !profile) throw new Error("Profile not found");
 
-            // Check if device already exists
-            const existingIndex = currentDevices.findIndex((d: RegisteredDevice) => d.deviceId === data.deviceId);
-            if (existingIndex !== -1) {
-                // Update last seen
-                currentDevices[existingIndex].lastSeen = new Date().toISOString();
-                t.update(userRef, { activeDevices: currentDevices });
-                return { success: true, message: 'Device already registered.', isExisting: true };
-            }
+        const MAX_DEVICES = 2;
+        const devices = (profile.active_devices as any[]) || []; // Assume JSON/Array
 
-            // STRICT LIMIT CHECK
-            if (currentDevices.length >= MAX_DEVICES && userData?.role !== 'admin') {
-                return {
-                    success: false,
-                    message: `Device limit (${MAX_DEVICES}) reached. Please remove a device first.`
-                };
-            }
-
-            // Add new device
-            const newDevice = {
-                deviceId: data.deviceId,
-                deviceName: data.deviceName,
-                registeredAt: new Date().toISOString(),
-                lastSeen: new Date().toISOString()
-            };
-
-            t.update(userRef, {
-                activeDevices: FieldValue.arrayUnion(newDevice)
-            });
-
-            return { success: true, message: 'Device registered successfully.', isExisting: false };
-        });
-
-        if (!result.success) {
-            throw new Error(result.message);
+        // Check exists
+        const existingIndex = devices.findIndex((d: any) => d.deviceId === data.deviceId);
+        if (existingIndex !== -1) {
+            devices[existingIndex].lastSeen = new Date().toISOString();
+            // Update
+            await supabase.from('profiles').update({ active_devices: devices }).eq('id', userId);
+            return { success: true, message: 'Device already registered.', isExisting: true };
         }
-        return result;
+
+        // Limit Check
+        if (devices.length >= MAX_DEVICES && profile.role !== 'admin') {
+            return { success: false, message: `Device limit (${MAX_DEVICES}) reached.` };
+        }
+
+        // Add
+        const newDevice = {
+            deviceId: data.deviceId,
+            deviceName: data.deviceName,
+            registeredAt: new Date().toISOString(),
+            lastSeen: new Date().toISOString()
+        };
+
+        const { error: updateError } = await supabase
+            .from('profiles')
+            .update({
+                active_devices: [...devices, newDevice]
+            })
+            .eq('id', userId);
+
+        if (updateError) throw updateError;
+
+        return { success: true, message: 'Device registered.', isExisting: false };
 
     } catch (error: unknown) {
         console.error("Device registration error:", error);
-        throw new Error(error instanceof Error ? error.message : 'Failed to register device.');
+        throw new Error('Failed to register device.');
     }
 }
 
 export async function unregisterDevice(userId: string, deviceId: string) {
-    // Security: Verify session
-    const claims = await requireAuth();
-    if (claims.role !== 'admin' && claims.uid !== userId) {
-        throw new Error("Unauthorized: Cannot modify another user's devices");
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("Unauthorized");
+    // Verify admin or self
+    if (user.id !== userId) {
+        // Check admin
+        const { data: callerProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (callerProfile?.role !== 'admin') {
+            throw new Error("Unauthorized");
+        }
     }
 
-    if (!userId) throw new Error("User ID required");
-
-    const userRef = db.collection('users').doc(userId);
-
     try {
-        await db.runTransaction(async (t) => {
-            const userSnap = await t.get(userRef);
-            if (!userSnap.exists) return;
+        const { data: profile } = await supabase.from('profiles').select('active_devices').eq('id', userId).single();
+        if (!profile) return { success: false, message: 'Profile not found' };
 
-            const userData = userSnap.data();
-            const currentDevices: RegisteredDevice[] = (userData?.activeDevices as RegisteredDevice[]) || [];
+        const devices = (profile.active_devices as any[]) || [];
+        const updatedDevices = devices.filter((d: any) => d.deviceId !== deviceId);
 
-            const updatedDevices = currentDevices.filter((d: RegisteredDevice) => d.deviceId !== deviceId);
-
-            if (updatedDevices.length !== currentDevices.length) {
-                t.update(userRef, { activeDevices: updatedDevices });
-            }
-        });
+        if (updatedDevices.length !== devices.length) {
+            await supabase.from('profiles').update({ active_devices: updatedDevices }).eq('id', userId);
+        }
 
         return { success: true, message: 'Device unregistered.' };
-    } catch (error: unknown) {
+    } catch (error) {
         console.error("Device unregister error:", error);
         throw new Error('Failed to unregister device.');
     }

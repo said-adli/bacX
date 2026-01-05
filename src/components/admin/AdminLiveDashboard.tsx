@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { toggleLiveStream, archiveStream } from "@/lib/live-service";
+import { toggleLiveStream, archiveStream } from "@/actions/live";
 import { useLiveStatus } from "@/hooks/useLiveStatus";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";

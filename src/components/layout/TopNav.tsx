@@ -3,14 +3,10 @@
 import { useAuth } from "@/context/AuthContext";
 import { Bell, Search, LogOut, ChevronDown, X, BookOpen, Crown, User as UserIcon } from "lucide-react";
 
-
-
 import { Link } from 'next-view-transitions';
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { collection, query, where, orderBy, onSnapshot, doc, limit } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { BrainyLogo } from "@/components/ui/BrainyLogo";
@@ -41,9 +37,10 @@ export function TopNav() {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [isLiveActive, setIsLiveActive] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
+    // TODO: Migrate to Supabase Realtime
+    const [isLiveActive, setIsLiveActive] = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
 
@@ -95,37 +92,15 @@ export function TopNav() {
         }
     }, [isSearchOpen]);
 
-    // Live Status
-    useEffect(() => {
-        const unsub = onSnapshot(doc(db, "app_settings", "global"), (doc) => {
-            setIsLiveActive(doc.data()?.isLiveActive || false);
-        });
-        return () => unsub();
-    }, []);
-
-    // Notifications
-    useEffect(() => {
-        if (!user) return;
-        const q = query(
-            collection(db, "notifications"),
-            where("userId", "in", [user.uid, "global"]),
-            orderBy("createdAt", "desc"),
-            limit(10)
-        );
-        const unsub = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Notification));
-            setNotifications(data);
-            setUnreadCount(data.filter((n) => !n.read).length);
-        });
-        return () => unsub();
-    }, [user]);
-
-    // Mock Search Results (Replace with Algolia/Fuse.js/Firestore later)
+    // Mock Search Results (Replace with Algolia/Fuse.js/Supabase later)
     const mockSearchResults = [
         { id: 1, title: "الدوال الأسية - الدرس الأول", type: "lesson" },
         { id: 2, title: "ملخص الوحدة الأولى - فيزياء", type: "summary" },
         { id: 3, title: "تمرين شامل في الأعداد المركبة", type: "exercise" },
     ].filter(item => item.title.includes(searchQuery));
+
+    const userDisplayName = user?.user_metadata?.full_name || profile?.full_name;
+    const userPhotoURL = user?.user_metadata?.avatar_url;
 
     return (
         <header className="relative w-full h-full flex items-center justify-between px-4 lg:px-8 bg-transparent">
@@ -234,10 +209,10 @@ export function TopNav() {
                             "w-9 h-9 rounded-full relative flex items-center justify-center overflow-hidden ring-2 transition-all shadow-lg",
                             isProfileOpen ? "ring-primary shadow-primary/20" : "ring-white/10 group-hover:ring-white/30"
                         )}>
-                            {user?.photoURL ? (
+                            {userPhotoURL ? (
                                 <div className="relative w-full h-full">
                                     <Image
-                                        src={user.photoURL}
+                                        src={userPhotoURL}
                                         alt="Profile"
                                         fill
                                         className="object-cover"
@@ -245,7 +220,7 @@ export function TopNav() {
                                 </div>
                             ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-slate-800 to-black flex items-center justify-center">
-                                    <span className="text-sm font-bold text-primary">{user?.displayName?.[0]?.toUpperCase() || "B"}</span>
+                                    <span className="text-sm font-bold text-primary">{userDisplayName?.[0]?.toUpperCase() || "B"}</span>
                                 </div>
                             )}
                         </div>
@@ -268,11 +243,11 @@ export function TopNav() {
                                 className="absolute left-0 mt-4 w-60 glass-panel rounded-2xl shadow-2xl overflow-hidden z-50 ring-1 ring-white/10"
                             >
                                 <div className="p-4 border-b border-white/5 bg-white/5">
-                                    <p className="font-bold text-white truncate">{user?.displayName || "الطالب"}</p>
+                                    <p className="font-bold text-white truncate">{userDisplayName || "الطالب"}</p>
                                     <p className="text-xs text-slate-400 truncate mt-0.5">{user?.email}</p>
                                     <div className="mt-3 flex items-center gap-2">
                                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/20 text-primary border border-primary/20 uppercase tracking-wider">
-                                            {profile?.role === 'admin' ? 'Admin' : (profile?.subscriptionStatus === 'premium' ? 'Premium' : 'Free')}
+                                            {profile?.role === 'admin' ? 'Admin' : 'Student'}
                                         </span>
                                     </div>
                                 </div>

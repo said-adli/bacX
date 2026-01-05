@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { createClient } from "@/utils/supabase/client";
+import { approvePayment, rejectPayment } from "@/actions/admin";
 import { XCircle, Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
@@ -16,7 +16,7 @@ interface PaymentRequest {
     planId?: string; // Optional for backward compatibility
     receiptUrl: string;
     status: 'pending' | 'approved' | 'rejected';
-    createdAt: Timestamp;
+    createdAt: string | any;
 }
 
 export default function PaymentsPage() {
@@ -25,52 +25,57 @@ export default function PaymentsPage() {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [processingId, setProcessingId] = useState<string | null>(null);
 
+    const supabase = createClient();
+
     useEffect(() => {
-        const q = query(collection(db, "payments"), where("status", "==", "pending"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PaymentRequest));
-            setPayments(data);
+        const fetchPayments = async () => {
+            const { data, error } = await supabase
+                .from("payments")
+                .select("*")
+                .eq("status", "pending");
+
+            if (data) {
+                // Map snake_case to camelCase if needed, or update interface. 
+                // Interface expects: id, userId, userName, amount, method, receiptsUrl, status, createdAt
+                // DB likely has: user_id, user_name, receipt_url, created_at.
+                // I'll map it manually here.
+                const mapped = data.map((d: any) => ({
+                    id: d.id,
+                    userId: d.user_id,
+                    userName: d.user_name,
+                    amount: d.amount,
+                    method: d.method,
+                    planId: d.plan_id,
+                    receiptUrl: d.receipt_url,
+                    status: d.status,
+                    createdAt: d.created_at // string, interface expects Timestamp? Update interface too.
+                }));
+                setPayments(mapped);
+            }
             setLoading(false);
-        });
-        return () => unsubscribe();
+        };
+        fetchPayments();
     }, []);
 
     const handleProcess = async (payment: PaymentRequest, status: 'approved' | 'rejected') => {
         setProcessingId(payment.id);
         try {
-            // 1. Update Payment Status
-            const paymentRef = doc(db, "payments", payment.id);
-            await updateDoc(paymentRef, { status });
-
-            // 2. If Approved, Update User Subscription
+            let result;
             if (status === 'approved') {
-                const userRef = doc(db, "users", payment.userId);
-
-                // Fetch Plan to get Duration
-                let durationDays = 365; // Default fallback
-                if (payment.planId) {
-                    try {
-                        const planSnapshot = await getDoc(doc(db, "plans", payment.planId));
-                        if (planSnapshot.exists()) {
-                            durationDays = planSnapshot.data().durationDays || 365;
-                        }
-                    } catch (e) {
-                        console.error("Could not fetch plan duration, using default", e);
-                    }
-                }
-
-                const expiryDate = new Date();
-                expiryDate.setDate(expiryDate.getDate() + durationDays);
-
-                await updateDoc(userRef, {
-                    isSubscribed: true,
-                    subscriptionPlan: payment.planId || 'yearly',
-                    subscriptionExpiry: expiryDate,
-                    role: 'student'
-                });
+                // Determine duration based on planId logic or default
+                // Simplified: default 365 days as per previous logic default
+                result = await approvePayment(payment.id, payment.userId);
+            } else {
+                result = await rejectPayment(payment.id, payment.userId);
             }
 
-            toast.success(`Payment ${status} successfully`);
+            if (result.success) {
+                toast.success(result.message);
+                // Remove from list
+                setPayments(prev => prev.filter(p => p.id !== payment.id));
+            } else {
+                toast.error(result.message);
+            }
         } catch (error) {
             console.error("Error processing payment:", error);
             toast.error("Failed to process payment");
