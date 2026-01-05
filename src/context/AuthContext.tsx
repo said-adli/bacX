@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode, useCallback, useEffect, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -92,6 +92,9 @@ export function AuthProvider({
     // handleNavigation was unused and causing lint warnings.
     // Logic for redirection is now handled in components or middleware if needed.
 
+    // Use a ref to track the current user ID to avoid infinite loops in useEffect
+    const userIdRef = useRef<string | undefined>(state.user?.id);
+
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             console.log("Auth State Change:", event);
@@ -99,13 +102,16 @@ export function AuthProvider({
             if (session?.user) {
                 const user = session.user;
                 // Only fetch profile if user changed or we don't have it
-                if (user.id !== state.user?.id) {
+                if (user.id !== userIdRef.current) {
+                    userIdRef.current = user.id; // Update Ref
                     const profile = await fetchProfile(user.id);
                     setState(prev => ({ ...prev, user, session, profile, loading: false }));
                 } else {
+                    // Even if user hasn't changed, we might need to update session or stop loading
                     setState(prev => ({ ...prev, user, session, loading: false }));
                 }
             } else {
+                userIdRef.current = undefined; // Reset Ref
                 setState(prev => ({ ...prev, user: null, session: null, profile: null, loading: false }));
             }
         });
@@ -113,7 +119,7 @@ export function AuthProvider({
         return () => {
             subscription.unsubscribe();
         };
-    }, [supabase, fetchProfile, state.user?.id]);
+    }, [supabase, fetchProfile]); // Removed state.user?.id dependency
     const loginWithEmail = async (email: string, password: string) => {
         setState(prev => ({ ...prev, loading: true, error: null }));
         const { error } = await supabase.auth.signInWithPassword({ email, password });
