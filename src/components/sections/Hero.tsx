@@ -48,7 +48,7 @@ export function Hero({ stats }: HeroProps) {
 
                     <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
                         <Link
-                            href="/auth?mode=signup"
+                            href="/auth/signup"
                             className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl font-bold text-lg hover:from-blue-700 hover:to-blue-600 transition-all shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 group"
                         >
                             ابدأ رحلتك مجاناً

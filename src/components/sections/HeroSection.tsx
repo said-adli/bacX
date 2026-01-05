@@ -80,7 +80,7 @@ export function HeroSection() {
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                        <Link href="/auth?mode=signup" className="group relative px-8 py-4 bg-primary rounded-[40px] text-white font-bold text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)]">
+                        <Link href="/auth/signup" className="group relative px-8 py-4 bg-primary rounded-[40px] text-white font-bold text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)]">
                             <span className="relative z-10 flex items-center gap-2">
                                 ابدأ رحلتك مجاناً
                                 <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />

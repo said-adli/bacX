@@ -17,7 +17,7 @@ const plans = [
             "دعم فني محدود"
         ],
         cta: "ابدأ مجاناً",
-        href: "/auth?mode=signup",
+        href: "/auth/signup",
         popular: false
     },
     {
@@ -105,7 +105,7 @@ export function Pricing() {
                             </ul>
 
                             <Link
-                                href={plan.href}
+                                href={plan.href === "/auth/signup" ? "/signup" : plan.href} // Changed /auth/signup to /signup
                                 className={cn(
                                     "w-full py-3 rounded-xl font-bold text-center transition-all",
                                     plan.popular

@@ -28,7 +28,7 @@ const pricingTiers = [
             "تحميل ملفات PDF"
         ],
         cta: "ابدأ مجاناً",
-        href: "/auth?mode=signup",
+        href: "/auth/signup",
         popular: false,
     },
     {
@@ -47,7 +47,7 @@ const pricingTiers = [
         ],
         notIncluded: [],
         cta: "اشترك الآن",
-        href: "/auth?mode=signup",
+        href: "/auth/signup",
         popular: true,
     },
     {

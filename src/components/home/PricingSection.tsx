@@ -27,7 +27,7 @@ export function PricingSection() {
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                            <Link href="/auth?mode=signup" className="w-full sm:w-auto px-10 py-5 bg-primary rounded-[40px] text-white font-bold text-xl hover:scale-105 transition-transform shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)]">
+                            <Link href="/auth/signup" className="w-full sm:w-auto px-10 py-5 bg-primary rounded-[40px] text-white font-bold text-xl hover:scale-105 transition-transform shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)]">
                                 اشتراك سنوي (15,000 دج)
                             </Link>
                             <Link href="/pricing" className="text-white/80 hover:text-primary transition-colors underline underline-offset-8">

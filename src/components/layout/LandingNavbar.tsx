@@ -37,7 +37,7 @@ export function LandingNavbar() {
                 </div>
 
                 {/* Left Side: Minimal Login Button */}
-                <Link href="/auth?mode=login" className="relative px-6 py-2 rounded-full border border-white/10 text-white/80 hover:text-white hover:border-white/30 transition-all text-xs uppercase tracking-widest font-medium group overflow-hidden bg-white/5 hover:bg-white/10">
+                <Link href="/login" className="relative px-6 py-2 rounded-full border border-white/10 text-white/80 hover:text-white hover:border-white/30 transition-all text-xs uppercase tracking-widest font-medium group overflow-hidden bg-white/5 hover:bg-white/10">
                     <span className="relative z-10 font-cinzel text-xs font-bold">Log In</span>
                 </Link>
             </div>

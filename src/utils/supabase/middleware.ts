@@ -55,7 +55,7 @@ export async function updateSession(request: NextRequest) {
 
     // --- AUTH ROUTES ---
     // If user exists, and trying to access login/signup
-    const isAuthRoute = path.startsWith('/auth');
+    const isAuthRoute = path.startsWith('/auth') || path.startsWith('/login');
 
     if (isAuthRoute && user) {
         // Smart Redirect based on role/completion could happen here,
