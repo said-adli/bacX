@@ -60,7 +60,7 @@ export default function ProfilePage() {
             if (!user) return;
             try {
                 // Fetch from 'profiles'
-                const { data, error } = await supabase
+                const { data } = await supabase
                     .from('profiles')
                     .select('*')
                     .eq('id', user.id)
@@ -79,8 +79,8 @@ export default function ProfilePage() {
                         createdAt: data.created_at ? new Date(data.created_at) : undefined
                     });
                 }
-            } catch (error) {
-                console.error("Error fetching profile:", error);
+            } catch {
+                // console.error("Error fetching profile");
             } finally {
                 setIsFetching(false);
             }

@@ -4,7 +4,7 @@ import { Loader2, Lock, SignalHigh, Radio, CalendarClock } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { DynamicWatermark } from "@/components/security/DynamicWatermark";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 // Separate component for redirect to avoid hydration issues
@@ -26,27 +26,17 @@ export default function LivePage() {
     const { isLive, youtubeId, title } = useLiveStatus();
     const { user, profile, loading: authLoading } = useAuth();
 
-    const [isSubscribed, setIsSubscribed] = useState(false);
-    const [checkingSub, setCheckingSub] = useState(true);
+    // Derived state - no need for useEffect
+    const isSubscribed = profile?.role === 'admin' || !!profile?.is_subscribed;
 
-    useEffect(() => {
-        if (authLoading) return;
-
-        if (!user) {
-            setCheckingSub(false);
-            return;
-        }
-
-        if (profile) {
-            // Calculate access once based on profile state
-            const hasAccess = profile.role === 'admin' || !!profile.is_subscribed;
-            setIsSubscribed(hasAccess);
-            setCheckingSub(false);
-        } else {
-            // Fallback if profile is null but user exists (shouldn't happen often if hydrated)
-            setCheckingSub(false);
-        }
-    }, [user, profile, authLoading]);
+    // --- GUARD: LOADING ---
+    if (authLoading) {
+        return (
+            <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            </div>
+        );
+    }
 
     // --- GUARD: NOT AUTHENTICATED ---
     // Use a component with useEffect for redirect to avoid hydration issues

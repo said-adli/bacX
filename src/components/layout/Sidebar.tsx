@@ -25,7 +25,7 @@ const subjects = [
 
 export function Sidebar() {
     const pathname = usePathname();
-    const { user, profile } = useAuth();
+    const { profile } = useAuth();
 
     // Default to 'student' if no profile
     const role = profile?.role || 'student';

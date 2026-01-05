@@ -52,7 +52,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
 
             // 2. Fetch Lesson
             const supabase = createClient();
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from('lessons')
                 .select('*')
                 .eq('id', id)

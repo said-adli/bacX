@@ -42,8 +42,7 @@ export function ReauthModal({ isOpen, onClose, onSuccess }: ReauthModalProps) {
             toast.success("تم تأكيد الهوية بنجاح");
             onSuccess();
             onClose();
-        } catch (error: any) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+        } catch (error: unknown) {
             console.error(error);
             toast.error("كلمة المرور غير صحيحة", {
                 description: "يرجى المحاولة مرة أخرى لتأكيد هويتك."

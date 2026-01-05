@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, useState, ReactNode, useCallback } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -89,21 +89,8 @@ export function AuthProvider({
         return profile as unknown as UserProfile;
     }, [supabase]);
 
-    const handleNavigation = useCallback(async (profile: UserProfile | null) => {
-        if (!profile) return;
-
-        // GOAL 2: Admin Trap Fix & Verified Profile Check
-        if (profile?.role === 'admin') {
-            router.replace("/admin");
-            return;
-        }
-
-        if (profile?.is_profile_complete) {
-            router.replace("/dashboard");
-        } else {
-            router.replace("/complete-profile");
-        }
-    }, [router]);
+    // handleNavigation was unused and causing lint warnings.
+    // Logic for redirection is now handled in components or middleware if needed.
 
     // ... EFFECTS ...
 
@@ -120,7 +107,7 @@ export function AuthProvider({
 
     const signupWithEmail = async ({ email, password, fullName, wilaya, major }: { email: string, password: string, fullName: string, wilaya: string, major: string }) => {
         setState(prev => ({ ...prev, loading: true, error: null }));
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
             email,
             password,
             options: {

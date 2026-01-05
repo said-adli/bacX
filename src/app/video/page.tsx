@@ -58,8 +58,8 @@ export default function LessonsIndexPage() {
                         isLocked: doc.is_locked
                     } as unknown as LessonSummary)));
                 }
-            } catch (error) {
-                console.error("Error fetching lessons:", error);
+            } catch {
+                // error ignored
             } finally {
                 setLoading(false);
             }

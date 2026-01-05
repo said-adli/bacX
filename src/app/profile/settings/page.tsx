@@ -43,9 +43,12 @@ export default function SettingsPage() {
                 toast.success("تم تحديث كلمة المرور");
                 setPassword("");
             }
-        } catch (err: any) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            toast.error(err.message || "فشل التحديث");
+        } catch (err: unknown) {
+            let message = "فشل التحديث";
+            if (err instanceof Error) {
+                message = err.message;
+            }
+            toast.error(message);
         } finally {
             setIsLoading(false);
         }
