@@ -23,12 +23,8 @@ function RedirectToAuth() {
 }
 
 export default function LivePage() {
-    const { isLive, youtubeId, title, loading: statusLoading } = useLiveStatus();
+    const { isLive, youtubeId, title } = useLiveStatus();
     const { user, profile, loading: authLoading } = useAuth();
-
-    // Derived state for subscription - no need for useEffect if we just trust the profile
-    // But we might want a local loading state if checks were async.
-    // Since profile is synchronous (once loaded), we can just derive it during render or use a simple Effect.
 
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [checkingSub, setCheckingSub] = useState(true);
@@ -41,15 +37,13 @@ export default function LivePage() {
             return;
         }
 
-        // If user exists, we check profile
-        // Profile might be null initially even if user exists? AuthProvider handles this.
         if (profile) {
+            // Calculate access once based on profile state
             const hasAccess = profile.role === 'admin' || !!profile.is_subscribed;
             setIsSubscribed(hasAccess);
             setCheckingSub(false);
         } else {
-            // If profile is still null but not authLoading, maybe it failed to load or just initial hydration delay?
-            // We'll set checkingSub to false to allow "Not Subscribed" view if it persists.
+            // Fallback if profile is null but user exists (shouldn't happen often if hydrated)
             setCheckingSub(false);
         }
     }, [user, profile, authLoading]);

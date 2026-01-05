@@ -78,7 +78,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
         } finally {
             setLoading(false);
         }
-    }, [user, profile, id, router]);
+    }, [profile, id, router]);
 
     useEffect(() => {
         if (authLoading) return;

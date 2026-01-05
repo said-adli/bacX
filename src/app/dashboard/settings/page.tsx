@@ -50,8 +50,11 @@ export default function SettingsPage() {
                 // The `device.ts` implied it's an array of objects { deviceId, ... }
                 // For this UI, user expects strings or we map them.
                 // Let's assume we map them to strings or IDs for now.
-                const deviceList = Array.isArray(data.active_devices) ? data.active_devices.map((d: any) => d.deviceName || d.deviceId || "Unknown Device") : [];
-                setDevices(deviceList);
+                if (Array.isArray(data.active_devices)) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const deviceList = data.active_devices.map((d: any) => d.deviceName || d.deviceId || "Unknown Device");
+                    setDevices(deviceList);
+                }
             }
         };
         fetchDevices();

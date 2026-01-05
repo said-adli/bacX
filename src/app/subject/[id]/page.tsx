@@ -43,6 +43,7 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
                 if (error) throw error;
 
                 if (data) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     setLessons(data.map((doc: any) => ({
                         id: doc.id,
                         title: doc.title,
