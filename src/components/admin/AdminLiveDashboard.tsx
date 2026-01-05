@@ -50,7 +50,7 @@ export default function AdminLiveDashboard() {
             const idToArchive = currentId || youtubeId;
             const titleToArchive = currentTitle || title;
 
-            await archiveStream(idToArchive, titleToArchive, subject);
+            await archiveStream(idToArchive);
 
             toast.success("✅ الحصة تم حفظها بنجاح في مكتبة الدروس", { position: "top-center" });
 

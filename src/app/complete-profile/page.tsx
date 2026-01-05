@@ -118,7 +118,7 @@ export default function CompleteProfilePage() {
                         <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-200 font-amiri mb-2">
                             إكمال الملف الشخصي
                         </h1>
-                        <p className="text-text-muted">مرحباً {user?.displayName || "بك"}! نحتاج لبعض التفاصيل البسيطة.</p>
+                        <p className="text-text-muted">مرحباً {user?.user_metadata?.full_name || "بك"}! نحتاج لبعض التفاصيل البسيطة.</p>
                     </div>
 
                     {error && (

@@ -16,12 +16,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 return;
             }
 
-            const status = checkProfileStatus(user, profile);
-            if (status === "REQUIRE_ONBOARDING") {
-                router.replace("/complete-profile");
-            }
+            const check = async () => {
+                const isComplete = await checkProfileStatus();
+                if (!isComplete) {
+                    router.replace("/complete-profile");
+                }
+            };
+            check();
         }
-    }, [user, profile, loading, router, checkProfileStatus]);
+    }, [user, loading, router, checkProfileStatus]);
 
     if (loading) {
         return <DashboardSkeleton />;
