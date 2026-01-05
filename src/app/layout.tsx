@@ -4,9 +4,9 @@ import "./globals.css";
 import { AuthProvider, type UserProfile } from "@/context/AuthContext";
 import { Toaster } from "sonner";
 import NextTopLoader from "nextjs-toploader";
-import { BackButton } from "@/components/ui/BackButton";
+
 import { GlobalErrorBoundary as ErrorBoundary } from "@/components/GlobalErrorBoundary";
-import { AppShell } from "@/components/layout/AppShell";
+
 
 import { createClient } from "@/utils/supabase/server"; // Use Supabase Server Client
 import { ViewTransitions } from 'next-view-transitions';
@@ -126,10 +126,7 @@ export default async function RootLayout({
           />
           <AuthProvider initialUser={initialUser} hydratedProfile={initialProfile}>
             <ErrorBoundary>
-              <AppShell>
-                <BackButton />
-                {children}
-              </AppShell>
+              {children}
               <Toaster
                 position="bottom-center"
                 richColors
