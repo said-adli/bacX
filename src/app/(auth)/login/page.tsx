@@ -12,12 +12,14 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 export default function LoginPage() {
-    const { loginWithEmail, loading, error } = useAuth();
+    const { loginWithEmail, error } = useAuth();
+    const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true);
         try {
             await loginWithEmail(email, password);
             toast.success("تم تسجيل الدخول بنجاح");
@@ -25,6 +27,8 @@ export default function LoginPage() {
             console.error(err);
             const errorMessage = err instanceof Error ? err.message : "فشل تسجيل الدخول";
             toast.error(errorMessage);
+        } finally {
+            setLoading(false);
         }
     };
 
