@@ -130,7 +130,9 @@ export function AuthProvider({
     };
 
     const logout = async () => {
+        console.log("Logging out...");
         await supabase.auth.signOut();
+        console.log("Logged out from Supabase, redirecting...");
         router.replace("/login");
     };
 
