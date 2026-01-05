@@ -17,11 +17,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         setIsMounted(true);
     }, []);
 
-    // Prevent hydration mismatch by only rendering after mount
-    if (!isMounted) {
-        return null;
-    }
-
     // Routes that should NOT have the dashboard layout
     const publicRoutes = ['/', '/auth', '/maintenance', '/pricing'];
     const isPublicRoute = publicRoutes.some(route =>
@@ -31,6 +26,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     // Don't render shell for public routes
     if (isPublicRoute) {
         return <>{children}</>;
+    }
+
+    // Render a skeleton that matches the layout structure during SSR/initial mount
+    // This prevents hydration mismatch which can break Link event handlers
+    if (!isMounted) {
+        return (
+            <div className="flex h-screen w-full bg-background font-sans overflow-hidden text-foreground">
+                {/* Sidebar skeleton */}
+                <aside className="hidden lg:block w-[280px] h-full shrink-0 relative z-[60]">
+                    <div className="h-full w-full glass-nav border-l border-glass-border" />
+                </aside>
+                {/* Main content skeleton */}
+                <div className="flex-1 flex flex-col h-full relative min-w-0">
+                    <header className="h-16 w-full z-40 shrink-0 glass-nav border-b border-glass-border sticky top-0" />
+                    <div className="flex-1 overflow-y-auto">
+                        <main className="w-full min-h-full p-6 lg:p-12 max-w-[1600px] mx-auto">
+                            {children}
+                        </main>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     // Optimistic Rendering:
