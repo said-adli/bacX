@@ -8,7 +8,7 @@ import { GlobalErrorBoundary as ErrorBoundary } from "@/components/GlobalErrorBo
 
 
 import { createClient } from "@/utils/supabase/server"; // Use Supabase Server Client
-import { ViewTransitions } from 'next-view-transitions';
+
 
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic", "latin"],
@@ -109,30 +109,28 @@ export default async function RootLayout({
   }
 
   return (
-    <ViewTransitions>
-      <html lang="ar" dir="rtl" className="scroll-smooth" suppressHydrationWarning>
-        <body className={`${ibmPlexSansArabic.variable} ${playfairDisplay.variable} ${amiri.variable} ${cinzel.variable} antialiased bg-background text-foreground font-sans selection:bg-primary/30`}>
-          <AuthProvider initialUser={initialUser} hydratedProfile={initialProfile}>
-            <ErrorBoundary>
-              {children}
-              <Toaster
-                position="bottom-center"
-                richColors
-                theme="dark"
-                toastOptions={{
-                  className: "glass-panel text-foreground font-sans",
-                  style: {
-                    fontFamily: 'var(--font-sans)',
-                    background: 'rgba(10, 10, 15, 0.9)',
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                    color: '#FFF'
-                  }
-                }}
-              />
-            </ErrorBoundary>
-          </AuthProvider>
-        </body>
-      </html>
-    </ViewTransitions>
+    <html lang="ar" dir="rtl" className="scroll-smooth" suppressHydrationWarning>
+      <body className={`${ibmPlexSansArabic.variable} ${playfairDisplay.variable} ${amiri.variable} ${cinzel.variable} antialiased bg-background text-foreground font-sans selection:bg-primary/30`}>
+        <AuthProvider initialUser={initialUser} hydratedProfile={initialProfile}>
+          <ErrorBoundary>
+            {children}
+            <Toaster
+              position="bottom-center"
+              richColors
+              theme="dark"
+              toastOptions={{
+                className: "glass-panel text-foreground font-sans",
+                style: {
+                  fontFamily: 'var(--font-sans)',
+                  background: 'rgba(10, 10, 15, 0.9)',
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                  color: '#FFF'
+                }
+              }}
+            />
+          </ErrorBoundary>
+        </AuthProvider>
+      </body>
+    </html>
   );
 }

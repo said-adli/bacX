@@ -92,10 +92,28 @@ export function AuthProvider({
     // handleNavigation was unused and causing lint warnings.
     // Logic for redirection is now handled in components or middleware if needed.
 
-    // ... EFFECTS ...
+    useEffect(() => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log("Auth State Change:", event);
 
-    // ... ACTIONS ...
+            if (session?.user) {
+                const user = session.user;
+                // Only fetch profile if user changed or we don't have it
+                if (user.id !== state.user?.id) {
+                    const profile = await fetchProfile(user.id);
+                    setState(prev => ({ ...prev, user, session, profile, loading: false }));
+                } else {
+                    setState(prev => ({ ...prev, user, session, loading: false }));
+                }
+            } else {
+                setState(prev => ({ ...prev, user: null, session: null, profile: null, loading: false }));
+            }
+        });
 
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [supabase, fetchProfile, state.user?.id]);
     const loginWithEmail = async (email: string, password: string) => {
         setState(prev => ({ ...prev, loading: true, error: null }));
         const { error } = await supabase.auth.signInWithPassword({ email, password });
