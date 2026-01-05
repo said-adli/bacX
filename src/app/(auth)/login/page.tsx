@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 export default function LoginPage() {
+    const router = useRouter();
     const { loginWithEmail, error } = useAuth();
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState("");
@@ -23,6 +25,11 @@ export default function LoginPage() {
         try {
             await loginWithEmail(email, password);
             toast.success("تم تسجيل الدخول بنجاح");
+
+            // Redirect to dashboard after 1.5 seconds
+            setTimeout(() => {
+                router.push("/dashboard");
+            }, 1500);
         } catch (err: unknown) {
             console.error(err);
             const errorMessage = err instanceof Error ? err.message : "فشل تسجيل الدخول";
