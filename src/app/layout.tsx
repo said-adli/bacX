@@ -3,7 +3,6 @@ import { IBM_Plex_Sans_Arabic, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AuthProvider, type UserProfile } from "@/context/AuthContext";
 import { Toaster } from "sonner";
-import { Toaster } from "sonner";
 
 import { GlobalErrorBoundary as ErrorBoundary } from "@/components/GlobalErrorBoundary";
 
