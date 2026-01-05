@@ -26,10 +26,10 @@ export default function LoginPage() {
             await loginWithEmail(email, password);
             toast.success("تم تسجيل الدخول بنجاح");
 
-            // Redirect to dashboard after 1.5 seconds
+            // Redirect to dashboard after 0.5 seconds
             setTimeout(() => {
                 router.push("/dashboard");
-            }, 1500);
+            }, 500);
         } catch (err: unknown) {
             console.error(err);
             const errorMessage = err instanceof Error ? err.message : "فشل تسجيل الدخول";

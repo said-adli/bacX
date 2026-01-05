@@ -3,23 +3,8 @@ import { Skeleton } from "@/components/ui/Skeleton";
 export default function Loading() {
     return (
         <div className="flex h-screen w-full bg-[#050505] overflow-hidden">
-            {/* Sidebar Skeleton (Left) */}
-            <div className="w-20 lg:w-64 hidden md:flex flex-col border-l border-white/5 bg-black/40 backdrop-blur-xl h-full p-4 gap-4">
-                {/* Logo Area */}
-                <div className="h-12 w-12 lg:w-32 bg-white/5 rounded-xl animate-pulse self-center mb-8" />
-
-                {/* Nav Items */}
-                {[...Array(6)].map((_, i) => (
-                    <div key={i} className="flex items-center gap-3 p-2">
-                        <div className="h-8 w-8 rounded-lg bg-white/5 animate-pulse shrink-0" />
-                        <div className="h-4 w-24 bg-white/5 rounded animate-pulse hidden lg:block" />
-                    </div>
-                ))}
-            </div>
-
             {/* Main Content Skeleton */}
             <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-
                 {/* Header Skeleton */}
                 <header className="h-16 w-full border-b border-white/5 bg-black/20 backdrop-blur-sm flex items-center justify-between px-6">
                     <div className="h-8 w-48 bg-white/5 rounded-lg animate-pulse" />
