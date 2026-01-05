@@ -78,9 +78,9 @@ export function PendingPaymentsView() {
             // Optimistic update
             setPayments(prev => prev.filter(p => p.id !== payment.id));
 
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
-            const msg = e.message || "Unknown error";
+            const msg = e instanceof Error ? e.message : "Unknown error";
             toast.error("حدث خطأ: " + msg);
         } finally {
             setProcessingId(null);
@@ -102,7 +102,7 @@ export function PendingPaymentsView() {
             toast.success("تم رفض الطلب");
             setPayments(prev => prev.filter(p => p.id !== paymentId));
 
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
             toast.error("حدث خطأ");
         } finally {

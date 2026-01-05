@@ -2,7 +2,7 @@
 "use client";
 
 import React, { Component, ErrorInfo } from "react";
-import { logErrorToFirestore } from "@/lib/logging";
+// import { logErrorToFirestore } from "@/lib/logging"; // Removed legacy logging
 import { GlassCard } from "./ui/GlassCard";
 import { AlertOctagon, RefreshCw } from "lucide-react";
 
@@ -26,10 +26,8 @@ export class GlobalErrorBoundary extends Component<Props, State> {
     }
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        // Log to Firestore
-        // We'll pass a mock user object or rely on a global context if accessible, 
-        // but here we just log what we have.
-        logErrorToFirestore(error, { componentStack: errorInfo.componentStack ?? undefined }, { uid: "client-crashed" });
+        // Log to Console instead of Firestore
+        console.error("Global Error Caught:", error, errorInfo);
     }
 
     render() {

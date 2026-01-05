@@ -145,7 +145,7 @@ export default function PurchasePage() {
 
             router.push("/dashboard"); // Redirect to dashboard or subscription page
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Submit error:", error);
             const msg = error instanceof Error ? error.message : "Error";
             toast.error("فشل إرسال الطلب", { description: msg });

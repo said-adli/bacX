@@ -5,8 +5,7 @@ import {
     getClientIp,
     createRateLimitResponse
 } from '@/lib/rate-limit';
-import { cookies } from 'next/headers';
-import * as jose from 'jose';
+import { createClient } from "@/utils/supabase/server";
 
 // CRITICAL: No fallback. Fail-closed if not set.
 const SERVER_SALT = process.env.VIDEO_ENCRYPTION_SALT;
@@ -34,26 +33,15 @@ export async function POST(request: Request) {
         );
     }
 
-    // 3. SESSION VALIDATION
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('bacx_session')?.value;
+    // 3. SESSION VALIDATION (SUPABASE)
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (!sessionCookie) {
+    if (authError || !user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Decode JWT to get user info
-    let userId: string | null = null;
-    try {
-        const claims = jose.decodeJwt(sessionCookie);
-        userId = claims.sub || claims.user_id as string || null;
-    } catch {
-        return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
-    }
-
-    if (!userId) {
-        return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
-    }
+    const userId = user.id;
 
     // 4. DECODE VIDEO ID
     try {

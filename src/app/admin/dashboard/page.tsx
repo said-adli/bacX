@@ -21,7 +21,7 @@ import { PendingPaymentsView } from "@/components/admin/PendingPaymentsView";
 
 export default function AdminDashboard() {
     const { user, profile, loading } = useAuth();
-    const role = profile?.role;
+    // const role = profile?.role; // Unused
     const router = useRouter();
     const supabase = createClient();
 
@@ -33,7 +33,8 @@ export default function AdminDashboard() {
     // --- SECURITY CHECK (CRITICAL) ---
     if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
 
-    if (!user || user.role !== 'admin') { // Use role from user metadata/context
+    // Use profile role if available, or user check
+    if (!user || profile?.role !== 'admin') {
         return (
             <main className="min-h-screen bg-black flex items-center justify-center p-4">
                 <GlassCard className="max-w-md w-full p-8 text-center border-red-500/20">
@@ -46,6 +47,7 @@ export default function AdminDashboard() {
         );
     }
 
+    /*
     const handleResetDevices = (studentName: string) => {
         toast.promise(
             new Promise((resolve) => setTimeout(resolve, 800)),
@@ -56,6 +58,7 @@ export default function AdminDashboard() {
             }
         );
     };
+    */
 
     const handleUploadLesson = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -70,8 +73,7 @@ export default function AdminDashboard() {
         const description = formData.get('description') as string;
 
         try {
-            // let pdfUrl = ""; // Warn: Unused
-            const lessonSlug = title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''); // Fix: const
+            const lessonSlug = title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
             if (pdfFile && pdfFile.size > 0) {
                 if (pdfFile.size > 10 * 1024 * 1024) throw new Error("حجم الملف يجب ألا يتجاوز 10 ميغابايت");
@@ -89,8 +91,6 @@ export default function AdminDashboard() {
 
                 if (uploadError) throw uploadError;
 
-                // const { data: { publicUrl } } = supabase.storage.from('lessons').getPublicUrl(filePath);
-                // pdfUrl = publicUrl; // Warn: Unused
                 setUploadProgress(70);
             }
 
@@ -117,6 +117,7 @@ export default function AdminDashboard() {
                 slug: lessonSlug,
                 subject_id: subject.id, // Linked!
                 video_url: videoId,
+                description, // Use the description
                 // pdf_url: pdfUrl, // Add this column if needed to schema! (My schema didn't have pdf_url)
                 // Let's check schema... schema had 'video_url', 'is_free', etc.
                 // We should add 'pdf_url' and 'description' to lessons table in schema update if missing.
@@ -129,9 +130,9 @@ export default function AdminDashboard() {
             toast.success("تم نشر الدرس بنجاح");
             (e.target as HTMLFormElement).reset();
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            const message = error.message || "حدث خطأ أثناء الرفع";
+            const message = error instanceof Error ? error.message : "حدث خطأ أثناء الرفع";
             toast.error(message);
         } finally {
             setIsLoading(false);

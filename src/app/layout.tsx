@@ -8,7 +8,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { GlobalErrorBoundary as ErrorBoundary } from "@/components/GlobalErrorBoundary";
 import { AppShell } from "@/components/layout/AppShell";
 import { cookies } from "next/headers";
-import { verifySessionCookie } from "@/lib/auth-jwt";
+import { createClient } from "@/utils/supabase/server"; // Use Supabase Server Client
 import { ViewTransitions } from 'next-view-transitions';
 
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
@@ -83,31 +83,32 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // --- SERVER AUTH HYDRATION ---
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get('bacx_session')?.value;
+  // --- SERVER AUTH HYDRATION (SUPABASE) ---
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   let initialUser = null;
   let initialProfile: UserProfile | null = null;
 
-  if (sessionCookie) {
-    const payload = await verifySessionCookie(sessionCookie);
-    if (payload) {
-      initialUser = {
-        uid: payload.sub as string,
-        email: payload.email as string,
-        displayName: payload.name as string || '',
-        photoURL: payload.picture as string || '',
-      };
+  if (user) {
+    initialUser = {
+      uid: user.id,
+      email: user.email || '',
+      displayName: user.user_metadata?.full_name || '',
+      photoURL: user.user_metadata?.avatar_url || '',
+    };
 
-      // Infer basic profile from token to avoid flicker
+    // Try fetch profile for role
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    if (profile) {
       initialProfile = {
-        uid: payload.sub as string,
-        email: payload.email as string,
-        displayName: payload.name as string,
-        photoURL: payload.picture as string,
-        role: (payload.admin || payload.role === 'admin') ? 'admin' : 'student',
-        subscriptionStatus: 'free',
-        isSubscribed: false
+        uid: user.id,
+        email: user.email || '',
+        displayName: profile.full_name || user.user_metadata?.full_name || '',
+        photoURL: user.user_metadata?.avatar_url || '',
+        role: profile.role || 'student',
+        subscriptionStatus: profile.subscription_plan || 'free',
+        isSubscribed: profile.is_subscribed || false
       };
     }
   }
