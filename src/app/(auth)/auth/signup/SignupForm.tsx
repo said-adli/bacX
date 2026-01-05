@@ -8,7 +8,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { BrainyStoneLogoSVG } from "@/components/ui/BrainyStoneLogoSVG";
 import { Mail, Lock, User, MapPin, BookOpen, AlertCircle, ChevronDown, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
-import { signupAction } from "@/app/auth/signup/actions";
+import { signupAction } from "./actions";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
