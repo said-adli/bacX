@@ -1,7 +1,8 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { Home, User, Crown, Settings, ChevronDown, ChevronRight, Brain, Calculator, FlaskConical, Microscope, HelpCircle } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useTransition } from "react";
+import { Home, User, Crown, Settings, ChevronDown, ChevronRight, Brain, Calculator, FlaskConical, Microscope, HelpCircle, Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -21,29 +22,40 @@ const subjects = [
     { id: "philosophy", label: "الفلسفة", icon: Brain },
 ];
 
-// FORCE HARD NAVIGATION - bypass Next.js router entirely
-function navigate(href: string) {
-    window.location.href = href;
-}
-
 export function Sidebar() {
     const pathname = usePathname();
+    const router = useRouter();
     const { profile } = useAuth();
+    const [isPending, startTransition] = useTransition();
 
     const role = profile?.role || 'student';
     const [isSubjectsOpen, setIsSubjectsOpen] = useState(true);
 
+    // SPA navigation with useTransition - non-blocking
+    const handleNav = (href: string) => {
+        if (pathname === href) return; // Already there
+        startTransition(() => {
+            router.push(href);
+        });
+    };
+
     return (
         <div className="w-full h-full flex flex-col bg-transparent relative z-[70] pointer-events-auto">
+            {/* Pending indicator */}
+            {isPending && (
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary/20 overflow-hidden z-[100]">
+                    <div className="h-full w-1/3 bg-primary animate-[slide_1s_ease-in-out_infinite]" />
+                </div>
+            )}
+
             {/* Logo */}
             <div className="h-24 flex items-center justify-center border-b border-white/5 mx-6">
-                <a
-                    href="/dashboard"
-                    onClick={(e) => { e.preventDefault(); navigate("/dashboard"); }}
+                <button
+                    onClick={() => handleNav("/dashboard")}
                     className="group cursor-pointer"
                 >
                     <BrainyLogo variant="navbar" className="h-12 w-auto" />
-                </a>
+                </button>
             </div>
 
             {/* Main Navigation */}
@@ -54,15 +66,16 @@ export function Sidebar() {
                         const Icon = item.icon || HelpCircle;
 
                         return (
-                            <a
+                            <button
                                 key={item.href}
-                                href={item.href}
-                                onClick={(e) => { e.preventDefault(); navigate(item.href); }}
+                                onClick={() => handleNav(item.href)}
+                                disabled={isPending}
                                 className={cn(
-                                    "relative z-[80] flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all duration-300 group overflow-hidden",
+                                    "w-full relative z-[80] flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all duration-300 group overflow-hidden text-right",
                                     isActive
                                         ? "bg-primary/10 text-white"
-                                        : "text-white/60 hover:text-white hover:bg-white/5"
+                                        : "text-white/60 hover:text-white hover:bg-white/5",
+                                    isPending && "opacity-70"
                                 )}
                             >
                                 {isActive && (
@@ -78,7 +91,7 @@ export function Sidebar() {
                                 )}>
                                     {item.label}
                                 </span>
-                            </a>
+                            </button>
                         );
                     })}
                 </div>
@@ -101,13 +114,14 @@ export function Sidebar() {
                                 const subjectHref = `/subject/${subject.id}`;
 
                                 return (
-                                    <a
+                                    <button
                                         key={subject.id}
-                                        href={subjectHref}
-                                        onClick={(e) => { e.preventDefault(); navigate(subjectHref); }}
+                                        onClick={() => handleNav(subjectHref)}
+                                        disabled={isPending}
                                         className={cn(
-                                            "relative z-[80] flex items-center gap-4 px-6 py-3 rounded-xl transition-all duration-300 group mr-4",
-                                            isActive ? "bg-primary/5 text-white" : "text-white/50 hover:text-white hover:bg-white/5"
+                                            "w-full relative z-[80] flex items-center gap-4 px-6 py-3 rounded-xl transition-all duration-300 group mr-4 text-right",
+                                            isActive ? "bg-primary/5 text-white" : "text-white/50 hover:text-white hover:bg-white/5",
+                                            isPending && "opacity-70"
                                         )}
                                     >
                                         {isActive && (
@@ -118,18 +132,18 @@ export function Sidebar() {
                                             isActive ? "text-primary" : "group-hover:text-primary/70"
                                         )} />
                                         <span className="text-sm font-medium">{subject.label}</span>
-                                    </a>
+                                    </button>
                                 );
                             })}
 
-                            <a
-                                href="/subjects"
-                                onClick={(e) => { e.preventDefault(); navigate("/subjects"); }}
-                                className="relative z-[80] flex items-center gap-4 px-6 py-3 text-sm text-primary/70 hover:text-primary transition-colors mr-4"
+                            <button
+                                onClick={() => handleNav("/subjects")}
+                                disabled={isPending}
+                                className="w-full relative z-[80] flex items-center gap-4 px-6 py-3 text-sm text-primary/70 hover:text-primary transition-colors mr-4 text-right"
                             >
                                 <div className="w-5 flex justify-center"><ChevronRight className="w-4 h-4" /></div>
                                 <span>عرض كل المواد...</span>
-                            </a>
+                            </button>
                         </div>
                     )}
                 </div>
@@ -137,27 +151,27 @@ export function Sidebar() {
                 {/* Admin Section */}
                 {role === 'admin' && (
                     <div className="pt-4 border-t border-white/5 mx-4">
-                        <a
-                            href="/admin"
-                            onClick={(e) => { e.preventDefault(); navigate("/admin"); }}
+                        <button
+                            onClick={() => handleNav("/admin")}
+                            disabled={isPending}
                             className={cn(
-                                "relative z-[80] flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all duration-300 group",
+                                "w-full relative z-[80] flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all duration-300 group text-right",
                                 pathname.startsWith('/admin') ? "bg-red-500/10 text-red-500" : "text-white/60 hover:text-red-400 hover:bg-red-500/5"
                             )}
                         >
                             <Settings className="w-6 h-6 shrink-0" />
                             <span className="font-medium">لوحة التحكم</span>
-                        </a>
+                        </button>
                     </div>
                 )}
             </div>
 
             {/* Premium Upgrade Card */}
             <div className="p-6 relative z-10">
-                <a
-                    href="/subscription"
-                    onClick={(e) => { e.preventDefault(); navigate("/subscription"); }}
-                    className="group relative block w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 transition-all duration-500 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(37,99,235,0.15)] hover:-translate-y-1"
+                <button
+                    onClick={() => handleNav("/subscription")}
+                    disabled={isPending}
+                    className="w-full group relative block overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 transition-all duration-500 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(37,99,235,0.15)] hover:-translate-y-1 text-right"
                 >
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <div className="relative flex items-start gap-4">
@@ -169,7 +183,7 @@ export function Sidebar() {
                             <p className="text-xs text-white/50 leading-relaxed">افتح جميع الدروس والتمارين الآن</p>
                         </div>
                     </div>
-                </a>
+                </button>
             </div>
         </div>
     );
