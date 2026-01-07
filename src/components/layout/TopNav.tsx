@@ -112,7 +112,7 @@ export function TopNav() {
             {/* Breadcrumbs */}
             <nav className="flex items-center gap-2 text-sm text-slate-400">
                 <div className="lg:hidden ml-2 flex items-center gap-3">
-                    <Link href="/dashboard" className="flex items-center gap-3 group">
+                    <Link href="/dashboard" prefetch={false} className="flex items-center gap-3 group">
                         <BrainyLogo
                             variant="icon"
                             className="w-14 h-14 drop-shadow-[0_0_8px_rgba(37,99,235,0.5)] transition-all group-hover:drop-shadow-[0_0_12px_rgba(37,99,235,0.7)]"
@@ -124,7 +124,7 @@ export function TopNav() {
                     <span key={index} className="flex items-center">
                         {index > 0 && <ChevronDown className="w-3 h-3 mx-2 opacity-30 -rotate-90" />}
                         {crumb.href ? (
-                            <Link href={crumb.href} className="hover:text-primary transition-colors hover:bg-white/5 px-2 py-1 rounded-lg">
+                            <Link href={crumb.href} prefetch={false} className="hover:text-primary transition-colors hover:bg-white/5 px-2 py-1 rounded-lg">
                                 {crumb.label}
                             </Link>
                         ) : (
@@ -139,7 +139,7 @@ export function TopNav() {
 
                 {/* Live Indicator */}
                 {isLiveActive && (
-                    <Link href="/live" className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-xs font-bold rounded-full transition-colors border border-red-500/20">
+                    <Link href="/live" prefetch={false} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-xs font-bold rounded-full transition-colors border border-red-500/20">
                         <span className="relative flex h-2 w-2">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
@@ -259,6 +259,7 @@ export function TopNav() {
                                 <div className="p-2 space-y-1">
                                     <Link
                                         href="/profile"
+                                        prefetch={false}
                                         onClick={() => setIsProfileOpen(false)}
                                         className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
                                     >
@@ -267,6 +268,7 @@ export function TopNav() {
                                     </Link>
                                     <Link
                                         href="/subscription"
+                                        prefetch={false}
                                         onClick={() => setIsProfileOpen(false)}
                                         className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
                                     >
@@ -327,7 +329,7 @@ export function TopNav() {
                                     {mockSearchResults.length > 0 ? (
                                         <div className="p-2">
                                             {mockSearchResults.map(res => (
-                                                <Link href={`/video/${res.id}`} key={res.id} className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl transition-colors group">
+                                                <Link href={`/video/${res.id}`} prefetch={false} key={res.id} className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl transition-colors group">
                                                     <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-primary/20">
                                                         <BookOpen className="w-4 h-4 text-slate-400 group-hover:text-primary" />
                                                     </div>

@@ -1,14 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { Home, User, Crown, Settings, ChevronDown, ChevronRight, Brain, Calculator, FlaskConical, Microscope } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { BrainyLogo } from "@/components/ui/BrainyLogo";
 
 // ============================================================================
-// SIDEBAR - WITH DIAGNOSTIC HOOKS v2
+// SIDEBAR v4 - ROUTER DEADLOCK FIX
+// Using native <a> tags with fallback to bypass Next.js Link issues
 // ============================================================================
 
 const NAV = [
@@ -24,29 +24,47 @@ const SUBJECTS = [
     { id: "philosophy", label: "الفلسفة", icon: Brain },
 ];
 
-// Diagnostic tracer with checkpoint
-function traceNav(target: string) {
-    console.log(`[NAV] Click: ${target} @ ${new Date().toISOString()}`);
-    if (typeof window !== "undefined") {
-        window.__DIAG_NAV_START?.(target);
-        window.__DIAG_CHECKPOINT?.("SIDEBAR_CLICK");
-    }
-}
-
 export function Sidebar() {
     const pathname = usePathname();
+    const router = useRouter();
     const { profile } = useAuth();
     const [open, setOpen] = useState(true);
+    const [isPending, startTransition] = useTransition();
 
     const isAdmin = profile?.role === "admin";
 
+    // Navigation handler using startTransition
+    const navigate = (href: string, e: React.MouseEvent) => {
+        e.preventDefault();
+
+        // Diagnostic logging
+        console.log(`[NAV] Click: ${href} @ ${new Date().toISOString()}`);
+        if (typeof window !== "undefined") {
+            window.__DIAG_NAV_START?.(href);
+            window.__DIAG_CHECKPOINT?.("SIDEBAR_CLICK");
+        }
+
+        // Don't navigate if already on this route
+        if (pathname === href) return;
+
+        // Use startTransition to make navigation non-blocking
+        startTransition(() => {
+            router.push(href);
+        });
+    };
+
     return (
         <div className="w-full h-full flex flex-col">
+            {/* Pending indicator */}
+            {isPending && (
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary animate-pulse z-50" />
+            )}
+
             {/* Logo */}
             <div className="h-24 flex items-center justify-center border-b border-white/5 mx-6">
-                <Link href="/dashboard" prefetch={false} onClick={() => traceNav("/dashboard")}>
+                <a href="/dashboard" onClick={(e) => navigate("/dashboard", e)}>
                     <BrainyLogo variant="navbar" className="h-12 w-auto" />
-                </Link>
+                </a>
             </div>
 
             {/* Nav */}
@@ -55,17 +73,16 @@ export function Sidebar() {
                     {NAV.map(({ href, label, icon: Icon }) => {
                         const active = pathname === href;
                         return (
-                            <Link
+                            <a
                                 key={href}
                                 href={href}
-                                prefetch={false}
-                                onClick={() => traceNav(href)}
-                                className={`relative flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all duration-300 ${active ? "bg-primary/10 text-white" : "text-white/60 hover:text-white hover:bg-white/5"}`}
+                                onClick={(e) => navigate(href, e)}
+                                className={`relative flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all duration-300 cursor-pointer ${active ? "bg-primary/10 text-white" : "text-white/60 hover:text-white hover:bg-white/5"} ${isPending ? "pointer-events-none opacity-70" : ""}`}
                             >
                                 {active && <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary rounded-l-full shadow-[0_0_20px_rgba(37,99,235,0.8)]" />}
                                 <Icon className={`w-6 h-6 ${active ? "text-primary" : ""}`} />
                                 <span className="text-base font-medium">{label}</span>
-                            </Link>
+                            </a>
                         );
                     })}
                 </div>
@@ -83,27 +100,25 @@ export function Sidebar() {
                                 const active = pathname.includes(id);
                                 const href = `/subject/${id}`;
                                 return (
-                                    <Link
+                                    <a
                                         key={id}
                                         href={href}
-                                        prefetch={false}
-                                        onClick={() => traceNav(href)}
-                                        className={`flex items-center gap-4 px-6 py-3 rounded-xl transition-all mr-4 ${active ? "bg-primary/5 text-white" : "text-white/50 hover:text-white hover:bg-white/5"}`}
+                                        onClick={(e) => navigate(href, e)}
+                                        className={`flex items-center gap-4 px-6 py-3 rounded-xl transition-all mr-4 cursor-pointer ${active ? "bg-primary/5 text-white" : "text-white/50 hover:text-white hover:bg-white/5"} ${isPending ? "pointer-events-none opacity-70" : ""}`}
                                     >
                                         <Icon className={`w-5 h-5 ${active ? "text-primary" : ""}`} />
                                         <span className="text-sm font-medium">{label}</span>
-                                    </Link>
+                                    </a>
                                 );
                             })}
-                            <Link
+                            <a
                                 href="/subjects"
-                                prefetch={false}
-                                onClick={() => traceNav("/subjects")}
-                                className="flex items-center gap-4 px-6 py-3 text-sm text-primary/70 hover:text-primary mr-4"
+                                onClick={(e) => navigate("/subjects", e)}
+                                className={`flex items-center gap-4 px-6 py-3 text-sm text-primary/70 hover:text-primary mr-4 cursor-pointer ${isPending ? "pointer-events-none opacity-70" : ""}`}
                             >
                                 <ChevronRight className="w-4 h-4" />
                                 <span>عرض كل المواد...</span>
-                            </Link>
+                            </a>
                         </div>
                     )}
                 </div>
@@ -111,26 +126,24 @@ export function Sidebar() {
                 {/* Admin */}
                 {isAdmin && (
                     <div className="pt-4 border-t border-white/5 mx-4">
-                        <Link
+                        <a
                             href="/admin"
-                            prefetch={false}
-                            onClick={() => traceNav("/admin")}
-                            className={`flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all ${pathname.startsWith("/admin") ? "bg-red-500/10 text-red-500" : "text-white/60 hover:text-red-400 hover:bg-red-500/5"}`}
+                            onClick={(e) => navigate("/admin", e)}
+                            className={`flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all cursor-pointer ${pathname.startsWith("/admin") ? "bg-red-500/10 text-red-500" : "text-white/60 hover:text-red-400 hover:bg-red-500/5"} ${isPending ? "pointer-events-none opacity-70" : ""}`}
                         >
                             <Settings className="w-6 h-6" />
                             <span className="font-medium">لوحة التحكم</span>
-                        </Link>
+                        </a>
                     </div>
                 )}
             </div>
 
             {/* Upgrade Card */}
             <div className="p-6">
-                <Link
+                <a
                     href="/subscription"
-                    prefetch={false}
-                    onClick={() => traceNav("/subscription")}
-                    className="block rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(37,99,235,0.15)] hover:-translate-y-1 transition-all duration-500"
+                    onClick={(e) => navigate("/subscription", e)}
+                    className={`block rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(37,99,235,0.15)] hover:-translate-y-1 transition-all duration-500 cursor-pointer ${isPending ? "pointer-events-none opacity-70" : ""}`}
                 >
                     <div className="flex items-start gap-4">
                         <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20">
@@ -141,7 +154,7 @@ export function Sidebar() {
                             <p className="text-xs text-white/50">افتح جميع الدروس والتمارين الآن</p>
                         </div>
                     </div>
-                </Link>
+                </a>
             </div>
         </div>
     );
