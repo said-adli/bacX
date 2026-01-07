@@ -56,27 +56,35 @@ export default function DashboardLayout({
 
     // SIMPLE LAYOUT - Matching admin layout structure
     return (
-        <div className="min-h-screen bg-[#050505] text-white font-sans" dir="rtl">
-            {/* Sidebar - Desktop Only, Fixed on Right */}
-            <aside className="hidden lg:flex w-72 flex-col fixed inset-y-0 right-0 z-40 border-l border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl">
-                <Sidebar />
-            </aside>
+        <>
+            <button
+                onClick={() => alert('الكليكة تمشي!')}
+                className="fixed top-0 left-0 z-[10000] bg-red-600 text-white font-bold p-10 border-4 border-white"
+            >
+                🚨 إضغط هنا: إذا خرجت الرسالة المشكل ليس CSS
+            </button>
+            <div className="min-h-screen bg-[#050505] text-white font-sans" dir="rtl">
+                {/* Sidebar - Desktop Only, Fixed on Right */}
+                <aside className="hidden lg:flex w-72 flex-col fixed inset-y-0 right-0 z-40 border-l border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl">
+                    <Sidebar />
+                </aside>
 
-            {/* Main Content Wrapper - Offset by sidebar width on desktop */}
-            <div className="lg:mr-72 min-h-screen">
-                {/* Top Navigation */}
-                <header className="sticky top-0 z-30 h-20 border-b border-white/5 bg-[#050505]/90 backdrop-blur-xl">
-                    <TopNav />
-                </header>
+                {/* Main Content Wrapper - Offset by sidebar width on desktop */}
+                <div className="lg:mr-72 min-h-screen">
+                    {/* Top Navigation */}
+                    <header className="sticky top-0 z-30 h-20 border-b border-white/5 bg-[#050505]/90 backdrop-blur-xl">
+                        <TopNav />
+                    </header>
 
-                {/* Page Content - Simple render, no AnimatePresence blocking */}
-                <main className="p-6 lg:p-10">
-                    {children}
-                </main>
+                    {/* Page Content - Simple render, no AnimatePresence blocking */}
+                    <main className="p-6 lg:p-10">
+                        {children}
+                    </main>
+                </div>
+
+                {/* Bottom Navigation - Mobile Only */}
+                <BottomNav />
             </div>
-
-            {/* Bottom Navigation - Mobile Only */}
-            <BottomNav />
-        </div>
+        </>
     );
 }
