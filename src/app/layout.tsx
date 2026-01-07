@@ -111,6 +111,7 @@ export default async function RootLayout({
   return (
     <html lang="ar" dir="rtl" className="scroll-smooth" suppressHydrationWarning>
       <body className={`${ibmPlexSansArabic.variable} ${playfairDisplay.variable} ${amiri.variable} ${cinzel.variable} antialiased bg-background text-foreground font-sans selection:bg-primary/30`}>
+        {/* TEMPORARILY DISABLED - Testing if this causes navigation hang
         <NextTopLoader
           color="#2563EB"
           initialPosition={0.1}
@@ -122,6 +123,7 @@ export default async function RootLayout({
           speed={200}
           shadow="0 0 10px #2563EB,0 0 5px #2563EB"
         />
+        */}
         <AuthProvider initialUser={initialUser} hydratedProfile={initialProfile}>
           <ErrorBoundary>
             {children}
