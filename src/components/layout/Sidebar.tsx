@@ -55,7 +55,7 @@ export function Sidebar() {
     // Profiler callback to report render times
     const onRenderCallback = useCallback((
         id: string,
-        phase: "mount" | "update",
+        phase: "mount" | "update" | "nested-update",
         actualDuration: number,
     ) => {
         if (typeof window !== "undefined" && window.__DIAG_PROFILE) {
