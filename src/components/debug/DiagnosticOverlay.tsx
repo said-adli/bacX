@@ -5,49 +5,47 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 /**
- * DIAGNOSTIC OVERLAY v3 - PASSIVE SCANNER
- * - Network traffic monitor (fetch interceptor)
- * - Transition timeout detector
- * - Smoking gun verdict
+ * DIAGNOSTIC OVERLAY v5 - MRI MODE
+ * - RSC Stream Monitor (pending requests)
+ * - Main Thread Heartbeat (freeze detection)
+ * - Silent Error Catcher
+ * - Context Tracer
+ * - Verdict Engine
  */
 
-interface Checkpoint {
-    label: string;
-    timestamp: string;
-    elapsed?: number;
+interface PendingRequest {
+    url: string;
+    startTime: number;
+    resolved: boolean;
 }
 
-interface NetworkEvent {
-    type: "REQUEST" | "RESPONSE" | "ERROR";
-    url: string;
+interface JsError {
+    message: string;
     timestamp: string;
 }
 
 interface DiagnosticState {
     authState: "LOADING" | "AUTHENTICATED" | "NULL";
+    authChanges: number;
     routerStatus: "IDLE" | "NAVIGATING";
-    lastNavClick: string | null;
-    lastNavTarget: string | null;
     pathname: string;
     renderCount: number;
-    checkpoints: Checkpoint[];
-    lastFetchTime: number | null;
-    networkEvents: NetworkEvent[];
-    transitionStartTime: number | null;
-    transitionTimeout: boolean;
+    pendingRequests: PendingRequest[];
+    jsErrors: JsError[];
+    heartbeatAlive: boolean;
+    lastHeartbeat: number;
     verdict: string | null;
+    verdictType: "SERVER_TIMEOUT" | "CLIENT_FREEZE" | "HYDRATION_ERROR" | null;
+    transitionStartTime: number | null;
 }
 
 // Global event bus
 declare global {
     interface Window {
         __DIAG_NAV_START?: (target: string) => void;
-        __DIAG_NAV_END?: () => void;
         __DIAG_CHECKPOINT?: (label: string) => void;
-        __DIAG_FETCH_TIME?: (ms: number) => void;
-        __DIAG_MIDDLEWARE_IN?: () => void;
-        __DIAG_MIDDLEWARE_OUT?: () => void;
         __originalFetch?: typeof fetch;
+        __DIAG_AUTH_CHANGE?: (state: string) => void;
     }
 }
 
@@ -56,65 +54,95 @@ export function DiagnosticOverlay() {
     const { user, loading } = useAuth();
     const [state, setState] = useState<DiagnosticState>({
         authState: "LOADING",
+        authChanges: 0,
         routerStatus: "IDLE",
-        lastNavClick: null,
-        lastNavTarget: null,
         pathname: "",
         renderCount: 0,
-        checkpoints: [],
-        lastFetchTime: null,
-        networkEvents: [],
-        transitionStartTime: null,
-        transitionTimeout: false,
+        pendingRequests: [],
+        jsErrors: [],
+        heartbeatAlive: true,
+        lastHeartbeat: Date.now(),
         verdict: null,
+        verdictType: null,
+        transitionStartTime: null,
     });
-    const startTimeRef = useRef<number | null>(null);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Update auth state
+    const startTimeRef = useRef<number | null>(null);
+    const heartbeatRef = useRef<number>(Date.now());
+    const frameRef = useRef<number>(0);
+    const prevAuthLoading = useRef<boolean>(loading);
+
+    // =========================================================================
+    // AUTH STATE TRACKING
+    // =========================================================================
     useEffect(() => {
         let authState: DiagnosticState["authState"] = "NULL";
         if (loading) authState = "LOADING";
         else if (user) authState = "AUTHENTICATED";
 
+        // Track auth state changes
+        const authChanged = prevAuthLoading.current !== loading;
+        prevAuthLoading.current = loading;
+
         setState(prev => ({
             ...prev,
             authState,
+            authChanges: authChanged ? prev.authChanges + 1 : prev.authChanges,
             pathname,
             renderCount: prev.renderCount + 1,
         }));
-    }, [user, loading, pathname]);
 
-    // Fetch interceptor for network monitoring
+        // If auth goes to LOADING during navigation, flag it
+        if (loading && state.routerStatus === "NAVIGATING") {
+            window.__DIAG_CHECKPOINT?.("AUTH_BLOCKED");
+        }
+    }, [user, loading, pathname, state.routerStatus]);
+
+    // =========================================================================
+    // FETCH INTERCEPTOR - RSC STREAM MONITOR
+    // =========================================================================
     useEffect(() => {
         if (typeof window === "undefined") return;
 
-        // Only install once
         if (!window.__originalFetch) {
             window.__originalFetch = window.fetch;
 
             window.fetch = async (...args) => {
                 const url = typeof args[0] === "string" ? args[0] : (args[0] as Request).url;
-                const isNextData = url.includes("_next") || url.includes("_rsc") || url.includes("__nextjs");
+                const isRsc = url.includes("_rsc") || url.includes("__nextjs") || url.includes("_next/data");
 
-                if (isNextData) {
-                    const ts = new Date().toISOString().slice(11, 23);
+                if (isRsc) {
+                    const shortUrl = url.split("?")[0].slice(-40);
+                    const now = Date.now();
+
+                    // Add to pending requests
                     setState(prev => ({
                         ...prev,
-                        networkEvents: [...prev.networkEvents, { type: "REQUEST" as const, url: url.slice(0, 50), timestamp: ts }].slice(-5),
+                        pendingRequests: [...prev.pendingRequests, { url: shortUrl, startTime: now, resolved: false }].slice(-5),
                     }));
 
                     try {
                         const response = await window.__originalFetch!(...args);
+                        const elapsed = Date.now() - now;
+
+                        // Mark as resolved
                         setState(prev => ({
                             ...prev,
-                            networkEvents: [...prev.networkEvents, { type: "RESPONSE" as const, url: url.slice(0, 50), timestamp: new Date().toISOString().slice(11, 23) }].slice(-5),
+                            pendingRequests: prev.pendingRequests.map(r =>
+                                r.url === shortUrl && r.startTime === now ? { ...r, resolved: true } : r
+                            ),
                         }));
+
+                        console.log(`[RSC] ${shortUrl} - ${elapsed}ms`);
                         return response;
                     } catch (err) {
+                        // Mark as error
                         setState(prev => ({
                             ...prev,
-                            networkEvents: [...prev.networkEvents, { type: "ERROR" as const, url: url.slice(0, 50), timestamp: new Date().toISOString().slice(11, 23) }].slice(-5),
+                            pendingRequests: prev.pendingRequests.map(r =>
+                                r.url === shortUrl && r.startTime === now ? { ...r, resolved: true } : r
+                            ),
+                            jsErrors: [...prev.jsErrors, { message: `Fetch failed: ${shortUrl}`, timestamp: new Date().toISOString().slice(11, 19) }].slice(-3),
                         }));
                         throw err;
                     }
@@ -123,221 +151,207 @@ export function DiagnosticOverlay() {
                 return window.__originalFetch!(...args);
             };
         }
+    }, []);
 
+    // =========================================================================
+    // MAIN THREAD HEARTBEAT (60fps check)
+    // =========================================================================
+    useEffect(() => {
+        let animationFrameId: number;
+
+        const heartbeat = () => {
+            const now = Date.now();
+            const delta = now - heartbeatRef.current;
+            heartbeatRef.current = now;
+
+            // If more than 100ms since last frame, thread was frozen
+            const frozen = delta > 100;
+
+            setState(prev => ({
+                ...prev,
+                heartbeatAlive: !frozen,
+                lastHeartbeat: now,
+                // If frozen during navigation, update verdict
+                ...(frozen && prev.routerStatus === "NAVIGATING" ? {
+                    verdict: "🔴 CLIENT_FREEZE: Main thread blocked for " + delta + "ms",
+                    verdictType: "CLIENT_FREEZE" as const,
+                } : {}),
+            }));
+
+            frameRef.current++;
+            animationFrameId = requestAnimationFrame(heartbeat);
+        };
+
+        animationFrameId = requestAnimationFrame(heartbeat);
+        return () => cancelAnimationFrame(animationFrameId);
+    }, []);
+
+    // =========================================================================
+    // SILENT ERROR CATCHER
+    // =========================================================================
+    useEffect(() => {
+        const handleError = (event: ErrorEvent) => {
+            setState(prev => ({
+                ...prev,
+                jsErrors: [...prev.jsErrors, { message: event.message.slice(0, 60), timestamp: new Date().toISOString().slice(11, 19) }].slice(-3),
+                // If error during navigation, it's hydration error
+                ...(prev.routerStatus === "NAVIGATING" ? {
+                    verdict: "🟣 HYDRATION_ERROR: " + event.message.slice(0, 40),
+                    verdictType: "HYDRATION_ERROR" as const,
+                } : {}),
+            }));
+        };
+
+        const handleRejection = (event: PromiseRejectionEvent) => {
+            const msg = event.reason?.message || String(event.reason).slice(0, 60);
+            setState(prev => ({
+                ...prev,
+                jsErrors: [...prev.jsErrors, { message: msg, timestamp: new Date().toISOString().slice(11, 19) }].slice(-3),
+                ...(prev.routerStatus === "NAVIGATING" ? {
+                    verdict: "🟣 HYDRATION_ERROR: " + msg.slice(0, 40),
+                    verdictType: "HYDRATION_ERROR" as const,
+                } : {}),
+            }));
+        };
+
+        window.addEventListener("error", handleError);
+        window.addEventListener("unhandledrejection", handleRejection);
         return () => {
-            // Don't restore - keep interceptor active
+            window.removeEventListener("error", handleError);
+            window.removeEventListener("unhandledrejection", handleRejection);
         };
     }, []);
 
-    // Navigation start handler with timeout
+    // =========================================================================
+    // NAVIGATION HANDLERS
+    // =========================================================================
     const handleNavStart = useCallback((target: string) => {
         const now = Date.now();
         startTimeRef.current = now;
 
-        // Clear any existing timeout
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
-
-        // Set 2-second timeout warning
-        timeoutRef.current = setTimeout(() => {
-            setState(prev => ({
-                ...prev,
-                transitionTimeout: true,
-                verdict: determineVerdict(prev.checkpoints),
-            }));
-        }, 2000);
+        console.log(`[NAV] Start: ${target}`);
 
         setState(prev => ({
             ...prev,
             routerStatus: "NAVIGATING",
-            lastNavClick: new Date().toISOString().slice(11, 23),
-            lastNavTarget: target,
-            checkpoints: [{ label: "SIDEBAR_CLICK", timestamp: new Date().toISOString().slice(11, 23) }],
-            lastFetchTime: null,
             transitionStartTime: now,
-            transitionTimeout: false,
             verdict: null,
-            networkEvents: [],
+            verdictType: null,
+            pendingRequests: [],
+            jsErrors: [],
         }));
+
+        // Set timeout for SERVER_TIMEOUT detection
+        setTimeout(() => {
+            setState(prev => {
+                // Check for pending unresolved requests
+                const hasTimeout = prev.pendingRequests.some(r => !r.resolved && (Date.now() - r.startTime) > 3000);
+                if (hasTimeout && !prev.verdictType) {
+                    return {
+                        ...prev,
+                        verdict: "🟠 SERVER_TIMEOUT: RSC request pending >3s",
+                        verdictType: "SERVER_TIMEOUT",
+                    };
+                }
+                return prev;
+            });
+        }, 3000);
     }, []);
 
-    // Navigation end handler
-    const handleNavEnd = useCallback(() => {
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
-        setState(prev => ({
-            ...prev,
-            routerStatus: "IDLE",
-            transitionTimeout: false,
-        }));
-    }, []);
-
-    // Checkpoint handler
-    const handleCheckpoint = useCallback((label: string) => {
-        const now = Date.now();
-        const elapsed = startTimeRef.current ? now - startTimeRef.current : undefined;
-        setState(prev => ({
-            ...prev,
-            checkpoints: [
-                ...prev.checkpoints,
-                { label, timestamp: new Date().toISOString().slice(11, 23), elapsed }
-            ].slice(-8),
-        }));
-    }, []);
-
-    // Fetch time handler
-    const handleFetchTime = useCallback((ms: number) => {
-        setState(prev => ({
-            ...prev,
-            lastFetchTime: ms,
-        }));
-        handleCheckpoint(`FETCH_DONE (${ms.toFixed(0)}ms)`);
-    }, [handleCheckpoint]);
-
-    // Middleware handlers
-    const handleMiddlewareIn = useCallback(() => {
-        handleCheckpoint("MIDDLEWARE_IN");
-    }, [handleCheckpoint]);
-
-    const handleMiddlewareOut = useCallback(() => {
-        handleCheckpoint("MIDDLEWARE_OUT");
-    }, [handleCheckpoint]);
-
-    // Determine verdict based on checkpoints
-    function determineVerdict(checkpoints: Checkpoint[]): string {
-        const labels = checkpoints.map(c => c.label);
-
-        if (labels.includes("SIDEBAR_CLICK") && !labels.some(l => l.includes("FETCH"))) {
-            return "🔴 BLOCKED AT CLIENT (Router Deadlock)";
-        }
-        if (labels.includes("MIDDLEWARE_IN") && !labels.includes("MIDDLEWARE_OUT")) {
-            return "🟠 BLOCKED AT MIDDLEWARE";
-        }
-        if (labels.some(l => l.includes("FETCH_START")) && !labels.some(l => l.includes("FETCH_DONE"))) {
-            return "🟡 BLOCKED AT PAGE FETCH (Supabase)";
-        }
-        return "⚪ UNKNOWN - Need more data";
-    }
-
-    // Register global handlers
     useEffect(() => {
         window.__DIAG_NAV_START = handleNavStart;
-        window.__DIAG_NAV_END = handleNavEnd;
-        window.__DIAG_CHECKPOINT = handleCheckpoint;
-        window.__DIAG_FETCH_TIME = handleFetchTime;
-        window.__DIAG_MIDDLEWARE_IN = handleMiddlewareIn;
-        window.__DIAG_MIDDLEWARE_OUT = handleMiddlewareOut;
-        return () => {
-            delete window.__DIAG_NAV_START;
-            delete window.__DIAG_NAV_END;
-            delete window.__DIAG_CHECKPOINT;
-            delete window.__DIAG_FETCH_TIME;
-            delete window.__DIAG_MIDDLEWARE_IN;
-            delete window.__DIAG_MIDDLEWARE_OUT;
-        };
-    }, [handleNavStart, handleNavEnd, handleCheckpoint, handleFetchTime, handleMiddlewareIn, handleMiddlewareOut]);
+        return () => { delete window.__DIAG_NAV_START; };
+    }, [handleNavStart]);
 
-    // Auto-reset when pathname changes
+    // Reset on successful navigation
     useEffect(() => {
         if (startTimeRef.current) {
             const elapsed = Date.now() - startTimeRef.current;
-            handleCheckpoint(`PAGE_LOADED (+${elapsed}ms)`);
-        }
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
+            console.log(`[NAV] Complete: ${elapsed}ms`);
         }
         setState(prev => ({
             ...prev,
             routerStatus: "IDLE",
-            transitionTimeout: false,
         }));
         startTimeRef.current = null;
-    }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [pathname]);
 
-    const getColor = (status: string) => {
-        switch (status) {
-            case "AUTHENTICATED":
-            case "IDLE":
-                return "text-green-400";
-            case "LOADING":
-            case "NAVIGATING":
-                return "text-yellow-400";
-            case "NULL":
-                return "text-red-400";
-            default:
-                return "text-white";
-        }
-    };
-
-    // Calculate elapsed time for display
-    const elapsedTime = state.transitionStartTime && state.routerStatus === "NAVIGATING"
-        ? Math.floor((Date.now() - state.transitionStartTime) / 100) * 100
+    // =========================================================================
+    // RENDER
+    // =========================================================================
+    const elapsed = state.transitionStartTime && state.routerStatus === "NAVIGATING"
+        ? Date.now() - state.transitionStartTime
         : null;
 
+    const hasUnresolvedRequest = state.pendingRequests.some(r => !r.resolved && (Date.now() - r.startTime) > 2000);
+
     return (
-        <div className={`fixed bottom-4 right-4 z-[9999] border rounded-lg p-3 font-mono text-[10px] space-y-1 shadow-2xl min-w-[320px] max-h-[450px] overflow-y-auto ${state.transitionTimeout ? "bg-red-950/95 border-red-500/50" : "bg-black/95 border-white/20"}`}>
-            <div className="text-white/50 font-bold border-b border-white/10 pb-1 mb-2 flex items-center gap-2">
-                🔬 DIAGNOSTIC PROBE v3
-                {state.routerStatus === "NAVIGATING" && (
-                    <span className={`animate-pulse ${state.transitionTimeout ? "text-red-400" : "text-yellow-400"}`}>
-                        ● {state.transitionTimeout ? "TIMEOUT!" : "SCANNING"}
-                    </span>
-                )}
+        <div className={`fixed bottom-4 right-4 z-[9999] border rounded-lg p-3 font-mono text-[10px] space-y-1 shadow-2xl min-w-[340px] max-h-[500px] overflow-y-auto ${state.verdictType ? "bg-red-950/95 border-red-500/50" : "bg-black/95 border-white/20"}`}>
+            {/* Header with Heartbeat */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-1 mb-2">
+                <span className="text-white/50 font-bold">🔬 MRI MODE v5</span>
+                <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${state.heartbeatAlive ? "bg-green-400 animate-pulse" : "bg-red-500"}`} />
+                    <span className="text-white/30">{frameRef.current % 100}</span>
+                    {state.routerStatus === "NAVIGATING" && (
+                        <span className="text-yellow-400 animate-pulse">● {elapsed}ms</span>
+                    )}
+                </div>
             </div>
 
             {/* Core Status */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                 <span className="text-white/40">AUTH:</span>
-                <span className={getColor(state.authState)}>{state.authState}</span>
+                <span className={state.authState === "LOADING" ? "text-yellow-400" : state.authState === "AUTHENTICATED" ? "text-green-400" : "text-red-400"}>
+                    {state.authState} ({state.authChanges} changes)
+                </span>
 
                 <span className="text-white/40">ROUTER:</span>
-                <span className={getColor(state.routerStatus)}>
+                <span className={state.routerStatus === "NAVIGATING" ? "text-yellow-400" : "text-green-400"}>
                     {state.routerStatus}
-                    {elapsedTime !== null && <span className="text-white/30 ml-1">({elapsedTime}ms)</span>}
                 </span>
 
                 <span className="text-white/40">PATH:</span>
                 <span className="text-blue-400 truncate">{state.pathname}</span>
             </div>
 
-            {/* Verdict (if timeout) */}
-            {state.transitionTimeout && state.verdict && (
-                <div className="border-t border-red-500/30 pt-2 mt-2 text-center">
+            {/* Verdict */}
+            {state.verdict && (
+                <div className={`border-t border-red-500/30 pt-2 mt-2 ${state.verdictType === "SERVER_TIMEOUT" ? "animate-pulse" : ""}`}>
                     <div className="text-red-400 font-bold text-xs">{state.verdict}</div>
                 </div>
             )}
 
-            {/* Network Events */}
-            {state.networkEvents.length > 0 && (
+            {/* Pending Requests */}
+            {state.pendingRequests.length > 0 && (
                 <div className="border-t border-white/10 pt-1 mt-1">
-                    <div className="text-white/40 mb-1">NETWORK:</div>
+                    <div className="text-white/40 mb-1">RSC REQUESTS:</div>
                     <div className="space-y-0.5 pl-2">
-                        {state.networkEvents.map((evt, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                                <span className={evt.type === "REQUEST" ? "text-blue-400" : evt.type === "RESPONSE" ? "text-green-400" : "text-red-400"}>
-                                    {evt.type === "REQUEST" ? "↑" : evt.type === "RESPONSE" ? "↓" : "✗"}
-                                </span>
-                                <span className="text-white/50 truncate max-w-[200px]">{evt.url}</span>
-                            </div>
-                        ))}
+                        {state.pendingRequests.map((req, i) => {
+                            const age = Date.now() - req.startTime;
+                            const isStale = !req.resolved && age > 2000;
+                            return (
+                                <div key={i} className={`flex items-center gap-2 ${isStale ? "text-red-400 animate-pulse" : ""}`}>
+                                    <span className={req.resolved ? "text-green-400" : isStale ? "text-red-400" : "text-yellow-400"}>
+                                        {req.resolved ? "✓" : isStale ? "⚠" : "↻"}
+                                    </span>
+                                    <span className="truncate max-w-[200px]">{req.url}</span>
+                                    {!req.resolved && <span className="text-white/30">{age}ms</span>}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             )}
 
-            {/* Checkpoints */}
-            {state.checkpoints.length > 0 && (
-                <div className="border-t border-white/10 pt-1 mt-1">
-                    <div className="text-white/40 mb-1">CHECKPOINTS:</div>
+            {/* JavaScript Errors */}
+            {state.jsErrors.length > 0 && (
+                <div className="border-t border-red-500/30 pt-1 mt-1">
+                    <div className="text-red-400 mb-1">JS ERRORS:</div>
                     <div className="space-y-0.5 pl-2">
-                        {state.checkpoints.map((cp, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                                <span className="text-green-400">✓</span>
-                                <span className="text-cyan-400">{cp.label}</span>
-                                {cp.elapsed !== undefined && (
-                                    <span className="text-yellow-400">(+{cp.elapsed}ms)</span>
-                                )}
+                        {state.jsErrors.map((err, i) => (
+                            <div key={i} className="text-red-300 text-[9px] truncate">
+                                <span className="text-red-500">{err.timestamp}</span> {err.message}
                             </div>
                         ))}
                     </div>
@@ -347,7 +361,7 @@ export function DiagnosticOverlay() {
             {/* Footer */}
             <div className="border-t border-white/10 pt-1 mt-1 flex justify-between text-white/30">
                 <span>RENDERS: {state.renderCount}</span>
-                <span>v3-passive</span>
+                <span>v5-mri</span>
             </div>
         </div>
     );
