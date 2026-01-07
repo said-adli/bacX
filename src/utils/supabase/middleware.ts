@@ -2,6 +2,9 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
+    // HEARTBEAT: Entry
+    console.log(`>> MIDDLEWARE_IN: ${request.nextUrl.pathname}`);
+
     let response = NextResponse.next({
         request: {
             headers: request.headers,
@@ -50,14 +53,18 @@ export async function updateSession(request: NextRequest) {
         path.startsWith('/profile');
 
     if (isProtectedRoute && !session) {
+        console.log(`<< MIDDLEWARE_OUT: ${path} (REDIRECT to login)`);
         return NextResponse.redirect(new URL('/login', request.url));
     }
 
     // Auth routes redirect
     const isAuthRoute = path.startsWith('/auth') || path.startsWith('/login');
     if (isAuthRoute && session) {
+        console.log(`<< MIDDLEWARE_OUT: ${path} (REDIRECT to dashboard)`);
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
+    // HEARTBEAT: Exit
+    console.log(`<< MIDDLEWARE_OUT: ${path}`);
     return response
 }
