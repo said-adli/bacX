@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { BrainyLogo } from "@/components/ui/BrainyLogo";
 
 // ============================================================================
-// SIDEBAR - CLIENT COMPONENT WITH DIAGNOSTIC HOOKS
+// SIDEBAR - WITH DIAGNOSTIC HOOKS v2
 // ============================================================================
 
 const NAV = [
@@ -24,11 +24,12 @@ const SUBJECTS = [
     { id: "philosophy", label: "الفلسفة", icon: Brain },
 ];
 
-// Diagnostic tracer
+// Diagnostic tracer with checkpoint
 function traceNav(target: string) {
     console.log(`[NAV] Click: ${target} @ ${new Date().toISOString()}`);
-    if (typeof window !== "undefined" && window.__DIAG_NAV_START) {
-        window.__DIAG_NAV_START(target);
+    if (typeof window !== "undefined") {
+        window.__DIAG_NAV_START?.(target);
+        window.__DIAG_CHECKPOINT?.("SIDEBAR_CLICK");
     }
 }
 
