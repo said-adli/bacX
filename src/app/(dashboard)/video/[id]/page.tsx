@@ -81,7 +81,9 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
     }, [profile, id, router]);
 
     useEffect(() => {
+        // Skip fetch while waiting for auth, but don't block
         if (authLoading) return;
+        // Redirect if no user (middleware should catch this, but fallback)
         if (!user) {
             router.replace("/auth");
             return;
@@ -90,9 +92,18 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
     }, [user, authLoading, router, fetchLesson]);
 
 
-    // --- LOADING STATE (SKELETON) ---
+    // Inline skeleton rendering instead of blocking return
     if (authLoading || loading) {
-        return <LessonSkeleton />;
+        return (
+            <div className="min-h-screen bg-[#050505] p-6">
+                <div className="max-w-5xl mx-auto animate-pulse">
+                    <div className="h-4 w-32 bg-white/10 rounded mb-8" />
+                    <div className="aspect-video bg-white/5 rounded-2xl mb-8" />
+                    <div className="h-8 w-64 bg-white/10 rounded mb-4" />
+                    <div className="h-4 w-full bg-white/5 rounded" />
+                </div>
+            </div>
+        );
     }
 
     // --- ERROR STATE (RETRY) ---

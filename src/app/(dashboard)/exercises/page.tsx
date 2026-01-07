@@ -55,7 +55,24 @@ export default function ExercisesPage() {
         fetchExercises();
     }, [supabase]);
 
-    if (loading) return <LessonSkeleton />;
+    // Render skeleton inline instead of blocking
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[#050505] p-6 pb-24 text-white">
+                <div className="max-w-6xl mx-auto">
+                    <div className="mb-8">
+                        <div className="h-8 w-48 bg-white/10 rounded animate-pulse mb-2" />
+                        <div className="h-4 w-64 bg-white/5 rounded animate-pulse" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <div key={i} className="aspect-[4/3] bg-white/5 rounded-2xl animate-pulse" />
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#050505] p-6 pb-24 text-white font-tajawal">

@@ -1,16 +1,19 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
-// import { doc, getDoc } from "firebase/firestore";
-// import { db } from "@/lib/firebase";
-import { Mail, GraduationCap, Shield, CreditCard, Settings, Loader2, ChevronLeft } from "lucide-react";
-
+import { Mail, GraduationCap, Shield, CreditCard, Settings, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+
+// ============================================================================
+// PROFILE PAGE - NON-BLOCKING
+// ============================================================================
+// Auth is handled by middleware. Page renders immediately with skeleton.
+// Data fetches in useEffect. NO blocking if(loading) return.
+// ============================================================================
 
 interface UserData {
     fullName: string;
@@ -20,46 +23,23 @@ interface UserData {
     role: string;
     isSubscribed: boolean;
     subscriptionPlan?: string;
-    subscriptionExpiry?: { toDate: () => Date } | Date;
+    subscriptionExpiry?: Date;
     createdAt?: Date;
 }
 
 export default function ProfilePage() {
-    const { user, loading } = useAuth();
-    const router = useRouter();
-    // Use profile from context if available, or fetch fresh? 
-    // Context profile might be enough if it has all fields.
-    // The previous code fetched "users/{uid}" separately.
-    // In Supabase, "profiles" is the table.
-    // Let's rely on AuthContext profile first, but maybe we need subscription info from a different table or joined?
-    // "profiles" should have: full_name, wilaya, major, role, is_profile_complete.
-    // Subscription info might be in "profiles" (is_subscribed?) or separate "subscriptions" table.
-    // Looking at `AuthContext`, it selects `*, wilayas(full_label), majors(label)`.
-    // Let's assume `profiles` has `is_subscribed` etc based on previous `admin/users/page.tsx` migration work.
-
-    // Actually, `admin/users/page.tsx` used `user.is_subscribed` etc.
-    // Let's assume the profile in Supabase has these fields mapped or available.
-    // If not, we might need adjustments.
-
-    // For now, let's use the local profile from AuthContext if possible, but the original code fetched specific fields.
-    // The original code uses `UserData` interface.
-    // Let's stick to component-level fetching for ensuring we get the exact fields, 
-    // but using Supabase Client.
-
+    const { user, profile } = useAuth();
     const [userData, setUserData] = useState<UserData | null>(null);
     const [isFetching, setIsFetching] = useState(true);
     const supabase = createClient();
 
     useEffect(() => {
-        if (!loading && !user) {
-            router.push("/auth");
-            return;
-        }
-
         async function fetchUserData() {
-            if (!user) return;
+            if (!user) {
+                setIsFetching(false);
+                return;
+            }
             try {
-                // Fetch from 'profiles'
                 const { data } = await supabase
                     .from('profiles')
                     .select('*')
@@ -70,8 +50,8 @@ export default function ProfilePage() {
                     setUserData({
                         fullName: data.full_name,
                         email: user.email || "",
-                        wilaya: data.wilaya, // or join
-                        major: data.major,   // or join
+                        wilaya: data.wilaya,
+                        major: data.major,
                         role: data.role,
                         isSubscribed: data.is_subscribed,
                         subscriptionPlan: data.subscription_plan,
@@ -80,31 +60,24 @@ export default function ProfilePage() {
                     });
                 }
             } catch {
-                // console.error("Error fetching profile");
+                // Silent fail - show skeleton/empty state
             } finally {
                 setIsFetching(false);
             }
         }
-
-        if (user) {
-            fetchUserData();
-        }
-    }, [user, loading, router, supabase]);
-
-    if (loading || isFetching) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            </div>
-        );
-    }
-
-    if (!user) return null;
+        fetchUserData();
+    }, [user, supabase]);
 
     const formatDate = (dateObj: Date | undefined) => {
         if (!dateObj) return "—";
         return format(dateObj, "d MMMM yyyy", { locale: ar });
     };
+
+    // Get display values (from fetched data or context fallback)
+    const displayName = userData?.fullName || profile?.full_name || user?.user_metadata?.full_name || "المستخدم";
+    const displayEmail = userData?.email || user?.email || "";
+    const displayRole = userData?.role || profile?.role || "student";
+    const isSubscribed = userData?.isSubscribed || profile?.is_subscribed || false;
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -133,25 +106,29 @@ export default function ProfilePage() {
                         <div className="panel-body">
                             <div className="flex items-center gap-4 mb-6">
                                 <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center text-white text-xl font-bold">
-                                    {userData?.fullName?.[0]?.toUpperCase() || user.user_metadata?.full_name?.[0]?.toUpperCase() || "U"}
+                                    {isFetching ? (
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                        displayName[0]?.toUpperCase() || "U"
+                                    )}
                                 </div>
                                 <div>
                                     <h2 className="text-lg font-bold text-foreground">
-                                        {userData?.fullName || user.user_metadata?.full_name || "المستخدم"}
+                                        {isFetching ? <span className="bg-white/10 rounded animate-pulse inline-block w-32 h-5" /> : displayName}
                                     </h2>
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                         <Mail className="w-4 h-4" />
-                                        {userData?.email || user.email}
+                                        {displayEmail}
                                     </div>
                                 </div>
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <span className={`badge ${userData?.role === 'admin' ? 'badge-info' : 'badge-neutral'}`}>
-                                    {userData?.role === 'admin' ? 'مسؤول' : 'طالب'}
+                                <span className={`badge ${displayRole === 'admin' ? 'badge-info' : 'badge-neutral'}`}>
+                                    {displayRole === 'admin' ? 'مسؤول' : 'طالب'}
                                 </span>
-                                <span className={`badge ${userData?.isSubscribed ? 'badge-success' : 'badge-neutral'}`}>
-                                    {userData?.isSubscribed ? 'مشترك' : 'مجاني'}
+                                <span className={`badge ${isSubscribed ? 'badge-success' : 'badge-neutral'}`}>
+                                    {isSubscribed ? 'مشترك' : 'مجاني'}
                                 </span>
                             </div>
                         </div>
@@ -179,7 +156,7 @@ export default function ProfilePage() {
                                 </div>
                                 <div className="p-4 bg-background-subtle rounded-xl border border-glass-border">
                                     <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">حالة الاشتراك</div>
-                                    <div className="font-semibold text-foreground">{userData?.isSubscribed ? "نشط" : "مجاني"}</div>
+                                    <div className="font-semibold text-foreground">{isSubscribed ? "نشط" : "مجاني"}</div>
                                 </div>
                             </div>
                         </div>
@@ -235,7 +212,7 @@ export default function ProfilePage() {
                     </section>
 
                     {/* Upgrade CTA */}
-                    {!userData?.isSubscribed && (
+                    {!isSubscribed && (
                         <section className="panel bg-primary/10 border-primary/30">
                             <div className="p-6">
                                 <h3 className="text-lg font-bold mb-2 text-foreground">ترقية الحساب</h3>

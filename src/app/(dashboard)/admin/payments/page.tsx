@@ -92,7 +92,19 @@ export default function PaymentsPage() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-zinc-500">Loading payments...</div>;
+    // Inline skeleton instead of blocking
+    if (loading) {
+        return (
+            <div className="space-y-8 animate-in fade-in duration-500">
+                <div className="h-8 w-48 bg-white/10 rounded animate-pulse" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="aspect-[4/3] bg-white/5 rounded-2xl animate-pulse" />
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">

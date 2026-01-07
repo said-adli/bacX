@@ -4,11 +4,15 @@ import { useAuth } from "@/context/AuthContext";
 import { VideoCard } from "@/components/dashboard/VideoCard";
 import { useState, useEffect, use } from "react";
 import { createClient } from "@/utils/supabase/client";
-// import { collection, query, where, orderBy, getDocs, Timestamp } from "firebase/firestore";
-// import { db } from "@/lib/firebase";
-import { LessonSkeleton } from "@/components/skeletons/LessonSkeleton";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
+
+// ============================================================================
+// SUBJECT PAGE - NON-BLOCKING
+// ============================================================================
+// Auth is handled by middleware. Page renders immediately.
+// Data fetches in useEffect. NO blocking if(loading) return.
+// ============================================================================
 
 interface Lesson {
     id: string;
@@ -18,22 +22,23 @@ interface Lesson {
     duration?: string;
     thumbnail?: string;
     videoUrl: string;
-    createdAt: string | Date;
 }
 
 export default function SubjectPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
-    const decodedSubject = decodeURIComponent(id); // Handle Arabic URLs
-    const { user, loading: authLoading } = useAuth();
+    const decodedSubject = decodeURIComponent(id);
+    const { user } = useAuth();
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [loading, setLoading] = useState(true);
-
     const supabase = createClient();
 
     useEffect(() => {
         async function fetchLessons() {
+            if (!user) {
+                setLoading(false);
+                return;
+            }
             try {
-                // Fetch lessons for this specific subject
                 const { data, error } = await supabase
                     .from('lessons')
                     .select('*')
@@ -43,20 +48,15 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
                 if (error) throw error;
 
                 if (data) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    setLessons(data.map((doc: any) => ({
+                    setLessons(data.map((doc) => ({
                         id: doc.id,
                         title: doc.title,
                         subject: doc.subject,
                         instructor: doc.instructor,
                         duration: doc.duration,
                         thumbnail: doc.thumbnail,
-                        videoUrl: doc.video_url || doc.videoUrl, // Handle snake_case
-                        createdAt: doc.created_at // Supabase returns string, but interface asks for Timestamp? 
-                        // We should update Interface to string or Date, or cast it.
-                        // Since we don't use createdAt in UI loop, maybe just keep it loosely typed or map.
-                        // Let's update Interface next.
-                    } as unknown as Lesson)));
+                        videoUrl: doc.video_url || doc.videoUrl,
+                    })));
                 }
             } catch (error) {
                 console.error("Error fetching lessons:", error);
@@ -64,33 +64,38 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
                 setLoading(false);
             }
         }
-
-        if (user) {
-            fetchLessons();
-        }
+        fetchLessons();
     }, [user, decodedSubject, supabase]);
-
-    if (authLoading || loading) return <div className="p-8"><LessonSkeleton /></div>;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 p-8">
+            {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Link href="/dashboard" className="hover:text-primary transition-colors">الرئيسية</Link>
                 <ChevronRight className="w-4 h-4" />
                 <span className="text-foreground font-medium">{decodedSubject}</span>
             </div>
 
+            {/* Header */}
             <div className="flex justify-between items-end">
                 <div>
                     <h1 className="text-3xl font-bold text-foreground mb-2">مادة {decodedSubject}</h1>
                     <p className="text-muted-foreground">استكشف جميع الدروس والتمارين المتاحة لهذه المادة</p>
                 </div>
                 <div className="text-sm font-bold bg-primary/10 text-primary px-3 py-1 rounded-full border border-primary/20">
-                    {lessons.length} درس
+                    {loading ? "..." : `${lessons.length} درس`}
                 </div>
             </div>
 
-            {lessons.length > 0 ? (
+            {/* Content */}
+            {loading ? (
+                // Skeleton grid
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="aspect-video bg-white/5 rounded-2xl animate-pulse" />
+                    ))}
+                </div>
+            ) : lessons.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {lessons.map((video) => (
                         <VideoCard
@@ -100,7 +105,7 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
                             instructor={video.instructor || "Brainy Instructor"}
                             duration={video.duration || "20:00"}
                             thumbnail={video.thumbnail || `https://img.youtube.com/vi/${video.videoUrl}/hqdefault.jpg`}
-                            href={`/video/${video.id}`} // New Route
+                            href={`/video/${video.id}`}
                             progress={0}
                         />
                     ))}

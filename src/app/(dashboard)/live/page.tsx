@@ -31,17 +31,16 @@ export default function LivePage() {
     // Derived state - no need for useEffect
     const isSubscribed = profile?.role === 'admin' || !!profile?.is_subscribed;
 
-    // --- GUARD: LOADING ---
+    // Non-blocking: render skeleton inline while loading
     if (authLoading) {
         return (
-            <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            </div>
+            <main className="min-h-screen bg-[#050505] flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </main>
         );
     }
 
-    // --- GUARD: NOT AUTHENTICATED ---
-    // Use a component with useEffect for redirect to avoid hydration issues
+    // Redirect handled in separate component to avoid hydration issues
     if (!user) {
         return <RedirectToAuth />;
     }

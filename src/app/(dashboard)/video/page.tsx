@@ -70,7 +70,21 @@ export default function LessonsIndexPage() {
     const filteredLessons = filter === "All" ? lessons : lessons.filter(l => l.subject === filter);
     const subjects = ["All", "الرياضيات", "الفيزياء", "العلوم"];
 
-    if (authLoading || loading) return <LessonSkeleton />; // Reusing skeleton (closely enough)
+    // Inline skeleton instead of blocking
+    if (authLoading || loading) {
+        return (
+            <main className="min-h-screen bg-[#050505] p-6 pb-24 text-white">
+                <div className="max-w-6xl mx-auto space-y-8">
+                    <div className="h-8 w-48 bg-white/10 rounded animate-pulse" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <div key={i} className="aspect-video bg-white/5 rounded-2xl animate-pulse" />
+                        ))}
+                    </div>
+                </div>
+            </main>
+        );
+    }
 
     return (
         <main className="min-h-screen bg-[#050505] p-6 pb-24 text-white font-tajawal">

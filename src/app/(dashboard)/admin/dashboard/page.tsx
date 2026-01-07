@@ -30,10 +30,20 @@ export default function AdminDashboard() {
     const [isLoading, setIsLoading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
-    // --- SECURITY CHECK (CRITICAL) ---
-    if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
+    // Non-blocking: render inline skeleton while checking auth
+    if (loading) {
+        return (
+            <main className="min-h-screen bg-[#050505] p-4 pb-24">
+                <div className="max-w-2xl mx-auto space-y-6 animate-pulse">
+                    <div className="h-8 w-48 bg-white/10 rounded" />
+                    <div className="h-12 bg-white/5 rounded-xl" />
+                    <div className="h-64 bg-white/5 rounded-xl" />
+                </div>
+            </main>
+        );
+    }
 
-    // Use profile role if available, or user check
+    // Access denied - user is not admin
     if (!user || profile?.role !== 'admin') {
         return (
             <main className="min-h-screen bg-black flex items-center justify-center p-4">
