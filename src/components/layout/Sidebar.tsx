@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Home, User, Crown, Settings, ChevronDown, ChevronRight, Brain, Calculator, FlaskConical, Microscope, HelpCircle } from "lucide-react";
 
-import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
@@ -52,14 +51,12 @@ export function Sidebar() {
                         const Icon = item.icon || HelpCircle;
 
                         return (
-                            <motion.div
+                            <div
                                 key={item.href}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                transition={{ type: "spring", stiffness: 400, damping: 25 }}
                             >
                                 <Link
                                     href={item.href}
+                                    prefetch={false}
                                     className={cn(
                                         "relative z-[80] flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all duration-300 group overflow-hidden cursor-pointer",
                                         isActive
@@ -69,10 +66,8 @@ export function Sidebar() {
                                 >
                                     {/* Active Indicator - Glowing */}
                                     {isActive && (
-                                        <motion.div
-                                            layoutId="activeIndicator"
+                                        <div
                                             className="absolute right-0 top-0 bottom-0 w-1 bg-primary rounded-l-full shadow-[0_0_20px_rgba(37,99,235,0.8)]"
-                                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
                                         />
                                     )}
 
@@ -87,7 +82,7 @@ export function Sidebar() {
                                         {item.label}
                                     </span>
                                 </Link>
-                            </motion.div>
+                            </div>
                         );
                     })}
                 </div>
@@ -102,81 +97,69 @@ export function Sidebar() {
                         {isSubjectsOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                     </button>
 
-                    <AnimatePresence>
-                        {isSubjectsOpen && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.3, ease: "easeInOut" }}
-                                className="space-y-1 overflow-hidden"
-                            >
-                                {subjects.map((subject) => {
-                                    // CRITICAL: Fallback to HelpCircle to prevent SVG path errors
-                                    const Icon = subject.icon || HelpCircle;
-                                    const isActive = pathname.includes(subject.id);
-                                    const subjectHref = `/subject/${subject.id}`;
+                    {/* AnimatePresence removed */}
+                    {isSubjectsOpen && (
+                        <div
+                            className="space-y-1 overflow-hidden"
+                        >
+                            {subjects.map((subject) => {
+                                // CRITICAL: Fallback to HelpCircle to prevent SVG path errors
+                                const Icon = subject.icon || HelpCircle;
+                                const isActive = pathname.includes(subject.id);
+                                const subjectHref = `/subject/${subject.id}`;
 
-                                    return (
-                                        <motion.div
-                                            key={subject.id}
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                                        >
-                                            <Link
-                                                href={subjectHref}
-                                                className={cn(
-                                                    "relative z-[80] flex items-center gap-4 px-6 py-3 rounded-xl transition-all duration-300 group mr-4 cursor-pointer",
-                                                    isActive ? "bg-primary/5 text-white" : "text-white/50 hover:text-white hover:bg-white/5"
-                                                )}
-                                            >
-                                                {isActive && (
-                                                    <motion.div
-                                                        layoutId="subjectActiveIndicator"
-                                                        className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-l-full shadow-[0_0_12px_rgba(37,99,235,0.6)]"
-                                                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                                    />
-                                                )}
-
-                                                <Icon className={cn(
-                                                    "w-5 h-5 shrink-0 transition-colors",
-                                                    isActive ? "text-primary" : "group-hover:text-primary/70"
-                                                )} />
-                                                <span className="text-sm font-medium">{subject.label}</span>
-                                            </Link>
-                                        </motion.div>
-                                    );
-                                })}
-
-                                <motion.div
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                                >
-                                    <Link
-                                        href="/subjects"
-                                        className="relative z-[80] flex items-center gap-4 px-6 py-3 text-sm text-primary/70 hover:text-primary transition-colors mr-4 cursor-pointer"
+                                return (
+                                    <div
+                                        key={subject.id}
                                     >
-                                        <div className="w-5 flex justify-center"><ChevronRight className="w-4 h-4" /></div>
-                                        <span>عرض كل المواد...</span>
-                                    </Link>
-                                </motion.div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                        <Link
+                                            href={subjectHref}
+                                            prefetch={false}
+                                            className={cn(
+                                                "relative z-[80] flex items-center gap-4 px-6 py-3 rounded-xl transition-all duration-300 group mr-4 cursor-pointer",
+                                                isActive ? "bg-primary/5 text-white" : "text-white/50 hover:text-white hover:bg-white/5"
+                                            )}
+                                        >
+                                            {isActive && (
+                                                <div
+                                                    className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-l-full shadow-[0_0_12px_rgba(37,99,235,0.6)]"
+                                                />
+                                            )}
+
+                                            <Icon className={cn(
+                                                "w-5 h-5 shrink-0 transition-colors",
+                                                isActive ? "text-primary" : "group-hover:text-primary/70"
+                                            )} />
+                                            <span className="text-sm font-medium">{subject.label}</span>
+                                        </Link>
+                                    </div>
+                                );
+                            })}
+
+                            <div
+                            >
+                                <Link
+                                    href="/subjects"
+                                    prefetch={false}
+                                    className="relative z-[80] flex items-center gap-4 px-6 py-3 text-sm text-primary/70 hover:text-primary transition-colors mr-4 cursor-pointer"
+                                >
+                                    <div className="w-5 flex justify-center"><ChevronRight className="w-4 h-4" /></div>
+                                    <span>عرض كل المواد...</span>
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+                    {/* AnimatePresence removed */}
                 </div>
 
                 {/* Admin Section */}
                 {role === 'admin' && (
                     <div className="pt-4 border-t border-white/5 mx-4">
-                        <motion.div
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                        <div
                         >
                             <Link
                                 href="/admin"
+                                prefetch={false}
                                 className={cn(
                                     "relative z-[80] flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all duration-300 group cursor-pointer",
                                     pathname.startsWith('/admin') ? "bg-red-500/10 text-red-500" : "text-white/60 hover:text-red-400 hover:bg-red-500/5"
@@ -185,7 +168,7 @@ export function Sidebar() {
                                 <Settings className="w-6 h-6 shrink-0" />
                                 <span className="font-medium">لوحة التحكم</span>
                             </Link>
-                        </motion.div>
+                        </div>
                     </div>
                 )}
             </div>
@@ -194,6 +177,7 @@ export function Sidebar() {
             <div className="p-6 relative z-10">
                 <Link
                     href="/subscription"
+                    prefetch={false}
                     className="group relative block w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 transition-all duration-500 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(37,99,235,0.15)] hover:-translate-y-1 cursor-pointer"
                 >
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

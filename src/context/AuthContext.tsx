@@ -137,7 +137,7 @@ export function AuthProvider({
                     user: null,
                     session: null,
                     profile: null,
-                    loading: false
+                    loading: false // FORCE FALSE
                 }));
             }
         });
