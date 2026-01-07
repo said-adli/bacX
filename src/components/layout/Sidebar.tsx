@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import Link from "next/link";
+// import Link from "next/link";
 import { Home, User, Crown, Settings, ChevronDown, ChevronRight, Brain, Calculator, FlaskConical, Microscope, HelpCircle } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,12 +35,12 @@ export function Sidebar() {
         <div className="w-full h-full flex flex-col bg-transparent relative z-[70] pointer-events-auto">
             {/* Logo - Perfectly Centered */}
             <div className="h-24 flex items-center justify-center border-b border-white/5 mx-6">
-                <Link
+                <a
                     href="/dashboard"
                     className="group cursor-pointer"
                 >
                     <BrainyLogo variant="navbar" className="h-12 w-auto" />
-                </Link>
+                </a>
             </div>
 
             {/* Main Navigation */}
@@ -58,7 +58,7 @@ export function Sidebar() {
                                 whileTap={{ scale: 0.98 }}
                                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
                             >
-                                <Link
+                                <a
                                     href={item.href}
                                     className={cn(
                                         "relative z-[80] flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all duration-300 group overflow-hidden cursor-pointer",
@@ -86,7 +86,7 @@ export function Sidebar() {
                                     )}>
                                         {item.label}
                                     </span>
-                                </Link>
+                                </a>
                             </motion.div>
                         );
                     })}
@@ -124,7 +124,7 @@ export function Sidebar() {
                                             whileTap={{ scale: 0.98 }}
                                             transition={{ type: "spring", stiffness: 400, damping: 25 }}
                                         >
-                                            <Link
+                                            <a
                                                 href={subjectHref}
                                                 className={cn(
                                                     "relative z-[80] flex items-center gap-4 px-6 py-3 rounded-xl transition-all duration-300 group mr-4 cursor-pointer",
@@ -144,7 +144,7 @@ export function Sidebar() {
                                                     isActive ? "text-primary" : "group-hover:text-primary/70"
                                                 )} />
                                                 <span className="text-sm font-medium">{subject.label}</span>
-                                            </Link>
+                                            </a>
                                         </motion.div>
                                     );
                                 })}
@@ -154,13 +154,13 @@ export function Sidebar() {
                                     whileTap={{ scale: 0.98 }}
                                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
                                 >
-                                    <Link
+                                    <a
                                         href="/subjects"
                                         className="relative z-[80] flex items-center gap-4 px-6 py-3 text-sm text-primary/70 hover:text-primary transition-colors mr-4 cursor-pointer"
                                     >
                                         <div className="w-5 flex justify-center"><ChevronRight className="w-4 h-4" /></div>
                                         <span>عرض كل المواد...</span>
-                                    </Link>
+                                    </a>
                                 </motion.div>
                             </motion.div>
                         )}
@@ -175,7 +175,7 @@ export function Sidebar() {
                             whileTap={{ scale: 0.98 }}
                             transition={{ type: "spring", stiffness: 400, damping: 25 }}
                         >
-                            <Link
+                            <a
                                 href="/admin"
                                 className={cn(
                                     "relative z-[80] flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all duration-300 group cursor-pointer",
@@ -184,7 +184,7 @@ export function Sidebar() {
                             >
                                 <Settings className="w-6 h-6 shrink-0" />
                                 <span className="font-medium">لوحة التحكم</span>
-                            </Link>
+                            </a>
                         </motion.div>
                     </div>
                 )}
@@ -192,7 +192,7 @@ export function Sidebar() {
 
             {/* Premium Upgrade Card - Floating Glass */}
             <div className="p-6 relative z-10">
-                <Link
+                <a
                     href="/subscription"
                     className="group relative block w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 transition-all duration-500 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(37,99,235,0.15)] hover:-translate-y-1 cursor-pointer"
                 >
@@ -207,7 +207,7 @@ export function Sidebar() {
                             <p className="text-xs text-white/50 leading-relaxed">افتح جميع الدروس والتمارين الآن</p>
                         </div>
                     </div>
-                </Link>
+                </a>
             </div>
         </div>
     );
