@@ -8,9 +8,6 @@ export async function updateSession(request: NextRequest) {
         },
     })
 
-    // Create an unmodified response for public routes to avoid creating session cookies excessively?
-    // No, Supabase needs to check the session everywhere to handle refresh tokens securely.
-
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -34,32 +31,30 @@ export async function updateSession(request: NextRequest) {
         }
     )
 
-    // IMPORTANT: Avoid writing complex logic in middleware that queries the DB.
-    // Just getUser() to validate auth token.
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+    // LIGHTWEIGHT: Use getSession() instead of getUser() 
+    // getSession() reads from cookie, getUser() hits Supabase API
+    const { data: { session } } = await supabase.auth.getSession()
 
     const path = request.nextUrl.pathname;
 
     // --- PROTECTED ROUTES ---
-    // If no user, and trying to access protected route (dashboard, admin, etc)
     const isProtectedRoute =
         path.startsWith('/dashboard') ||
         path.startsWith('/admin') ||
-        path.startsWith('/complete-profile');
+        path.startsWith('/complete-profile') ||
+        path.startsWith('/subject') ||
+        path.startsWith('/video') ||
+        path.startsWith('/subscription') ||
+        path.startsWith('/profile');
 
-    if (isProtectedRoute && !user) {
+    if (isProtectedRoute && !session) {
         return NextResponse.redirect(new URL('/login', request.url));
     }
 
     // --- AUTH ROUTES ---
-    // If user exists, and trying to access login/signup
     const isAuthRoute = path.startsWith('/auth') || path.startsWith('/login');
 
-    if (isAuthRoute && user) {
-        // Smart Redirect based on role/completion could happen here,
-        // But usually safer to let the Page/Context handle specifics or redirect to dashboard default.
+    if (isAuthRoute && session) {
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
