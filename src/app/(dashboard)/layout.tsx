@@ -1,60 +1,15 @@
-"use client";
-
-import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopNav } from "@/components/layout/TopNav";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { useAuth } from "@/context/AuthContext";
 
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const { user, loading } = useAuth();
-    const router = useRouter();
-    const [isMounted, setIsMounted] = useState(false);
-
-    // CRITICAL: Track if redirect has been initiated to prevent loop
-    const hasRedirected = useRef(false);
-
-    // Mounted guard - ensures we only render after client is ready
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
-
-    // Auth redirect logic - only runs after mounted and auth resolved
-    useEffect(() => {
-        if (!isMounted || loading) return;
-
-        if (!user && !hasRedirected.current) {
-            hasRedirected.current = true;
-            router.replace('/login');
-        }
-    }, [isMounted, loading, user, router]);
-
-    // Show loading while auth is resolving or not mounted
-    if (!isMounted || loading) {
-        return (
-            <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            </div>
-        );
-    }
-
-    // If no user after auth resolved, show loading (redirect in progress)
-    if (!user) {
-        return (
-            <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            </div>
-        );
-    }
-
-    // SIMPLE LAYOUT - No animations, reliable rendering
     return (
         <div className="min-h-screen bg-[#050505] text-white font-sans" dir="rtl">
             {/* Sidebar - Desktop Only, Fixed on Right */}
@@ -69,9 +24,15 @@ export default function DashboardLayout({
                     <TopNav />
                 </header>
 
-                {/* Page Content - Simple render */}
+                {/* Page Content - Wrapped in Suspense for SPA transitions */}
                 <main className="p-6 lg:p-10">
-                    {children}
+                    <Suspense fallback={
+                        <div className="w-full h-[calc(100vh-10rem)] flex items-center justify-center">
+                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                        </div>
+                    }>
+                        {children}
+                    </Suspense>
                 </main>
             </div>
 
