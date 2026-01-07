@@ -101,20 +101,20 @@ export function DiagnosticOverlay() {
                     const ts = new Date().toISOString().slice(11, 23);
                     setState(prev => ({
                         ...prev,
-                        networkEvents: [...prev.networkEvents, { type: "REQUEST", url: url.slice(0, 50), timestamp: ts }].slice(-5),
+                        networkEvents: [...prev.networkEvents, { type: "REQUEST" as const, url: url.slice(0, 50), timestamp: ts }].slice(-5),
                     }));
 
                     try {
                         const response = await window.__originalFetch!(...args);
                         setState(prev => ({
                             ...prev,
-                            networkEvents: [...prev.networkEvents, { type: "RESPONSE", url: url.slice(0, 50), timestamp: new Date().toISOString().slice(11, 23) }].slice(-5),
+                            networkEvents: [...prev.networkEvents, { type: "RESPONSE" as const, url: url.slice(0, 50), timestamp: new Date().toISOString().slice(11, 23) }].slice(-5),
                         }));
                         return response;
                     } catch (err) {
                         setState(prev => ({
                             ...prev,
-                            networkEvents: [...prev.networkEvents, { type: "ERROR", url: url.slice(0, 50), timestamp: new Date().toISOString().slice(11, 23) }].slice(-5),
+                            networkEvents: [...prev.networkEvents, { type: "ERROR" as const, url: url.slice(0, 50), timestamp: new Date().toISOString().slice(11, 23) }].slice(-5),
                         }));
                         throw err;
                     }
