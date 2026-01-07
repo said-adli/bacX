@@ -57,7 +57,7 @@ export function AuthProvider({
         user: initialUser,
         profile: hydratedProfile,
         session: null,
-        loading: !initialUser,
+        loading: false, // OPTIMISTIC: Never block UI on auth - trust SSR hydration
         error: null,
     });
 
@@ -89,61 +89,54 @@ export function AuthProvider({
         return profile as unknown as UserProfile;
     }, [supabase]);
 
-    // handleNavigation was unused and causing lint warnings.
-    // Logic for redirection is now handled in components or middleware if needed.
-
-    // Use a ref to track the current user ID to avoid infinite loops in useEffect
-    const userIdRef = useRef<string | undefined>(state.user?.id);
+    // Track if we've completed initial auth check
+    const hasInitialized = useRef(!!initialUser);
+    // Track current user ID to avoid duplicate fetches
+    const userIdRef = useRef<string | undefined>(initialUser?.id);
 
     useEffect(() => {
-        // EMERGENCY BYPASS: Force loading to false after 5 seconds
-        const timer = setTimeout(() => {
-            if (state.loading) {
-                console.error("AuthContext: Emergency bypass triggered - forcing loading to false");
-                setState(prev => ({ ...prev, loading: false }));
-            }
-        }, 5000);
-
+        // BACKGROUND AUTH LISTENER: Never blocks navigation
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log("AuthContext: Auth State Change:", event);
-            console.log("AuthContext: session is", session);
-            console.log("AuthContext: user object is", session?.user);
+            // Skip INITIAL_SESSION if we already have SSR data
+            if (event === 'INITIAL_SESSION' && hasInitialized.current) {
+                // Just sync the session object, don't re-fetch profile
+                if (session) {
+                    setState(prev => ({ ...prev, session }));
+                }
+                return;
+            }
 
             if (session?.user) {
                 const user = session.user;
-                // Only fetch profile if user changed or we don't have it
-                if (user.id !== userIdRef.current) {
-                    userIdRef.current = user.id; // Update Ref
-                    console.log("AuthContext: Fetching profile for new user", user.id);
+
+                if (!hasInitialized.current) {
+                    // First client-side auth - silently hydrate
+                    hasInitialized.current = true;
+                    userIdRef.current = user.id;
                     const profile = await fetchProfile(user.id);
-                    setState(prev => ({
-                        ...prev,
-                        user,
-                        session,
-                        profile,
-                        loading: false
-                    }));
-                    console.log("AuthContext: Profile loaded, loading set to false");
+                    setState(prev => ({ ...prev, user, session, profile }));
+                } else if (user.id !== userIdRef.current) {
+                    // User actually changed (rare: account switch)
+                    userIdRef.current = user.id;
+                    const profile = await fetchProfile(user.id);
+                    setState(prev => ({ ...prev, user, session, profile }));
                 } else {
-                    // Even if user hasn't changed, we might need to update session or stop loading
-                    console.log("AuthContext: User unchanged, updating session");
-                    setState(prev => ({ ...prev, user, session, loading: false }));
+                    // Same user, just session refresh - update session only
+                    setState(prev => ({ ...prev, session }));
                 }
-            } else {
-                console.log("AuthContext: No session, clearing state");
-                userIdRef.current = undefined; // Reset Ref
+            } else if (hasInitialized.current && userIdRef.current) {
+                // Actual logout (not initial empty state)
+                userIdRef.current = undefined;
                 setState(prev => ({
                     ...prev,
                     user: null,
                     session: null,
-                    profile: null,
-                    loading: false // FORCE FALSE
+                    profile: null
                 }));
             }
         });
 
         return () => {
-            clearTimeout(timer);
             subscription.unsubscribe();
         };
     }, [supabase, fetchProfile]);
