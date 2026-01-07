@@ -1,15 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { AnimatePresence } from "framer-motion";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopNav } from "@/components/layout/TopNav";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { BackButton } from "@/components/ui/BackButton";
-import { PageTransition } from "@/components/ui/PageTransition";
 import { useAuth } from "@/context/AuthContext";
 
 export default function DashboardLayout({
@@ -19,7 +16,6 @@ export default function DashboardLayout({
 }) {
     const { user, loading } = useAuth();
     const router = useRouter();
-    const pathname = usePathname();
     const [isMounted, setIsMounted] = useState(false);
 
     // CRITICAL: Track if redirect has been initiated to prevent loop
@@ -58,35 +54,24 @@ export default function DashboardLayout({
         );
     }
 
+    // SIMPLE LAYOUT - Matching admin layout structure
     return (
-        <div className="min-h-screen bg-[#050505] relative">
+        <div className="min-h-screen bg-[#050505] text-white font-sans" dir="rtl">
             {/* Sidebar - Desktop Only, Fixed on Right */}
-            <aside className="hidden lg:flex w-72 flex-col fixed inset-y-0 right-0 z-40 border-l border-white/5 bg-[#0a0a0f]/80 backdrop-blur-xl">
+            <aside className="hidden lg:flex w-72 flex-col fixed inset-y-0 right-0 z-40 border-l border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl">
                 <Sidebar />
             </aside>
 
             {/* Main Content Wrapper - Offset by sidebar width on desktop */}
-            <div className="lg:mr-72 min-h-screen flex flex-col">
-                {/* Top Navigation - Fixed at top */}
-                <header className="sticky top-0 z-30 h-20 border-b border-white/5 bg-[#050505]/80 backdrop-blur-xl">
+            <div className="lg:mr-72 min-h-screen">
+                {/* Top Navigation */}
+                <header className="sticky top-0 z-30 h-20 border-b border-white/5 bg-[#050505]/90 backdrop-blur-xl">
                     <TopNav />
                 </header>
 
-                {/* Page Content */}
-                <main className="flex-1 relative">
-                    {/* Back Button - Show on nested pages */}
-                    {pathname !== '/dashboard' && (
-                        <div className="absolute top-4 right-4 z-20">
-                            <BackButton />
-                        </div>
-                    )}
-
-                    {/* Animated Page Content */}
-                    <AnimatePresence mode="wait">
-                        <PageTransition key={pathname}>
-                            {children}
-                        </PageTransition>
-                    </AnimatePresence>
+                {/* Page Content - Simple render, no AnimatePresence blocking */}
+                <main className="p-6 lg:p-10">
+                    {children}
                 </main>
             </div>
 
