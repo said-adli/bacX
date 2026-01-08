@@ -41,6 +41,11 @@ interface HijackerState {
 declare global {
     interface Window {
         __HIJACK_NAV?: (url: string) => void;
+        __DIAG_NAV_START?: (target: string) => void;
+        __DIAG_CHECKPOINT?: (phase: string, source?: string) => void;
+        __DIAG_FETCH_TIME?: (ms: number) => void;
+        __DIAG_PROFILE?: (name: string, time: number, phase: string) => void;
+        __originalFetch?: typeof fetch;
     }
 }
 
@@ -276,8 +281,8 @@ export function ShadowHijacker() {
                 <div className="p-4 bg-white/5 rounded-lg">
                     <h2 className="text-white/60 text-sm mb-3 uppercase tracking-wider">RAW SERVER STATUS</h2>
                     <div className={`text-3xl font-bold mb-2 ${sf?.status === "PENDING" ? "text-yellow-400 animate-pulse" :
-                            sf?.status === "SUCCESS" ? "text-green-400" :
-                                "text-red-400"
+                        sf?.status === "SUCCESS" ? "text-green-400" :
+                            "text-red-400"
                         }`}>
                         {sf?.status || "—"}
                     </div>
