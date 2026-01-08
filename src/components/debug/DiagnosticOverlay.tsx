@@ -1,27 +1,20 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, Profiler, ProfilerOnRenderCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 /**
- * DIAGNOSTIC OVERLAY v6 - DNA CULPRIT HUNTER
- * - React.Profiler integration
- * - Component timing table
- * - Performance mark tracking
- * - Smoking gun detector
+ * DIAGNOSTIC OVERLAY v8 - ON-SCREEN DOCTOR'S REPORT
+ * - Live timer display
+ * - Color-coded critical values
+ * - Persistent results across navigation
  */
 
-interface ComponentTiming {
-    name: string;
-    renderTime: number;
-    phase: "mount" | "update";
+interface TimerResult {
+    label: string;
+    duration: number;
     timestamp: number;
-}
-
-interface JsError {
-    message: string;
-    timestamp: string;
 }
 
 interface DiagnosticState {
@@ -29,14 +22,14 @@ interface DiagnosticState {
     routerStatus: "IDLE" | "NAVIGATING";
     pathname: string;
     renderCount: number;
-    componentTimings: ComponentTiming[];
-    jsErrors: JsError[];
+    timers: TimerResult[];
     heartbeatAlive: boolean;
     verdict: string | null;
     transitionStartTime: number | null;
-    slowestComponent: string | null;
-    slowestTime: number;
 }
+
+// Global timer storage
+const pendingTimers: Record<string, number> = {};
 
 // Global event bus
 declare global {
@@ -45,41 +38,37 @@ declare global {
         __DIAG_CHECKPOINT?: (label: string) => void;
         __DIAG_FETCH_TIME?: (ms: number) => void;
         __DIAG_PROFILE?: (name: string, time: number, phase: string) => void;
+        __DIAG_TIMER_START?: (label: string) => void;
+        __DIAG_TIMER_END?: (label: string) => void;
         __originalFetch?: typeof fetch;
     }
 }
 
 // ============================================================================
-// PROFILER WRAPPER COMPONENT
+// GLOBAL TIMING FUNCTIONS (for use in other components)
 // ============================================================================
-export function ProfiledComponent({
-    id,
-    children
-}: {
-    id: string;
-    children: React.ReactNode;
-}) {
-    const onRender: ProfilerOnRenderCallback = useCallback((
-        id,
-        phase,
-        actualDuration,
-    ) => {
-        // Report to global handler
-        if (typeof window !== "undefined" && window.__DIAG_PROFILE) {
-            window.__DIAG_PROFILE(id, actualDuration, phase);
-        }
+export function timerStart(label: string) {
+    pendingTimers[label] = performance.now();
+    if (typeof window !== "undefined" && window.__DIAG_TIMER_START) {
+        window.__DIAG_TIMER_START(label);
+    }
+}
 
-        // Log slow renders
-        if (actualDuration > 16) {
-            console.warn(`[PROFILER] ${id} took ${actualDuration.toFixed(1)}ms (${phase})`);
+export function timerEnd(label: string) {
+    const start = pendingTimers[label];
+    if (start) {
+        const duration = performance.now() - start;
+        delete pendingTimers[label];
+        if (typeof window !== "undefined" && window.__DIAG_TIMER_END) {
+            window.__DIAG_TIMER_END(label);
         }
-    }, []);
-
-    return (
-        <Profiler id={id} onRender={onRender}>
-            {children}
-        </Profiler>
-    );
+        // Also report to global handler
+        if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent('diag-timer', { detail: { label, duration } }));
+        }
+        return duration;
+    }
+    return 0;
 }
 
 // ============================================================================
@@ -93,18 +82,14 @@ export function DiagnosticOverlay() {
         routerStatus: "IDLE",
         pathname: "",
         renderCount: 0,
-        componentTimings: [],
-        jsErrors: [],
+        timers: [],
         heartbeatAlive: true,
         verdict: null,
         transitionStartTime: null,
-        slowestComponent: null,
-        slowestTime: 0,
     });
 
     const startTimeRef = useRef<number | null>(null);
     const heartbeatRef = useRef<number>(Date.now());
-    const frameRef = useRef<number>(0);
 
     // =========================================================================
     // AUTH STATE TRACKING
@@ -123,34 +108,42 @@ export function DiagnosticOverlay() {
     }, [user, loading, pathname]);
 
     // =========================================================================
-    // PROFILER HANDLER
+    // TIMER EVENT LISTENER
     // =========================================================================
-    const handleProfile = useCallback((name: string, time: number, phase: string) => {
-        const timing: ComponentTiming = {
-            name,
-            renderTime: time,
-            phase: phase as "mount" | "update",
-            timestamp: Date.now(),
+    useEffect(() => {
+        const handleTimer = (e: CustomEvent<{ label: string; duration: number }>) => {
+            const { label, duration } = e.detail;
+            setState(prev => {
+                // Update or add timer result
+                const existing = prev.timers.findIndex(t => t.label === label);
+                const newTimer: TimerResult = { label, duration, timestamp: Date.now() };
+
+                let newTimers: TimerResult[];
+                if (existing >= 0) {
+                    newTimers = [...prev.timers];
+                    newTimers[existing] = newTimer;
+                } else {
+                    newTimers = [...prev.timers, newTimer].slice(-10);
+                }
+
+                // Determine verdict based on slowest timer
+                const slowest = newTimers.reduce((a, b) => a.duration > b.duration ? a : b, { label: "", duration: 0 });
+                const verdict = slowest.duration > 100
+                    ? `🔴 CRITICAL: ${slowest.label} (${slowest.duration.toFixed(0)}ms)`
+                    : slowest.duration > 50
+                        ? `🟠 SLOW: ${slowest.label} (${slowest.duration.toFixed(0)}ms)`
+                        : null;
+
+                return {
+                    ...prev,
+                    timers: newTimers,
+                    verdict,
+                };
+            });
         };
 
-        setState(prev => {
-            // Keep last 10 timings per component
-            const newTimings = [...prev.componentTimings.filter(t => t.name !== name).slice(-9), timing];
-
-            // Find slowest
-            const slowest = newTimings.reduce((a, b) => a.renderTime > b.renderTime ? a : b, { name: "", renderTime: 0 } as ComponentTiming);
-
-            return {
-                ...prev,
-                componentTimings: newTimings,
-                slowestComponent: slowest.renderTime > 16 ? slowest.name : prev.slowestComponent,
-                slowestTime: Math.max(slowest.renderTime, prev.slowestTime),
-                // Update verdict if component is very slow
-                ...(time > 50 ? {
-                    verdict: `🔴 SLOW COMPONENT: ${name} (${time.toFixed(0)}ms)`,
-                } : {}),
-            };
-        });
+        window.addEventListener('diag-timer', handleTimer as EventListener);
+        return () => window.removeEventListener('diag-timer', handleTimer as EventListener);
     }, []);
 
     // =========================================================================
@@ -170,43 +163,15 @@ export function DiagnosticOverlay() {
                 ...prev,
                 heartbeatAlive: !frozen,
                 ...(frozen && prev.routerStatus === "NAVIGATING" ? {
-                    verdict: `🔴 CLIENT_FREEZE: Thread blocked ${delta}ms`,
+                    verdict: `🔴 THREAD FROZEN: ${delta}ms`,
                 } : {}),
             }));
 
-            frameRef.current++;
             animationFrameId = requestAnimationFrame(heartbeat);
         };
 
         animationFrameId = requestAnimationFrame(heartbeat);
         return () => cancelAnimationFrame(animationFrameId);
-    }, []);
-
-    // =========================================================================
-    // ERROR CATCHER
-    // =========================================================================
-    useEffect(() => {
-        const handleError = (event: ErrorEvent) => {
-            setState(prev => ({
-                ...prev,
-                jsErrors: [...prev.jsErrors, { message: event.message.slice(0, 50), timestamp: new Date().toISOString().slice(11, 19) }].slice(-3),
-            }));
-        };
-
-        const handleRejection = (event: PromiseRejectionEvent) => {
-            const msg = event.reason?.message || String(event.reason).slice(0, 50);
-            setState(prev => ({
-                ...prev,
-                jsErrors: [...prev.jsErrors, { message: msg, timestamp: new Date().toISOString().slice(11, 19) }].slice(-3),
-            }));
-        };
-
-        window.addEventListener("error", handleError);
-        window.addEventListener("unhandledrejection", handleRejection);
-        return () => {
-            window.removeEventListener("error", handleError);
-            window.removeEventListener("unhandledrejection", handleRejection);
-        };
     }, []);
 
     // =========================================================================
@@ -216,35 +181,20 @@ export function DiagnosticOverlay() {
         const now = Date.now();
         startTimeRef.current = now;
 
-        console.log(`[NAV] Start: ${target}`);
-
         setState(prev => ({
             ...prev,
             routerStatus: "NAVIGATING",
             transitionStartTime: now,
-            verdict: null,
-            componentTimings: [],
-            slowestComponent: null,
-            slowestTime: 0,
         }));
     }, []);
 
-    // Register global handlers
     useEffect(() => {
         window.__DIAG_NAV_START = handleNavStart;
-        window.__DIAG_PROFILE = handleProfile;
-        return () => {
-            delete window.__DIAG_NAV_START;
-            delete window.__DIAG_PROFILE;
-        };
-    }, [handleNavStart, handleProfile]);
+        return () => { delete window.__DIAG_NAV_START; };
+    }, [handleNavStart]);
 
-    // Reset on successful navigation
+    // Reset router status on pathname change
     useEffect(() => {
-        if (startTimeRef.current) {
-            const elapsed = Date.now() - startTimeRef.current;
-            console.log(`[NAV] Complete: ${elapsed}ms`);
-        }
         setState(prev => ({
             ...prev,
             routerStatus: "IDLE",
@@ -253,12 +203,23 @@ export function DiagnosticOverlay() {
     }, [pathname]);
 
     // =========================================================================
-    // GET COMPONENT STATUS
+    // CLEAR FUNCTION
     // =========================================================================
-    const getStatus = (time: number) => {
-        if (time > 50) return { icon: "🔴", label: "CRITICAL", color: "text-red-400" };
-        if (time > 16) return { icon: "🟠", label: "SLOW", color: "text-orange-400" };
-        return { icon: "🟢", label: "OK", color: "text-green-400" };
+    const clearTimers = () => {
+        setState(prev => ({
+            ...prev,
+            timers: [],
+            verdict: null,
+        }));
+    };
+
+    // =========================================================================
+    // GET COLOR FOR DURATION
+    // =========================================================================
+    const getColor = (duration: number) => {
+        if (duration > 100) return { bg: "bg-red-500/20", text: "text-red-400", flash: true };
+        if (duration > 50) return { bg: "bg-yellow-500/20", text: "text-yellow-400", flash: false };
+        return { bg: "bg-green-500/20", text: "text-green-400", flash: false };
     };
 
     // =========================================================================
@@ -268,90 +229,77 @@ export function DiagnosticOverlay() {
         ? Date.now() - state.transitionStartTime
         : null;
 
-    // Get unique components with their latest timing
-    const componentTable = state.componentTimings.reduce((acc, t) => {
-        acc[t.name] = t;
-        return acc;
-    }, {} as Record<string, ComponentTiming>);
-
     return (
-        <div className={`fixed bottom-4 right-4 z-[9999] border rounded-lg p-3 font-mono text-[10px] space-y-1 shadow-2xl min-w-[360px] max-h-[500px] overflow-y-auto ${state.verdict ? "bg-red-950/95 border-red-500/50" : "bg-black/95 border-white/20"}`}>
+        <div className="fixed bottom-4 left-4 z-[9999] bg-black border border-white/30 rounded-lg p-4 font-mono text-xs shadow-2xl min-w-[320px] max-h-[500px] overflow-y-auto">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-1 mb-2">
-                <span className="text-white/50 font-bold">🧬 DNA HUNTER v6</span>
+            <div className="flex items-center justify-between border-b border-white/20 pb-2 mb-3">
+                <span className="text-white font-bold text-sm">🩺 DOCTOR'S REPORT v8</span>
                 <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${state.heartbeatAlive ? "bg-green-400 animate-pulse" : "bg-red-500"}`} />
                     {state.routerStatus === "NAVIGATING" && (
-                        <span className="text-yellow-400 animate-pulse">● {elapsed}ms</span>
+                        <span className="text-yellow-400 animate-pulse">{elapsed}ms</span>
                     )}
                 </div>
             </div>
 
-            {/* Core Status */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[9px]">
-                <span className="text-white/40">AUTH:</span>
-                <span className={state.authState === "LOADING" ? "text-yellow-400" : state.authState === "AUTHENTICATED" ? "text-green-400" : "text-red-400"}>
-                    {state.authState}
-                </span>
-                <span className="text-white/40">ROUTER:</span>
-                <span className={state.routerStatus === "NAVIGATING" ? "text-yellow-400" : "text-green-400"}>
-                    {state.routerStatus}
-                </span>
+            {/* Status Row */}
+            <div className="grid grid-cols-2 gap-2 mb-3 text-[10px]">
+                <div className="bg-white/5 rounded px-2 py-1">
+                    <span className="text-white/50">AUTH:</span>{" "}
+                    <span className={state.authState === "LOADING" ? "text-yellow-400" : state.authState === "AUTHENTICATED" ? "text-green-400" : "text-red-400"}>
+                        {state.authState}
+                    </span>
+                </div>
+                <div className="bg-white/5 rounded px-2 py-1">
+                    <span className="text-white/50">ROUTER:</span>{" "}
+                    <span className={state.routerStatus === "NAVIGATING" ? "text-yellow-400" : "text-green-400"}>
+                        {state.routerStatus}
+                    </span>
+                </div>
             </div>
 
-            {/* Verdict */}
+            {/* Verdict Banner */}
             {state.verdict && (
-                <div className="border-t border-red-500/30 pt-2 mt-2 animate-pulse">
-                    <div className="text-red-400 font-bold text-xs">{state.verdict}</div>
+                <div className={`mb-3 p-2 rounded text-center font-bold ${state.verdict.includes('CRITICAL') ? 'bg-red-500/30 text-red-400 animate-pulse' : state.verdict.includes('SLOW') ? 'bg-yellow-500/30 text-yellow-400' : 'bg-blue-500/30 text-blue-400'}`}>
+                    {state.verdict}
                 </div>
             )}
 
-            {/* Component Timing Table */}
-            {Object.keys(componentTable).length > 0 && (
-                <div className="border-t border-white/10 pt-2 mt-2">
-                    <div className="text-white/50 font-bold mb-1">COMPONENT RENDER TIMES:</div>
-                    <table className="w-full text-[9px]">
-                        <thead>
-                            <tr className="text-white/30">
-                                <th className="text-left py-0.5">Component</th>
-                                <th className="text-right py-0.5">Time</th>
-                                <th className="text-right py-0.5">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {Object.values(componentTable).sort((a, b) => b.renderTime - a.renderTime).map(t => {
-                                const status = getStatus(t.renderTime);
-                                return (
-                                    <tr key={t.name} className={status.color}>
-                                        <td className="py-0.5">{t.name}</td>
-                                        <td className="text-right">{t.renderTime.toFixed(1)}ms</td>
-                                        <td className="text-right">{status.icon} {status.label}</td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
-            {/* JavaScript Errors */}
-            {state.jsErrors.length > 0 && (
-                <div className="border-t border-red-500/30 pt-1 mt-1">
-                    <div className="text-red-400 mb-1">JS ERRORS:</div>
-                    <div className="space-y-0.5 pl-2">
-                        {state.jsErrors.map((err, i) => (
-                            <div key={i} className="text-red-300 text-[9px] truncate">
-                                <span className="text-red-500">{err.timestamp}</span> {err.message}
+            {/* Timer Results */}
+            <div className="space-y-1 mb-3">
+                <div className="text-white/50 text-[10px] uppercase tracking-wider mb-1">TIMING RESULTS:</div>
+                {state.timers.length === 0 ? (
+                    <div className="text-white/30 text-center py-2">Click a link to capture timings...</div>
+                ) : (
+                    state.timers.sort((a, b) => b.duration - a.duration).map((timer, i) => {
+                        const color = getColor(timer.duration);
+                        return (
+                            <div
+                                key={timer.label}
+                                className={`flex items-center justify-between px-2 py-1.5 rounded ${color.bg} ${color.flash ? 'animate-pulse' : ''}`}
+                            >
+                                <span className="text-white/80">{timer.label.replace('🔴 ', '')}</span>
+                                <span className={`font-bold ${color.text}`}>
+                                    {timer.duration.toFixed(1)}ms
+                                </span>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+                        );
+                    })
+                )}
+            </div>
+
+            {/* Clear Button */}
+            <button
+                onClick={clearTimers}
+                className="w-full py-2 bg-white/10 hover:bg-white/20 rounded text-white/70 hover:text-white transition-colors text-[10px] uppercase tracking-wider"
+            >
+                Reset Report
+            </button>
 
             {/* Footer */}
-            <div className="border-t border-white/10 pt-1 mt-1 flex justify-between text-white/30">
-                <span>RENDERS: {state.renderCount}</span>
-                <span>v6-dna</span>
+            <div className="mt-2 pt-2 border-t border-white/10 flex justify-between text-[9px] text-white/30">
+                <span>PATH: {state.pathname}</span>
+                <span>v8</span>
             </div>
         </div>
     );
