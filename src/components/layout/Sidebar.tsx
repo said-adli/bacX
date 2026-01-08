@@ -1,15 +1,10 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import Link from "next/link";
 import { Home, User, Crown, Settings, ChevronDown, ChevronRight, Brain, Calculator, FlaskConical, Microscope } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { BrainyLogo } from "@/components/ui/BrainyLogo";
-
-// ============================================================================
-// SIDEBAR v12 - SHADOW HIJACKER MODE
-// Every click triggers the command center instead of navigation
-// ============================================================================
 
 const NAV = [
     { href: "/dashboard", label: "الرئيسية", icon: Home },
@@ -27,39 +22,16 @@ const SUBJECTS = [
 export function Sidebar() {
     const pathname = usePathname();
     const { profile } = useAuth();
-    const [isPending, setIsPending] = useState(false);
 
     const isAdmin = profile?.role === "admin";
 
-    // HIJACKED Navigation - Opens Command Center
-    const hijackNav = (href: string, e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        console.log(`[HIJACK] Intercepted: ${href}`);
-
-        // Trigger the Shadow Hijacker command center
-        if (typeof window !== "undefined" && window.__HIJACK_NAV) {
-            window.__HIJACK_NAV(href);
-        } else {
-            // Fallback to hard navigation if hijacker not loaded
-            console.warn("[HIJACK] Command center not ready, using hard nav");
-            window.location.href = href;
-        }
-    };
-
     return (
         <div className="w-full h-full flex flex-col">
-            {/* Pending indicator */}
-            {isPending && (
-                <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary animate-pulse z-50" />
-            )}
-
             {/* Logo */}
             <div className="h-24 flex items-center justify-center border-b border-white/5 mx-6">
-                <a href="/dashboard" onClick={(e) => hijackNav("/dashboard", e)}>
+                <Link href="/dashboard">
                     <BrainyLogo variant="navbar" className="h-12 w-auto" />
-                </a>
+                </Link>
             </div>
 
             {/* Nav */}
@@ -68,16 +40,15 @@ export function Sidebar() {
                     {NAV.map(({ href, label, icon: Icon }) => {
                         const active = pathname === href;
                         return (
-                            <a
+                            <Link
                                 key={href}
                                 href={href}
-                                onClick={(e) => hijackNav(href, e)}
-                                className={`relative flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all duration-300 cursor-pointer ${active ? "bg-primary/10 text-white" : "text-white/60 hover:text-white hover:bg-white/5"}`}
+                                className={`relative flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all duration-300 ${active ? "bg-primary/10 text-white" : "text-white/60 hover:text-white hover:bg-white/5"}`}
                             >
                                 {active && <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary rounded-l-full shadow-[0_0_20px_rgba(37,99,235,0.8)]" />}
                                 <Icon className={`w-6 h-6 ${active ? "text-primary" : ""}`} />
                                 <span className="text-base font-medium">{label}</span>
-                            </a>
+                            </Link>
                         );
                     })}
                 </div>
@@ -94,49 +65,45 @@ export function Sidebar() {
                             const active = pathname.includes(id);
                             const href = `/subject/${id}`;
                             return (
-                                <a
+                                <Link
                                     key={id}
                                     href={href}
-                                    onClick={(e) => hijackNav(href, e)}
-                                    className={`flex items-center gap-4 px-6 py-3 rounded-xl transition-all mr-4 cursor-pointer ${active ? "bg-primary/5 text-white" : "text-white/50 hover:text-white hover:bg-white/5"}`}
+                                    className={`flex items-center gap-4 px-6 py-3 rounded-xl transition-all mr-4 ${active ? "bg-primary/5 text-white" : "text-white/50 hover:text-white hover:bg-white/5"}`}
                                 >
                                     <Icon className={`w-5 h-5 ${active ? "text-primary" : ""}`} />
                                     <span className="text-sm font-medium">{label}</span>
-                                </a>
+                                </Link>
                             );
                         })}
-                        <a
+                        <Link
                             href="/subjects"
-                            onClick={(e) => hijackNav("/subjects", e)}
-                            className="flex items-center gap-4 px-6 py-3 text-sm text-primary/70 hover:text-primary mr-4 cursor-pointer"
+                            className="flex items-center gap-4 px-6 py-3 text-sm text-primary/70 hover:text-primary mr-4"
                         >
                             <ChevronRight className="w-4 h-4" />
                             <span>عرض كل المواد...</span>
-                        </a>
+                        </Link>
                     </div>
                 </div>
 
                 {/* Admin */}
                 {isAdmin && (
                     <div className="pt-4 border-t border-white/5 mx-4">
-                        <a
+                        <Link
                             href="/admin"
-                            onClick={(e) => hijackNav("/admin", e)}
-                            className={`flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all cursor-pointer ${pathname.startsWith("/admin") ? "bg-red-500/10 text-red-500" : "text-white/60 hover:text-red-400 hover:bg-red-500/5"}`}
+                            className={`flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all ${pathname.startsWith("/admin") ? "bg-red-500/10 text-red-500" : "text-white/60 hover:text-red-400 hover:bg-red-500/5"}`}
                         >
                             <Settings className="w-6 h-6" />
                             <span className="font-medium">لوحة التحكم</span>
-                        </a>
+                        </Link>
                     </div>
                 )}
             </div>
 
             {/* Upgrade Card */}
             <div className="p-6">
-                <a
+                <Link
                     href="/subscription"
-                    onClick={(e) => hijackNav("/subscription", e)}
-                    className="block rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(37,99,235,0.15)] hover:-translate-y-1 transition-all duration-500 cursor-pointer"
+                    className="block rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(37,99,235,0.15)] hover:-translate-y-1 transition-all duration-500"
                 >
                     <div className="flex items-start gap-4">
                         <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20">
@@ -147,7 +114,7 @@ export function Sidebar() {
                             <p className="text-xs text-white/50">افتح جميع الدروس والتمارين الآن</p>
                         </div>
                     </div>
-                </a>
+                </Link>
             </div>
         </div>
     );
