@@ -1,8 +1,8 @@
 "use client";
 
-import Link from 'next/link';
 import { usePathname } from "next/navigation";
 import { Home, BookOpen, Radio, User, HelpCircle } from "lucide-react";
+import { TransitionLink } from "@/components/ui/TransitionLink";
 
 export function BottomNav() {
     const pathname = usePathname();
@@ -25,10 +25,9 @@ export function BottomNav() {
                     // CRITICAL: Fallback to HelpCircle to prevent SVG path errors
                     const Icon = item.icon || HelpCircle;
                     return (
-                        <Link
+                        <TransitionLink
                             key={item.href}
                             href={item.href}
-                            prefetch={false}
                             className={`relative flex flex-col items-center justify-center transition-all duration-300 ${isActive
                                 ? "text-primary -translate-y-1"
                                 : "text-white/50 hover:text-white"
@@ -42,7 +41,7 @@ export function BottomNav() {
                                 className={`w-6 h-6 mb-1 ${isActive ? "drop-shadow-[0_0_8px_rgba(37,99,235,0.6)]" : ""
                                     }`}
                             />
-                        </Link>
+                        </TransitionLink>
                     );
                 })}
             </nav>
