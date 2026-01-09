@@ -29,7 +29,7 @@ export function Sidebar() {
         <div className="w-full h-full flex flex-col">
             {/* Logo */}
             <div className="h-24 flex items-center justify-center border-b border-white/5 mx-6">
-                <Link href="/dashboard">
+                <Link href="/dashboard" prefetch={false}>
                     <BrainyLogo variant="navbar" className="h-12 w-auto" />
                 </Link>
             </div>
@@ -43,6 +43,8 @@ export function Sidebar() {
                             <Link
                                 key={href}
                                 href={href}
+                                prefetch={false}
+                                onClick={() => console.log(`[SIDEBAR] Navigating to: ${href}`)}
                                 className={`relative flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all duration-300 ${active ? "bg-primary/10 text-white" : "text-white/60 hover:text-white hover:bg-white/5"}`}
                             >
                                 {active && <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary rounded-l-full shadow-[0_0_20px_rgba(37,99,235,0.8)]" />}
@@ -68,6 +70,7 @@ export function Sidebar() {
                                 <Link
                                     key={id}
                                     href={href}
+                                    prefetch={false}
                                     className={`flex items-center gap-4 px-6 py-3 rounded-xl transition-all mr-4 ${active ? "bg-primary/5 text-white" : "text-white/50 hover:text-white hover:bg-white/5"}`}
                                 >
                                     <Icon className={`w-5 h-5 ${active ? "text-primary" : ""}`} />
@@ -77,6 +80,7 @@ export function Sidebar() {
                         })}
                         <Link
                             href="/subjects"
+                            prefetch={false}
                             className="flex items-center gap-4 px-6 py-3 text-sm text-primary/70 hover:text-primary mr-4"
                         >
                             <ChevronRight className="w-4 h-4" />
@@ -90,6 +94,7 @@ export function Sidebar() {
                     <div className="pt-4 border-t border-white/5 mx-4">
                         <Link
                             href="/admin"
+                            prefetch={false}
                             className={`flex items-center gap-4 px-6 py-3.5 rounded-xl transition-all ${pathname.startsWith("/admin") ? "bg-red-500/10 text-red-500" : "text-white/60 hover:text-red-400 hover:bg-red-500/5"}`}
                         >
                             <Settings className="w-6 h-6" />
@@ -103,6 +108,7 @@ export function Sidebar() {
             <div className="p-6">
                 <Link
                     href="/subscription"
+                    prefetch={false}
                     className="block rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(37,99,235,0.15)] hover:-translate-y-1 transition-all duration-500"
                 >
                     <div className="flex items-start gap-4">
