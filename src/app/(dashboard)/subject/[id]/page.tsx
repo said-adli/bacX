@@ -34,10 +34,6 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
 
     useEffect(() => {
         async function fetchLessons() {
-            // Checkpoint: fetch started
-            if (typeof window !== "undefined") {
-                window.__DIAG_CHECKPOINT?.("SUBJECT_FETCH_START");
-            }
             const start = performance.now();
 
             if (!user) {
@@ -70,11 +66,6 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
                 const end = performance.now();
                 const fetchTime = end - start;
                 console.log(`[SUBJECT] FETCH_TIME: ${fetchTime.toFixed(0)}ms`);
-
-                // Checkpoint: fetch done
-                if (typeof window !== "undefined") {
-                    window.__DIAG_FETCH_TIME?.(fetchTime);
-                }
                 setLoading(false);
             }
         }
