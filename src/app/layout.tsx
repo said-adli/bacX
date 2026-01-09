@@ -1,14 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_Arabic, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import { AuthProvider, type UserProfile } from "@/context/AuthContext";
+import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "sonner";
 
 import { GlobalErrorBoundary as ErrorBoundary } from "@/components/GlobalErrorBoundary";
-
-import { createClient } from "@/utils/supabase/server";
-
-
 
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic", "latin"],
@@ -77,39 +73,23 @@ export const metadata: Metadata = {
   }
 };
 
-export default async function RootLayout({
+// ============================================================================
+// ROOT LAYOUT - NON-BLOCKING
+// ============================================================================
+// CRITICAL FIX: Removed async data fetching from root layout.
+// Auth hydration now happens client-side via AuthProvider's useEffect.
+// This prevents blocking the main thread on every navigation.
+// ============================================================================
+
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // --- SERVER AUTH HYDRATION (SUPABASE) ---
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  let initialUser = null;
-  let initialProfile: UserProfile | null = null;
-
-  if (user) {
-    initialUser = user;
-
-    // Try fetch profile for role
-    const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-    if (profile) {
-      initialProfile = {
-        id: user.id,
-        email: user.email || '',
-        full_name: profile.full_name || user.user_metadata?.full_name || '',
-        role: profile.role || 'student',
-        is_profile_complete: profile.is_profile_complete || false,
-        created_at: profile.created_at || new Date().toISOString()
-      };
-    }
-  }
-
   return (
     <html lang="ar" dir="rtl" className="scroll-smooth" suppressHydrationWarning>
       <body className={`${ibmPlexSansArabic.variable} ${playfairDisplay.variable} ${amiri.variable} ${cinzel.variable} antialiased bg-background text-foreground font-sans selection:bg-primary/30`}>
-        <AuthProvider initialUser={initialUser} hydratedProfile={initialProfile}>
+        <AuthProvider>
           <ErrorBoundary>
             {children}
             <Toaster
