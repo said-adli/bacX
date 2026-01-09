@@ -29,16 +29,32 @@ export function LandingNavbar() {
             )}
         >
             <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-                {/* Right Side: Luxury Brand (Imprinted + Soul) */}
+                {/* Right Side: Brand */}
                 <div className="relative group select-none flex items-center gap-6 z-20">
-                    <div className="relative flex items-center gap-4">
-                        <BrainyLogo variant="full" className="h-[6rem] w-auto drop-shadow-xl" />
-                    </div>
+                    <BrainyLogo variant="full" className="h-[4rem] w-auto drop-shadow-xl" />
                 </div>
 
-                {/* Left Side: Minimal Login Button */}
+                {/* Center: Navigation Pill */}
+                <nav className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-1 px-2 py-2 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg">
+                    {[
+                        { label: "المنتج", href: "/product" },
+                        { label: "المسارات", href: "/tracks" },
+                        { label: "الأسعار", href: "/pricing" },
+                        { label: "المدونة", href: "/blog" },
+                    ].map((item) => (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className="px-5 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-full transition-all duration-200"
+                        >
+                            {item.label}
+                        </Link>
+                    ))}
+                </nav>
+
+                {/* Left Side: Login */}
                 <Link href="/login" className="relative px-6 py-2 rounded-full border border-white/10 text-white/80 hover:text-white hover:border-white/30 transition-all text-xs uppercase tracking-widest font-medium group overflow-hidden bg-white/5 hover:bg-white/10">
-                    <span className="relative z-10 font-cinzel text-xs font-bold">Log In</span>
+                    <span className="relative z-10 font-cinzel text-xs font-bold">تسجيل الدخول</span>
                 </Link>
             </div>
         </motion.header>

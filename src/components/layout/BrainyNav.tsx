@@ -10,11 +10,9 @@ import Link from "next/link";
 
 const navItems = [
     { label: "المنتج", href: "/product" },
-    { label: "للمؤسسات", href: "/enterprise" },
+    { label: "المسارات", href: "/tracks" },
     { label: "الأسعار", href: "/pricing" },
     { label: "المدونة", href: "/blog" },
-    { label: "الدروس", href: "/docs" },
-    { label: "المنتدى", href: "/forum" },
 ];
 
 export function BrainyNav() {
@@ -65,17 +63,6 @@ export function BrainyNav() {
                         </Link>
                     ))}
                 </div>
-
-                {/* Divider */}
-                <div className="w-px h-6 bg-white/10" />
-
-                {/* Action Button - White Pill */}
-                <Link
-                    href="/download"
-                    className="px-5 py-2 text-sm font-semibold text-black bg-white hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
-                >
-                    تحميل
-                </Link>
             </div>
         </nav>
     );
