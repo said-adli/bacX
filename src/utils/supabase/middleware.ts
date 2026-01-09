@@ -11,9 +11,18 @@ export async function updateSession(request: NextRequest) {
         },
     })
 
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    // BYPASS: If keys are missing (e.g. during nuclear reset/dev), skip auth
+    if (!supabaseUrl || !supabaseKey) {
+        console.warn("⚠️ SUPABASE KEYS MISSING - Bypassing auth middleware for development ⚠️")
+        return response
+    }
+
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        supabaseUrl,
+        supabaseKey,
         {
             cookies: {
                 getAll() {
