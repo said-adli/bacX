@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 export interface LiveSession {
     id: string;
@@ -48,7 +49,7 @@ export function useLiveStatus() {
                     schema: 'public',
                     table: 'live_sessions'
                 },
-                (payload) => {
+                (payload: RealtimePostgresChangesPayload<LiveSession>) => {
                     // Refresh data on any change (simple approach) or handle payload
                     // For simplicity, we just refetch or inspect the payload
                     if (payload.eventType === 'DELETE') {
