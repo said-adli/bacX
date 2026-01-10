@@ -2,7 +2,6 @@
 
 import { GlassCard } from "@/components/ui/GlassCard";
 import PlanetHero from "@/components/dashboard/PlanetHero";
-import { CrystallSubjectCard } from "@/components/dashboard/CrystalSubjectCard"; // Typo fix in import if needed, assuming I named it CrystalSubjectCard
 import { CrystalSubjectCard } from "@/components/dashboard/CrystalSubjectCard";
 import { SUBJECTS, NEWS, APPOINTMENTS } from "@/data/mockLibrary";
 import { Clock, TrendingUp, Zap } from "lucide-react";
