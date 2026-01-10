@@ -80,15 +80,11 @@ export function HeroSection() {
                     </p>
 
                     <div className="flex flex-col items-center justify-center gap-6">
-                        <Link href="/auth/signup" className="group relative px-12 py-6 bg-emerald-500/20 rounded-[40px] text-white font-bold text-2xl overflow-hidden transition-all hover:scale-105 border border-emerald-500/50 shadow-[0_0_40px_-5px_rgba(16,185,129,0.4)] backdrop-blur-xl">
-                            <span className="relative z-10 flex items-center gap-3 drop-shadow-md">
+                        <Link href="/auth/signup" className="group relative px-12 py-6 bg-blue-600 rounded-[40px] text-white font-bold text-2xl overflow-hidden transition-all duration-300 hover:scale-105 hover:bg-blue-500 shadow-xl shadow-blue-500/70 hover:shadow-blue-400/90">
+                            <span className="relative z-10 flex items-center gap-3">
                                 ابدأ رحلتك الآن
                                 <ArrowLeft className="w-6 h-6 transition-transform group-hover:-translate-x-2" />
                             </span>
-                            {/* Inner Glow Pulse */}
-                            <div className="absolute inset-0 bg-emerald-500/10 animate-pulse"></div>
-                            {/* Hover Sweep */}
-                            <div className="absolute inset-0 bg-emerald-400/30 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                         </Link>
                     </div>
                 </motion.div>

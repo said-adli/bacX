@@ -16,8 +16,8 @@
      DARK MODE PALETTE (Default)
      ========================================================================== */
 
-  /* Backgrounds — Deep Charcoal (Not Pure Black) */
-  --background: #0A0A0F;
+  /* Backgrounds — Calm Dark Theme */
+  --background: radial-gradient(circle at top, #111827 0%, #050505 100%);
   --background-elevated: #12121A;
   --background-subtle: #1A1A24;
 
