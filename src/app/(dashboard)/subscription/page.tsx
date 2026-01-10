@@ -1,4 +1,7 @@
+"use client";
+
 import { Check } from "lucide-react";
+import { GlassCard } from "@/components/ui/GlassCard";
 
 export default function SubscriptionPage() {
     const plans = [
@@ -39,14 +42,14 @@ export default function SubscriptionPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4">
                 {plans.map((plan, i) => (
-                    <div
+                    <GlassCard
                         key={i}
-                        className={`relative p-8 rounded-3xl border flex flex-col gap-6 transition-all duration-300
-              ${plan.featured
+                        className={`relative p-8 flex flex-col gap-6 transition-all duration-300
+                            ${plan.featured
                                 ? "bg-white/10 border-blue-500/50 shadow-[0_0_40px_rgba(59,130,246,0.15)] scale-105 z-10"
-                                : "bg-white/5 border-white/10 hover:border-white/20"
+                                : "hover:bg-white/10"
                             }
-            `}
+                        `}
                     >
                         {plan.featured && (
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
@@ -73,15 +76,15 @@ export default function SubscriptionPage() {
 
                         <button
                             className={`w-full py-3 rounded-xl font-bold transition-all
-                  ${plan.featured
+                            ${plan.featured
                                     ? "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20"
                                     : "bg-white/10 hover:bg-white/20 text-white"
                                 }
-                `}
+                            `}
                         >
                             {plan.cta}
                         </button>
-                    </div>
+                    </GlassCard>
                 ))}
             </div>
         </div>

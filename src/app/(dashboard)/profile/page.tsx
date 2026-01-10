@@ -1,9 +1,13 @@
+"use client";
+
+import { GlassCard } from "@/components/ui/GlassCard";
+
 export default function ProfilePage() {
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
             {/* Profile Header */}
-            <div className="glass-card p-8 flex flex-col md:flex-row items-center gap-8 text-center md:text-right">
+            <GlassCard className="p-8 flex flex-col md:flex-row items-center gap-8 text-center md:text-right">
                 <div className="relative">
                     <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 p-[2px]">
                         <div className="w-full h-full rounded-full bg-[#0A0A0F] border-4 border-[#0A0A0F] flex items-center justify-center overflow-hidden">
@@ -25,11 +29,11 @@ export default function ProfilePage() {
                 <button className="px-6 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-colors">
                     تعديل الملف
                 </button>
-            </div>
+            </GlassCard>
 
             {/* Info Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="glass-card p-6 space-y-4">
+                <GlassCard className="p-6 space-y-4">
                     <h3 className="text-lg font-bold border-b border-white/10 pb-2">المعلومات الشخصية</h3>
                     <div className="space-y-3">
                         <div className="flex justify-between">
@@ -45,9 +49,9 @@ export default function ProfilePage() {
                             <span>الدار البيضاء</span>
                         </div>
                     </div>
-                </div>
+                </GlassCard>
 
-                <div className="glass-card p-6 space-y-4">
+                <GlassCard className="p-6 space-y-4">
                     <h3 className="text-lg font-bold border-b border-white/10 pb-2">إحصائيات الأداء</h3>
                     <div className="space-y-4">
                         <div>
@@ -69,7 +73,7 @@ export default function ProfilePage() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </GlassCard>
             </div>
 
         </div>
