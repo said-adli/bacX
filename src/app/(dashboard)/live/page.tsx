@@ -2,16 +2,38 @@
 
 import { useAuth } from "@/context/AuthContext";
 import EncodedVideoPlayer from "@/components/lesson/VideoPlayer";
-import { Lock, MessageCircle, Users } from "lucide-react";
+import { Lock, MessageCircle, Users, Video } from "lucide-react";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
 
 // Mock Live ID (using a live stream placeholder or the demo one)
 const LIVE_STREAM_ID = "enc_live_jfKfPfyJRdk"; // lofi girl as mock live
+const IS_LIVE = true; // Toggle this manually to Start/Stop the stream in the UI
 
 export default function LiveSessionsPage() {
     const { profile } = useAuth();
     const isSubscribed = profile?.is_subscribed === true;
+
+    if (!IS_LIVE) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-in fade-in zoom-in duration-700">
+                <GlassCard className="p-12 text-center max-w-2xl mx-auto space-y-6 border-white/10 shadow-2xl bg-black/40 backdrop-blur-xl">
+                    <div className="w-24 h-24 rounded-full bg-white/5 mx-auto flex items-center justify-center mb-4">
+                        <Video className="w-10 h-10 text-white/30" />
+                    </div>
+                    <h1 className="text-4xl font-serif font-bold text-white mb-2">
+                        انتظرونا في الحصة القادمة
+                    </h1>
+                    <p className="text-xl text-white/60 font-light">
+                        لا يوجد بث مباشر حالياً. سيتم إعلامكم بموعد الحصة القادمة قريباً.
+                    </p>
+                    <Link href="/materials" className="inline-block px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors mt-4">
+                        تصفح الدروس المسجلة
+                    </Link>
+                </GlassCard>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

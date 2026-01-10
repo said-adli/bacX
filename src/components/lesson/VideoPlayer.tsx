@@ -90,7 +90,7 @@ export default function EncodedVideoPlayer({ encodedVideoId }: EncodedVideoPlaye
     if (!decodedId) return <div className="w-full aspect-video bg-zinc-900 animate-pulse rounded-2xl" />;
 
     return (
-        <div className="relative w-full aspect-video rounded-2xl overflow-hidden group select-none">
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden group select-none shadow-[0_0_50px_rgba(37,99,235,0.25)] border border-blue-500/20">
             <iframe
                 src={`https://www.youtube-nocookie.com/embed/${decodedId}?rel=0&modestbranding=1&controls=1&showinfo=0&fs=1`}
                 className="w-full h-full object-cover"
