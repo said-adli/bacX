@@ -1,6 +1,8 @@
 "use client";
 
 import { GlassCard } from "@/components/ui/GlassCard";
+import { createClient } from "@/utils/supabase/client";
+import { LogOut } from "lucide-react";
 
 export default function SettingsPage() {
     return (
@@ -41,6 +43,22 @@ export default function SettingsPage() {
                         </div>
                     ))}
                 </div>
+            </GlassCard>
+
+            {/* Account Actions Section */}
+            <GlassCard className="p-6 space-y-6 border-red-500/20">
+                <h3 className="text-xl font-bold border-b border-white/10 pb-4 text-red-400">إجراءات الحساب</h3>
+                <button
+                    onClick={async () => {
+                        const supabase = createClient();
+                        await supabase.auth.signOut();
+                        window.location.replace('/login');
+                    }}
+                    className="w-full py-4 rounded-xl border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 text-red-400 hover:text-red-300 transition-all flex items-center justify-center gap-3 font-bold group cursor-pointer shadow-[0_0_20px_rgba(239,68,68,0.05)] hover:shadow-[0_0_30px_rgba(239,68,68,0.15)]"
+                >
+                    <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    تسجيل الخروج
+                </button>
             </GlassCard>
 
             <div className="flex justify-end gap-3 pt-4">

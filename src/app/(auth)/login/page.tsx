@@ -25,8 +25,6 @@ export default function LoginPage() {
         try {
             await loginWithEmail(email, password);
             toast.success("تم تسجيل الدخول بنجاح");
-
-            // Redirect to dashboard after 0.5 seconds
             setTimeout(() => {
                 router.push("/dashboard");
             }, 500);
@@ -40,60 +38,58 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#050505] text-white font-tajawal">
-
-            {/* Ambient Background Effects */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-blue-900/5 blur-[150px] rounded-full opacity-40 mix-blend-screen" />
-                <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-indigo-900/5 blur-[150px] rounded-full opacity-40 mix-blend-screen" />
-                <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.02]" />
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+        >
+            {/* Breathing Logo */}
+            <div className="flex justify-center mb-8">
+                <motion.div
+                    className="w-24 h-24 relative"
+                    animate={{
+                        filter: ["drop-shadow(0 0 0px rgba(59,130,246,0))", "drop-shadow(0 0 25px rgba(59,130,246,0.4))", "drop-shadow(0 0 0px rgba(59,130,246,0))"]
+                    }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                >
+                    <BrainyStoneLogoSVG />
+                </motion.div>
             </div>
 
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className="w-full max-w-sm relative z-10"
-            >
-                {/* Breathing Logo */}
-                <div className="flex justify-center mb-10">
-                    <motion.div
-                        className="w-20 h-20 relative"
-                        animate={{
-                            filter: ["drop-shadow(0 0 0px rgba(59,130,246,0))", "drop-shadow(0 0 15px rgba(59,130,246,0.3))", "drop-shadow(0 0 0px rgba(59,130,246,0))"]
-                        }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                        <BrainyStoneLogoSVG />
-                    </motion.div>
+            <GlassCard className="p-8 border-white/10 bg-white/5 backdrop-blur-[40px] shadow-[0_0_50px_rgba(37,99,235,0.1)] rounded-[2rem]">
+
+                <div className="text-center mb-8">
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-blue-100 to-white/60 bg-clip-text text-transparent">مرحباً بك مجدداً</h1>
+                    <p className="text-white/40 text-sm mt-2">سجل دخولك للمتابعة في رحلتك التعليمية</p>
                 </div>
 
-                <GlassCard className="p-8 border-white/5 bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/50">
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="bg-red-500/10 border border-red-500/10 rounded-xl p-3 mb-6 flex items-center gap-3 text-red-300 text-xs"
+                    >
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                        <span>{error}</span>
+                    </motion.div>
+                )}
 
-                    {error && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-red-500/10 border border-red-500/10 rounded-lg p-3 mb-6 flex items-center gap-3 text-red-400 text-xs"
-                        >
-                            <AlertCircle className="h-4 w-4 shrink-0" />
-                            <span>{error}</span>
-                        </motion.div>
-                    )}
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="space-y-4">
+                        <div className="relative group">
+                            <Input
+                                type="email"
+                                placeholder="البريد الإلكتروني"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                icon={Mail}
+                                required
+                                className="bg-white/5 border-white/10 focus:border-blue-400/50 focus:bg-white/10 text-white placeholder:text-white/20 h-14 text-right pr-4 rounded-xl transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] focus:shadow-[0_0_20px_rgba(59,130,246,0.2)]"
+                                dir="rtl"
+                            />
+                        </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-4">
-                            <div className="relative group">
-                                <Input
-                                    type="email"
-                                    placeholder="البريد الإلكتروني"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    icon={Mail}
-                                    required
-                                    className="bg-black/40 border-white/5 focus:border-white/20 text-white placeholder:text-white/20 h-12 text-sm transition-all group-hover:bg-black/50"
-                                />
-                            </div>
+                        <div className="space-y-2">
                             <div className="relative group">
                                 <Input
                                     type="password"
@@ -102,34 +98,44 @@ export default function LoginPage() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     icon={Lock}
                                     required
-                                    className="bg-black/40 border-white/5 focus:border-white/20 text-white placeholder:text-white/20 h-12 text-sm transition-all group-hover:bg-black/50"
+                                    className="bg-white/5 border-white/10 focus:border-blue-400/50 focus:bg-white/10 text-white placeholder:text-white/20 h-14 text-right pr-4 rounded-xl transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] focus:shadow-[0_0_20px_rgba(59,130,246,0.2)]"
+                                    dir="rtl"
                                 />
                             </div>
+                            <div className="flex justify-end">
+                                <Link href="/forgot-password" className="text-[11px] text-white/30 hover:text-white/80 transition-colors">
+                                    نسيت كلمة المرور؟
+                                </Link>
+                            </div>
                         </div>
+                    </div>
 
-                        <div className="pt-4">
-                            <Button
-                                type="submit"
-                                className="w-full bg-white text-black hover:bg-white/90 font-bold h-12 shadow-lg shadow-white/5 transition-all hover:scale-[1.01] active:scale-[0.99] text-sm tracking-wide"
-                                size="lg"
-                                isLoading={loading}
-                            >
-                                {loading ? "..." : "دخول"}
-                            </Button>
-                        </div>
-                    </form>
+                    <div className="pt-2">
+                        <Button
+                            type="submit"
+                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold h-14 rounded-xl shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_50px_rgba(37,99,235,0.5)] transition-all hover:scale-[1.02] active:scale-[0.98] text-base"
+                            size="lg"
+                            isLoading={loading}
+                        >
+                            {loading ? "..." : "دخول"}
+                        </Button>
+                    </div>
+                </form>
 
-                    <div className="mt-8 text-center flex flex-col gap-3">
-                        <Link href="/auth/signup" className="text-white/30 hover:text-white text-xs transition-colors duration-300">
-                            إنشاء حساب جديد
-                        </Link>
-                        <Link href="/" className="text-white/10 hover:text-white/30 text-[10px] transition-colors flex items-center justify-center gap-1 group">
-                            <ArrowLeft className="w-3 h-3 transition-transform group-hover:-translate-x-0.5" />
-                            العودة للرئيسية
+                <div className="mt-8 pt-6 border-t border-white/5 text-center flex flex-col gap-4">
+                    <div className="text-xs text-white/30">
+                        لا تمتلك حساباً؟{" "}
+                        <Link href="/auth/signup" className="text-blue-400 hover:text-blue-300 font-bold transition-colors">
+                            أنشئ حساب جديد
                         </Link>
                     </div>
-                </GlassCard>
-            </motion.div>
-        </div>
+
+                    <Link href="/" className="text-white/10 hover:text-white/30 text-[10px] transition-colors flex items-center justify-center gap-1 group">
+                        <ArrowLeft className="w-3 h-3 transition-transform group-hover:-translate-x-0.5" />
+                        العودة للرئيسية
+                    </Link>
+                </div>
+            </GlassCard>
+        </motion.div>
     );
 }
