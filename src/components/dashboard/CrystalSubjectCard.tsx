@@ -28,7 +28,7 @@ export function CrystalSubjectCard({ subject }: { subject: Subject }) {
                 ref={cardRef}
                 onMouseMove={handleMouseMove}
                 onMouseLeave={handleMouseLeave}
-                className="relative h-64 rounded-3xl bg-white/5 backdrop-blur-3xl border border-white/10 overflow-hidden group transition-all duration-500 hover:scale-[1.02] hover:border-white/20 hover:shadow-[0_0_40px_rgba(0,0,0,0.5)] cursor-pointer"
+                className="glass-card relative h-64 overflow-hidden group hover:scale-[1.02] cursor-pointer"
             >
                 {/* Interactive Glow */}
                 <div

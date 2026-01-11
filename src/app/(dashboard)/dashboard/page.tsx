@@ -20,7 +20,7 @@ export default function DashboardPage() {
                     { label: "ساعات التعلم", value: "24.5", icon: Clock, color: "text-blue-400" },
                     { label: "الترتيب العام", value: "#12", icon: TrendingUp, color: "text-green-400" },
                 ].map((stat, i) => (
-                    <div key={i} className="p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/5 flex items-center justify-between hover:bg-white/10 transition-colors cursor-default">
+                    <div key={i} className="glass-card p-6 flex items-center justify-between hover:bg-white/10 cursor-default">
                         <div>
                             <p className="text-sm text-white/40 mb-1">{stat.label}</p>
                             <p className="text-3xl font-bold font-serif">{stat.value}</p>
@@ -52,7 +52,7 @@ export default function DashboardPage() {
                     <h2 className="text-2xl font-bold text-white px-2">آخر المستجدات</h2>
                     <div className="space-y-4">
                         {NEWS.map((item) => (
-                            <GlassCard key={item.id} className="p-6 flex items-start gap-4 hover:bg-white/10 transition-colors group cursor-pointer border-white/5">
+                            <GlassCard key={item.id} className="p-6 flex items-start gap-4 hover:bg-white/10 transition-colors group cursor-pointer">
                                 <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 shrink-0 group-hover:scale-150 transition-transform shadow-[0_0_10px_#3b82f6]" />
                                 <div className="flex-1">
                                     <h4 className="font-bold text-lg mb-1 group-hover:text-blue-400 transition-colors">{item.title}</h4>
@@ -70,7 +70,7 @@ export default function DashboardPage() {
                 {/* Live Countdown & Appointments */}
                 <div className="space-y-6">
                     <h2 className="text-2xl font-bold text-white px-2">المواعيد القادمة</h2>
-                    <GlassCard className="p-0 overflow-hidden border-white/5">
+                    <GlassCard className="p-0 overflow-hidden">
                         <div className="bg-gradient-to-br from-blue-900/50 to-indigo-900/50 p-6 text-center border-b border-white/5 relative overflow-hidden">
                             <div className="absolute inset-0 bg-blue-500/10 animate-pulse" />
                             <h3 className="text-sm text-blue-200 mb-2 relative z-10">الحصة المباشرة القادمة</h3>

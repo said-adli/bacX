@@ -181,26 +181,30 @@
 
   /* Glass Panel — Base */
   .glass-panel {
-    background: var(--glass-surface);
-    backdrop-filter: blur(32px);
-    -webkit-backdrop-filter: blur(32px);
-    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(50px);
+    -webkit-backdrop-filter: blur(50px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02), 0 4px 30px rgba(0, 0, 0, 0.5);
   }
 
   /* Glass Card — With Hover Effects */
   .glass-card {
-    background: var(--glass-surface);
-    backdrop-filter: blur(32px);
-    -webkit-backdrop-filter: blur(32px);
-    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(50px);
+    -webkit-backdrop-filter: blur(50px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.3); /* Stronger top reflection */
     border-radius: var(--radius-3xl);
+    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02), 0 8px 40px rgba(0, 0, 0, 0.6);
     transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .glass-card:hover {
-    background: var(--glass-surface-hover);
-    border-color: var(--glass-border-hover);
-    box-shadow: var(--shadow-glow);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.25);
+    border-top-color: rgba(255, 255, 255, 0.5);
+    box-shadow: var(--shadow-glow), inset 0 0 30px rgba(255, 255, 255, 0.05);
     transform: translateY(-4px);
   }
 
