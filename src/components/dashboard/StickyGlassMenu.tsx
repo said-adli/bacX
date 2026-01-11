@@ -4,16 +4,17 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { User, CreditCard, Users, Settings, LogOut, ChevronDown } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { createClient } from "@/utils/supabase/client";
 
 export default function StickyGlassMenu() {
     const pathname = usePathname();
-    const { logout } = useAuth();
+    const supabase = createClient();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const handleLogout = async () => {
-        await logout();
+        await supabase.auth.signOut();
+        window.location.href = "/login";
     };
 
     // Close dropdown on click outside
@@ -69,7 +70,7 @@ export default function StickyGlassMenu() {
                             <div className="h-px bg-white/5 my-1" />
                             <button
                                 onClick={handleLogout}
-                                className="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-red-500/10 text-red-300/70 hover:text-red-400 transition-colors text-sm w-full text-right cursor-pointer"
+                                className="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-red-500/10 text-red-300/70 hover:text-red-400 transition-colors text-sm w-full text-right cursor-pointer relative z-[9999]"
                             >
                                 <LogOut size={16} />
                                 <span>تسجيل الخروج</span>

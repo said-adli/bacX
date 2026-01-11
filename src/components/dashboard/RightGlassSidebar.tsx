@@ -2,19 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, Video, ChevronRight, ChevronLeft, Menu } from "lucide-react";
+import { Home, BookOpen, Video, ChevronRight, ChevronLeft, Menu, LogOut } from "lucide-react";
 import { useState } from "react";
 
-import { useAuth } from "@/hooks/useAuth";
-import { LogOut } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
 export default function RightGlassSidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { logout } = useAuth();
+  const supabase = createClient();
 
   const handleLogout = async () => {
-    await logout();
+    await supabase.auth.signOut();
+    window.location.href = "/login";
   };
 
   const navItems = [
@@ -81,7 +81,7 @@ export default function RightGlassSidebar() {
       </nav>
 
       {/* Logout Section */}
-      <div className="px-3 mt-2 pt-2 border-t border-white/5 mx-4 relative z-[60]">
+      <div className="px-3 mt-2 pt-2 border-t border-white/5 mx-4 relative z-[9999]">
         <button
           onClick={handleLogout}
           className={`w-full relative flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group overflow-hidden text-red-400/70 hover:text-red-400 hover:bg-red-500/10 hover:shadow-[0_0_20px_rgba(239,68,68,0.15)] cursor-pointer active:scale-95`}
