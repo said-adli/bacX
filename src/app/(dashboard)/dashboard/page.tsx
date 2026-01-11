@@ -1,7 +1,7 @@
 "use client";
 
 import { GlassCard } from "@/components/ui/GlassCard";
-import PlanetHero from "@/components/dashboard/PlanetHero";
+import CinematicHero from "@/components/dashboard/CinematicHero";
 import { CrystalSubjectCard } from "@/components/dashboard/CrystalSubjectCard";
 import { SUBJECTS, NEWS, APPOINTMENTS } from "@/data/mockLibrary";
 import { Clock, TrendingUp, Zap } from "lucide-react";
@@ -11,7 +11,7 @@ export default function DashboardPage() {
         <div className="space-y-16 animate-in fade-in zoom-in duration-700 pb-20">
 
             {/* 1. HERO SECTION (PLANET) */}
-            <PlanetHero />
+            <CinematicHero />
 
             {/* 2. STATS (Transparent Glass) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-4 md:px-0">
