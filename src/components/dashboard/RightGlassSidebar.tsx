@@ -34,7 +34,7 @@ export default function RightGlassSidebar() {
       <div className={`px-6 mb-8 flex items-center justify-center ${isCollapsed ? "" : ""}`}>
         <div className={`relative transition-all duration-300 ${isCollapsed ? "w-10 h-10" : "w-32 h-12"}`}>
           <Image
-            src="/images/brainy-final-logo.png"
+            src="/images/brainy-logo-v2.png"
             alt="Brainy"
             fill
             className="object-contain"

@@ -37,7 +37,7 @@ export default function StickyGlassMenu() {
                 {/* Logo */}
                 <div className="relative w-10 h-10 ml-2">
                     <Image
-                        src="/images/brainy-final-logo.png"
+                        src="/images/brainy-logo-v2.png"
                         alt="Brainy"
                         fill
                         className="object-contain"
