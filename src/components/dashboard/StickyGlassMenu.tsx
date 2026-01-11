@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { User, CreditCard, Users, Settings, ChevronDown } from "lucide-react";
 
@@ -32,6 +33,16 @@ export default function StickyGlassMenu() {
 
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] animate-in slide-in-from-top-4 duration-700">
             <div className="flex items-center gap-1 p-2 bg-black/60 backdrop-blur-3xl border border-white/10 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+
+                {/* Logo */}
+                <div className="relative w-10 h-10 ml-2">
+                    <Image
+                        src="/images/brainy-final-logo.png"
+                        alt="Brainy"
+                        fill
+                        className="object-contain"
+                    />
+                </div>
 
                 {/* Profile Dropdown Trigger */}
                 <div className="relative" ref={dropdownRef}>

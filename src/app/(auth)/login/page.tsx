@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/Button";
@@ -52,7 +53,13 @@ export default function LoginPage() {
                     }}
                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                 >
-                    <BrainyStoneLogoSVG />
+                    <Image
+                        src="/images/brainy-final-logo.png"
+                        alt="Brainy Logo"
+                        fill
+                        className="object-contain"
+                        priority
+                    />
                 </motion.div>
             </div>
 

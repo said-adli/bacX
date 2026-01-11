@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Home, BookOpen, Video, ChevronRight, ChevronLeft, Menu } from "lucide-react";
 import { useState } from "react";
@@ -30,15 +31,16 @@ export default function RightGlassSidebar() {
       </button>
 
       {/* Brand / Logo Area */}
-      <div className={`px-6 mb-8 flex items-center gap-3 ${isCollapsed ? "justify-center" : ""}`}>
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-900/40">
-          <span className="font-bold text-white text-lg">B</span>
+      <div className={`px-6 mb-8 flex items-center justify-center ${isCollapsed ? "" : ""}`}>
+        <div className={`relative transition-all duration-300 ${isCollapsed ? "w-10 h-10" : "w-32 h-12"}`}>
+          <Image
+            src="/images/brainy-final-logo.png"
+            alt="Brainy"
+            fill
+            className="object-contain"
+            priority
+          />
         </div>
-        {!isCollapsed && (
-          <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent animate-in fade-in duration-300">
-            Brainy
-          </span>
-        )}
       </div>
 
       <nav className="flex-1 px-3 space-y-2">

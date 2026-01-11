@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -56,13 +57,19 @@ export default function SignupForm({ wilayas, majors }: SignupFormProps) {
             {/* Breathing Logo */}
             <div className="flex justify-center mb-8">
                 <motion.div
-                    className="w-20 h-20 relative"
+                    className="w-24 h-24 relative"
                     animate={{
                         filter: ["drop-shadow(0 0 0px rgba(59,130,246,0))", "drop-shadow(0 0 25px rgba(59,130,246,0.4))", "drop-shadow(0 0 0px rgba(59,130,246,0))"]
                     }}
                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                 >
-                    <BrainyStoneLogoSVG />
+                    <Image
+                        src="/images/brainy-final-logo.png"
+                        alt="Brainy Logo"
+                        fill
+                        className="object-contain"
+                        priority
+                    />
                 </motion.div>
             </div>
 
