@@ -40,15 +40,15 @@ export default function CinematicHero() {
                     <span className="text-xs font-bold tracking-[0.25em] text-blue-100/90 uppercase">Daily Inspiration</span>
                 </motion.div>
 
-                {/* Main English Quote */}
+                {/* Main Arabic Quote */}
                 <motion.h1
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 1, delay: 0.4 }}
-                    className="text-5xl md:text-7xl lg:text-8xl font-serif italic font-light text-white/90 leading-tight drop-shadow-[0_0_30px_rgba(0,0,0,0.5)] tracking-wide"
+                    className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-white/90 leading-tight drop-shadow-[0_0_30px_rgba(0,0,0,0.5)] tracking-normal"
                 >
-                    &ldquo;knowledge is light,<br />
-                    <span className="text-white/70">guided by the heart.&rdquo;</span>
+                    &ldquo;إن الله يقذف العلم<br />
+                    <span className="text-white/70">في قلب من يحب&rdquo;</span>
                 </motion.h1>
 
                 {/* Decorative Line */}
