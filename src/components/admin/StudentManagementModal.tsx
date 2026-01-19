@@ -172,7 +172,7 @@ export function StudentManagementModal({ student, isOpen, onClose, onUpdate }: S
 
                                     <div className="flex flex-col gap-2 justify-center">
                                         <Button
-                                            variant="outline"
+                                            variant="secondary"
                                             onClick={() => handleExtend(30)}
                                             disabled={loading}
                                             className="justify-start border-emerald-500/20 hover:bg-emerald-500/10 hover:text-emerald-400"
@@ -181,7 +181,7 @@ export function StudentManagementModal({ student, isOpen, onClose, onUpdate }: S
                                             Add 30 Days (+1 Month)
                                         </Button>
                                         <Button
-                                            variant="outline"
+                                            variant="secondary"
                                             onClick={() => handleExtend(120)}
                                             disabled={loading}
                                             className="justify-start border-emerald-500/20 hover:bg-emerald-500/10 hover:text-emerald-400"
@@ -207,10 +207,11 @@ export function StudentManagementModal({ student, isOpen, onClose, onUpdate }: S
                                             <p className="text-xs text-zinc-500">Prevent this user from logging in.</p>
                                         </div>
                                         <Button
-                                            variant="destructive"
+                                            variant="secondary"
                                             size="sm"
                                             onClick={handleBan}
                                             disabled={loading}
+                                            className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20 hover:shadow-[0_0_10px_rgba(220,38,38,0.2)]"
                                         >
                                             {student.banned ? "Unban Account" : "Ban Account"}
                                         </Button>
@@ -224,7 +225,7 @@ export function StudentManagementModal({ student, isOpen, onClose, onUpdate }: S
                                             <p className="text-xs text-zinc-500">Sign out from all active sessions.</p>
                                         </div>
                                         <Button
-                                            variant="outline"
+                                            variant="secondary"
                                             size="sm"
                                             onClick={handleLogout}
                                             disabled={loading}
