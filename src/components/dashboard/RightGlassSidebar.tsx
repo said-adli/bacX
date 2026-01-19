@@ -37,11 +37,17 @@ export default function RightGlassSidebar() {
       </button>
 
       {/* Brand / Logo Area */}
-      <div className="px-4 mb-8 mt-4 flex items-center justify-center gap-3 overflow-hidden whitespace-nowrap">
+      <div className="px-4 mb-12 mt-6 flex items-center justify-center gap-4 overflow-visible whitespace-nowrap">
         <motion.div
           animate={{
-            width: isCollapsed ? 50 : 60,
-            height: isCollapsed ? 50 : 60
+            width: isCollapsed ? 48 : 54,
+            height: isCollapsed ? 48 : 54,
+            scale: [1, 1.05, 1], // Breathing Animation
+          }}
+          transition={{
+            width: { duration: 0.3 },
+            height: { duration: 0.3 },
+            scale: { duration: 3, repeat: Infinity, ease: "easeInOut" }
           }}
           className="relative flex-shrink-0"
         >
@@ -50,7 +56,7 @@ export default function RightGlassSidebar() {
             alt="Brainy"
             fill
             className="object-contain"
-            style={{ filter: "drop-shadow(0 0 12px rgba(37, 99, 235, 0.4))" }}
+            style={{ filter: "drop-shadow(0 0 15px rgba(59, 130, 246, 0.6))" }} // Neon Glow
             priority
           />
         </motion.div>
@@ -61,8 +67,8 @@ export default function RightGlassSidebar() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="font-bold text-2xl tracking-wide bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent font-serif"
+              transition={{ duration: 0.3 }}
+              className="font-sans font-extrabold text-3xl tracking-[0.1em] bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent drop-shadow-md"
             >
               Brainy
             </motion.span>
