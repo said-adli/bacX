@@ -115,7 +115,7 @@ export default function SettingsPage() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20 pt-8">
-            <h1 className="text-3xl font-serif font-bold text-white mb-2">إعدادات التطبيق</h1>
+            <h1 className="text-3xl font-serif font-bold text-white mb-2">إعدادات التطبيق (V8.0)</h1>
 
             <div className="space-y-6">
 
