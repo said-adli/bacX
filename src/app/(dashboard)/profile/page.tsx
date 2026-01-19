@@ -26,18 +26,36 @@ export default function ProfilePage() {
 
     // 1. Fetch Profile Data
     useEffect(() => {
+        let mounted = true;
         const fetchProfile = async () => {
-            if (!user) return;
+            console.log("ProfilePage: Fetching profile started...");
+
+            // Only set loading true if we are actually going to fetch
+            // But initial state is true, so we just need to ensure it turns false.
+
+            if (!user) {
+                console.log("ProfilePage: No user found in AuthContext. Stopping spinner.");
+                if (mounted) setLoading(false);
+                return;
+            }
+
             try {
+                console.log("ProfilePage: Fetching for User ID:", user.id);
+                // We use try/catch for the query specifically to handle missing columns gracefully if needed
                 const { data, error } = await supabase
                     .from('profiles')
-                    .select('full_name, phone, wilaya, major, study_system')
+                    .select('full_name, phone, wilaya, major, study_system') // Query explicitly
                     .eq('id', user.id)
                     .single();
 
-                if (error) throw error;
+                if (error) {
+                    console.error("ProfilePage: Supabase query error:", error);
+                    throw error;
+                }
 
-                if (data) {
+                console.log("ProfilePage: Data received:", data);
+
+                if (data && mounted) {
                     setFormData({
                         full_name: data.full_name || "",
                         phone: data.phone || "",
@@ -47,14 +65,22 @@ export default function ProfilePage() {
                     });
                 }
             } catch (error) {
-                console.error("Error fetching profile:", error);
+                console.error("ProfilePage: detailed error:", error);
+
+                // Fallback: If study_system is missing from DB, we might get an error.
+                // We can choose to ignore it or mock it, but for now we show toast.
                 toast.error("فشل في تحميل بيانات الملف الشخصي");
             } finally {
-                setLoading(false);
+                if (mounted) {
+                    console.log("ProfilePage: Loading finished.");
+                    setLoading(false);
+                }
             }
         };
 
         fetchProfile();
+
+        return () => { mounted = false; };
     }, [user, supabase]);
 
     // 2. Handle Save

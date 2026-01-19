@@ -35,29 +35,48 @@ export default function SettingsPage() {
 
     // 1. Fetch Preferences on Load
     useEffect(() => {
+        let mounted = true;
         const fetchPreferences = async () => {
-            if (!user) return;
+            console.log("SettingsPage: Fetching preferences started...");
+
+            if (!user) {
+                console.log("SettingsPage: No user found. Stopping spinner.");
+                if (mounted) setLoading(false);
+                return;
+            }
+
             try {
+                console.log("SettingsPage: Fetching for User ID:", user.id);
                 const { data, error } = await supabase
                     .from('profiles')
                     .select('preferences')
                     .eq('id', user.id)
                     .single();
 
-                if (error) throw error;
+                if (error) {
+                    console.error("SettingsPage: Supabase query error:", error);
+                    throw error;
+                }
 
-                if (data && data.preferences) {
+                console.log("SettingsPage: Data received:", data);
+
+                if (data && data.preferences && mounted) {
                     setPreferences(data.preferences as UserPreferences);
                 }
             } catch (error) {
-                console.error("Error fetching preferences:", error);
+                console.error("SettingsPage: Error fetching preferences:", error);
                 toast.error("فشل في تحميل التفضيلات");
             } finally {
-                setLoading(false);
+                if (mounted) {
+                    console.log("SettingsPage: Loading finished.");
+                    setLoading(false);
+                }
             }
         };
 
         fetchPreferences();
+
+        return () => { mounted = false; };
     }, [user, supabase]);
 
     // 2. Handle Save
