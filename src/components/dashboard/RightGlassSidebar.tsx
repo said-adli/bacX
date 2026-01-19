@@ -26,7 +26,7 @@ export default function RightGlassSidebar() {
       initial={false}
       animate={{ width: isCollapsed ? 80 : 288 }} // 20px (5rem) is 80px, 72 is 288px
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed right-0 top-0 h-full bg-black/40 backdrop-blur-2xl border-l border-white/5 flex flex-col pt-24 pb-4 z-50 overflow-visible" // overflow-visible for tooltips
+      className="fixed right-0 top-0 h-full bg-black/20 backdrop-blur-3xl border-l border-white/5 flex flex-col pt-24 pb-4 z-[90] overflow-visible shadow-[-10px_0_40px_rgba(0,0,0,0.5)]" // Higher z-index, lighter bg, deeper shadow
     >
       {/* Toggle Button */}
       <button
