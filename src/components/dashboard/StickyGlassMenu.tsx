@@ -92,9 +92,9 @@ export default function StickyGlassMenu() {
                             onClick={() => setIsProfileOpen(!isProfileOpen)}
                             className={`flex items-center gap-2 pl-1 pr-1 py-1 rounded-full border transition-all ${isProfileOpen ? 'bg-white/10 border-white/20' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
                         >
-                            <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/10 shadow-[0_0_10px_rgba(37,99,235,0.3)]">
+                            <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/20 shadow-[0_0_15px_rgba(37,99,235,0.6)] group-hover:shadow-[0_0_25px_rgba(37,99,235,0.8)] transition-all duration-300">
                                 {/* Fallback Avatar if no image */}
-                                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-xs font-bold text-white">
+                                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white">
                                     {profile?.full_name?.[0] || <User size={14} />}
                                 </div>
                             </div>
@@ -108,11 +108,14 @@ export default function StickyGlassMenu() {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                     transition={{ duration: 0.2 }}
-                                    className="absolute left-0 mt-2 w-56 bg-[#0B0E14]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[70]"
+                                    className="absolute left-0 mt-2 w-64 bg-black/60 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[70] ring-1 ring-white/5"
                                 >
-                                    <div className="p-4 border-b border-white/5 bg-white/5">
-                                        <p className="font-bold text-sm text-white truncate">{profile?.full_name || 'طالب'}</p>
-                                        <p className="text-xs text-white/50 truncate font-mono">{user?.email}</p>
+                                    <div className="p-5 border-b border-white/5 bg-white/5 relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-blue-600/10 blur-xl opacity-50" />
+                                        <div className="relative z-10">
+                                            <p className="font-bold text-base text-white truncate">{profile?.full_name || 'طالب'}</p>
+                                            <p className="text-xs text-blue-200/50 truncate font-mono mt-0.5">{user?.email}</p>
+                                        </div>
                                     </div>
                                     <div className="p-2 space-y-1">
                                         <Link
