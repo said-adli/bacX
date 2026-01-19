@@ -120,7 +120,7 @@ export default function SettingsPage() {
             <div className="space-y-6">
 
                 {/* Account Actions */}
-                <GlassCard className="p-8 space-y-6 border-blue-500/20">
+                <GlassCard className="p-8 space-y-6 border-blue-500/20 pointer-events-auto hover:scale-[1.02] transition-transform duration-300 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]">
                     <h3 className="text-xl font-bold border-b border-white/10 pb-4 flex items-center gap-2 text-blue-300">
                         <UserCog className="w-5 h-5" />
                         الحساب
@@ -141,7 +141,7 @@ export default function SettingsPage() {
                 </GlassCard>
 
                 {/* Preferences */}
-                <GlassCard className="p-8 space-y-6">
+                <GlassCard className="p-8 space-y-6 pointer-events-auto hover:scale-[1.02] transition-transform duration-300 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)]">
                     <h3 className="text-xl font-bold border-b border-white/10 pb-4 flex items-center gap-2 text-purple-300">
                         <Monitor className="w-5 h-5" />
                         التفضيلات
@@ -186,7 +186,7 @@ export default function SettingsPage() {
                 </GlassCard>
 
                 {/* Notifications */}
-                <GlassCard className="p-8 space-y-6">
+                <GlassCard className="p-8 space-y-6 pointer-events-auto hover:scale-[1.02] transition-transform duration-300 hover:shadow-[0_0_30px_rgba(34,197,94,0.2)]">
                     <h3 className="text-xl font-bold border-b border-white/10 pb-4 flex items-center gap-2 text-green-300">
                         <Bell className="w-5 h-5" />
                         الإشعارات
@@ -214,7 +214,7 @@ export default function SettingsPage() {
                 </GlassCard>
 
                 {/* Subscription Info */}
-                <GlassCard className="p-8 space-y-6 border-blue-500/20 bg-blue-900/5">
+                <GlassCard className="p-8 space-y-6 border-blue-500/20 bg-blue-900/5 pointer-events-auto hover:scale-[1.02] transition-transform duration-300 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]">
                     <h3 className="text-xl font-bold border-b border-white/10 pb-4 flex items-center gap-2 text-blue-300">
                         <CreditCard className="w-5 h-5" />
                         الاشتراك

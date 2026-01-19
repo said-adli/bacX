@@ -6,12 +6,49 @@ import { useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { PaymentModal } from "@/components/subscription/PaymentModal";
 import { uploadReceipt, createSubscriptionRequest } from "@/lib/payment";
+import { toast } from "sonner"; // Assuming sonner is used based on other files
 
 export default function SubscriptionPage() {
+    const { user } = useAuth();
     const pricingRef = useRef<HTMLDivElement>(null);
+
+    const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState<{ name: string; price: string } | null>(null);
 
     const scrollToPricing = () => {
         pricingRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    const handleSubscribe = (plan: any) => {
+        if (plan.price === "مجاني") {
+            toast.info("هذه الباقة مجانية ومفعلة تلقائياً");
+            return;
+        }
+        setSelectedPlan({ name: plan.name, price: plan.price });
+        setPaymentModalOpen(true);
+    };
+
+    const handlePaymentSubmit = async (file: File) => {
+        if (!user || !selectedPlan) return;
+
+        try {
+            // 1. Upload Receipt
+            const receiptUrl = await uploadReceipt(file, user.id);
+            if (!receiptUrl) throw new Error("فشل رفع الإيصال");
+
+            // 2. Create Request
+            const result = await createSubscriptionRequest(user.id, selectedPlan.name, receiptUrl);
+
+            if (result.success) {
+                toast.success("تم إرسال طلب الاشتراك بنجاح! سيتم تفعيله قريباً.");
+                setPaymentModalOpen(false);
+            } else {
+                throw new Error("فشل إنشاء الطلب");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("حدث خطأ، يرجى المحاولة مرة أخرى.");
+        }
     };
 
     // Mock Status Data
@@ -124,10 +161,10 @@ export default function SubscriptionPage() {
                 {plans.map((plan, i) => (
                     <GlassCard
                         key={i}
-                        className={`relative p-8 flex flex-col gap-6 transition-all duration-500 group
+                        className={`relative p-8 flex flex-col gap-6 transition-all duration-500 group pointer-events-auto
                             ${plan.featured
-                                ? "bg-white/5 border-blue-500/50 shadow-[0_0_40px_rgba(37,99,235,0.15)] scale-105 z-10"
-                                : "hover:bg-white/10 hover:border-white/20"
+                                ? "bg-white/5 border-blue-500/50 shadow-[0_0_40px_rgba(37,99,235,0.15)] scale-105 z-10 hover:scale-[1.08]"
+                                : "hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(255,255,255,0.1)]"
                             }
                         `}
                     >
@@ -164,7 +201,8 @@ export default function SubscriptionPage() {
                         </ul>
 
                         <button
-                            className={`w-full py-4 rounded-xl font-bold transition-all relative overflow-hidden group/btn
+                            onClick={() => handleSubscribe(plan)}
+                            className={`w-full py-4 rounded-xl font-bold transition-all relative overflow-hidden group/btn z-20 pointer-events-auto cursor-pointer
                             ${plan.featured
                                     ? "bg-blue-600 text-white shadow-[0_0_30px_rgba(37,99,235,0.4)] hover:shadow-[0_0_50px_rgba(37,99,235,0.6)] hover:scale-[1.02]"
                                     : "bg-white/5 hover:bg-white/10 text-white border border-white/10"
@@ -179,6 +217,17 @@ export default function SubscriptionPage() {
                     </GlassCard>
                 ))}
             </div>
+
+            {/* Payment Modal */}
+            {selectedPlan && (
+                <PaymentModal
+                    isOpen={paymentModalOpen}
+                    onClose={() => setPaymentModalOpen(false)}
+                    planName={selectedPlan.name}
+                    price={selectedPlan.price}
+                    onSubmit={handlePaymentSubmit}
+                />
+            )}
         </div>
     );
 }
