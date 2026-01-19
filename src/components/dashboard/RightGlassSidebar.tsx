@@ -24,48 +24,40 @@ export default function RightGlassSidebar() {
   return (
     <motion.aside
       initial={false}
-      animate={{ width: isCollapsed ? 80 : 288 }} // 20px (5rem) is 80px, 72 is 288px
+      animate={{ width: isCollapsed ? 90 : 288 }} // Slightly wider collapsed state for the logo
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed right-0 top-0 h-full bg-black/20 backdrop-blur-3xl border-l border-white/5 flex flex-col pt-4 pb-4 z-[90] overflow-visible shadow-[-10px_0_40px_rgba(0,0,0,0.5)]" // V11.5 Zero Top Margin
+      className="fixed right-0 top-0 h-full bg-black/20 backdrop-blur-3xl border-l border-white/5 flex flex-col pt-6 pb-4 z-[90] shadow-[-10px_0_40px_rgba(0,0,0,0.5)]"
     >
-      {/* Toggle Button */}
+      {/* Toggle Button - Repositioned to prevent collision */}
       <button
         onClick={toggleCollapse}
-        className="absolute top-4 -left-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-1.5 shadow-[0_0_15px_rgba(59,130,246,0.5)] border border-white/10 transition-transform hover:scale-110 z-50"
+        className="absolute top-6 left-[-12px] bg-blue-600 hover:bg-blue-500 text-white rounded-full p-1.5 shadow-[0_0_15px_rgba(59,130,246,0.5)] border border-white/10 transition-transform hover:scale-110 z-50"
       >
         {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
 
-      {/* Brand / Logo Area - V11.5 EMERGENCY FIX */}
-      <div className={`px-5 mb-8 mt-0 flex items-center ${isCollapsed ? "justify-center" : "justify-start"} gap-4 overflow-visible whitespace-nowrap transition-all duration-500`}>
-        {/* The Hard Crop Hack (Hides "Brainy" text) */}
+      {/* Brand / Logo Area - FIXED & ALIGNED */}
+      <div className={`px-6 mb-2 flex items-center ${isCollapsed ? "justify-center" : "justify-start"} gap-6 text-white transition-all duration-500`}>
+        {/* Logo Wrapper - NO CLIPPING */}
         <motion.div
-          animate={{
-            width: isCollapsed ? 50 : 130,
-            height: isCollapsed ? 50 : 80, // STRICT 80px Height Limit
-            scale: [1, 1.05, 1],
-          }}
-          transition={{
-            width: { duration: 0.4, ease: "backOut" },
-            height: { duration: 0.4, ease: "backOut" },
-            scale: { duration: 3, repeat: Infinity, ease: "easeInOut" }
-          }}
-          className="relative flex-shrink-0 z-10 overflow-hidden"
+          layout
+          className="relative flex-shrink-0 z-10 flex items-center justify-center"
+          style={{ height: "80px", width: isCollapsed ? "50px" : "auto" }} // Consistent Height
         >
           <Image
             src="/images/brainy-logo-v3.png"
             alt="Brainy"
-            fill
-            className="object-cover"
+            width={80}
+            height={80}
+            className="object-contain h-full w-auto transition-all duration-500"
             style={{
-              objectPosition: "top center", // Pushes text out of frame
-              transform: "translateY(5px)", // Nudge pyramid down to center in crop
-              filter: "drop-shadow(0 0 15px #3b82f6) brightness(1.4)" // Violent Blue Glow
+              filter: "drop-shadow(0 0 15px #3b82f6) brightness(1.2)" // Powerful Blue Neon Glow
             }}
             priority
           />
         </motion.div>
 
+        {/* Text - PERFECTLY CENTERED */}
         <AnimatePresence>
           {!isCollapsed && (
             <motion.span
@@ -73,7 +65,7 @@ export default function RightGlassSidebar() {
               animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
               exit={{ opacity: 0, x: -20, filter: "blur(5px)" }}
               transition={{ duration: 0.4, delay: 0.05 }}
-              className="font-sans font-black text-4xl tracking-tight bg-gradient-to-r from-white via-blue-100 to-sky-400 bg-clip-text text-transparent drop-shadow-2xl pt-1"
+              className="font-black text-3xl tracking-tight text-white drop-shadow-lg whitespace-nowrap pt-2"
             >
               Brainy
             </motion.span>
@@ -81,7 +73,7 @@ export default function RightGlassSidebar() {
         </AnimatePresence>
       </div>
 
-      <nav className="flex-1 px-3 space-y-2">
+      <nav className="flex-1 px-3 space-y-2 mt-4">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
