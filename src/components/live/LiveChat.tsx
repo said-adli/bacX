@@ -48,7 +48,7 @@ export function LiveChat() {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'live_messages'
-            }, (payload) => {
+            }, (payload: any) => {
                 const newMsg = payload.new as Message;
                 setMessages(prev => [...prev, newMsg]);
             })
@@ -56,7 +56,7 @@ export function LiveChat() {
                 event: 'DELETE',
                 schema: 'public',
                 table: 'live_messages'
-            }, (payload) => {
+            }, (payload: any) => {
                 setMessages(prev => prev.filter(msg => msg.id !== payload.old.id));
             })
             .subscribe();
