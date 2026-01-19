@@ -7,7 +7,21 @@ import StickyGlassMenu from "@/components/dashboard/StickyGlassMenu";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div className="min-h-screen text-white font-sans selection:bg-blue-500/30 bg-[radial-gradient(circle_at_top,_#111827_0%,_#050505_100%)]" dir="rtl">
+        <div className="relative min-h-screen text-white font-sans selection:bg-blue-500/30 bg-[#0B0E14] overflow-hidden" dir="rtl">
+
+            {/* Dark Luxury Mesh Gradient Background */}
+            <div className="fixed inset-0 z-0">
+                {/* Base Deep Charcoal */}
+                <div className="absolute inset-0 bg-[#0B0E14]" />
+
+                {/* Ambient Glowing Blobs */}
+                <div className="absolute top-[-20%] left-[-20%] w-[800px] h-[800px] bg-blue-600/20 rounded-full blur-[120px] mix-blend-screen animate-[ambient-motion_20s_infinite]" />
+                <div className="absolute bottom-[-20%] right-[-20%] w-[800px] h-[800px] bg-indigo-600/15 rounded-full blur-[120px] mix-blend-screen animate-[ambient-motion_25s_infinite_reverse]" />
+                <div className="absolute top-[40%] left-[30%] w-[600px] h-[600px] bg-purple-900/10 rounded-full blur-[100px] mix-blend-screen animate-[pulse_10s_infinite]" />
+
+                {/* Cinematic Grain Overlay */}
+                <div className="absolute inset-0 film-grain z-10" />
+            </div>
 
             {/* Right Side Navigation */}
             <RightGlassSidebar />
@@ -18,14 +32,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Main Content Area */}
             {/* Using mr-20 (collapsed width) + padding to allow content to be visible. 
                 The Sidebar will expand OVER the content (glass effect). */}
-            <main className="min-h-screen mr-0 md:mr-24 pt-32 px-4 md:px-12 pb-10 relative z-0 transition-all duration-300 ease-in-out">
+            <main className="min-h-screen mr-0 md:mr-24 pt-28 px-4 md:px-12 pb-10 relative z-10 transition-all duration-300 ease-in-out">
 
-                {/* Ultra-Glass Background Blobs */}
-                <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-                    <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[100px] animate-pulse" />
-                    <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-[100px] animate-pulse delay-700" />
-                    <div className="absolute top-[40%] left-[40%] w-[600px] h-[600px] bg-blue-900/20 rounded-full blur-[120px] animate-pulse delay-1000" />
-                </div>
+
 
                 {/* THE SOUL */}
                 <div className="flex justify-center mb-12 animate-in fade-in slide-in-from-top-4 duration-1000 delay-300">
