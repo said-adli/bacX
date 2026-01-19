@@ -26,29 +26,29 @@ export default function RightGlassSidebar() {
       initial={false}
       animate={{ width: isCollapsed ? 80 : 288 }} // 20px (5rem) is 80px, 72 is 288px
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed right-0 top-0 h-full bg-black/20 backdrop-blur-3xl border-l border-white/5 flex flex-col pt-6 pb-4 z-[90] overflow-visible shadow-[-10px_0_40px_rgba(0,0,0,0.5)]" // Reduced pt-24 to pt-6
+      className="fixed right-0 top-0 h-full bg-black/20 backdrop-blur-3xl border-l border-white/5 flex flex-col pt-4 pb-4 z-[90] overflow-visible shadow-[-10px_0_40px_rgba(0,0,0,0.5)]" // V11.5 Zero Top Margin
     >
       {/* Toggle Button */}
       <button
         onClick={toggleCollapse}
-        className="absolute top-6 -left-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-1.5 shadow-[0_0_15px_rgba(59,130,246,0.5)] border border-white/10 transition-transform hover:scale-110 z-50"
+        className="absolute top-4 -left-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full p-1.5 shadow-[0_0_15px_rgba(59,130,246,0.5)] border border-white/10 transition-transform hover:scale-110 z-50"
       >
         {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
 
-      {/* Brand / Logo Area - V11.4 Hero Alignment */}
-      <div className={`px-5 mb-10 mt-2 flex items-center ${isCollapsed ? "justify-center" : "justify-start"} gap-5 overflow-visible whitespace-nowrap transition-all duration-500`}>
-        {/* The Logo (Massive Crop Hack) */}
+      {/* Brand / Logo Area - V11.5 EMERGENCY FIX */}
+      <div className={`px-5 mb-8 mt-0 flex items-center ${isCollapsed ? "justify-center" : "justify-start"} gap-4 overflow-visible whitespace-nowrap transition-all duration-500`}>
+        {/* The Hard Crop Hack (Hides "Brainy" text) */}
         <motion.div
           animate={{
-            width: isCollapsed ? 50 : 140, // Huge 140px width
-            height: isCollapsed ? 50 : 100, // cropped height
+            width: isCollapsed ? 50 : 130,
+            height: isCollapsed ? 50 : 80, // STRICT 80px Height Limit
             scale: [1, 1.05, 1],
           }}
           transition={{
             width: { duration: 0.4, ease: "backOut" },
             height: { duration: 0.4, ease: "backOut" },
-            scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+            scale: { duration: 3, repeat: Infinity, ease: "easeInOut" }
           }}
           className="relative flex-shrink-0 z-10 overflow-hidden"
         >
@@ -58,8 +58,9 @@ export default function RightGlassSidebar() {
             fill
             className="object-cover"
             style={{
-              objectPosition: "top center",
-              filter: "drop-shadow(0 0 12px rgba(59, 130, 246, 0.9)) brightness(1.3)" // Intense Blue Energy
+              objectPosition: "top center", // Pushes text out of frame
+              transform: "translateY(5px)", // Nudge pyramid down to center in crop
+              filter: "drop-shadow(0 0 15px #3b82f6) brightness(1.4)" // Violent Blue Glow
             }}
             priority
           />
@@ -72,7 +73,7 @@ export default function RightGlassSidebar() {
               animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
               exit={{ opacity: 0, x: -20, filter: "blur(5px)" }}
               transition={{ duration: 0.4, delay: 0.05 }}
-              className="font-sans font-black text-4xl tracking-widest text-white drop-shadow-[0_0_10px_rgba(59,130,246,0.5)] pt-1"
+              className="font-sans font-black text-4xl tracking-tight bg-gradient-to-r from-white via-blue-100 to-sky-400 bg-clip-text text-transparent drop-shadow-2xl pt-1"
             >
               Brainy
             </motion.span>
