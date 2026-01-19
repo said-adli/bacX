@@ -50,7 +50,7 @@ export default function StickyGlassMenu() {
                     <div className="flex items-center gap-2">
                         <div className="relative w-[50px] h-[50px]">
                             <Image
-                                src="/images/brainy-logo-v2.png"
+                                src="/images/brainy-logo-v3.png"
                                 alt="Brainy"
                                 fill
                                 className="object-contain"

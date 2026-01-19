@@ -8,7 +8,7 @@ export function BrainyModernLogo({ className }: { className?: string }) {
     return (
         <div className={cn("relative", className)}>
             <Image
-                src="/images/brainy-logo-v2.png"
+                src="/images/brainy-logo-v3.png"
                 alt="Brainy"
                 fill
                 className="object-contain"

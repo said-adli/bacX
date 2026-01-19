@@ -64,7 +64,7 @@ export default function SignupForm({ wilayas, majors }: SignupFormProps) {
                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                 >
                     <Image
-                        src="/images/brainy-logo-v2.png"
+                        src="/images/brainy-logo-v3.png"
                         alt="Brainy Logo"
                         fill
                         className="object-contain"

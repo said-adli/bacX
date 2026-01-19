@@ -53,7 +53,7 @@ export default function RightGlassSidebar() {
           className="relative flex-shrink-0 z-10 overflow-hidden"
         >
           <Image
-            src="/images/brainy-logo-v2.png"
+            src="/images/brainy-logo-v3.png"
             alt="Brainy"
             fill
             className="object-cover"
