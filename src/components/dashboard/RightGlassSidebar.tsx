@@ -36,27 +36,33 @@ export default function RightGlassSidebar() {
         {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
 
-      {/* Brand / Logo Area - V11.2 Hero Branding */}
-      <div className={`px-5 mb-14 mt-8 flex items-center ${isCollapsed ? "justify-center" : "justify-start"} gap-6 overflow-visible whitespace-nowrap transition-all duration-500`}>
+      {/* Brand / Logo Area - V11.3 The Ultimate Refactor */}
+      <div className={`px-5 mb-14 mt-8 flex items-center ${isCollapsed ? "justify-center" : "justify-start"} gap-3 overflow-visible whitespace-nowrap transition-all duration-500`}>
+        {/* The Logo (Crucial Crop Hack) */}
         <motion.div
           animate={{
-            width: isCollapsed ? 50 : 110,
-            height: isCollapsed ? 50 : 110,
-            scale: [1, 1.02, 1], // Subtle Breathing
+            // Width matches the visible pyramid width
+            width: isCollapsed ? 50 : 120,
+            // Height is RESTRICTED to cut off the bottom text ("Brainy" in the PNG)
+            height: isCollapsed ? 50 : 90,
+            scale: [1, 1.05, 1],
           }}
           transition={{
             width: { duration: 0.4, ease: "backOut" },
             height: { duration: 0.4, ease: "backOut" },
             scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
           }}
-          className="relative flex-shrink-0 z-10"
+          className="relative flex-shrink-0 z-10 overflow-hidden" // overflow-hidden cuts the text
         >
           <Image
             src="/images/brainy-logo-v2.png"
             alt="Brainy"
             fill
-            className="object-contain"
-            style={{ filter: "drop-shadow(0 0 20px rgba(59, 130, 246, 0.5))" }} // Stronger Neon Glow
+            className="object-cover" // Cover ensures it fills width, Top position keeps pyramid, cuts bottom
+            style={{
+              objectPosition: "top center", // Pushes the top (Pyramid) to view, hides bottom (Text)
+              filter: "drop-shadow(0 0 15px rgba(59, 130, 246, 0.8)) brightness(1.2)" // Blue Energy Glow 
+            }}
             priority
           />
         </motion.div>
@@ -64,11 +70,11 @@ export default function RightGlassSidebar() {
         <AnimatePresence>
           {!isCollapsed && (
             <motion.span
-              initial={{ opacity: 0, x: -30, filter: "blur(10px)" }}
+              initial={{ opacity: 0, x: -20, filter: "blur(5px)" }}
               animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, x: -30, filter: "blur(10px)" }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="font-sans font-black text-4xl tracking-widest bg-gradient-to-br from-white via-blue-100 to-blue-500 bg-clip-text text-transparent drop-shadow-2xl pt-2"
+              exit={{ opacity: 0, x: -20, filter: "blur(5px)" }}
+              transition={{ duration: 0.4, delay: 0.05 }}
+              className="font-sans font-black text-4xl tracking-tight bg-gradient-to-r from-white via-blue-200 to-blue-500 bg-clip-text text-transparent drop-shadow-2xl pt-1"
             >
               Brainy
             </motion.span>
