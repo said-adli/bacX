@@ -16,22 +16,17 @@ export default function RightGlassSidebar() {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const supabase = createClient();
 
-  const handleLogout = async () => {
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Stop any bubbling
+    console.log("Logout initiated..."); // Debugging
     try {
-      // 1. نعيطو لـ Supabase باش يغلق الجلسة
-      const { error } = await supabase.auth.signOut();
-
-      if (error) throw error;
-
-      // 2. نمسحو أي بيانات بقات في المتصفح (اختياري بصح أضمن)
+      await supabase.auth.signOut();
       localStorage.clear();
-
-      // 3. نبعثو المستخدم لصفحة الدخول فوراً
-      window.location.href = '/login';
-    } catch (error) {
-      console.error('Error logging out:', error);
-      // حتى وإذا صرا مشكل، نبعثوه للـ login باش يجدد الدخول
-      window.location.href = '/login';
+      sessionStorage.clear();
+      window.location.assign('/login'); // Force hard redirect
+    } catch (err) {
+      console.error("Logout error:", err);
+      window.location.assign('/login'); // Redirect anyway
     }
   };
 
