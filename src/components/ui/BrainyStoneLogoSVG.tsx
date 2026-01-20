@@ -8,7 +8,7 @@ export function BrainyStoneLogoSVG({ className }: { className?: string }) {
     return (
         <div className={cn("relative", className)}>
             <Image
-                src="/images/brainy-logo-v2.png"
+                src="/images/brainy-logo-final.png"
                 alt="Brainy"
                 fill
                 className="object-contain"

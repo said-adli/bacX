@@ -66,7 +66,7 @@ export function GlassSidebar() {
                             >
                                 <div className="relative w-14 h-14">
                                     <Image
-                                        src="/images/brainy-logo-v2.png"
+                                        src="/images/brainy-logo-final.png"
                                         alt="Brainy"
                                         fill
                                         className="object-contain"
