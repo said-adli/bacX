@@ -44,20 +44,20 @@ export default function RightGlassSidebar() {
         }
       `}</style>
       <div
-        className={`w-full flex justify-center items-center pt-8 mb-6 transition-all duration-500`}
+        className={`w-full flex justify-center items-center pt-8 mb-12 transition-all duration-500`}
       >
         <motion.div
           layout
           className="relative z-10 flex items-center justify-center gpu-accelerated"
           animate={{
-            width: isCollapsed ? 60 : 220, // Large 220px width for V12.0 impact
-            height: isCollapsed ? 60 : 220
+            width: isCollapsed ? 50 : 176, // Reduced from 220 to 176 (w-44)
+            height: isCollapsed ? 50 : 176
           }}
           transition={{ duration: 0.5, ease: "backOut" }}
         >
           <Image
             src="/images/brainy-logo-final.png"
-            alt="Brainy V12.0"
+            alt="Brainy V12.1"
             fill
             className="object-contain"
             style={{
