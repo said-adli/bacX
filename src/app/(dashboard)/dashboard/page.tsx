@@ -3,23 +3,60 @@
 import { GlassCard } from "@/components/ui/GlassCard";
 import CinematicHero from "@/components/dashboard/CinematicHero";
 import { CrystalSubjectCard } from "@/components/dashboard/CrystalSubjectCard";
-import { SUBJECTS, NEWS, APPOINTMENTS } from "@/data/mockLibrary";
+import { NEWS, APPOINTMENTS } from "@/data/mockLibrary"; // Keep News/Appointments mock for now
 import { Clock, TrendingUp, Zap } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
 import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+
+interface Subject {
+    id: string;
+    name: string;
+    icon: string;
+    description: string;
+    color: string;
+    unitCount: number;
+    lessonCount: number;
+    lessons: any[];
+}
 
 export default function DashboardPage() {
     const searchParams = useSearchParams();
     const query = searchParams.get("q")?.toLowerCase() || "";
+    const supabase = createClient();
 
-    const filteredSubjects = SUBJECTS.filter(s => {
+    const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchSubjects = async () => {
+            try {
+                // Fetch Subjects with Lessons count or join
+                // For simplicity in display, we fetch basic info. 
+                // Getting full lessons might be heavy, but let's try shallow or full if small app.
+                const { data, error } = await supabase
+                    .from('subjects')
+                    .select('*, lessons(id, title)');
+
+                if (data) setSubjects(data);
+            } catch (error) {
+                console.error("Error fetching content", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchSubjects();
+    }, []);
+
+    const filteredSubjects = subjects.filter(s => {
         // Base Filter: Math & Physics ONLY (V18.0 Restriction)
         if (s.name !== "الرياضيات" && s.name !== "الفيزياء") return false;
 
         // Search Filter
         if (!query) return true;
         const matchesSubject = s.name.toLowerCase().includes(query);
-        const matchesLesson = s.lessons.some(l => l.title.toLowerCase().includes(query));
+        const matchesLesson = s.lessons?.some((l: any) => l.title.toLowerCase().includes(query));
         return matchesSubject || matchesLesson;
     });
 

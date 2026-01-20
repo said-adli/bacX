@@ -2,18 +2,36 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { SUBJECTS, getLessonVideoId } from "@/data/mockLibrary";
+import { getLessonVideoId } from "@/data/mockLibrary"; // Keep helper for now, or move to utils
 import { useAuth } from "@/context/AuthContext";
 import EncodedVideoPlayer from "@/components/lesson/VideoPlayer";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Lock, PlayCircle, Clock } from "lucide-react";
 import Link from "next/link";
 import { PremiumLockScreen } from "@/components/dashboard/PremiumLockScreen";
+import { createClient } from "@/utils/supabase/client";
 
 export default function SubjectPage() {
     const params = useParams();
     const subjectId = params.subjectId as string;
-    const subject = SUBJECTS.find(s => s.id === subjectId);
+    const supabase = createClient();
+
+    const [subject, setSubject] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchSubject = async () => {
+            const { data, error } = await supabase
+                .from('subjects')
+                .select('*, lessons(*)')
+                .eq('id', subjectId)
+                .single();
+
+            if (data) setSubject(data);
+            setLoading(false);
+        };
+        fetchSubject();
+    }, [subjectId]);
 
     // Auth & Gatekeeping
     const { user, profile } = useAuth();
@@ -24,16 +42,18 @@ export default function SubjectPage() {
 
     // Set initial lesson
     useEffect(() => {
-        if (subject && subject.lessons.length > 0 && !activeLessonId) {
+        if (subject && subject.lessons?.length > 0 && !activeLessonId) {
             setActiveLessonId(subject.lessons[0].id);
         }
     }, [subject, activeLessonId]);
+
+    if (loading) return <div className="p-10 text-center text-white/50">جاري التحميل...</div>;
 
     if (!subject) {
         return <div className="p-10 text-center text-white/50">المادة غير موجودة</div>;
     }
 
-    const activeLesson = subject.lessons.find(l => l.id === activeLessonId) || subject.lessons[0];
+    const activeLesson = subject.lessons.find((l: any) => l.id === activeLessonId) || subject.lessons[0];
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
