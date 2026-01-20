@@ -5,7 +5,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { useAuth } from "@/context/AuthContext";
 import {
     Shield, Lock, Smartphone, Globe, Download,
-    AlertTriangle, LogOut, Eye, EyeOff, LayoutGrid, key
+    AlertTriangle, LogOut, Eye, EyeOff, LayoutGrid, Key
 } from "lucide-react";
 import { toast } from "sonner";
 
