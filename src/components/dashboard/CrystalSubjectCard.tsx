@@ -2,9 +2,18 @@
 
 import { useRef, useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { Subject } from "@/data/mockLibrary";
+
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+
+interface Subject {
+    id: string;
+    name: string;
+    icon: string;
+    description: string;
+    color?: string;
+    [key: string]: any;
+}
 
 export function CrystalSubjectCard({ subject }: { subject: Subject }) {
     const cardRef = useRef<HTMLDivElement>(null);
