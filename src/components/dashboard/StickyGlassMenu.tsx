@@ -1,31 +1,35 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Search, Bell, ChevronDown, LogOut, User, Settings, CreditCard } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import {
-    Search, Bell, Settings, LogOut, User,
-    ChevronDown, CreditCard, Menu
-} from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import LiveStatus from "@/components/dashboard/LiveStatus";
 import { useAuth } from "@/context/AuthContext";
-import LiveStatus from "./LiveStatus";
+import { useNotifications } from "@/context/NotificationContext";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function StickyGlassMenu() {
     const pathname = usePathname();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { user, profile, logout } = useAuth();
+    const { notifications, unreadCount, markAsRead, clearAll, pushNotification, loading } = useNotifications();
 
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isNotifOpen, setIsNotifOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const notifDropdownRef = useRef<HTMLDivElement>(null);
 
     // Close dropdown on click outside
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setIsProfileOpen(false);
+            }
+            if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target as Node)) {
+                setIsNotifOpen(false);
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
@@ -68,6 +72,16 @@ export default function StickyGlassMenu() {
                             className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-full py-2.5 pr-10 pl-4 focus:outline-none focus:bg-white/10 focus:border-blue-500/50 transition-all placeholder:text-white/20"
                             onFocus={() => setIsSearchFocused(true)}
                             onBlur={() => setIsSearchFocused(false)}
+                            defaultValue={searchParams.get('q') || ''}
+                            onChange={(e) => {
+                                const params = new URLSearchParams(searchParams);
+                                if (e.target.value) {
+                                    params.set('q', e.target.value);
+                                } else {
+                                    params.delete('q');
+                                }
+                                router.replace(`${pathname}?${params.toString()}`);
+                            }}
                         />
                     </div>
                 </div>
@@ -76,10 +90,77 @@ export default function StickyGlassMenu() {
                 <div className="flex items-center gap-3">
 
                     {/* Notifications */}
-                    <button className="relative w-10 h-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all group">
-                        <Bell size={18} className="text-white/70 group-hover:text-white transition-colors" />
-                        <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-black/50 shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse" />
-                    </button>
+                    <div className="relative" ref={notifDropdownRef}>
+                        <button
+                            onClick={() => setIsNotifOpen(!isNotifOpen)}
+                            className="relative w-10 h-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all group"
+                        >
+                            <Bell size={18} className="text-white/70 group-hover:text-white transition-colors" />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-black/50 shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse" />
+                            )}
+                        </button>
+
+                        <AnimatePresence>
+                            {isNotifOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    className="absolute left-0 mt-2 w-80 bg-[#0B0E14]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-2xl z-[70] overflow-hidden"
+                                >
+                                    <div className="flex items-center justify-between p-4 border-b border-white/5">
+                                        <h3 className="font-bold text-white text-sm">الإشعارات {unreadCount > 0 && `(${unreadCount})`}</h3>
+                                        <button onClick={clearAll} className="text-xs text-blue-400 hover:text-blue-300">مسح الكل</button>
+                                    </div>
+
+                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-2 space-y-2">
+                                        {loading ? (
+                                            <div className="text-center py-8 text-white/30 text-xs">جاري التحميل...</div>
+                                        ) : notifications.length === 0 ? (
+                                            <div className="text-center py-8 text-white/30 text-xs">لا توجد إشعارات جديدة</div>
+                                        ) : (
+                                            notifications.map((notif) => (
+                                                <div
+                                                    key={notif.id}
+                                                    onClick={() => markAsRead(notif.id)}
+                                                    className={`p-3 rounded-xl border border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${notif.read_by?.includes(user?.id || '') ? 'opacity-50' : 'bg-white/[0.02]'}`}
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <div className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${notif.type === 'live' ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`} />
+                                                        <div>
+                                                            <h4 className="text-sm font-bold text-white">{notif.title}</h4>
+                                                            <p className="text-xs text-white/60 mt-1">{notif.message}</p>
+                                                            <span className="text-[10px] text-white/20 mt-2 block">{new Date(notif.created_at).toLocaleTimeString()}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+
+                                    {/* ADMIN PUSH (Visible to all for demo/admin) */}
+                                    <div className="p-3 border-t border-white/10 bg-white/5">
+                                        <p className="text-[10px] text-white/30 mb-2 uppercase tracking-wider font-bold">لوحة التحكم (Admin)</p>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => pushNotification("بث مباشر بدأ!", "الأستاذ بدأ الدرس الآن.", "live", true)}
+                                                className="flex-1 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs rounded-lg border border-red-500/20 transition-all font-bold"
+                                            >
+                                                إرسال تنبيه بث
+                                            </button>
+                                            <button
+                                                onClick={() => pushNotification("تحديث جديد", "تم إضافة دروس جديدة.", "info", true)}
+                                                className="flex-1 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-xs rounded-lg border border-blue-500/20 transition-all font-bold"
+                                            >
+                                                إرسال إعلان
+                                            </button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
 
                     {/* Profile Dropdown */}
                     <div className="relative" ref={dropdownRef}>
