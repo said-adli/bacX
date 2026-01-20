@@ -48,7 +48,7 @@ export default function RightGlassSidebar() {
       initial={false}
       animate={{ width: isCollapsed ? 90 : 288 }} // Slightly wider collapsed state for the logo
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed right-0 top-0 h-full bg-black/20 backdrop-blur-xl border-l border-white/5 flex flex-col pt-6 pb-4 z-[90] shadow-[-10px_0_40px_rgba(0,0,0,0.5)]"
+      className="fixed right-0 top-0 h-full bg-black/20 backdrop-blur-xl border-l border-white/5 flex flex-col pt-6 pb-10 z-[90] shadow-[-10px_0_40px_rgba(0,0,0,0.5)] overflow-y-auto glass-scrollbar"
     >
       {/* Toggle Button - Repositioned to prevent collision */}
       <button
@@ -63,6 +63,26 @@ export default function RightGlassSidebar() {
         @keyframes energyPulse {
           0%, 100% { filter: brightness(1) drop-shadow(0 0 10px rgba(59,130,246,0.5)); transform: scale(1); }
           50% { filter: brightness(1.3) drop-shadow(0 0 25px rgba(59,130,246,0.8)); transform: scale(1.02); }
+        }
+        /* Custom Glass Scrollbar */
+        .glass-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .glass-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .glass-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+          backdrop-filter: blur(5px);
+        }
+        .glass-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+        /* Hide scrollbar when not hovering over the sidebar */
+        .glass-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
         }
       `}</style>
       <div
