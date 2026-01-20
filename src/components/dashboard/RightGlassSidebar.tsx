@@ -5,15 +5,35 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Home, BookOpen, Video, ChevronRight, ChevronLeft, Settings, User, LogOut } from "lucide-react";
 import { useSidebar } from "@/context/SidebarContext";
+import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 
 export default function RightGlassSidebar() {
   const pathname = usePathname();
-  const { logout } = useAuth();
   const { isCollapsed, toggleCollapse } = useSidebar();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const supabase = createClient();
+
+  const handleLogout = async () => {
+    try {
+      // 1. نعيطو لـ Supabase باش يغلق الجلسة
+      const { error } = await supabase.auth.signOut();
+
+      if (error) throw error;
+
+      // 2. نمسحو أي بيانات بقات في المتصفح (اختياري بصح أضمن)
+      localStorage.clear();
+
+      // 3. نبعثو المستخدم لصفحة الدخول فوراً
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Error logging out:', error);
+      // حتى وإذا صرا مشكل، نبعثوه للـ login باش يجدد الدخول
+      window.location.href = '/login';
+    }
+  };
 
   const navItems = [
     { name: "الصفحة الرئيسية", href: "/dashboard", icon: Home },
@@ -137,11 +157,11 @@ export default function RightGlassSidebar() {
       {/* Footer / User Info */}
       <div className={`p-4 mt-auto border-t border-white/5 transition-opacity duration-300 ${isCollapsed ? "justify-center flex" : ""}`}>
         <button
-          onClick={() => logout()}
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 hover:text-red-400 text-gray-400 transition-colors group cursor-pointer w-full ${isCollapsed ? 'justify-center px-2' : ''}`}
+          onClick={handleLogout}
+          className="flex items-center gap-3 p-3 text-red-400 hover:bg-white/10 rounded-xl transition-all w-full"
         >
           <LogOut size={20} />
-          {!isCollapsed && <span className="font-medium group-hover:text-red-400">تسجيل الخروج</span>}
+          {!isCollapsed && <span>تسجيل الخروج</span>}
         </button>
       </div>
     </motion.aside>
