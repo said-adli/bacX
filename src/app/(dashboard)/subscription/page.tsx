@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import {
     Crown, Clock, Check, Zap, Star,
-    Download, ArrowUpRight, Gift
+    Download, ArrowUpRight, Gift, ScrollText, UploadCloud
 } from "lucide-react";
 import { toast } from "sonner";
 import { usePageVisibility } from "@/hooks/usePageVisibility";
@@ -174,7 +174,66 @@ export default function SubscriptionPage() {
                         )}
                     </button>
                 </GlassCard>
-            </div>
+
+                {/* Upload Receipt Section */}
+                <GlassCard className="p-6 flex flex-col justify-center gap-4 lg:col-span-1">
+                    <div className="flex items-center gap-3 mb-2">
+                        <ScrollText className="text-blue-400" size={20} />
+                        <h3 className="font-bold text-white">تأكيد الدفع اليدوي</h3>
+                    </div>
+                    <p className="text-xs text-white/50 mb-2">
+                        إذا قمت بالدفع عبر بريدي موب، قم برفع صورة الوصل هنا ليتم تفعيل حسابك.
+                    </p>
+                    <div className="relative group cursor-pointer">
+                        <input
+                            type="file"
+                            accept="image/png, image/jpeg"
+                            onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file || !user) return;
+
+                                const toastId = toast.loading("جاري رفع الوصل...");
+                                try {
+                                    // 1. Upload to Storage
+                                    const fileName = `${user.id}-${Date.now()}`;
+                                    const { data: uploadData, error: uploadError } = await supabase.storage
+                                        .from('receipts')
+                                        .upload(fileName, file);
+
+                                    if (uploadError) throw uploadError;
+
+                                    // 2. Get Public URL
+                                    const { data: { publicUrl } } = supabase.storage
+                                        .from('receipts')
+                                        .getPublicUrl(fileName);
+
+                                    // 3. Insert into Database
+                                    const { error: dbError } = await supabase
+                                        .from('payment_requests')
+                                        .insert({
+                                            user_id: user.id,
+                                            receipt_url: publicUrl,
+                                            status: 'pending'
+                                        });
+
+                                    if (dbError) throw dbError;
+
+                                    toast.success("تم رفع الوصل بنجاح! سيتم مراجعته قريباً", { id: toastId });
+                                } catch (err) {
+                                    console.error(err);
+                                    toast.error("فشل في رفع الوصل", { id: toastId });
+                                }
+                            }}
+                            className="absolute inset-0 w-full h-full opacity-0 z-20 cursor-pointer"
+                        />
+                        <div className="border md:border-2 border-dashed border-white/20 rounded-xl p-6 flex flex-col items-center justify-center text-center group-hover:bg-white/5 transition-colors">
+                            <UploadCloud className="text-white/40 mb-2 group-hover:text-blue-400 transition-colors" size={32} />
+                            <span className="text-sm text-white/60 font-medium">اضغط لرفع الصورة</span>
+                            <span className="text-[10px] text-white/30 mt-1">JPG, PNG only</span>
+                        </div>
+                    </div>
+                </GlassCard>
+            </div> // End of Grid
 
             {/* SECTION 2: AVAILABLE UPGRADES */}
             <div className="space-y-6">
@@ -259,8 +318,8 @@ export default function SubscriptionPage() {
                                             <td className="p-4 text-white/80 font-mono">{item.amount}</td>
                                             <td className="p-4">
                                                 <span className={`px-2 py-1 rounded-md text-xs border ${item.status === 'completed' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                                        item.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                                                            'bg-red-500/10 text-red-400 border-red-500/20'
+                                                    item.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                                        'bg-red-500/10 text-red-400 border-red-500/20'
                                                     }`}>
                                                     {item.status === 'completed' ? 'ناجحة' : item.status === 'pending' ? 'قيد المعالجة' : 'فاشلة'}
                                                 </span>

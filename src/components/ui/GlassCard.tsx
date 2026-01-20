@@ -3,12 +3,12 @@
 import { cn } from "@/lib/utils";
 import { useIsLowEndDevice } from "@/hooks/useIsLowEndDevice";
 
-interface GlassCardProps {
+interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
     children: React.ReactNode;
     className?: string;
 }
 
-export function GlassCard({ children, className }: GlassCardProps) {
+export function GlassCard({ children, className, ...props }: GlassCardProps) {
     const isLowEnd = useIsLowEndDevice();
 
     return (
@@ -18,6 +18,7 @@ export function GlassCard({ children, className }: GlassCardProps) {
                 isLowEnd ? "backdrop-blur-md" : "glass-premium",
                 className
             )}
+            {...props}
         >
             {children}
         </div>

@@ -19,6 +19,11 @@ interface StudentProfile {
     subscription_end_date?: string | null;
     role: "admin" | "student";
     created_at: string;
+    payment_request?: {
+        id: string;
+        receipt_url: string;
+        status: string;
+    } | null;
 }
 
 export default function ManageStudentsPage() {
@@ -30,6 +35,7 @@ export default function ManageStudentsPage() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [processingId, setProcessingId] = useState<string | null>(null);
+    const [viewingReceipt, setViewingReceipt] = useState<{ url: string; studentId: string; requestId: string } | null>(null);
 
     useEffect(() => {
         // Security Check
@@ -41,13 +47,28 @@ export default function ManageStudentsPage() {
     const fetchStudents = async () => {
         setLoading(true);
         try {
-            const { data, error } = await supabase
+            // 1. Fetch Profiles
+            const { data: profiles, error: profilesError } = await supabase
                 .from('profiles')
                 .select('*')
                 .order('created_at', { ascending: false });
 
-            if (error) throw error;
-            if (data) setStudents(data as StudentProfile[]);
+            if (profilesError) throw profilesError;
+
+            // 2. Fetch Payment Requests
+            const { data: requests, error: requestsError } = await supabase
+                .from('payment_requests')
+                .select('*');
+
+            if (requestsError) throw requestsError;
+
+            // 3. Merge
+            const merged = (profiles as StudentProfile[]).map(p => {
+                const req = requests?.find((r: any) => r.user_id === p.id && r.status === 'pending');
+                return { ...p, payment_request: req || null };
+            });
+
+            setStudents(merged);
         } catch (err) {
             console.error("Error fetching students:", err);
             toast.error("فشل في تحميل قائمة الطلاب");
@@ -56,7 +77,7 @@ export default function ManageStudentsPage() {
         }
     };
 
-    const handleActivateVIP = async (studentId: string) => {
+    const handleActivateVIP = async (studentId: string, requestId?: string) => {
         if (!confirm("هل أنت متأكد من تفعيل اشتراك VIP لهذا الطالب لمدة 30 يوم؟")) return;
 
         setProcessingId(studentId);
@@ -65,7 +86,8 @@ export default function ManageStudentsPage() {
             const expiryDate = new Date();
             expiryDate.setDate(expiryDate.getDate() + 30);
 
-            const { error } = await supabase
+            // 1. Update Profile
+            const { error: profileError } = await supabase
                 .from('profiles')
                 .update({
                     is_subscribed: true,
@@ -73,16 +95,25 @@ export default function ManageStudentsPage() {
                 })
                 .eq('id', studentId);
 
-            if (error) throw error;
+            if (profileError) throw profileError;
+
+            // 2. Approve Request (if exists)
+            if (requestId) {
+                await supabase
+                    .from('payment_requests')
+                    .update({ status: 'approved' })
+                    .eq('id', requestId);
+            }
 
             toast.success("تم تفعيل الاشتراك بنجاح ✅");
 
             // Optimistic Update
             setStudents(prev => prev.map(s =>
                 s.id === studentId
-                    ? { ...s, is_subscribed: true, subscription_end_date: expiryDate.toISOString() }
+                    ? { ...s, is_subscribed: true, subscription_end_date: expiryDate.toISOString(), payment_request: null }
                     : s
             ));
+            setViewingReceipt(null);
 
         } catch (err) {
             console.error("Activation error:", err);
@@ -176,6 +207,7 @@ export default function ManageStudentsPage() {
                                 <th className="p-4 font-medium">الطالب</th>
                                 <th className="p-4 font-medium">الحالة</th>
                                 <th className="p-4 font-medium">تاريخ التسجيل</th>
+                                <th className="p-4 font-medium">وصل الدفع</th>
                                 <th className="p-4 font-medium">انتهاء الاشتراك</th>
                                 <th className="p-4 font-medium text-center">الإجراءات</th>
                             </tr>
@@ -183,13 +215,13 @@ export default function ManageStudentsPage() {
                         <tbody className="divide-y divide-white/5">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={5} className="p-12 text-center text-white/40">
+                                    <td colSpan={6} className="p-12 text-center text-white/40">
                                         جاري تحميل البيانات...
                                     </td>
                                 </tr>
                             ) : filteredStudents.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="p-12 text-center text-white/40">
+                                    <td colSpan={6} className="p-12 text-center text-white/40">
                                         لا يوجد طلاب مطابقين للبحث
                                     </td>
                                 </tr>
@@ -223,6 +255,21 @@ export default function ManageStudentsPage() {
                                             {new Date(student.created_at).toLocaleDateString()}
                                         </td>
                                         <td className="p-4">
+                                            {student.payment_request ? (
+                                                <button
+                                                    onClick={() => setViewingReceipt({
+                                                        url: student.payment_request!.receipt_url,
+                                                        studentId: student.id,
+                                                        requestId: student.payment_request!.id
+                                                    })}
+                                                    className="flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-xs hover:bg-yellow-500/20 transition-colors animate-pulse"
+                                                >
+                                                    <Calendar size={12} />
+                                                    عرض الوصل
+                                                </button>
+                                            ) : <span className="text-white/20 text-xs">-</span>}
+                                        </td>
+                                        <td className="p-4">
                                             {student.subscription_end_date ? (
                                                 <span className="text-yellow-400 font-mono text-sm flex items-center gap-2">
                                                     <Calendar size={14} />
@@ -243,7 +290,7 @@ export default function ManageStudentsPage() {
                                                 </button>
                                             ) : (
                                                 <button
-                                                    onClick={() => handleActivateVIP(student.id)}
+                                                    onClick={() => handleActivateVIP(student.id, student.payment_request?.id)}
                                                     disabled={!!processingId}
                                                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-xs font-bold shadow-lg shadow-purple-900/20 transition-all gpu-accelerated hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100"
                                                 >
@@ -265,6 +312,36 @@ export default function ManageStudentsPage() {
                     </table>
                 </div>
             </GlassCard>
+
+            {/* View Receipt Modal */}
+            {viewingReceipt && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setViewingReceipt(null)}>
+                    <GlassCard className="w-full max-w-lg p-2 overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
+                        <button
+                            onClick={() => setViewingReceipt(null)}
+                            className="absolute top-4 right-4 z-10 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white"
+                        >
+                            <XCircle size={20} />
+                        </button>
+                        <img
+                            src={viewingReceipt.url}
+                            alt="Receipt"
+                            className="w-full h-auto max-h-[60vh] object-contain rounded-lg bg-black/20"
+                        />
+                        <div className="p-4 flex gap-3">
+                            <button
+                                onClick={() => handleActivateVIP(viewingReceipt.studentId, viewingReceipt.requestId)}
+                                disabled={!!processingId}
+                                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform"
+                            >
+                                <CheckCircle size={18} />
+                                تأكيد وتفعيل الحساب
+                            </button>
+                        </div>
+                    </GlassCard>
+                </div>
+            )}
+
         </div>
     );
 }
