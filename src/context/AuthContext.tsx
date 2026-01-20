@@ -178,11 +178,11 @@ export function AuthProvider({
             console.log("Logging out...");
             await supabase.auth.signOut();
             console.log("Logged out from Supabase, redirecting...");
-            // Hard redirect to clear all states and memory
+            // Use window.location for a hard refresh to clear all memory/states effectively
             window.location.href = "/login";
         } catch (error) {
             console.error("Logout failed", error);
-            // Force redirect anyway
+            // Force redirect even if error
             window.location.href = "/login";
         }
     };

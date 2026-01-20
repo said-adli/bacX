@@ -17,6 +17,7 @@ import {
     LogOut
 } from "lucide-react";
 import { BrainyLogo } from "@/components/ui/BrainyLogo";
+import { useAuth } from "@/context/AuthContext";
 
 // ============================================================================
 // BRAINY V3 - GLASS SIDEBAR (SLIDING)
@@ -35,6 +36,7 @@ const menuItems = [
 
 export function GlassSidebar() {
     const pathname = usePathname();
+    const { logout } = useAuth();
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     // Sidebar Widths
@@ -125,7 +127,10 @@ export function GlassSidebar() {
 
                 {/* Footer: User & Logout */}
                 <div className="p-4 border-t border-white/5">
-                    <button className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 hover:text-red-400 text-gray-400 transition-colors group ${isCollapsed ? 'justify-center' : ''}`}>
+                    <button
+                        onClick={() => logout()}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 hover:text-red-400 text-gray-400 transition-colors group cursor-pointer ${isCollapsed ? 'justify-center' : ''}`}
+                    >
                         <LogOut size={20} />
                         {!isCollapsed && <span className="font-medium group-hover:text-red-400">تسجيل الخروج</span>}
                     </button>
