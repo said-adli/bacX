@@ -8,66 +8,42 @@ import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 
 export default function ProfilePage() {
-    const { user } = useAuth();
+    const { user, profile, refreshProfile } = useAuth();
     const supabase = createClient();
 
     const [loading, setLoading] = useState(true);
-    const [profileData, setProfileData] = useState({
-        full_name: "",
-        wilaya: "",
-        major: "",
-        study_system: ""
-    });
 
-    // 1. Fetch Profile Data
+    // Use profile from context as primary source, fallback to local state if needed
+    // But since context is hydrated, we can rely on it.
+
     useEffect(() => {
-        let mounted = true;
-        const fetchProfile = async () => {
-            if (!user) {
-                if (mounted) setLoading(false);
-                return;
-            }
+        if (profile) {
+            setLoading(false);
+        } else {
+            // Force refresh if no profile yet (should be handled by context but safety first)
+            refreshProfile().then(() => setLoading(false));
+        }
+    }, [profile, refreshProfile]);
 
-            try {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('full_name, wilaya, major, study_system')
-                    .eq('id', user.id)
-                    .single();
-
-                if (error) {
-                    console.error("ProfilePage: Supabase query error:", error);
-                    throw error;
-                }
-
-                if (data && mounted) {
-                    setProfileData({
-                        full_name: data.full_name || "غير محدد",
-                        wilaya: data.wilaya || "غير محدد",
-                        major: data.major || "غير محدد",
-                        study_system: data.study_system === 'regular' ? 'طالب نظامي' :
-                            data.study_system === 'private' ? 'طالب حر' : "غير محدد"
-                    });
-                }
-            } catch (error) {
-                console.error("ProfilePage: error:", error);
-                // toast.error("فشل في تحميل بيانات الملف الشخصي");
-            } finally {
-                if (mounted) setLoading(false);
-            }
-        };
-
-        fetchProfile();
-        return () => { mounted = false; };
-    }, [user, supabase]);
-
-    if (loading) {
+    if (loading && !profile) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
             </div>
         );
     }
+
+    const displayProfile: any = profile || {
+        full_name: "مستخدم",
+        wilaya: "غير محدد",
+        major: "غير محدد",
+        study_system: "غير محدد",
+        role: "student"
+    };
+
+    const studySystemLabel = displayProfile.study_system === 'regular' ? 'طالب نظامي' :
+        displayProfile.study_system === 'private' ? 'طالب حر' :
+            displayProfile.study_system || "غير محدد";
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20 pt-8">
@@ -77,24 +53,30 @@ export default function ProfilePage() {
                 <div className="flex flex-col md:flex-row items-start md:items-center gap-6 pb-8 border-b border-white/10">
                     <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 p-[2px]">
                         <div className="w-full h-full rounded-full bg-black/90 flex items-center justify-center">
-                            <User className="w-10 h-10 text-white/80" />
+                            <span className="text-3xl font-bold text-white">
+                                {displayProfile.full_name?.charAt(0).toUpperCase() || <User className="w-10 h-10 text-white/80" />}
+                            </span>
                         </div>
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold text-white mb-1">{profileData.full_name}</h2>
+                        <h2 className="text-2xl font-bold text-white mb-1">{displayProfile.full_name}</h2>
                         <div className="flex flex-wrap gap-2 text-sm text-white/60">
-                            {profileData.study_system !== "غير محدد" && (
+                            {displayProfile.study_system && (
                                 <span className="px-3 py-1 bg-white/5 rounded-full border border-white/10 flex items-center gap-1">
                                     <GraduationCap className="w-3 h-3" />
-                                    {profileData.study_system}
+                                    {studySystemLabel}
                                 </span>
                             )}
-                            {profileData.major !== "غير محدد" && (
+                            {displayProfile.major && (
                                 <span className="px-3 py-1 bg-white/5 rounded-full border border-white/10 flex items-center gap-1">
                                     <BookOpen className="w-3 h-3" />
-                                    {profileData.major}
+                                    {displayProfile.major}
                                 </span>
                             )}
+                            <span className="px-3 py-1 bg-white/5 rounded-full border border-white/10 flex items-center gap-1">
+                                <Shield className="w-3 h-3 text-yellow-400" />
+                                {displayProfile.role === 'admin' ? "مسؤول (Admin)" : "طالب (Student)"}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -105,7 +87,7 @@ export default function ProfilePage() {
                             <User className="w-4 h-4" />
                             الاسم الكامل
                         </label>
-                        <p className="text-lg font-medium text-white">{profileData.full_name}</p>
+                        <p className="text-lg font-medium text-white">{displayProfile.full_name || "غير محدد"}</p>
                     </div>
 
                     <div className="space-y-1">
@@ -113,7 +95,7 @@ export default function ProfilePage() {
                             <MapPin className="w-4 h-4" />
                             الولاية
                         </label>
-                        <p className="text-lg font-medium text-white">{profileData.wilaya}</p>
+                        <p className="text-lg font-medium text-white">{displayProfile.wilaya || "غير محدد"}</p>
                     </div>
 
                     <div className="space-y-1">
@@ -121,7 +103,11 @@ export default function ProfilePage() {
                             <BookOpen className="w-4 h-4" />
                             الشعبة
                         </label>
-                        <p className="text-lg font-medium text-white">{profileData.major}</p>
+                        <p className="text-lg font-medium text-white">
+                            {displayProfile.major || "غير محدد"}
+                            {displayProfile.major === 'science' && " (علوم تجريبية)"}
+                            {displayProfile.major === 'math' && " (رياضيات)"}
+                        </p>
                     </div>
 
                     <div className="space-y-1">
@@ -129,13 +115,13 @@ export default function ProfilePage() {
                             <GraduationCap className="w-4 h-4" />
                             نظام الدراسة
                         </label>
-                        <p className="text-lg font-medium text-white">{profileData.study_system}</p>
+                        <p className="text-lg font-medium text-white">{studySystemLabel}</p>
                     </div>
                 </div>
             </GlassCard>
 
             <div className="text-center text-white/20 text-sm">
-                لتعديل هذه المعلومات، انتقل إلى الإعدادات
+                لتعديل هذه المعلومات، انتقل إلى <a href="/settings" className="hover:text-white underline">الإعدادات</a>
             </div>
         </div>
     );

@@ -13,6 +13,7 @@ export interface UserProfile {
     full_name?: string;
     wilaya?: string; // e.g., "16 - Algiers"
     major?: string;  // e.g., "science"
+    study_system?: string; // e.g., "regular" or "private"
     role: "admin" | "student";
     is_profile_complete: boolean;
     is_subscribed?: boolean;
