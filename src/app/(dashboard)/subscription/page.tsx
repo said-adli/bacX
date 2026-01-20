@@ -1,233 +1,230 @@
 "use client";
 
-import { Check, Star, Zap, Shield, ArrowDown } from "lucide-react";
+import { useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { useRef, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { PaymentModal } from "@/components/subscription/PaymentModal";
-import { uploadReceipt, createSubscriptionRequest } from "@/lib/payment";
-import { toast } from "sonner"; // Assuming sonner is used based on other files
+import {
+    Crown, CreditCard, Clock, Receipt, Check, Zap, Star,
+    Download, ArrowUpRight, Gift
+} from "lucide-react";
+import { toast } from "sonner";
 
 export default function SubscriptionPage() {
-    const { user } = useAuth();
-    const pricingRef = useRef<HTMLDivElement>(null);
+    const [promoCode, setPromoCode] = useState("");
+    const [isApplying, setIsApplying] = useState(false);
 
-    const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-    const [selectedPlan, setSelectedPlan] = useState<{ name: string; price: string } | null>(null);
-
-    const scrollToPricing = () => {
-        pricingRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Mock Data
+    const currentPlan = {
+        name: "الباقة المجانية",
+        type: "Free Tier",
+        expiry: "غير محدود",
+        progress: 100,
+        color: "text-white"
     };
 
-    const handleSubscribe = (plan: any) => {
-        if (plan.price === "مجاني") {
-            toast.info("هذه الباقة مجانية ومفعلة تلقائياً");
-            return;
-        }
-        setSelectedPlan({ name: plan.name, price: plan.price });
-        setPaymentModalOpen(true);
-    };
-
-    const handlePaymentSubmit = async (file: File) => {
-        if (!user || !selectedPlan) return;
-
-        try {
-            // 1. Upload Receipt
-            const receiptUrl = await uploadReceipt(file, user.id);
-            if (!receiptUrl) throw new Error("فشل رفع الإيصال");
-
-            // 2. Create Request
-            const result = await createSubscriptionRequest(user.id, selectedPlan.name, receiptUrl);
-
-            if (result.success) {
-                toast.success("تم إرسال طلب الاشتراك بنجاح! سيتم تفعيله قريباً.");
-                setPaymentModalOpen(false);
-            } else {
-                throw new Error("فشل إنشاء الطلب");
-            }
-        } catch (error) {
-            console.error(error);
-            toast.error("حدث خطأ، يرجى المحاولة مرة أخرى.");
-        }
-    };
-
-    // Mock Status Data
-    const status = {
-        plan: "المتفوق",
-        daysLeft: 12,
-        totalDays: 30,
-        expiry: "2026-02-15",
-        active: true
-    };
-
-    const progressPercentage = (status.daysLeft / status.totalDays) * 100;
-
-    const plans = [
-        {
-            name: "البداية",
-            price: "مجاني",
-            period: "مدى الحياة",
-            features: ["الوصول للمواد المجانية", "اختبارات تجريبية محدودة", "دعم فني عبر البريد"],
-            cta: "ابدأ الآن",
-            featured: false,
-            icon: Star
-        },
-        {
-            name: "المتفوق",
-            price: "199",
-            period: "درهم / شهر",
-            features: ["جميع المواد الدراسية", "حصص مباشرة أسبوعية", "تصحيح الفروض والامتحانات", "مجموعة واتساب خاصة"],
-            cta: "اشترك الآن",
-            featured: true,
-            icon: Zap
-        },
-        {
-            name: "النخبة",
-            price: "1500",
-            period: "درهم / سنة",
-            features: ["كل مميزات المتفوق", "توجيه أكاديمي شخصي", "حصص دعم فردية", "ضمان استرجاع الأموال"],
-            cta: "تواصل معنا",
-            featured: false,
-            icon: Shield
-        },
+    const billingHistory = [
+        { id: 1, date: "2024-01-15", plan: "شحن رصيد", amount: "2000 د.ج", status: "Completed" },
+        { id: 2, date: "2023-12-10", plan: "باقة المواد العلمية", amount: "4500 د.ج", status: "Completed" },
     ];
 
+    const handleApplyPromo = () => {
+        if (!promoCode) return;
+        setIsApplying(true);
+        setTimeout(() => {
+            setIsApplying(false);
+            if (promoCode.toLowerCase() === "brainy2025") {
+                toast.success("تم تفعيل الكود بنجاح! حصلت على 20% خصم.");
+            } else {
+                toast.error("الكود غير صالح أو منتهي الصلاحية.");
+            }
+        }, 1500);
+    };
+
     return (
-        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500 py-6">
+        <div className="space-y-12 animate-in fade-in zoom-in duration-500 pb-20">
 
             {/* Header */}
-            <div className="text-center space-y-4">
-                <h1 className="text-4xl font-serif font-bold text-white">اشتراكي</h1>
-                <p className="text-white/60">إدارة حسابك وتجديد الاشتراك</p>
+            <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-yellow-500/20 flex items-center justify-center border border-yellow-500/30 shadow-[0_0_30px_rgba(234,179,8,0.3)]">
+                    <Crown className="w-6 h-6 text-yellow-400" />
+                </div>
+                <div>
+                    <h1 className="text-3xl font-bold text-white font-serif">الاشتراكات والمدفوعات</h1>
+                    <p className="text-white/40 text-sm">إدارة باقتك الحالية، سجل الدفعات، والترقيات المتاحة</p>
+                </div>
             </div>
 
-            {/* Status Card */}
-            <div className="max-w-4xl mx-auto">
-                <GlassCard className="p-8 relative overflow-hidden">
-                    {/* Background Glow */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+            {/* SECTION 1: CURRENT STATUS & PROMO */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-                        {/* Right: Plan Info */}
-                        <div className="text-center md:text-right space-y-2">
-                            <h2 className="text-2xl font-bold flex items-center gap-2 justify-center md:justify-start">
-                                <Zap className="text-yellow-400 fill-yellow-400" />
-                                باقة {status.plan}
-                            </h2>
-                            <div className="inline-block px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm font-bold border border-green-500/30">
-                                {status.active ? "اشتراك نشط" : "اشتراك منتهي"}
-                            </div>
-                        </div>
-
-                        {/* Center: Progress Bar */}
-                        <div className="flex-1 w-full max-w-md space-y-2">
-                            <div className="flex justify-between text-sm text-white/60 mb-1">
-                                <span>الأيام المتبقية</span>
-                                <span>{status.daysLeft} يوم</span>
-                            </div>
-                            <div className="h-4 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                                <div
-                                    className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-1000"
-                                    style={{ width: `${progressPercentage}%` }}
-                                />
-                            </div>
-                            <p className="text-xs text-white/40 text-left pl-1">ينتهي في {status.expiry}</p>
-                        </div>
-
-                        {/* Left: Renew Action */}
+                {/* Current Plan Card - Glowing Gold */}
+                <GlassCard className="lg:col-span-2 p-8 relative overflow-hidden flex flex-col justify-between min-h-[220px] border-yellow-500/20">
+                    <div className="relative z-10 flex justify-between items-start">
                         <div>
-                            <button
-                                onClick={scrollToPricing}
-                                className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl transition-all flex items-center gap-2"
-                            >
-                                تجديد الاشتراك
-                                <ArrowDown size={16} />
-                            </button>
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="px-3 py-1 rounded-full bg-white/10 border border-white/10 text-xs text-white/70">الحالة الحالية</span>
+                                <span className="flex h-2 w-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" />
+                            </div>
+                            <h2 className="text-4xl font-bold text-white font-serif mb-1">{currentPlan.name}</h2>
+                            <p className="text-yellow-400/80 font-mono text-sm tracking-wider uppercase">{currentPlan.type}</p>
+                        </div>
+                        <div className="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center border border-yellow-500/20">
+                            <Crown size={32} className="text-yellow-400" />
                         </div>
                     </div>
+
+                    <div className="relative z-10 mt-8">
+                        <div className="flex justify-between text-sm text-white/60 mb-2">
+                            <span>صلاحية الباقة</span>
+                            <span>{currentPlan.expiry}</span>
+                        </div>
+                        <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400"
+                                style={{ width: `${currentPlan.progress}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Ambience */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                </GlassCard>
+
+                {/* Promo Code Section */}
+                <GlassCard className="p-6 flex flex-col justify-center gap-4">
+                    <div className="flex items-center gap-3 mb-2">
+                        <Gift className="text-purple-400" size={20} />
+                        <h3 className="font-bold text-white">لديك كود خصم؟</h3>
+                    </div>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="أدخل الكود هنا (مثال: BRAINY2025)"
+                            value={promoCode}
+                            onChange={(e) => setPromoCode(e.target.value)}
+                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all font-mono text-center tracking-widest uppercase"
+                        />
+                        <div className="absolute inset-0 rounded-xl pointer-events-none ring-1 ring-white/5" />
+                    </div>
+                    <button
+                        onClick={handleApplyPromo}
+                        disabled={isApplying || !promoCode}
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold shadow-lg shadow-purple-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                    >
+                        {isApplying ? (
+                            <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                            <>
+                                <Zap size={16} className="fill-white" />
+                                تفعيل الكود
+                            </>
+                        )}
+                    </button>
                 </GlassCard>
             </div>
 
-            {/* Pricing Section Title */}
-            <div className="text-center pt-8" ref={pricingRef}>
-                <h2 className="text-3xl font-serif font-bold mb-4">باقات الاشتراك</h2>
-                <p className="text-white/60 max-w-2xl mx-auto">
-                    استثمر في مستقبلك مع أفضل الأدوات التعليمية
-                </p>
-            </div>
+            {/* SECTION 2: AVAILABLE UPGRADES */}
+            <div className="space-y-6">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Star className="text-yellow-400" size={20} />
+                    الباقات المتوفرة للترقية
+                </h3>
 
-            {/* Pricing Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4 pb-12">
-                {plans.map((plan, i) => (
-                    <GlassCard
-                        key={i}
-                        className={`relative p-8 flex flex-col gap-6 transition-all duration-500 group pointer-events-auto
-                            ${plan.featured
-                                ? "bg-white/5 border-blue-500/50 shadow-[0_0_40px_rgba(37,99,235,0.15)] scale-105 z-10 hover:scale-[1.08]"
-                                : "hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(255,255,255,0.1)]"
-                            }
-                        `}
-                    >
-                        {plan.featured && (
-                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-1.5 rounded-full text-sm font-bold shadow-lg shadow-blue-900/40 whitespace-nowrap">
-                                الأكثر طلباً 🔥
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Full Access Card */}
+                    <GlassCard className="p-6 relative group border-purple-500/30 hover:border-purple-500/60 transition-all duration-300">
+                        <div className="absolute inset-0 bg-purple-600/5 group-hover:bg-purple-600/10 transition-colors" />
+                        <div className="relative z-10 flex flex-col h-full">
+                            <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4">
+                                <Zap className="text-purple-400 fill-purple-400/20" size={24} />
                             </div>
-                        )}
-
-                        <div className="text-center space-y-4">
-                            <div className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-3xl mb-4
-                                ${plan.featured ? "bg-blue-600/20 text-blue-400" : "bg-white/5 text-white/40"}
-                            `}>
-                                <plan.icon size={28} />
-                            </div>
-                            <h3 className="text-2xl font-bold">{plan.name}</h3>
-                            <div className="flex items-center justify-center gap-1">
-                                <span className="text-5xl font-bold font-serif tracking-tight">{plan.price}</span>
-                                <span className="text-sm text-white/40 self-end mb-2">{plan.period}</span>
-                            </div>
-                        </div>
-
-                        <ul className="space-y-4 flex-1 py-6 border-t border-white/5">
-                            {plan.features.map((feature, idx) => (
-                                <li key={idx} className="flex items-center gap-3 text-sm text-white/70">
-                                    <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 
-                                        ${plan.featured ? "bg-blue-500/20 text-blue-400" : "bg-white/10 text-white/30"}
-                                    `}>
-                                        <Check size={12} />
+                            <h4 className="text-2xl font-bold text-white mb-2">الباقة الشاملة</h4>
+                            <p className="text-white/60 text-sm mb-6 flex-1">وصول كامل لجميع الدروس المسجلة، الملخصات، بنك التمارين، والاختبارات التجريبية.</p>
+                            <div className="space-y-3 mb-8">
+                                {['جميع المواد العلمية والأدبية', 'أكثر من 500 ساعة مسجلة', 'تمارين تفاعلية يومية'].map((item, i) => (
+                                    <div key={i} className="flex items-center gap-2 text-sm text-white/80">
+                                        <Check size={14} className="text-green-400" />
+                                        {item}
                                     </div>
-                                    {feature}
-                                </li>
-                            ))}
-                        </ul>
-
-                        <button
-                            onClick={() => handleSubscribe(plan)}
-                            className={`w-full py-4 rounded-xl font-bold transition-all relative overflow-hidden group/btn z-20 pointer-events-auto cursor-pointer
-                            ${plan.featured
-                                    ? "bg-blue-600 text-white shadow-[0_0_30px_rgba(37,99,235,0.4)] hover:shadow-[0_0_50px_rgba(37,99,235,0.6)] hover:scale-[1.02]"
-                                    : "bg-white/5 hover:bg-white/10 text-white border border-white/10"
-                                }
-                            `}
-                        >
-                            <span className="relative z-10">{plan.cta}</span>
-                            {plan.featured && (
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000" />
-                            )}
-                        </button>
+                                ))}
+                            </div>
+                            <button className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white font-bold transition-all flex items-center justify-center gap-2 group-hover:bg-purple-600 group-hover:border-purple-500">
+                                ترقية الآن
+                                <ArrowUpRight size={16} />
+                            </button>
+                        </div>
                     </GlassCard>
-                ))}
+
+                    {/* Teacher VIP Card */}
+                    <GlassCard className="p-6 relative group border-yellow-500/30 hover:border-yellow-500/60 transition-all duration-300">
+                        <div className="absolute inset-0 bg-yellow-600/5 group-hover:bg-yellow-600/10 transition-colors" />
+                        <div className="relative z-10 flex flex-col h-full">
+                            <div className="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center mb-4">
+                                <Crown className="text-yellow-400 fill-yellow-400/20" size={24} />
+                            </div>
+                            <div className="flex justify-between items-start">
+                                <h4 className="text-2xl font-bold text-white mb-2">باقة الأستاذ VIP</h4>
+                                <span className="bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide">Most Popular</span>
+                            </div>
+                            <p className="text-white/60 text-sm mb-6 flex-1">متابعة شخصية من الأساتذة، حصص مباشرة أسبوعية، وتصحيح فردي للمقالات.</p>
+                            <div className="space-y-3 mb-8">
+                                {['كل ميزات الباقة الشاملة', 'حصص Call مباشرة أسبوعياً', 'مجموعة Whatsapp خاصة'].map((item, i) => (
+                                    <div key={i} className="flex items-center gap-2 text-sm text-white/80">
+                                        <Check size={14} className="text-yellow-400" />
+                                        {item}
+                                    </div>
+                                ))}
+                            </div>
+                            <button className="w-full py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-black font-bold transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_30px_rgba(234,179,8,0.5)]">
+                                اشتراك VIP
+                            </button>
+                        </div>
+                    </GlassCard>
+                </div>
             </div>
 
-            {/* Payment Modal */}
-            {selectedPlan && (
-                <PaymentModal
-                    isOpen={paymentModalOpen}
-                    onClose={() => setPaymentModalOpen(false)}
-                    planName={selectedPlan.name}
-                    price={selectedPlan.price}
-                    onSubmit={handlePaymentSubmit}
-                />
-            )}
+            {/* SECTION 3: BILLING HISTORY */}
+            <div className="space-y-6">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Clock className="text-blue-400" size={20} />
+                    سجل العمليات السابقة
+                </h3>
+
+                <GlassCard className="p-0 overflow-hidden">
+                    <table className="w-full text-right">
+                        <thead>
+                            <tr className="bg-white/5 border-b border-white/10 text-white/50 text-xs uppercase tracking-wider">
+                                <th className="p-4 font-medium">رقم العملية</th>
+                                <th className="p-4 font-medium">التاريخ</th>
+                                <th className="p-4 font-medium">التفاصيل</th>
+                                <th className="p-4 font-medium">المبلغ</th>
+                                <th className="p-4 font-medium">الحالة</th>
+                                <th className="p-4 font-medium">الفاتورة</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {billingHistory.map((item) => (
+                                <tr key={item.id} className="hover:bg-white/5 transition-colors group">
+                                    <td className="p-4 text-white/40 font-mono text-sm">#{item.id}0092</td>
+                                    <td className="p-4 text-white/80 text-sm">{item.date}</td>
+                                    <td className="p-4 text-white font-bold text-sm">{item.plan}</td>
+                                    <td className="p-4 text-white/80 font-mono">{item.amount}</td>
+                                    <td className="p-4">
+                                        <span className="px-2 py-1 rounded-md bg-green-500/10 text-green-400 text-xs border border-green-500/20">
+                                            ناجحة
+                                        </span>
+                                    </td>
+                                    <td className="p-4">
+                                        <button className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors">
+                                            <Download size={16} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </GlassCard>
+            </div>
+
         </div>
     );
 }
