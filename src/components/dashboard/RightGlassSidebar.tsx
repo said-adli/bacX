@@ -36,55 +36,36 @@ export default function RightGlassSidebar() {
         {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
 
-      {/* Brand / Logo Area - FIXED & ALIGNED [LTR ORDER] */}
+      {/* Brand / Logo Area - FINAL V12.0 SINGLE IMAGE */}
       <style jsx global>{`
-        @keyframes textShimmer {
-          0% { background-position: 0% 50%; }
-          100% { background-position: 200% 50%; }
+        @keyframes energyPulse {
+          0%, 100% { filter: brightness(1) drop-shadow(0 0 10px rgba(59,130,246,0.5)); transform: scale(1); }
+          50% { filter: brightness(1.3) drop-shadow(0 0 25px rgba(59,130,246,0.8)); transform: scale(1.02); }
         }
       `}</style>
       <div
-        dir="ltr"
-        className={`px-6 mb-2 flex items-center ${isCollapsed ? "justify-center" : "justify-start"} gap-4 text-white transition-all duration-500`}
+        className={`w-full flex justify-center items-center pt-8 mb-6 transition-all duration-500`}
       >
-        {/* Logo Wrapper - NO CLIPPING */}
         <motion.div
           layout
-          className="relative flex-shrink-0 z-10 flex items-center justify-center"
-          style={{ height: "80px", width: isCollapsed ? "50px" : "auto" }} // Consistent Height
+          className="relative z-10 flex items-center justify-center gpu-accelerated"
+          animate={{
+            width: isCollapsed ? 60 : 220, // Large 220px width for V12.0 impact
+            height: isCollapsed ? 60 : 220
+          }}
+          transition={{ duration: 0.5, ease: "backOut" }}
         >
           <Image
-            src="/images/brainy-logo-v3.png"
-            alt="Brainy"
-            width={80}
-            height={80}
-            className="object-contain h-full w-auto transition-all duration-500"
+            src="/images/brainy-logo-final.png"
+            alt="Brainy V12.0"
+            fill
+            className="object-contain"
             style={{
-              filter: "drop-shadow(0 0 15px #3b82f6) brightness(1.2)" // Powerful Blue Neon Glow
+              animation: "energyPulse 4s ease-in-out infinite"
             }}
             priority
           />
         </motion.div>
-
-        {/* Text - PERFECTLY CENTERED & SHIMMERING */}
-        <AnimatePresence>
-          {!isCollapsed && (
-            <motion.span
-              initial={{ opacity: 0, x: -20, filter: "blur(5px)" }}
-              animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, x: -20, filter: "blur(5px)" }}
-              transition={{ duration: 0.4, delay: 0.05 }}
-              className="font-black text-3xl tracking-tight bg-clip-text text-transparent pt-2"
-              style={{
-                backgroundImage: "linear-gradient(to right, #ffffff 0%, #ffffff 40%, #00d2ff 50%, #ffffff 60%, #ffffff 100%)",
-                backgroundSize: "200% auto",
-                animation: "textShimmer 3s linear infinite"
-              }}
-            >
-              Brainy
-            </motion.span>
-          )}
-        </AnimatePresence>
       </div>
 
       <nav className="flex-1 px-3 space-y-2 mt-4">
