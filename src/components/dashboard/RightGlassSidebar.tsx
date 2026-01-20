@@ -55,16 +55,21 @@ export default function RightGlassSidebar() {
           }}
           transition={{ duration: 0.5, ease: "backOut" }}
         >
-          <Image
-            src="/images/brainy-logo-final.png"
-            alt="Brainy V12.1"
-            fill
-            className="object-contain"
-            style={{
-              animation: "energyPulse 4s ease-in-out infinite"
-            }}
-            priority
-          />
+          <Link
+            href="/dashboard"
+            className="relative block w-full h-full cursor-pointer transition-all duration-300 hover:brightness-125 hover:drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] hover:scale-105"
+          >
+            <Image
+              src="/images/brainy-logo-final.png"
+              alt="Brainy V12.1"
+              fill
+              className="object-contain"
+              style={{
+                animation: "energyPulse 4s ease-in-out infinite"
+              }}
+              priority
+            />
+          </Link>
         </motion.div>
       </div>
 
