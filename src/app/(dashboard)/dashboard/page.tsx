@@ -38,9 +38,54 @@ export default function DashboardPage() {
                     <h2 className="text-2xl font-bold text-white">مسار التعلم</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {SUBJECTS.slice(0, 6).map((subject) => (
+                    {/* 1. MATH & PHYSICS ONLY */}
+                    {SUBJECTS.filter(s => s.name === "الرياضيات" || s.name === "الفيزياء").map((subject) => (
                         <CrystalSubjectCard key={subject.id} subject={subject} />
                     ))}
+
+                    {/* 2. PREMIUM CARD: FULL ACCESS */}
+                    <GlassCard className="p-6 flex flex-col justify-between relative overflow-hidden group border-purple-500/30 hover:border-purple-500/60 transition-all duration-500">
+                        {/* Glow Effect */}
+                        <div className="absolute inset-0 bg-purple-600/5 group-hover:bg-purple-600/10 transition-colors duration-500" />
+                        <div className="absolute -right-10 -top-10 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl group-hover:bg-purple-500/30 transition-all" />
+
+                        <div className="relative z-10">
+                            <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4 text-purple-400 group-hover:scale-110 transition-transform duration-500">
+                                <Zap size={24} className="fill-current" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">الباقة الشاملة</h3>
+                            <div className="text-sm text-purple-300 font-mono mb-4">FULL ACCESS</div>
+                            <p className="text-sm text-white/60 mb-6">
+                                وصول كامل لجميع الحصص المسجلة، الملخصات، والتمارين المكثفة لجميع المواد.
+                            </p>
+                        </div>
+
+                        <button className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm shadow-[0_0_20px_rgba(147,51,234,0.3)] hover:shadow-[0_0_30px_rgba(147,51,234,0.5)] transition-all relative z-10 group-hover:translate-y-[-2px]">
+                            اشترك الآن
+                        </button>
+                    </GlassCard>
+
+                    {/* 3. PREMIUM CARD: TEACHER VIP */}
+                    <GlassCard className="p-6 flex flex-col justify-between relative overflow-hidden group border-blue-500/30 hover:border-blue-500/60 transition-all duration-500">
+                        {/* Glow Effect */}
+                        <div className="absolute inset-0 bg-blue-600/5 group-hover:bg-blue-600/10 transition-colors duration-500" />
+                        <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl group-hover:bg-blue-500/30 transition-all" />
+
+                        <div className="relative z-10">
+                            <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4 text-blue-400 group-hover:scale-110 transition-transform duration-500">
+                                <TrendingUp size={24} />
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">اشتراك الأستاذ</h3>
+                            <div className="text-sm text-blue-300 font-mono mb-4">TEACHER VIP</div>
+                            <p className="text-sm text-white/60 mb-6">
+                                متابعة شخصية مباشرة، حصص أسئلة وأجوبة أسبوعية، وتصحيح مفصل للمحاولات.
+                            </p>
+                        </div>
+
+                        <button className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] transition-all relative z-10 group-hover:translate-y-[-2px]">
+                            اشترك الآن
+                        </button>
+                    </GlassCard>
                 </div>
             </div>
 
