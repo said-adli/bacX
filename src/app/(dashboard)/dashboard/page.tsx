@@ -6,7 +6,23 @@ import { CrystalSubjectCard } from "@/components/dashboard/CrystalSubjectCard";
 import { SUBJECTS, NEWS, APPOINTMENTS } from "@/data/mockLibrary";
 import { Clock, TrendingUp, Zap } from "lucide-react";
 
+import { useSearchParams } from "next/navigation";
+
 export default function DashboardPage() {
+    const searchParams = useSearchParams();
+    const query = searchParams.get("q")?.toLowerCase() || "";
+
+    const filteredSubjects = SUBJECTS.filter(s => {
+        // Base Filter: Math & Physics ONLY
+        if (s.name !== "الرياضيات" && s.name !== "الفيزياء") return false;
+
+        // Search Filter
+        if (!query) return true;
+        const matchesSubject = s.name.toLowerCase().includes(query);
+        const matchesLesson = s.lessons.some(l => l.title.toLowerCase().includes(query));
+        return matchesSubject || matchesLesson;
+    });
+
     return (
         <div className="space-y-16 animate-in fade-in zoom-in duration-700 pb-20">
 
@@ -35,13 +51,19 @@ export default function DashboardPage() {
             {/* 3. CRYSTAL GRID (Subjects) */}
             <div className="space-y-6">
                 <div className="flex items-center justify-between px-2">
-                    <h2 className="text-2xl font-bold text-white">مسار التعلم</h2>
+                    <h2 className="text-2xl font-bold text-white">مسار التعلم {query && <span className="text-sm text-blue-400 font-normal">(نتائج البحث: {query})</span>}</h2>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {/* 1. MATH & PHYSICS ONLY */}
-                    {SUBJECTS.filter(s => s.name === "الرياضيات" || s.name === "الفيزياء").map((subject) => (
-                        <CrystalSubjectCard key={subject.id} subject={subject} />
-                    ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* 1. MATH & PHYSICS ONLY (Filtered) */}
+                    {filteredSubjects.length > 0 ? (
+                        filteredSubjects.map((subject) => (
+                            <CrystalSubjectCard key={subject.id} subject={subject} />
+                        ))
+                    ) : (
+                        <div className="col-span-1 md:col-span-2 text-center py-12 text-white/30 border border-white/5 rounded-2xl bg-white/5">
+                            لا توجد نتائج مطابقة لـ "{query}" داخل المواد المتاحة.
+                        </div>
+                    )}
 
                     {/* 2. PREMIUM CARD: FULL ACCESS */}
                     <GlassCard className="p-6 flex flex-col justify-between relative overflow-hidden group border-purple-500/30 hover:border-purple-500/60 transition-all duration-500">

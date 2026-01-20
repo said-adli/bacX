@@ -13,6 +13,7 @@ export interface Notification {
     type: "info" | "warning" | "success" | "live";
     created_at: string;
     is_global: boolean;
+    user_id?: string;
     read_by?: string[];
 }
 
