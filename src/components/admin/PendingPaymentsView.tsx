@@ -29,7 +29,7 @@ export function PendingPaymentsView() {
     useEffect(() => {
         const fetchPayments = async () => {
             const { data } = await supabase
-                .from('payments')
+                .from('payment_requests')
                 .select('*')
                 .eq('status', 'pending')
                 .order('created_at', { ascending: false });
@@ -45,7 +45,7 @@ export function PendingPaymentsView() {
                 {
                     event: '*',
                     schema: 'public',
-                    table: 'payments',
+                    table: 'payment_requests',
                     filter: 'status=eq.pending'
                 },
                 () => fetchPayments() // Simple refresh on change

@@ -37,7 +37,7 @@ export async function approvePayment(paymentId: string, userId: string, duration
 
         // 1. Verify Payment Exists
         const { data: payment, error: pError } = await adminClient
-            .from('payments')
+            .from('payment_requests')
             .select('*')
             .eq('id', paymentId)
             .single();
@@ -51,7 +51,7 @@ export async function approvePayment(paymentId: string, userId: string, duration
 
         // 3. Update Payment Status (Bypassing RLS)
         const { error: updateError } = await adminClient
-            .from('payments')
+            .from('payment_requests')
             .update({
                 status: 'approved',
                 approved_at: now,
@@ -88,7 +88,7 @@ export async function rejectPayment(paymentId: string, userId: string, reason: s
         const { adminClient } = await requireAdmin();
 
         const { error } = await adminClient
-            .from('payments')
+            .from('payment_requests')
             .update({
                 status: 'rejected',
                 rejection_reason: reason,
