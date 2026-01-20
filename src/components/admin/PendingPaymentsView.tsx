@@ -61,23 +61,17 @@ export function PendingPaymentsView() {
         setProcessingId(payment.id);
         try {
             // Determine duration based on plan (simple logic for now)
-            // Ideally fetch plan from DB
             const durationDays = payment.plan_id === 'annual' ? 365 : 90;
 
-            const { error } = await supabase.rpc('approve_payment_transaction', {
-                p_payment_id: payment.id,
-                p_user_id: payment.user_id,
-                p_subscription_plan: payment.plan_id,
-                p_duration_days: durationDays
-            });
+            const { approvePayment } = await import("@/actions/admin");
+            const result = await approvePayment(payment.id, payment.user_id, durationDays);
 
-            if (error) throw error;
+            if (!result.success) throw new Error(result.message);
 
             toast.success("تم تفعيل الاشتراك بنجاح");
 
             // Optimistic update
             setPayments(prev => prev.filter(p => p.id !== payment.id));
-
         } catch (e: unknown) {
             console.error(e);
             const msg = e instanceof Error ? e.message : "Unknown error";
@@ -91,17 +85,13 @@ export function PendingPaymentsView() {
         if (!confirm("هل أنت متأكد من رفض هذا الطلب؟")) return;
         setProcessingId(paymentId);
         try {
-            // Simple update for rejection
-            const { error } = await supabase
-                .from('payments')
-                .update({ status: 'rejected' })
-                .eq('id', paymentId);
+            const { rejectPayment } = await import("@/actions/admin");
+            const result = await rejectPayment(paymentId, "Rejected by Admin");
 
-            if (error) throw error;
+            if (!result.success) throw new Error(result.message);
 
             toast.success("تم رفض الطلب");
             setPayments(prev => prev.filter(p => p.id !== paymentId));
-
         } catch (e: unknown) {
             console.error(e);
             toast.error("حدث خطأ");
