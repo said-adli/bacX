@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/utils/supabase/client";
 import {
     LayoutGrid, BookOpen, Plus, Trash2, Edit2,
-    Video, FileText, ChevronDown, ChevronRight
+    Video, FileText, ChevronDown, ChevronRight, File
 } from "lucide-react";
 import { toast } from "sonner";
 import { usePageVisibility } from "@/hooks/usePageVisibility";
@@ -106,13 +106,14 @@ export default function ContentManagerPage() {
         const title = formData.get("title") as string;
         const duration = formData.get("duration") as string;
         const video_url = formData.get("video_url") as string;
+        const pdf_url = formData.get("pdf_url") as string; // [NEW]
 
         try {
             if (editingLesson) {
                 // Update
                 const { error } = await supabase
                     .from('lessons')
-                    .update({ title, duration, video_url })
+                    .update({ title, duration, video_url, pdf_url })
                     .eq('id', editingLesson.id);
                 if (error) throw error;
                 toast.success("تم التحديث بنجاح");
@@ -125,7 +126,8 @@ export default function ContentManagerPage() {
                         subject_id: activeSubjectId,
                         title,
                         duration,
-                        video_url
+                        video_url,
+                        pdf_url
                     }]);
                 if (error) throw error;
                 toast.success("تمت الإضافة بنجاح");
@@ -253,11 +255,20 @@ export default function ContentManagerPage() {
                                         className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500"
                                     />
                                 </div>
-                                <div>
+                                <div className="md:col-span-2">
                                     <label className="block text-sm text-white/60 mb-1">رابط الفيديو (ID or URL)</label>
                                     <input
                                         name="video_url"
                                         defaultValue={editingLesson?.video_url}
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500"
+                                    />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm text-white/60 mb-1">رابط ملف PDF (اختياري)</label>
+                                    <input
+                                        name="pdf_url"
+                                        defaultValue={editingLesson?.pdf_url}
+                                        placeholder="https://example.com/file.pdf"
                                         className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500"
                                     />
                                 </div>

@@ -7,26 +7,71 @@ import { ShieldAlert } from "lucide-react";
 interface EncodedVideoPlayerProps {
     encodedVideoId: string; // SALT + ID + SALT (Base64)
     shouldMute?: boolean;   // [NEW] Allow external muting
+    onEnded?: () => void;   // [NEW] Callback when video ends
 }
 
-export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false }: EncodedVideoPlayerProps) {
+export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false, onEnded }: EncodedVideoPlayerProps) {
     const [decodedId, setDecodedId] = useState<string | null>(null);
     const [securityWarning, setSecurityWarning] = useState(false);
     const { user } = useAuth();
     const [sessionIp] = useState("192.168.x.x");
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
+    // [NEW] Progress Tracking
+    useEffect(() => {
+        if (!iframeRef.current) return;
+
+        const handleMessage = (event: MessageEvent) => {
+            // YouTube IFrame API sends messages. We look for 'infoDelivery' with 'playerState'
+            // State 0 = Ended.
+            if (event.source === iframeRef.current?.contentWindow) {
+                const data = JSON.parse(event.data);
+                if (data.event === 'infoDelivery' && data.info && data.info.playerState === 0) {
+                    // Video Ended
+                    // Trigger server action (we need lessonId passed prop or context, current component only has encodedVideoId)
+                    // Issue: VideoPlayer doesn't know LessonID. 
+                    // Solution: We need to pass lessonId or handle it in parent.
+                    // But user asked to "Update VideoPlayer". 
+                    // Let's dispatch a custom event that active view can listen to? 
+                    // Or better: Assume EncodedVideoPlayer is generic and parent handles completion?
+                    // BUT requirement: "Update VideoPlayer component to trigger completion".
+                    // Ideally we add `onEnded` prop to VideoPlayer.
+                }
+            }
+        };
+        // Just adding logic scaffold. Real implementation needs onEnded prop.
+        // I will add onEnded prop to component signature first.
+    }, []);
+
     // [NEW] Toggle Mute without reload
     useEffect(() => {
         if (!iframeRef.current?.contentWindow) return;
 
         const command = shouldMute ? "mute" : "unMute";
-        // YouTube Player API postMessage protocol
         iframeRef.current.contentWindow.postMessage(
             JSON.stringify({ event: 'command', func: command, args: [] }),
             '*'
         );
     }, [shouldMute, decodedId]);
+
+    // [NEW] Listen for Video End
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (iframeRef.current && event.source === iframeRef.current.contentWindow) {
+                try {
+                    const data = JSON.parse(event.data);
+                    // YouTube API: infoDelivery -> info -> playerState: 0 (ENDED)
+                    if (data.event === 'infoDelivery' && data.info && data.info.playerState === 0) {
+                        if (onEnded) onEnded();
+                    }
+                } catch (e) {
+                    // Ignore non-JSON messages
+                }
+            }
+        };
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [onEnded]);
 
     useEffect(() => {
         let mounted = true;

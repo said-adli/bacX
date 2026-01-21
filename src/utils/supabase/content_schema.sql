@@ -84,3 +84,26 @@ insert into public.lessons (id, subject_id, title, duration) values
 ('svt-01', 'svt', 'تحرير الطاقة الكامنة في المادة العضوية', '1:20:00'),
 ('svt-02', 'svt', 'ألية تقلص العضلة الهيكلية', '1:10:00'),
 ('svt-03', 'svt', 'الخبر الوراثي', '1:30:00');
+
+-- 6. User Progress Table
+create table public.user_progress (
+  user_id uuid references auth.users(id) on delete cascade not null,
+  lesson_id text references public.lessons(id) on delete cascade not null,
+  is_completed boolean default false,
+  completed_at timestamp with time zone,
+  last_watched_position integer default 0,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  primary key (user_id, lesson_id)
+);
+
+-- RLS for Progress
+alter table public.user_progress enable row level security;
+
+create policy "Users can view own progress" on public.user_progress
+  for select using (auth.uid() = user_id);
+
+create policy "Users can update own progress" on public.user_progress
+  for insert with check (auth.uid() = user_id);
+
+create policy "Users can update own progress" on public.user_progress
+  for update using (auth.uid() = user_id);
