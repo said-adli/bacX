@@ -6,10 +6,11 @@ import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/utils/supabase/client";
 import {
     LayoutGrid, BookOpen, Plus, Trash2, Edit2,
-    Video, FileText, ChevronDown, ChevronRight, File, Loader2, UploadCloud
+    Video, FileText, ChevronDown, ChevronRight, File, Loader2, UploadCloud, Database
 } from "lucide-react";
 import { toast } from "sonner";
 import { usePageVisibility } from "@/hooks/usePageVisibility";
+import { AdminEmptyState } from "@/components/admin/ui/AdminEmptyState";
 
 interface Lesson {
     id: string;
@@ -194,7 +195,32 @@ export default function ContentManagerPage() {
                     <BookOpen className="text-blue-400" />
                     إدارة المحتوى (CMS)
                 </h1>
+                <button
+                    onClick={() => {
+                        setActiveSubjectId(null); // Or prompt to create subject first
+                        toast.info("يرجى إنشاء مادة دراسية أولاً من قاعدة البيانات");
+                    }}
+                    className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-500"
+                >
+                    <Plus size={18} />
+                    مادة جديدة
+                </button>
             </div>
+
+            {/* Empty State */}
+            {!loading && subjects.length === 0 && (
+                <div className="mt-10">
+                    <AdminEmptyState
+                        title="لا يوجد محتوى (No Content)"
+                        description="قاعدة البيانات فارغة. يجب عليك تشغيل ملف SQL لإضافة المواد الدراسية."
+                        icon="database"
+                    >
+                        <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-400 text-sm">
+                            ⚠️ <strong>تنبيه:</strong> لم يتم العثور على أي مواد. يرجى تشغيل SQL Seed Data.
+                        </div>
+                    </AdminEmptyState>
+                </div>
+            )}
 
             {/* List of Subjects */}
             <div className="space-y-4">
