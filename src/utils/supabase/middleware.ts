@@ -63,6 +63,7 @@ export async function updateSession(request: NextRequest) {
         path.startsWith('/subject') ||
         path.startsWith('/video') ||
         path.startsWith('/subscription') ||
+        path.startsWith('/settings') ||
         path.startsWith('/profile');
 
     if (isProtectedRoute && !session) {

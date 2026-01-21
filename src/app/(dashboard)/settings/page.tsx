@@ -9,10 +9,10 @@ import {
     AlertTriangle, LogOut, Eye, EyeOff, LayoutGrid, Key, User, MapPin, BookOpen, GraduationCap, Save, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/Input"; // Assuming we have this, or I'll use standard input
+// import { Input } from "@/components/ui/Input";
 
 export default function SettingsPage() {
-    const { logout, user } = useAuth();
+    const { logout, user, refreshProfile } = useAuth();
     const supabase = createClient();
 
     // Toggle States
@@ -35,7 +35,10 @@ export default function SettingsPage() {
     // 1. Fetch User Data
     useEffect(() => {
         const fetchUserData = async () => {
-            if (!user) return;
+            if (!user) {
+                setLoadingData(false);
+                return;
+            }
             try {
                 const { data, error } = await supabase
                     .from('profiles')
@@ -89,8 +92,7 @@ export default function SettingsPage() {
             if (error) throw error;
             toast.success("تم حفظ التغييرات بنجاح");
 
-            // Optional: Update Auth Context if needed via refreshProfile()
-            // window.location.reload(); // Simple way to refresh all app state
+            await refreshProfile();
         } catch (error) {
             console.error("Error saving profile:", error);
             toast.error("فشل في حفظ التغييرات");
