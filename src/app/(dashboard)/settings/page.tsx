@@ -6,33 +6,31 @@ import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/utils/supabase/client";
 import {
     Shield, Lock, Smartphone, Globe, Download,
-    AlertTriangle, LogOut, Eye, EyeOff, LayoutGrid, Key, User, MapPin, BookOpen, GraduationCap, Save, Loader2
+    AlertTriangle, LogOut, Eye, EyeOff, User, MapPin, BookOpen, GraduationCap, Edit, ExternalLink, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
-// import { Input } from "@/components/ui/Input";
+import Link from "next/link";
 
 export default function SettingsPage() {
-    const { logout, user, refreshProfile } = useAuth();
+    // 1. Auth & Supabase
+    const { logout, user } = useAuth();
     const supabase = createClient();
 
-    // Toggle States
+    // 2. Local State
     const [twoFactor, setTwoFactor] = useState(false);
     const [incognito, setIncognito] = useState(false);
-
-    // Loading States
     const [loadingExport, setLoadingExport] = useState(false);
-    const [saving, setSaving] = useState(false);
     const [loadingData, setLoadingData] = useState(true);
 
-    // Form Data
-    const [formData, setFormData] = useState({
+    // Data State (Read Only)
+    const [profileData, setProfileData] = useState({
         full_name: "",
         wilaya: "",
         major: "",
         study_system: ""
     });
 
-    // 1. Fetch User Data
+    // 3. Fetch User Data
     useEffect(() => {
         const fetchUserData = async () => {
             if (!user) {
@@ -48,11 +46,12 @@ export default function SettingsPage() {
 
                 if (error) throw error;
                 if (data) {
-                    setFormData({
-                        full_name: data.full_name || "",
-                        wilaya: data.wilaya || "",
-                        major: data.major || "",
-                        study_system: data.study_system || ""
+                    setProfileData({
+                        full_name: data.full_name || "غير محدد",
+                        wilaya: data.wilaya || "غير محدد",
+                        major: data.major || "غير محدد",
+                        study_system: data.study_system === 'regular' ? 'طالب نظامي' :
+                            data.study_system === 'private' ? 'طالب حر' : "غير محدد"
                     });
                 }
             } catch (error) {
@@ -66,39 +65,13 @@ export default function SettingsPage() {
         fetchUserData();
     }, [user, supabase]);
 
+    // 4. Handlers
     const handleGlobalLogout = async () => {
         toast.promise(logout(), {
             loading: "جاري تسجيل الخروج من جميع الأجهزة...",
             success: "تم الخروج بنجاح",
             error: "حدث خطأ أثناء تسجيل الخروج"
         });
-    };
-
-    const handleSaveChanges = async () => {
-        if (!user) return;
-        setSaving(true);
-        try {
-            const { error } = await supabase
-                .from('profiles')
-                .update({
-                    full_name: formData.full_name,
-                    wilaya: formData.wilaya,
-                    major: formData.major,
-                    study_system: formData.study_system,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', user.id);
-
-            if (error) throw error;
-            toast.success("تم حفظ التغييرات بنجاح");
-
-            await refreshProfile();
-        } catch (error) {
-            console.error("Error saving profile:", error);
-            toast.error("فشل في حفظ التغييرات");
-        } finally {
-            setSaving(false);
-        }
     };
 
     const handleExportData = () => {
@@ -111,9 +84,6 @@ export default function SettingsPage() {
 
     const handleDeleteAccount = async () => {
         if (!confirm("هل أنت متأكد من حذف حسابك؟ هذا الإجراء لا يمكن التراجع عنه!")) return;
-
-        // In a real app, calling a server action to delete user is safer.
-        // For now, we'll try to disable the profile as 'deleted' status if hard delete is restricted.
         toast.error("يرجى التواصل مع الدعم الفني لحذف الحساب نهائياً لأسباب أمنية.");
     };
 
@@ -144,82 +114,65 @@ export default function SettingsPage() {
                 {/* LEFT COLUMN: Profile & Privacy */}
                 <div className="space-y-6">
 
-                    {/* PROFILE EDIT SECTION (NEW) */}
+                    {/* READ-ONLY PROFILE SECTION */}
                     <div className="space-y-4">
-                        <h2 className="text-xl font-bold text-white/90 flex items-center gap-2">
-                            <User className="w-5 h-5 text-blue-400" />
-                            المعلومات الشخصية
-                        </h2>
-                        <GlassCard className="p-6 space-y-4 border-blue-500/20">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-white/90 flex items-center gap-2">
+                                <User className="w-5 h-5 text-blue-400" />
+                                المعلومات الشخصية
+                            </h2>
+                            <Link href="/profile" className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
+                                تعديل الملف
+                                <ExternalLink size={12} />
+                            </Link>
+                        </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm text-white/60">الاسم الكامل</label>
-                                <div className="relative">
-                                    <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-                                    <input
-                                        type="text"
-                                        value={formData.full_name}
-                                        onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                                        className="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 pr-10 pl-4 text-white focus:border-blue-500/50 focus:outline-none transition-all"
-                                        placeholder="الاسم الكامل"
-                                    />
+                        <GlassCard className="p-6 space-y-6 border-blue-500/20 relative overflow-hidden group">
+                            {/* Decorative Background */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-600/10 transition-all duration-700" />
+
+                            <div className="grid grid-cols-1 gap-6">
+                                {/* Name */}
+                                <div className="space-y-1">
+                                    <label className="text-xs text-white/40 flex items-center gap-2">
+                                        <User size={12} />
+                                        الاسم الكامل
+                                    </label>
+                                    <p className="text-lg font-bold text-white font-serif tracking-wide">{profileData.full_name}</p>
                                 </div>
-                            </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm text-white/60">الولاية</label>
-                                    <div className="relative">
-                                        <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-                                        <input
-                                            type="text"
-                                            value={formData.wilaya}
-                                            onChange={(e) => setFormData({ ...formData, wilaya: e.target.value })}
-                                            className="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 pr-10 pl-4 text-white focus:border-blue-500/50 focus:outline-none transition-all"
-                                            placeholder="الولاية"
-                                        />
+                                <div className="grid grid-cols-2 gap-6">
+                                    {/* Wilaya */}
+                                    <div className="space-y-1">
+                                        <label className="text-xs text-white/40 flex items-center gap-2">
+                                            <MapPin size={12} />
+                                            الولاية
+                                        </label>
+                                        <p className="text-base text-white/90">{profileData.wilaya}</p>
+                                    </div>
+
+                                    {/* Major */}
+                                    <div className="space-y-1">
+                                        <label className="text-xs text-white/40 flex items-center gap-2">
+                                            <BookOpen size={12} />
+                                            الشعبة
+                                        </label>
+                                        <p className="text-base text-white/90">{profileData.major}</p>
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm text-white/60">الشعبة</label>
-                                    <div className="relative">
-                                        <BookOpen className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-                                        <input
-                                            type="text"
-                                            value={formData.major}
-                                            onChange={(e) => setFormData({ ...formData, major: e.target.value })}
-                                            className="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 pr-10 pl-4 text-white focus:border-blue-500/50 focus:outline-none transition-all"
-                                            placeholder="الشعبة"
-                                        />
+
+                                {/* Study System */}
+                                <div className="space-y-1 pt-2 border-t border-white/5">
+                                    <label className="text-xs text-white/40 flex items-center gap-2">
+                                        <GraduationCap size={12} />
+                                        نظام الدراسة
+                                    </label>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className={`w-2 h-2 rounded-full ${profileData.study_system.includes('نظامي') ? 'bg-green-500' : 'bg-purple-500'}`} />
+                                        <p className="text-base text-white/90">{profileData.study_system}</p>
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm text-white/60">نظام الدراسة</label>
-                                <div className="relative">
-                                    <GraduationCap className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-                                    <select
-                                        value={formData.study_system}
-                                        onChange={(e) => setFormData({ ...formData, study_system: e.target.value })}
-                                        className="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 pr-10 pl-4 text-white focus:border-blue-500/50 focus:outline-none transition-all appearance-none"
-                                    >
-                                        <option value="" className="bg-zinc-900 text-gray-500">اختر نظام الدراسة (نظامي/حر)</option>
-                                        <option value="regular" className="bg-zinc-900">طالب نظامي (Moutamadriss)</option>
-                                        <option value="private" className="bg-zinc-900">طالب حر (Candidat Libre)</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={handleSaveChanges}
-                                disabled={saving}
-                                className="w-full mt-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                                حفظ التعديلات
-                            </button>
-
                         </GlassCard>
                     </div>
 
