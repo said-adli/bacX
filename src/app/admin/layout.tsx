@@ -22,7 +22,7 @@ export default async function AdminLayout({
     }
 
     return (
-        <div className="min-h-screen bg-black text-white selection:bg-blue-500/30">
+        <div className="min-h-screen bg-black text-white selection:bg-blue-500/30" dir="rtl">
             {/* Background Ambient Glows */}
             <div className="fixed left-0 top-0 -z-10 h-full w-full overflow-hidden bg-black">
                 <div className="absolute -left-[10%] -top-[10%] h-[500px] w-[500px] rounded-full bg-blue-900/20 blur-[120px]" />
@@ -31,7 +31,7 @@ export default async function AdminLayout({
 
             <AdminSidebar />
 
-            <div className="pl-64">
+            <div className="pr-64">
                 <AdminHeader />
                 <main className="min-h-[calc(100vh-4rem)] p-8 pt-0">
                     <div className="mx-auto max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">

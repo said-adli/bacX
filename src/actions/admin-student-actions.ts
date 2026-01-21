@@ -80,7 +80,7 @@ export async function getStudents({
         };
 
     } catch (err) {
-        console.error("Error fetching students:", err);
+        console.error("DEBUG: Error fetching students:", err);
         throw err;
     }
 }
