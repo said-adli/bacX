@@ -66,12 +66,13 @@ export function GlassSidebar() {
                                 exit={{ opacity: 0, x: 20 }}
                                 className="flex items-center gap-3 overflow-hidden"
                             >
-                                <div className="relative w-14 h-14">
+                                <div className="relative w-10 h-10">
                                     <Image
-                                        src="/images/brainy-logo-final.png"
+                                        src="/images/brainy-logo-black.png"
                                         alt="Brainy"
                                         fill
                                         className="object-contain"
+                                        style={{ filter: 'invert(1) brightness(2)' }}
                                     />
                                 </div>
                                 <span className="font-bold text-2xl tracking-wide bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent font-serif">Brainy</span>

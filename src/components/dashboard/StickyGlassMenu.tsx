@@ -52,10 +52,17 @@ export default function StickyGlassMenu() {
                 {/* 1. BRAND & LIVE (Right Side visually) */}
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-2">
-                            {/* Logo removed to prevent duplication with Sidebar */}
-                            <div className="w-[10px]" />
-                        </div>
+                        {/* Logo / Home Link */}
+                        <Link href="/dashboard" className="flex items-center gap-3 group">
+                            <div className="relative w-10 h-10 transition-transform duration-300 group-hover:scale-110">
+                                <img
+                                    src="/images/brainy-logo-black.png"
+                                    alt="Brainy"
+                                    className="w-full h-full object-contain"
+                                    style={{ filter: 'invert(1) brightness(2)' }}
+                                />
+                            </div>
+                        </Link>
                     </div>
                     <LiveStatus />
                 </div>
