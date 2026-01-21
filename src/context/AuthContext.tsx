@@ -178,14 +178,16 @@ export function AuthProvider({
     const logout = async () => {
         try {
             console.log("Logging out...");
+            // Attempt to sign out from Supabase
             await supabase.auth.signOut();
-            console.log("Logged out from Supabase, redirecting...");
-            // Use window.location for a hard refresh to clear all memory/states effectively
-            window.location.href = "/login";
+            console.log("Logged out from Supabase success");
         } catch (error) {
-            console.error("Logout failed", error);
-            // Force redirect even if error
-            window.location.href = "/login";
+            console.error("Logout error (non-blocking):", error);
+        } finally {
+            // ALWAYS Redirect, even if error occurs
+            console.log("Redirecting to login...");
+            router.push("/login"); // Client-side nav
+            router.refresh();      // Clear server cache
         }
     };
 
