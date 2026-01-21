@@ -16,13 +16,12 @@ import { Image } from 'lucide-react'; // Placeholder if we don't have Image comp
 import NextImage from 'next/image';
 
 const navItems = [
-    { name: 'Overview', href: '/admin', icon: LayoutDashboard },
-    { name: 'Students', href: '/admin/students', icon: Users },
-    { name: 'Finance', href: '/admin/payments', icon: CreditCard },
-    { name: 'Content', href: '/admin/content', icon: BookOpen },
-    { name: 'Go Live', href: '/admin/live', icon: Radio },
-    { name: 'Broadcast', href: '/admin/broadcast', icon: Radio },
-    { name: 'Settings', href: '/admin/settings', icon: Settings },
+    { name: 'لوحة التحكم', href: '/admin', icon: LayoutDashboard },
+    { name: 'الطلاب', href: '/admin/students', icon: Users },
+    { name: 'المالية', href: '/admin/payments', icon: CreditCard },
+    { name: 'إدارة المحتوى', href: '/admin/content', icon: BookOpen },
+    { name: 'بث مباشر', href: '/admin/live', icon: Radio },
+    { name: 'الإعدادات', href: '/admin/settings', icon: Settings },
 ];
 
 export function AdminSidebar() {
