@@ -1,29 +1,57 @@
-import { Suspense } from "react";
-import { getAllStudents } from "@/actions/admin-student-management";
-import { StudentTable } from "@/components/admin/StudentTable";
+import { getStudents } from "@/actions/admin-student-actions";
+import { StudentsTable } from "@/components/admin/students/StudentsTable";
+import { AdminEmptyState } from "@/components/admin/ui/AdminEmptyState";
 
-// Note: Ensure types for searchParams match Next.js 15
-type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
+export const metadata = {
+    title: "Admin - Student Management",
+};
 
-export default async function StudentsPage(props: {
-    searchParams: SearchParams
-}) {
-    const searchParams = await props.searchParams;
-    const query = typeof searchParams.query === 'string' ? searchParams.query : '';
+interface SearchParams {
+    q?: string;
+    page?: string;
+    filter?: 'all' | 'active' | 'banned' | 'vip';
+}
 
-    // Advanced Fetcher
-    const students = await getAllStudents(query);
+export default async function StudentsPage(props: { searchParamsPromise: Promise<SearchParams> }) {
+    const params = await props.searchParamsPromise;
+
+    const query = params.q || "";
+    const page = Number(params.page) || 1;
+    const filter = params.filter || "all";
+
+    // Data Fetching
+    let data;
+    try {
+        data = await getStudents({
+            query,
+            page,
+            statusFilter: filter
+        });
+    } catch (error) {
+        return (
+            <AdminEmptyState
+                title="Error Fetching Data"
+                description="Could not load student list. Please try again."
+                icon="error"
+            />
+        );
+    }
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold font-tajawal text-white">Student Management</h1>
-                <p className="text-zinc-400 font-tajawal">Surgical control center for all student accounts.</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-white">Students</h1>
+                    <p className="text-gray-400">Manage user accounts and subscriptions</p>
+                </div>
+
+                {/* We can put filter controls here later which update URL params */}
             </div>
 
-            <Suspense fallback={<div className="text-white">Loading directory...</div>}>
-                <StudentTable data={students} />
-            </Suspense>
+            <StudentsTable
+                initialStudents={data.students}
+                totalCount={data.totalCount}
+            />
         </div>
     );
 }

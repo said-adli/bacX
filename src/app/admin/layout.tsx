@@ -1,79 +1,42 @@
-import { redirect } from "next/navigation";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AdminHeader } from "@/components/admin/AdminHeader";
+import { verifyAdmin } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
 
 export default async function AdminLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const cookieStore = await cookies();
-
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                getAll() {
-                    return cookieStore.getAll();
-                },
-                setAll(cookiesToSet) {
-                    try {
-                        cookiesToSet.forEach(({ name, value, options }) =>
-                            cookieStore.set(name, value, options)
-                        );
-                    } catch {
-                        // The `setAll` method was called from a Server Component.
-                        // This can be ignored if you have middleware refreshing
-                        // user sessions.
-                    }
-                },
-            },
-        }
-    );
-
-    const {
-        data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session) {
-        redirect("/login");
-    }
-
-    // Check for admin role
-    // METHOD 1: Check user_metadata (if you put role there)
-    const role = session.user.user_metadata?.role;
-
-    // METHOD 2: Check active profiles table (more secure/typical)
-    const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
-
-    const userRole = profile?.role || role;
-
-    if (userRole !== "admin") {
-        console.warn(`Unauthorized access attempt to /admin by user ${session.user.id} with role ${userRole}`);
-        redirect("/dashboard"); // Redirect non-admins to normal dashboard
+    // 1. Strict Server-Side Security Check
+    // This runs on every request to /admin/*
+    try {
+        await verifyAdmin();
+    } catch (error) {
+        // If verification fails, strict redirect to home or login
+        // We could also show a 403 page, but redirect is safer to get them out
+        console.error("Admin Access Denied:", error);
+        redirect("/");
     }
 
     return (
-        <div className="min-h-screen bg-[#050508] text-white selection:bg-blue-500/30">
-            <AdminSidebar />
-            <main className="pl-64 min-h-screen relative">
-                {/* Background Ambient Glow */}
-                <div className="fixed inset-0 pointer-events-none z-0">
-                    <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-blue-600/5 rounded-full blur-[120px]" />
-                    <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/5 rounded-full blur-[100px]" />
-                </div>
+        <div className="min-h-screen bg-black text-white selection:bg-blue-500/30">
+            {/* Background Ambient Glows */}
+            <div className="fixed left-0 top-0 -z-10 h-full w-full overflow-hidden bg-black">
+                <div className="absolute -left-[10%] -top-[10%] h-[500px] w-[500px] rounded-full bg-blue-900/20 blur-[120px]" />
+                <div className="absolute -right-[10%] bottom-[20%] h-[500px] w-[500px] rounded-full bg-purple-900/10 blur-[120px]" />
+            </div>
 
-                {/* Content */}
-                <div className="relative z-10 p-8">
-                    {children}
-                </div>
-            </main>
+            <AdminSidebar />
+
+            <div className="pl-64">
+                <AdminHeader />
+                <main className="min-h-[calc(100vh-4rem)] p-8 pt-0">
+                    <div className="mx-auto max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {children}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 }
