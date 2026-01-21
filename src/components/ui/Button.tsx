@@ -24,9 +24,9 @@ const variants = {
 };
 
 const sizes = {
-    sm: "px-4 py-2 text-sm rounded-lg",
-    md: "px-6 py-3 text-base rounded-xl",
-    lg: "px-8 py-4 text-lg rounded-xl",
+    sm: "px-5 py-2 text-sm rounded-full",
+    md: "px-8 py-3.5 text-base rounded-full",
+    lg: "px-10 py-5 text-lg rounded-full",
 };
 
 interface ButtonProps extends Omit<HTMLMotionProps<"button">, "ref"> {

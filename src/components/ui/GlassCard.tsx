@@ -14,8 +14,12 @@ export function GlassCard({ children, className, ...props }: GlassCardProps) {
     return (
         <div
             className={cn(
-                "glass-panel backdrop-blur-[24px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05),0_8px_32px_rgba(0,0,0,0.5)] border-white/10",
-                isLowEnd ? "backdrop-blur-md" : "glass-premium",
+                // BRAINY CURVE (V29.0): Standardized rounded-3xl (32px) and Glowing Border
+                "glass-panel rounded-[2rem] border border-white/5 transition-all duration-300",
+                "shadow-[0_0_20px_-5px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_-5px_var(--primary-glow)]", // Ambient Glow
+                "hover:border-primary/30", // Subtle Blue Glow on hover
+                "backdrop-blur-[12px] bg-[#0A0A0F]/60",
+                isLowEnd ? "backdrop-blur-none bg-[#0A0A0F]/90" : "glass-premium",
                 className
             )}
             {...props}

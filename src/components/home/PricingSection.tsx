@@ -8,7 +8,7 @@ import { BrainyLogo } from "@/components/ui/BrainyLogo";
 
 export function PricingSection() {
     return (
-        <section className="py-32 px-6 relative">
+        <section className="py-32 px-6 relative" style={{ contentVisibility: 'auto' }}>
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-accent/10 pointer-events-none"></div>
             <div className="max-w-5xl mx-auto">
                 <motion.div
