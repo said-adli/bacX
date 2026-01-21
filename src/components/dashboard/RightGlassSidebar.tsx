@@ -70,11 +70,12 @@ export default function RightGlassSidebar() {
               className="relative block w-full h-full cursor-pointer transition-all duration-300 hover:brightness-125 hover:drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] hover:scale-105"
             >
               <Image
-                src="/images/brainy-logo-final.png"
+                src="/images/brainy-logo-black.png"
                 alt="Brainy V12.1"
                 fill
                 className="object-contain"
                 style={{
+                  filter: 'invert(1) brightness(2)',
                   animation: "energyPulse 4s ease-in-out infinite",
                 }}
                 priority

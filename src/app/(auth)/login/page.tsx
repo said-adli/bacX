@@ -54,10 +54,11 @@ export default function LoginPage() {
                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                 >
                     <Image
-                        src="/images/brainy-logo-final.png"
+                        src="/images/brainy-logo-black.png"
                         alt="Brainy Logo"
                         fill
                         className="object-contain"
+                        style={{ filter: 'invert(1) brightness(2)' }}
                         priority
                     />
                 </motion.div>
