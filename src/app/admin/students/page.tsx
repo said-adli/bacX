@@ -16,12 +16,12 @@ export default function StudentsPage() {
     const [students, setStudents] = useState<Student[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     useEffect(() => {
         async function fetchData() {
             setLoading(true);
-            setError(false);
+            setErrorMessage(null);
             try {
                 // Mimic the student app's non-blocking fetch
                 const res = await getStudents({
@@ -31,9 +31,9 @@ export default function StudentsPage() {
                 });
                 setStudents(res.students);
                 setTotalCount(res.totalCount);
-            } catch (err) {
+            } catch (err: any) {
                 console.error("Failed to fetch students", err);
-                setError(true);
+                setErrorMessage(err.message || "Unknown error occurred");
             } finally {
                 setLoading(false);
             }
@@ -42,11 +42,11 @@ export default function StudentsPage() {
         fetchData();
     }, [query, page, filter]);
 
-    if (error) {
+    if (errorMessage) {
         return (
             <AdminEmptyState
                 title="Error Fetching Data"
-                description="Could not load student list. Please try again."
+                description={`Error Details: ${errorMessage}`}
                 icon="error"
             />
         );
