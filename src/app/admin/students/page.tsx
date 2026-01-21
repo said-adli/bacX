@@ -12,8 +12,8 @@ interface SearchParams {
     filter?: 'all' | 'active' | 'banned' | 'vip';
 }
 
-export default async function StudentsPage(props: { searchParamsPromise: Promise<SearchParams> }) {
-    const params = await props.searchParamsPromise;
+export default async function StudentsPage(props: { searchParams: Promise<SearchParams> }) {
+    const params = await props.searchParams;
 
     const query = params.q || "";
     const page = Number(params.page) || 1;
