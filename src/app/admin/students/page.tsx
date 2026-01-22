@@ -1,82 +1,36 @@
-"use client";
+import { Suspense } from "react";
+import { StudentTable } from "@/components/admin/students/StudentTable";
+import { getStudents } from "@/actions/admin-students";
 
-import { useState, useEffect } from "react";
-import { getStudents, Student } from "@/actions/admin-student-actions";
-import { StudentsTable } from "@/components/admin/students/StudentsTable";
-import { AdminEmptyState } from "@/components/admin/ui/AdminEmptyState";
-import { Loader2 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+export default async function AdminStudentsPage(props: {
+    searchParams?: Promise<{
+        query?: string;
+        page?: string;
+        filter?: "all" | "active" | "expired" | "banned";
+    }>;
+}) {
+    const searchParams = await props.searchParams;
+    const query = searchParams?.query || "";
+    const page = Number(searchParams?.page) || 1;
+    const filter = searchParams?.filter || "all";
 
-export default function StudentsPage() {
-    const searchParams = useSearchParams();
-    const query = searchParams.get("q") || "";
-    const page = Number(searchParams.get("page")) || 1;
-    const filter = (searchParams.get("filter") as 'all' | 'active' | 'banned' | 'vip') || "all";
-
-    const [students, setStudents] = useState<Student[]>([]);
-    const [totalCount, setTotalCount] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-    useEffect(() => {
-        async function fetchData() {
-            setLoading(true);
-            setErrorMessage(null);
-            try {
-                // Mimic the student app's non-blocking fetch
-                const res = await getStudents({
-                    query,
-                    page,
-                    statusFilter: filter
-                });
-
-                if (res.error) {
-                    throw new Error(res.error);
-                }
-
-                setStudents(res.students);
-                setTotalCount(res.totalCount);
-            } catch (err: any) {
-                console.error("Failed to fetch students", err);
-                setErrorMessage(err.message || "Unknown error occurred");
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        fetchData();
-    }, [query, page, filter]);
-
-    if (errorMessage) {
-        return (
-            <AdminEmptyState
-                title="Error Fetching Data"
-                description={`Error Details: ${errorMessage}`}
-                icon="error"
-            />
-        );
-    }
+    const { students, totalPages } = await getStudents(page, query, filter);
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex items-center justify-between">
+        <div className="container mx-auto max-w-7xl">
+            <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-white font-tajawal">الطلاب (Students)</h1>
-                    <p className="text-gray-400 font-tajawal">إدارة حسابات واشتراكات الطلاب</p>
+                    <h2 className="text-3xl font-bold text-white tracking-tight">Student Management</h2>
+                    <p className="text-zinc-500">Manage access, subscriptions, and security.</p>
                 </div>
+                <button className="px-4 py-2 bg-blue-600 rounded-xl text-white text-sm font-bold shadow-[0_0_15px_rgba(37,99,235,0.4)] hover:bg-blue-500 transition-colors">
+                    Export CSV
+                </button>
             </div>
 
-            {loading ? (
-                <div className="flex flex-col items-center justify-center p-20 space-y-4">
-                    <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-                    <p className="text-white/50 animate-pulse font-tajawal">جاري تحميل داتا الطلاب...</p>
-                </div>
-            ) : (
-                <StudentsTable
-                    initialStudents={students}
-                    totalCount={totalCount}
-                />
-            )}
+            <Suspense fallback={<div className="text-white">Loading students...</div>}>
+                <StudentTable students={students} totalPages={totalPages} />
+            </Suspense>
         </div>
     );
 }

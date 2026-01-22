@@ -11,6 +11,9 @@ export interface SubscriptionPlan {
     description?: string;
     features: string[];
     is_active: boolean;
+    // New Fields
+    duration_days: number;
+    type: 'subscription' | 'course';
 }
 
 // ADMIN ACTIONS (Secure)
@@ -55,9 +58,8 @@ export async function createPlan(data: Omit<SubscriptionPlan, "id" | "is_active"
         }]);
 
     if (error) throw error;
-    revalidatePath('/admin/plans');
+    revalidatePath('/admin/offers');
     revalidatePath('/subscription');
-    revalidatePath('/'); // Landing page
 }
 
 export async function updatePlan(id: string, data: Partial<SubscriptionPlan>) {
@@ -75,9 +77,8 @@ export async function updatePlan(id: string, data: Partial<SubscriptionPlan>) {
         .eq('id', id);
 
     if (error) throw error;
-    revalidatePath('/admin/plans');
+    revalidatePath('/admin/offers');
     revalidatePath('/subscription');
-    revalidatePath('/');
 }
 
 export async function deletePlan(id: string) {
@@ -95,9 +96,8 @@ export async function deletePlan(id: string) {
         .eq('id', id);
 
     if (error) throw error;
-    revalidatePath('/admin/plans');
+    revalidatePath('/admin/offers');
     revalidatePath('/subscription');
-    revalidatePath('/');
 }
 
 // PUBLIC ACTIONS

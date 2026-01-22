@@ -1,87 +1,90 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import {
-    LayoutDashboard,
+    BarChart3,
     Users,
     CreditCard,
-    BookOpen,
-    Radio,
+    Receipt,
+    Layers,
     Settings,
+    Hexagon,
     LogOut
-} from 'lucide-react';
-import { Image } from 'lucide-react'; // Placeholder if we don't have Image component imported yet, but we do have Next Image
-import NextImage from 'next/image';
-
-const navItems = [
-    { name: 'لوحة التحكم', href: '/admin', icon: LayoutDashboard },
-    { name: 'الطلاب', href: '/admin/students', icon: Users },
-    { name: 'المالية', href: '/admin/payments', icon: CreditCard },
-    { name: 'إدارة المحتوى', href: '/admin/content', icon: BookOpen },
-    { name: 'بث مباشر', href: '/admin/live', icon: Radio },
-    { name: 'الإعدادات', href: '/admin/settings', icon: Settings },
-];
+} from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
 
 export function AdminSidebar() {
     const pathname = usePathname();
+    const router = useRouter();
+
+    const links = [
+        { name: "Dashboard", href: "/admin", icon: BarChart3 },
+        { name: "Students", href: "/admin/students", icon: Users },
+        { name: "Payments", href: "/admin/payments", icon: Receipt },
+        { name: "Offers", href: "/admin/offers", icon: CreditCard },
+        { name: "Content", href: "/admin/content", icon: Layers },
+        { name: "Controls", href: "/admin/controls", icon: Settings },
+    ];
+
+    const handleLogout = async () => {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        router.push("/login");
+    }
 
     return (
-        <aside className="fixed right-0 top-0 z-40 h-screen w-64 border-l border-white/10 bg-black/90 backdrop-blur-xl">
-            <div className="flex h-full flex-col px-4 py-6">
-                {/* Logo */}
-                <div className="mb-8 flex items-center gap-3 px-2">
-                    <div className="relative h-10 w-10">
-                        <img
-                            src="/images/brainy-logo-black.png"
-                            alt="Brainy Admin"
-                            className="h-full w-full object-contain"
-                            style={{ filter: 'invert(1) brightness(2)' }}
-                        />
-                    </div>
-                    <span className="text-xl font-bold tracking-tight text-white">
-                        Admin<span className="text-blue-500">Panel</span>
-                    </span>
+        <aside className="w-64 h-full border-r border-white/5 bg-black/20 backdrop-blur-xl flex flex-col p-4 z-50 transition-all duration-300">
+            {/* Logo Area */}
+            <div className="flex items-center gap-3 mb-10 px-2 pt-2">
+                <div className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center border border-blue-500/30 shadow-[0_0_15px_rgba(37,99,235,0.3)]">
+                    <Hexagon className="text-blue-500" size={24} />
                 </div>
-
-                {/* Navigation */}
-                <nav className="flex-1 space-y-2">
-                    {navItems.map((item) => {
-                        const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
-                        const Icon = item.icon;
-
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={cn(
-                                    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
-                                    isActive
-                                        ? "bg-blue-600/10 text-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.1)]"
-                                        : "text-gray-400 hover:bg-white/5 hover:text-white"
-                                )}
-                            >
-                                <Icon className={cn("h-5 w-5", isActive ? "text-blue-400" : "text-gray-500")} />
-                                {item.name}
-                            </Link>
-                        );
-                    })}
-                </nav>
-
-                {/* Footer User Profile (Static for now) */}
-                <div className="mt-auto border-t border-white/10 pt-4">
-                    <div className="flex items-center gap-3 px-2">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/20 text-blue-400">
-                            AD
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-sm font-bold text-white">المسؤول</span>
-                            <span className="text-xs text-gray-500">مشرف النظام</span>
-                        </div>
-                    </div>
+                <div>
+                    <h1 className="font-bold text-lg tracking-wider text-white">COMMAND</h1>
+                    <p className="text-[10px] text-blue-400 font-mono tracking-widest uppercase">CENTER v2.0</p>
                 </div>
             </div>
+
+            {/* Navigation */}
+            <nav className="flex-1 space-y-2">
+                {links.map((link) => {
+                    const isActive = pathname === link.href;
+                    return (
+                        <Link
+                            key={link.href}
+                            href={link.href}
+                            className={cn(
+                                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden",
+                                isActive
+                                    ? "bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-[0_0_20px_rgba(37,99,235,0.1)]"
+                                    : "text-zinc-500 hover:text-white hover:bg-white/5"
+                            )}
+                        >
+                            <link.icon size={20} className={cn("transition-transform duration-300 group-hover:scale-110", isActive && "text-blue-400")} />
+                            <span className="font-medium">{link.name}</span>
+
+                            {/* Active Indicator Line */}
+                            {isActive && (
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-500 rounded-r-full shadow-[0_0_10px_#3b82f6]" />
+                            )}
+                        </Link>
+                    )
+                })}
+            </nav>
+
+            {/* Footer / Logout */}
+            <div className="mt-auto pt-6 border-t border-white/5">
+                <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                >
+                    <LogOut size={20} />
+                    <span className="font-medium">Logout System</span>
+                </button>
+            </div>
         </aside>
-    );
+    )
 }

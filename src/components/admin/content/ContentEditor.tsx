@@ -1,0 +1,189 @@
+"use client";
+
+import { useState } from "react";
+import { Lesson, createLesson, updateLesson, deleteLesson } from "@/actions/admin-content";
+import { SubscriptionPlan } from "@/actions/admin-plans";
+import { toast } from "sonner";
+import { Video, Radio, FileText, ArrowLeft, Trash2, Save } from "lucide-react";
+
+interface ContentEditorProps {
+    unitId: string;
+    initialData?: Lesson;
+    activePlans: SubscriptionPlan[];
+    onClose: () => void;
+}
+
+export default function ContentEditor({ unitId, initialData, activePlans, onClose }: ContentEditorProps) {
+    const isEditing = !!initialData;
+    const [formData, setFormData] = useState({
+        title: initialData?.title || "",
+        type: initialData?.type || "video",
+        video_url: initialData?.video_url || "",
+        required_plan_id: initialData?.required_plan_id || "",
+        is_public: initialData?.is_public || false
+    });
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSubmit = async () => {
+        if (!formData.title) return toast.error("Title is required");
+
+        setIsSaving(true);
+        try {
+            const payload = {
+                title: formData.title,
+                type: formData.type as any,
+                video_url: formData.video_url,
+                required_plan_id: formData.required_plan_id || null, // Granular Access Logic
+                unit_id: unitId,
+                is_public: formData.is_public
+            };
+
+            if (isEditing && initialData) {
+                await updateLesson(initialData.id, payload);
+                toast.success("Changes saved");
+            } else {
+                await createLesson(payload);
+                toast.success("Lesson created");
+                onClose();
+            }
+        } catch (e) {
+            toast.error("Failed to save Content");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!initialData || !confirm("Delete this lesson permanently?")) return;
+        try {
+            await deleteLesson(initialData.id);
+            toast.success("Deleted");
+            onClose();
+        } catch (e) {
+            toast.error("Failed to delete");
+        }
+    };
+
+    return (
+        <div className="h-full bg-black/40 border border-white/5 rounded-3xl overflow-hidden flex flex-col backdrop-blur-md">
+            {/* Header */}
+            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+                <div className="flex items-center gap-4">
+                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                        <ArrowLeft size={20} className="text-zinc-400" />
+                    </button>
+                    <h2 className="text-xl font-bold text-white">
+                        {isEditing ? "Edit Content" : "New Content Item"}
+                    </h2>
+                </div>
+                {isEditing && (
+                    <button onClick={handleDelete} className="text-red-500 hover:text-red-400 p-2">
+                        <Trash2 size={20} />
+                    </button>
+                )}
+            </div>
+
+            {/* Form */}
+            <div className="flex-1 overflow-y-auto p-8 space-y-8">
+
+                {/* Type Selection */}
+                <div className="grid grid-cols-3 gap-4">
+                    {['video', 'live_stream', 'pdf'].map((t) => (
+                        <div
+                            key={t}
+                            onClick={() => setFormData({ ...formData, type: t as any })}
+                            className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col items-center gap-2 ${formData.type === t ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'bg-black/20 border-white/5 text-zinc-500 hover:bg-white/5'}`}
+                        >
+                            {t === 'video' && <Video size={24} />}
+                            {t === 'live_stream' && <Radio size={24} />}
+                            {t === 'pdf' && <FileText size={24} />}
+                            <span className="text-xs font-bold uppercase tracking-wider">{t.replace('_', ' ')}</span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Main Fields */}
+                <div className="space-y-6">
+                    <div>
+                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Title</label>
+                        <input
+                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none text-lg font-bold placeholder:font-normal"
+                            placeholder="e.g. Introduction to Calculus"
+                            value={formData.title}
+                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        />
+                    </div>
+
+                    {formData.type !== 'pdf' && (
+                        <div>
+                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
+                                {formData.type === 'live_stream' ? 'YouTube Live URL' : 'Video Source URL'}
+                            </label>
+                            <input
+                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-mono text-zinc-300 focus:border-blue-500 outline-none"
+                                placeholder="https://..."
+                                value={formData.video_url}
+                                onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                            />
+                        </div>
+                    )}
+
+                    {/* Granular Access Control */}
+                    <div className="p-6 rounded-2xl bg-blue-900/10 border border-blue-500/20">
+                        <h4 className="text-blue-400 font-bold text-sm mb-4 flex items-center gap-2">
+                            <Lock size={14} /> Access Control
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Required Plan</label>
+                                <select
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
+                                    value={formData.required_plan_id || ""}
+                                    onChange={(e) => setFormData({ ...formData, required_plan_id: e.target.value })}
+                                >
+                                    <option value="">Public / Free</option>
+                                    {activePlans.map(plan => (
+                                        <option key={plan.id} value={plan.id}>
+                                            {plan.name} ({plan.price}DA)
+                                        </option>
+                                    ))}
+                                </select>
+                                <p className="text-[10px] text-zinc-500 mt-2">
+                                    Only students with this specific active subscription can view this content.
+                                </p>
+                            </div>
+
+                            {/* Toggle Public */}
+                            <div className="flex items-center gap-3 mt-6">
+                                <div
+                                    className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-colors ${formData.is_public ? 'bg-emerald-500' : 'bg-zinc-700'}`}
+                                    onClick={() => setFormData({ ...formData, is_public: !formData.is_public })}
+                                >
+                                    <div className={`w-5 h-5 rounded-full bg-white transition-transform ${formData.is_public ? 'translate-x-5' : 'translate-x-0'}`} />
+                                </div>
+                                <span className="text-sm font-medium text-zinc-300">Is Public Preview?</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Attachments Placeholder */}
+                <div className="p-4 border border-white/10 border-dashed rounded-xl flex items-center justify-center text-zinc-500 text-sm">
+                    Drag and drop files to attach (PDF, Images)
+                </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-white/5 bg-black/20 flex justify-end">
+                <button
+                    onClick={handleSubmit}
+                    disabled={isSaving}
+                    className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition-all"
+                >
+                    {isSaving ? "Saving..." : <><Save size={18} /> Save Content</>}
+                </button>
+            </div>
+        </div>
+    );
+}
