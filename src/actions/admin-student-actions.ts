@@ -34,8 +34,8 @@ export async function getStudents({
     statusFilter = 'all'
 }: GetStudentsParams) {
     try {
-        await verifyAdmin(); // Security check: Ensure user is actually an admin
-        const supabase = createAdminClient(); // Service Role: Bypasses RLS to see all users
+        const { user, supabase } = await verifyAdmin(); // Use auth client to avoid Invalid API Key error
+        // Note: RLS Policy 'Admins View All' must be enabled in DB for this to work.
 
         // Calculate pagination
         const from = (page - 1) * pageSize;
