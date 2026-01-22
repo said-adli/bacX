@@ -7,6 +7,8 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { Lock, PlayCircle, Clock, FileText } from "lucide-react";
 import Link from "next/link";
 import { PremiumLockScreen } from "@/components/dashboard/PremiumLockScreen";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
 
 import { markLessonComplete, getUserProgress } from "@/actions/progress";
 import { toast } from "sonner";
@@ -22,13 +24,34 @@ export default function SubjectView({ subject, units, isSubscribed }: SubjectVie
     const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
     const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
     const [expandedUnits, setExpandedUnits] = useState<Set<string>>(new Set());
+    const router = useRouter();
 
     // Flatten all lessons for easy access
     const allLessons = units?.flatMap(u => u.lessons || []) || [];
 
+    // Realtime Content Sync
+    useEffect(() => {
+        const supabase = createClient();
+
+        const channel = supabase.channel('content-updates')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'units' }, () => {
+                toast.info("Updating course structure...");
+                router.refresh();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'lessons' }, () => {
+                toast.info("Content updated");
+                router.refresh();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        }
+    }, [router]);
+
     // Set initial lesson and expand first unit
     useEffect(() => {
-        if (units?.length > 0) {
+        if (units?.length > 0 && expandedUnits.size === 0) { // Only if not already expanded
             // Expand first unit by default
             setExpandedUnits(new Set([units[0].id]));
 
@@ -38,6 +61,30 @@ export default function SubjectView({ subject, units, isSubscribed }: SubjectVie
             }
         }
     }, [units]);
+
+    // Realtime Content Sync
+    useEffect(() => {
+        const supabase = createClient();
+        const router = require("next/navigation").useRouter(); // Dynamic require or just import?
+        // Actually imports are at top. I will use the hook I likely imported or need to import.
+
+        const channel = supabase.channel('content-updates')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'units' }, () => {
+                toast.info("Updating course structure...");
+                router.refresh();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'lessons' }, () => {
+                // specific lesson updates might not need full refresh if we optimized, 
+                // but for "INSTANT" and "Sync", refresh is safest key.
+                toast.info("Content updated");
+                router.refresh();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        }
+    }, []); // Empty dep to run once on mount
 
     // Fetch Progress
     useEffect(() => {

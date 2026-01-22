@@ -6,14 +6,20 @@ import { sendGlobalNotification, toggleMaintenanceMode, toggleLiveGlobal } from 
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-export default function GlobalControlsClient({ recentNotifications }: { recentNotifications: any[] }) {
+export default function GlobalControlsClient({
+    recentNotifications,
+    initialSettings
+}: {
+    recentNotifications: any[],
+    initialSettings: { maintenance: boolean, live: boolean }
+}) {
     const router = useRouter();
     const [notifData, setNotifData] = useState({ title: "", message: "" });
     const [isSending, setIsSending] = useState(false);
 
-    // Mock States for UI (ideally fetched from DB)
-    const [isMaintenance, setIsMaintenance] = useState(false);
-    const [isLive, setIsLive] = useState(false);
+    // Initial State from Server
+    const [isMaintenance, setIsMaintenance] = useState(initialSettings.maintenance);
+    const [isLive, setIsLive] = useState(initialSettings.live);
 
     const handleSendNotif = async () => {
         if (!notifData.title || !notifData.message) return toast.error("Fill all fields");
@@ -31,16 +37,31 @@ export default function GlobalControlsClient({ recentNotifications }: { recentNo
     };
 
     const handleToggleMaintenance = async () => {
-        if (!confirm(`Turn Maintenance Mode ${isMaintenance ? 'OFF' : 'ON'}?`)) return;
-        await toggleMaintenanceMode(isMaintenance);
-        setIsMaintenance(!isMaintenance);
-        toast.info("Maintenance Status Updated");
+        const newState = !isMaintenance;
+        if (!confirm(`Turn Maintenance Mode ${newState ? 'ON' : 'OFF'}?`)) return;
+
+        // Optimistic
+        setIsMaintenance(newState);
+        try {
+            await toggleMaintenanceMode(isMaintenance); // Action expects 'currentState' and flips it
+            toast.info(`Maintenance: ${newState ? 'ON' : 'OFF'}`);
+        } catch (e) {
+            setIsMaintenance(!newState); // Revert
+            toast.error("Failed");
+        }
     };
 
     const handleToggleLive = async () => {
-        await toggleLiveGlobal(isLive);
-        setIsLive(!isLive);
-        toast.success(`Live Status: ${!isLive ? 'ON AIR' : 'OFFLINE'}`);
+        const newState = !isLive;
+        // Optimistic
+        setIsLive(newState);
+        try {
+            await toggleLiveGlobal(isLive);
+            toast.success(`Live Status: ${newState ? 'ON AIR' : 'OFFLINE'}`);
+        } catch (e) {
+            setIsLive(!newState);
+            toast.error("Failed");
+        }
     };
 
     return (
@@ -93,8 +114,9 @@ export default function GlobalControlsClient({ recentNotifications }: { recentNo
                 </div>
             </div>
 
-            {/* Notification Center */}
+            {/* Notification Center follows... (unchanged logic) */}
             <div className="bg-black/20 border border-white/5 rounded-3xl p-8 backdrop-blur-md">
+                {/* ...Same as before... */}
                 <div className="flex items-center gap-4 mb-8">
                     <Megaphone className="text-blue-500" size={28} />
                     <div>
@@ -145,9 +167,6 @@ export default function GlobalControlsClient({ recentNotifications }: { recentNo
                                     <p className="text-xs text-zinc-400 mt-1 line-clamp-2">{n.message}</p>
                                 </div>
                             ))}
-                            {recentNotifications.length === 0 && (
-                                <p className="text-zinc-500 text-sm italic text-center py-4">No recent history</p>
-                            )}
                         </div>
                     </div>
                 </div>

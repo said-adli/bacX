@@ -19,7 +19,7 @@ export async function sendGlobalNotification(title: string, message: string) {
 
     if (error) throw error;
     revalidatePath('/admin/controls');
-    revalidatePath('/dashboard'); // Update student dashboard
+    revalidatePath('/dashboard');
 }
 
 export async function getRecentNotifications() {
@@ -30,10 +30,7 @@ export async function getRecentNotifications() {
         .order('created_at', { ascending: false })
         .limit(10);
 
-    if (error) {
-        console.error("Notif fetch error", error);
-        return [];
-    }
+    if (error) return [];
     return data;
 }
 
@@ -44,26 +41,58 @@ export async function deleteNotification(id: string) {
     revalidatePath('/admin/controls');
 }
 
-// SYSTEM TOGGLES
-// Assuming a 'system_settings' or 'config' table. If not, we use 'global_flags' table concept or just hardcoded logic for now.
-// For V1 reconstruction, if table doesn't exist, we might skip or use storage/metadata.
-// Let's assume a table `system_config` exists or we will use a dedicated function.
-// For now, I will create a mock implementation or use a simple KV table if present.
-// Since schema was not explicitly created for config, I will use a hacky way: 
-// Use a specific row in 'global_notifications' with title='__SYSTEM_CONFIG__' or typically we create a table.
-// I will propose creating a `system_config` table or just rely on manual DB edits.
-// Actually, user said: "Maintenance Mode: A master toggle...".
-// I'll create a `toggleSystemState` action that updates a hypothetical config.
-// If it fails, I'll log it.
+// SYSTEM TOGGLES (DB-Driven)
 
 export async function toggleMaintenanceMode(currentState: boolean) {
-    // Ideally update DB.
-    // For now, just revalidate to simulate.
-    console.log("Toggling Maintenance:", !currentState);
+    const supabase = await createClient();
+    // We update the 'maintenance_mode' key
+    // Value must be JSONB, so we wrap the boolean
+    const newState = !currentState;
+
+    const { error } = await supabase
+        .from('system_settings')
+        .upsert({ key: 'maintenance_mode', value: newState }); // simple json-compatible value? or { active: boolean }?
+    // Let's use simple boolean value as jsonb: true/false.
+
+    if (error) {
+        console.error("Maintenance toggle fail", error);
+        throw error;
+    }
     revalidatePath('/');
 }
 
 export async function toggleLiveGlobal(currentState: boolean) {
-    console.log("Toggling Live:", !currentState);
+    const supabase = await createClient();
+    const newState = !currentState;
+
+    const { error } = await supabase
+        .from('system_settings')
+        .upsert({ key: 'live_mode', value: newState });
+
+    if (error) {
+        console.error("Live toggle fail", error);
+        throw error;
+    }
     revalidatePath('/dashboard');
+}
+
+// Fetch helper (for initial state)
+export async function getSystemStatus() {
+    const supabase = await createClient();
+    const { data } = await supabase.from('system_settings').select('key, value');
+
+    const settings = {
+        maintenance: false,
+        live: false
+    };
+
+    if (data) {
+        const m = data.find(d => d.key === 'maintenance_mode');
+        // Handle jsonb parsing carefully. Supabase js returns the json value.
+        if (m) settings.maintenance = !!m.value;
+
+        const l = data.find(d => d.key === 'live_mode');
+        if (l) settings.live = !!l.value;
+    }
+    return settings;
 }

@@ -9,6 +9,7 @@ import { usePageVisibility } from "@/hooks/usePageVisibility";
 // ============================================================================
 
 import { NotificationProvider } from "@/context/NotificationContext";
+import { RealtimeSystemStatus } from "@/components/dashboard/RealtimeSystemStatus";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const isVisible = usePageVisibility();
@@ -16,6 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
         <SidebarProvider>
             <NotificationProvider>
+                <RealtimeSystemStatus />
                 {/* Dark Luxury Mesh Gradient Background (Kept global here) */}
                 <div className={`fixed inset-0 z-0 pointer-events-none ${!isVisible ? "animations-paused" : ""}`}>
                     {/* Base Deep Charcoal */}
