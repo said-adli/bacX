@@ -46,8 +46,13 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: {
-    default: "Brainy | بوابة النخبة الأكاديمية",
-    template: "%s | Brainy",
+    default: "BRAINY | رحلة التفوق",
+    template: "%s | BRAINY",
+  },
+  icons: {
+    icon: '/brainy-white-icon.png', // Assuming we save the generated image here or convert
+    shortcut: '/brainy-white-icon.png',
+    apple: '/brainy-white-icon.png',
   },
   description: "رحلة سينمائية نحو النجاح في البكالوريا.",
   keywords: ["brainy", "bac dz", "bac algeria", "تعليم", "بكالوريا", "دروس", "منصة تعليمية"],

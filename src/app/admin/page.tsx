@@ -3,6 +3,10 @@ import { StatsGrid } from "@/components/admin/dashboard/StatsGrid";
 import { RevenueChart } from "@/components/admin/dashboard/RevenueChart";
 import { ActivityChart } from "../../components/admin/dashboard/ActivityChart";
 
+export const metadata = {
+    title: "Command Center",
+};
+
 export default async function AdminDashboard() {
     const supabase = await createClient();
 
