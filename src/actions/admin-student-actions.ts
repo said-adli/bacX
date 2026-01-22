@@ -34,7 +34,8 @@ export async function getStudents({
     statusFilter = 'all'
 }: GetStudentsParams) {
     try {
-        const { user, supabase } = await verifyAdmin(); // Ensure admin & get auth client
+        await verifyAdmin(); // Security check: Ensure user is actually an admin
+        const supabase = createAdminClient(); // Service Role: Bypasses RLS to see all users
 
         // Calculate pagination
         const from = (page - 1) * pageSize;
