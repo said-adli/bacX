@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { StatsGrid } from "@/components/admin/dashboard/StatsGrid";
 import { RevenueChart } from "@/components/admin/dashboard/RevenueChart";
-import { ActivityChart } from "@/components/admin/dashboard/ActivityChart";
+import { ActivityChart } from "../../components/admin/dashboard/ActivityChart";
 
 export default async function AdminDashboard() {
     const supabase = await createClient();

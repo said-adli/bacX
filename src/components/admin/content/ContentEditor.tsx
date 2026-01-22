@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Lesson, createLesson, updateLesson, deleteLesson } from "@/actions/admin-content";
 import { SubscriptionPlan } from "@/actions/admin-plans";
 import { toast } from "sonner";
-import { Video, Radio, FileText, ArrowLeft, Trash2, Save } from "lucide-react";
+import { Video, Radio, FileText, ArrowLeft, Trash2, Save, Lock as LockIcon } from "lucide-react";
 
 interface ContentEditorProps {
     unitId: string;
@@ -131,7 +131,7 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
                     {/* Granular Access Control */}
                     <div className="p-6 rounded-2xl bg-blue-900/10 border border-blue-500/20">
                         <h4 className="text-blue-400 font-bold text-sm mb-4 flex items-center gap-2">
-                            <Lock size={14} /> Access Control
+                            <LockIcon size={14} /> Access Control
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>

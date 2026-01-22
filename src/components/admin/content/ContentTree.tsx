@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Folder, FileVideo, Plus, Trash2, Edit, ChevronRight, ChevronDown, Lock } from "lucide-react";
+import { Folder, FileVideo, Plus, Trash2, Edit, ChevronRight, ChevronDown, Lock as LockIcon } from "lucide-react";
 import {
     Subject,
     Unit,
@@ -12,7 +12,7 @@ import {
 } from "@/actions/admin-content";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import ContentEditor from "./ContentEditor";
+import ContentEditor from "@/components/admin/content/ContentEditor";
 import { SubscriptionPlan } from "@/actions/admin-plans";
 
 interface ContentTreeProps {
@@ -145,7 +145,7 @@ export default function ContentTree({ subjects, activePlans }: ContentTreeProps)
                                                         <span className="flex-1 truncate">{lesson.title}</span>
                                                         {lesson.required_plan_id && (
                                                             <div title="Restricted Access">
-                                                                <Lock size={12} className="text-amber-500" />
+                                                                <LockIcon size={12} className="text-amber-500" />
                                                             </div>
                                                         )}
                                                     </div>
