@@ -34,6 +34,7 @@ export async function verifyAdmin() {
     // 1. Check Auth (Session)
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
+        console.error("DEBUG [verifyAdmin]: No Session or Auth Error", authError);
         throw new Error("Unauthorized: No active session");
     }
 
@@ -44,11 +45,20 @@ export async function verifyAdmin() {
         .eq('id', user.id)
         .single();
 
-    if (profileError || !profile) {
+    if (profileError) {
+        console.error(`DEBUG [verifyAdmin]: Profile Error for User ${user.email} (${user.id}):`, profileError);
+        throw new Error("Unauthorized: Profile lookup failed");
+    }
+
+    if (!profile) {
+        console.error(`DEBUG [verifyAdmin]: No Profile Found for User ${user.email} (${user.id})`);
         throw new Error("Unauthorized: Profile not found");
     }
 
+    console.log(`DEBUG [verifyAdmin]: Success. User: ${user.email}, Role: ${profile.role}`);
+
     if (profile.role !== 'admin') {
+        console.error(`DEBUG [verifyAdmin]: Role Mismatch. Expected 'admin', Got '${profile.role}'`);
         throw new Error("Forbidden: Admin access required");
     }
 
