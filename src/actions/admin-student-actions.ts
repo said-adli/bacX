@@ -34,8 +34,7 @@ export async function getStudents({
     statusFilter = 'all'
 }: GetStudentsParams) {
     try {
-        const { user } = await verifyAdmin(); // Ensure admin
-        const supabase = createAdminClient();
+        const { user, supabase } = await verifyAdmin(); // Ensure admin & get auth client
 
         // Calculate pagination
         const from = (page - 1) * pageSize;
