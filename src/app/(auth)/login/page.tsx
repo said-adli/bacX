@@ -139,6 +139,32 @@ export default function LoginPage() {
                     </div>
                 </form>
 
+                <div className="mt-6 flex justify-center">
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            toast.loading("جاري تسجيل الخروج الإجباري...");
+                            localStorage.clear();
+                            sessionStorage.clear();
+                            const { createBrowserClient } = await import('@supabase/ssr');
+                            const supabase = createBrowserClient(
+                                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+                            );
+                            await supabase.auth.signOut();
+                            document.cookie.split(";").forEach((c) => {
+                                document.cookie = c
+                                    .replace(/^ +/, "")
+                                    .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                            });
+                            window.location.href = '/login';
+                        }}
+                        className="text-[10px] text-red-400/50 hover:text-red-400 underline transition-colors"
+                    >
+                        تسجيل خروج إجباري (Hard Logout)
+                    </button>
+                </div>
+
                 <div className="mt-8 pt-6 border-t border-white/5 text-center flex flex-col gap-4">
                     <div className="text-xs text-white/30">
                         لا تمتلك حساباً؟{" "}

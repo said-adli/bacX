@@ -67,14 +67,19 @@ export async function updateSession(request: NextRequest) {
         path.startsWith('/profile');
 
     if (isProtectedRoute && !session) {
-        console.log(`<< MIDDLEWARE_OUT: ${path} (REDIRECT to login)`);
+        console.log(`<< MIDDLEWARE_OUT: ${path} (REDIRECT to login - No Session)`);
         return NextResponse.redirect(new URL('/login', request.url));
+    }
+
+    // DEBUG: Admin Route Specific Checks
+    if (path.startsWith('/admin') && session) {
+        console.log(`>> MIDDLEWARE_ADMIN_CHECK: User ${session.user.id} accessing ${path}`);
     }
 
     // Auth routes redirect
     const isAuthRoute = path.startsWith('/auth') || path.startsWith('/login');
     if (isAuthRoute && session) {
-        console.log(`<< MIDDLEWARE_OUT: ${path} (REDIRECT to dashboard)`);
+        console.log(`<< MIDDLEWARE_OUT: ${path} (REDIRECT to dashboard - Session Exists)`);
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 

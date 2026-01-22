@@ -38,7 +38,8 @@ export async function verifyAdmin() {
         throw new Error("Unauthorized: No active session");
     }
 
-    // 2. Check Role (DB)
+    // 2. Check Role (DB) - FORCE REFRESH LOGIC MIGHT BE NEEDED HERE IF CACHING IS AN ISSUE
+    console.log(`DEBUG [verifyAdmin]: Fetching profile for user ${user.id}`);
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
@@ -47,6 +48,8 @@ export async function verifyAdmin() {
 
     if (profileError) {
         console.error(`DEBUG [verifyAdmin]: Profile Error for User ${user.email} (${user.id}):`, profileError);
+        // CRITICAL: Log the actual error code to see if it's RLS or connection
+        console.error(`DEBUG [verifyAdmin]: Error Details:`, JSON.stringify(profileError, null, 2));
         throw new Error("Unauthorized: Profile lookup failed");
     }
 
