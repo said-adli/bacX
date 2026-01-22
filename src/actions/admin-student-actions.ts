@@ -47,7 +47,7 @@ export async function getStudents({
 
         // Text Search
         if (query) {
-            dbQuery = dbQuery.or(`full_name.ilike.%${query}%,email.ilike.%${query}%`);
+            dbQuery = dbQuery.ilike('full_name', `%${query}%`);
         }
 
         // Role Filter (Always exclude admins from this list logic usually)
