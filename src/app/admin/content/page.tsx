@@ -42,6 +42,7 @@ interface Subject {
 const getSubjectIcon = (name: string) => {
     if (name.includes("الرياضيات") || name.toLowerCase().includes("math")) return <Sigma />;
     if (name.includes("الفيزياء") || name.toLowerCase().includes("physics")) return <Atom />;
+    if (name.includes("الكيمياء") || name.toLowerCase().includes("chemistry")) return <FlaskConical />;
     if (name.includes("العلوم") || name.toLowerCase().includes("science")) return <FlaskConical />;
     if (name.includes("هندسة") || name.toLowerCase().includes("engineer")) return <Binary />;
     return <BookOpen />;
@@ -241,6 +242,18 @@ export default function ContentManagerPage() {
         }
     };
 
+    const handleDeleteSubject = async (subjectId: string) => {
+        if (!confirm("هل أنت متأكد من حذف هذه المادة؟ سيتم حذف جميع الوحدات والدروس التابعة لها!")) return;
+        try {
+            const { error } = await supabase.from('subjects').delete().eq('id', subjectId);
+            if (error) throw error;
+            toast.success("تم حذف المادة");
+            fetchContent();
+        } catch (err) {
+            toast.error("فشل الحذف. تأكد من عدم وجود بيانات مرتبطة (أو تفعيل cascade).");
+        }
+    };
+
     // Remove "Create Subject" UI logic as requested (Hardcoded only)
 
     // File Upload (Same as before)
@@ -300,7 +313,19 @@ export default function ContentManagerPage() {
                                     <p className="text-zinc-400 text-sm mt-1">{subject.units?.length || 0} وحدات دراسية</p>
                                 </div>
                             </div>
-                            {expandedSubject === subject.id ? <ChevronDown className="text-white/50" /> : <ChevronRight className="text-white/50" />}
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteSubject(subject.id);
+                                    }}
+                                    className="p-2 hover:bg-red-500/20 text-red-500/50 hover:text-red-500 rounded-lg transition-colors"
+                                    title="حذف المادة"
+                                >
+                                    <Trash2 size={20} />
+                                </button>
+                                {expandedSubject === subject.id ? <ChevronDown className="text-white/50" /> : <ChevronRight className="text-white/50" />}
+                            </div>
                         </div>
 
                         {/* Units List */}
