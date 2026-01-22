@@ -43,6 +43,7 @@ export default function ContentManagerPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [activeSubjectId, setActiveSubjectId] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false); // [NEW] Upload Progress State
+    const [isSubjectFormOpen, setIsSubjectFormOpen] = useState(false); // [NEW] Subject Form State
 
     useEffect(() => {
         // Relaxed role check for demo/dev if needed, but keeping admin for safety
@@ -186,6 +187,38 @@ export default function ContentManagerPage() {
         }
     };
 
+    // [NEW] Handle Create Subject
+    const handleSaveSubject = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const name = formData.get("name") as string;
+        const icon = formData.get("icon") as string;
+
+        // Random color assignment
+        const colors = ['blue', 'green', 'purple', 'red', 'orange', 'pink', 'indigo', 'cyan'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+        try {
+            const { error } = await supabase
+                .from('subjects')
+                .insert([{
+                    id: crypto.randomUUID(),
+                    name,
+                    icon,
+                    color: randomColor
+                }]);
+
+            if (error) throw error;
+
+            toast.success("تم إضافة المادة بنجاح");
+            setIsSubjectFormOpen(false);
+            fetchContent();
+        } catch (err) {
+            console.error(err);
+            toast.error("فشل إضافة المادة");
+        }
+    };
+
     // if (role !== "admin") return <div className="p-10 text-white">Access Denied</div>;
 
     return (
@@ -197,8 +230,7 @@ export default function ContentManagerPage() {
                 </h1>
                 <button
                     onClick={() => {
-                        setActiveSubjectId(null); // Or prompt to create subject first
-                        toast.info("يرجى إنشاء مادة دراسية أولاً من قاعدة البيانات");
+                        setIsSubjectFormOpen(true);
                     }}
                     className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-500"
                 >
@@ -293,6 +325,60 @@ export default function ContentManagerPage() {
                     </GlassCard>
                 ))}
             </div>
+
+            {/* Subject Creation Modal */}
+            {isSubjectFormOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <GlassCard className="w-full max-w-sm p-6 relative">
+                        <button
+                            onClick={() => setIsSubjectFormOpen(false)}
+                            className="absolute top-4 right-4 text-white/40 hover:text-white"
+                        >
+                            ×
+                        </button>
+                        <h2 className="text-2xl font-bold text-white mb-6">
+                            إضافة مادة جديدة
+                        </h2>
+                        <form onSubmit={handleSaveSubject} className="space-y-4">
+                            <div>
+                                <label className="block text-sm text-white/60 mb-1">اسم المادة (مثال: الفيزياء)</label>
+                                <input
+                                    name="name"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500"
+                                    placeholder="ادخل اسم المادة..."
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-white/60 mb-1">الأيقونة (إيموجي)</label>
+                                <input
+                                    name="icon"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500 text-center text-2xl"
+                                    placeholder="⚛️"
+                                    maxLength={2}
+                                    required
+                                />
+                            </div>
+
+                            <div className="pt-4 flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsSubjectFormOpen(false)}
+                                    className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold"
+                                >
+                                    إلغاء
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/20"
+                                >
+                                    إضافة المادة
+                                </button>
+                            </div>
+                        </form>
+                    </GlassCard>
+                </div>
+            )}
 
             {/* Edit/Add Modal */}
             {isFormOpen && (
