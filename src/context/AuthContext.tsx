@@ -233,12 +233,51 @@ export function AuthProvider({
 
         return () => clearInterval(heartbeatInterval);
     }, [state.session, state.user, supabase]);
+    // --- LOGIN ---
     const loginWithEmail = async (email: string, password: string) => {
         setState(prev => ({ ...prev, loading: true, error: null }));
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+        // 1. Supabase Auth (Credentials Check)
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
         if (error) {
             setState(prev => ({ ...prev, loading: false, error: error.message }));
             throw error;
+        }
+
+        // 2. DEVICE LIMIT CHECK (Post-Auth Enforcement)
+        if (data.user) {
+            // Get or Create Device ID (Persistent)
+            let deviceId = window.localStorage.getItem('brainy_device_id');
+            if (!deviceId) {
+                deviceId = crypto.randomUUID();
+                window.localStorage.setItem('brainy_device_id', deviceId);
+            }
+
+            // Sync to Cookie for Middleware
+            document.cookie = `x-device-id=${deviceId}; path=/; Secure; SameSite=Strict`;
+
+            // Server Check
+            const { checkAndRegisterDevice } = await import("@/actions/auth-device");
+            const result = await checkAndRegisterDevice(deviceId, navigator.userAgent);
+
+            if (!result.success) {
+                console.error("Device Limit Reached:", result.error);
+
+                // CRITICAL: Rollback (Logout immediately)
+                await supabase.auth.signOut();
+
+                setState(prev => ({
+                    ...prev,
+                    user: null,
+                    session: null,
+                    loading: false,
+                    error: result.error
+                }));
+
+                // Throw error to stop UI redirect
+                throw new Error(result.error);
+            }
         }
     };
 
@@ -252,7 +291,7 @@ export function AuthProvider({
                     full_name: fullName,
                     wilaya: wilaya,
                     major: major,
-                    is_profile_complete: true // Assuming sign up flow includes all data
+                    is_profile_complete: true
                 }
             }
         });
@@ -261,28 +300,40 @@ export function AuthProvider({
             setState(prev => ({ ...prev, loading: false, error: error.message }));
             throw error;
         }
-
-        // Note: Profile creation is usually handled by a Database Trigger on "auth.users" created.
-        // Assuming trigger exists. If not, we might need manual insert here, but Trigger is Supabase best practice.
     };
 
     const logout = async () => {
         try {
             console.log("Logging out...");
-            // Attempt to sign out from Supabase
+
+            // 1. Unregister Device (Free up slot)
+            const deviceId = window.localStorage.getItem('brainy_device_id');
+            if (deviceId) {
+                const { unregisterDevice } = await import("@/actions/auth-device");
+                await unregisterDevice(deviceId);  // Best effort
+            }
+
+            // 2. Sign Out
             await supabase.auth.signOut();
             console.log("Logged out from Supabase success");
         } catch (error) {
             console.error("Logout error (non-blocking):", error);
         } finally {
-            // ALWAYS Redirect, even if error occurs
             console.log("Redirecting to login...");
             if (typeof window !== 'undefined') {
-                window.localStorage.clear(); // Clear all local storage
-                window.sessionStorage.clear(); // Clear session storage
+                window.localStorage.removeItem('brainy_device_id'); // Clear device ID? 
+                // Wait, if they logout, they might login again on same device. 
+                // Clearing it means they generate a NEW ID next time, appearing as a NEW device.
+                // BETTER: Keep ID, but we removed it from DB. Next login re-registers same ID.
+                // However, user usually wants to "Clear Slot". 
+                // If I keep ID, and re-login, it inserts same ID. OK.
+                // If I clear ID, I generate new ID. It inserts new ID. OK.
+                // Let's clear to be clean.
+                window.localStorage.clear();
+                window.sessionStorage.clear();
             }
-            router.push("/"); // Client-side nav to LANDING (Rule 1)
-            router.refresh();      // Clear server cache
+            router.push("/");
+            router.refresh();
         }
     };
 
