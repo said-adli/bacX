@@ -4,9 +4,6 @@ import { useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-// The following import is used for reauthentication logic. If you intended to remove it,
-// please note that `EmailAuthProvider` and `reauthenticateWithCredential` are actively used in `handleReauth`.
-// import { EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";

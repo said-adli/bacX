@@ -16,75 +16,64 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         const supabase = await createClient();
         const adminClient = createAdminClient();
 
-        // 1. Verify Admin (Basic check, middleware handles the rest mostly)
-        // 1. Verify Admin Role (STRICT)
         await verifyAdmin();
 
-        const { data: { user } } = await supabase.auth.getUser(); // Re-fetch or ignore, verifyAdmin handles it.
-        if (!user) throw new Error("Unauthorized");
-
-        // 2. Fetch Students Stats
-        // Assuming 'student' role or just all profiles that are not admin
-        // We can use is_subscribed to differentiate Regular vs Private (VIP)
-        const { data: profiles, error: profilesError } = await adminClient
+        // 1. Total Students
+        const { count: totalStudents } = await adminClient
             .from('profiles')
-            .select('id, role, is_subscribed, last_sign_in_at');
+            .select('*', { count: 'exact', head: true })
+            .eq('role', 'student');
 
-        if (profilesError) {
-            console.error("Error fetching profiles:", profilesError);
-            throw new Error(`Failed to fetch student stats: ${profilesError.message}`);
-        }
+        // 2. VIP Students (Subscribed)
+        const { count: vipStudents } = await adminClient
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('is_subscribed', true);
 
-        const students = profiles.filter(p => p.role !== 'admin');
-        const totalStudents = students.length;
-        const vipStudents = students.filter(p => p.is_subscribed).length;
-        const regularStudents = totalStudents - vipStudents;
+        const regularStudents = (totalStudents || 0) - (vipStudents || 0);
 
-        // 3. Active Online (Heuristic: Signed in within last 15 mins)
-        let activeOnline = 0;
-        try {
-            const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-            const activeProfiles = students.filter(p => p.last_sign_in_at && p.last_sign_in_at > fifteenMinutesAgo);
-            activeOnline = activeProfiles.length;
-        } catch (e) {
-            console.warn("Failed to calc active users", e);
-        }
+        // 3. Active Online (From security_logs past 24h)
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        // Note: Supabase doesn't support SELECT DISTINCT in simple client calls easily.
+        // We will fetch logs and unique them in JS for now or use a dedicated RPC if performance demands.
+        // For V1 (Small Scale), fetching logs is acceptable.
+        // Optimization: Use head=false and check user_id.
+        const { data: logs } = await adminClient
+            .from('security_logs') // or 'auth_logs' depending on system
+            .select('user_id')
+            .gte('created_at', oneDayAgo);
 
-        // 4. Calculate Revenue
-        // Sum 'amount' from approved payments
-        const { data: payments, error: paymentsError } = await adminClient
+        const activeOnline = logs ? new Set(logs.map(l => l.user_id)).size : 0;
+
+
+        // 4. Total Revenue
+        // Assuming 'payments' table exists and has 'amount' and 'status'
+        const { data: payments } = await adminClient
             .from('payments')
             .select('amount')
             .eq('status', 'approved');
 
-        if (paymentsError) {
-            console.warn("Error fetching revenues (table might not exist yet):", paymentsError);
-            // Don't throw for revenue, just return 0
-        }
-
         let totalRevenue = 0;
         if (payments) {
             payments.forEach(p => {
-                // Clean string: "2500 DA" -> 2500
-                const amountStr = String(p.amount).replace(/[^0-9.]/g, '');
-                const amount = parseFloat(amountStr);
-                if (!isNaN(amount)) {
-                    totalRevenue += amount;
-                }
+                // handle if amount is number or string "2500 DA"
+                const val = typeof p.amount === 'string'
+                    ? parseFloat(p.amount.replace(/[^0-9.]/g, ''))
+                    : Number(p.amount);
+                if (!isNaN(val)) totalRevenue += val;
             });
         }
 
         return {
-            totalStudents,
-            regularStudents,
-            vipStudents,
+            totalStudents: totalStudents || 0,
+            regularStudents: regularStudents || 0,
+            vipStudents: vipStudents || 0,
             totalRevenue,
             activeOnline
         };
 
     } catch (err: any) {
         console.error("CRITICAL ADMIN STATS ERROR:", err);
-        // Return safe fallback to prevent page crash
         return {
             totalStudents: 0,
             regularStudents: 0,

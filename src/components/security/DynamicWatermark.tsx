@@ -3,7 +3,6 @@
 
 import { memo, useEffect, useRef, useState } from "react";
 import { User } from "@supabase/supabase-js";
-// import { User } from "firebase/auth";
 import { hashUID } from "@/lib/hash";
 
 interface DynamicWatermarkProps {

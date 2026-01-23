@@ -33,10 +33,18 @@ export default function DashboardPage() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [stats, setStats] = useState<Stats>({ courses: 0, hours: 0, rank: "--" });
     const [loading, setLoading] = useState(true);
+    const [isSubscribed, setIsSubscribed] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // 0. User & Auth Status
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const { data: profile } = await supabase.from('profiles').select('is_subscribed').eq('id', user.id).single();
+                    if (profile) setIsSubscribed(profile.is_subscribed);
+                }
+
                 // 1. Fetch Subjects
                 const { data: subjectData } = await supabase
                     .from('subjects')
@@ -83,21 +91,35 @@ export default function DashboardPage() {
 
             {/* 2. STATS (Transparent Glass) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-4 md:px-0">
-                {[
-                    { label: "المواد المتاحة", value: stats.courses, icon: Zap, color: "text-yellow-400" },
-                    { label: "ساعات التعلم", value: stats.hours, icon: Clock, color: "text-blue-400" },
-                    { label: "الترتيب العام", value: stats.rank, icon: TrendingUp, color: "text-green-400" },
-                ].map((stat, i) => (
-                    <div key={i} className="glass-card p-6 flex items-center justify-between hover:bg-white/10 cursor-default">
-                        <div>
-                            <p className="text-sm text-white/40 mb-1">{stat.label}</p>
-                            <p className="text-3xl font-bold font-serif">{stat.value}</p>
+                {loading ? (
+                    // Loading Skeletons
+                    [1, 2, 3].map((i) => (
+                        <div key={i} className="glass-card p-6 flex items-center justify-between border-white/5">
+                            <div className="space-y-2">
+                                <div className="h-4 w-24 bg-white/10 rounded animate-pulse" />
+                                <div className="h-8 w-16 bg-white/10 rounded animate-pulse" />
+                            </div>
+                            <div className="w-12 h-12 rounded-full bg-white/5 animate-pulse" />
                         </div>
-                        <div className={`w-12 h-12 rounded-full bg-white/5 flex items-center justify-center ${stat.color}`}>
-                            <stat.icon size={24} />
+                    ))
+                ) : (
+                    // Real Data
+                    [
+                        { label: "المواد المتاحة", value: stats.courses, icon: Zap, color: "text-yellow-400" },
+                        { label: "ساعات التعلم", value: stats.hours, icon: Clock, color: "text-blue-400" },
+                        { label: "الترتيب العام", value: stats.rank, icon: TrendingUp, color: "text-green-400" },
+                    ].map((stat, i) => (
+                        <div key={i} className="glass-card p-6 flex items-center justify-between hover:bg-white/10 cursor-default">
+                            <div>
+                                <p className="text-sm text-white/40 mb-1">{stat.label}</p>
+                                <p className="text-3xl font-bold font-serif">{stat.value}</p>
+                            </div>
+                            <div className={`w-12 h-12 rounded-full bg-white/5 flex items-center justify-center ${stat.color}`}>
+                                <stat.icon size={24} />
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))
+                )}
             </div>
 
             {/* 3. CRYSTAL GRID (Subjects) */}
@@ -112,11 +134,23 @@ export default function DashboardPage() {
                             <CrystalSubjectCard key={subject.id} subject={subject} />
                         ))
                     ) : (
-                        <div className="col-span-1 md:col-span-2 text-center py-12 text-white/30 border border-white/5 rounded-2xl bg-white/5">
-                            لا توجد نتائج مطابقة لـ "{query}" داخل المواد المتاحة.
+                        <div className="col-span-1 md:col-span-2 py-12 flex flex-col items-center justify-center text-center opacity-50 space-y-4">
+                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
+                                <Clock className="w-8 h-8 text-white/40" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white">ابدأ رحلتك التعليمية</h3>
+                            <p className="text-sm text-white/40 max-w-md">
+                                لا توجد مواد متاحة حالياً. يرجى تصفح المسارات أو التواصل مع الإدارة.
+                            </p>
                         </div>
                     )}
 
+                </div>
+            </div>
+
+            {/* 4. SUBSCRIPTION / OFFERS SECTION (Dynamic) */}
+            {!loading && !isSubscribed && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* 2. PREMIUM CARD: FULL ACCESS */}
                     <GlassCard className="p-6 flex flex-col justify-between relative overflow-hidden group border-purple-500/30 hover:border-purple-500/60 transition-all duration-500">
                         {/* Glow Effect */}
@@ -161,17 +195,21 @@ export default function DashboardPage() {
                         </button>
                     </GlassCard>
                 </div>
-            </div>
+            )}
 
-            {/* 4. CONTENT SECTIONS */}
-            <div className="grid grid-cols-1 gap-8">
-                {/* Empty State / Coming Soon for News */}
-                <div className="p-8 border border-white/5 rounded-2xl bg-white/5 flex flex-col items-center justify-center text-center">
+            {/* If Subscribed, show Progress maybe? (Future enhancement) */}
+        </div>
+            </div >
+
+        {/* 4. CONTENT SECTIONS */ }
+        < div className = "grid grid-cols-1 gap-8" >
+            {/* Empty State / Coming Soon for News */ }
+            < div className = "p-8 border border-white/5 rounded-2xl bg-white/5 flex flex-col items-center justify-center text-center" >
                     <Clock className="w-12 h-12 text-blue-400 mb-4 opacity-50" />
                     <h3 className="text-xl font-bold text-white mb-2">المستجدات والمواعيد</h3>
                     <p className="text-white/40">سيتم نشر جداول الحصص المباشرة والاختبارات قريباً.</p>
-                </div>
-            </div>
-        </div>
+                </div >
+            </div >
+        </div >
     );
 }

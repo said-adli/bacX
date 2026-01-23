@@ -2,38 +2,15 @@ import { createClient } from "@/utils/supabase/server";
 import { StatsGrid } from "@/components/admin/dashboard/StatsGrid";
 import { RevenueChart } from "@/components/admin/dashboard/RevenueChart";
 import { ActivityChart } from "../../components/admin/dashboard/ActivityChart";
+import { getDashboardStats } from "@/actions/admin-stats";
 
 export const metadata = {
     title: "Command Center",
 };
 
 export default async function AdminDashboard() {
-    const supabase = await createClient();
-
-    // 1. Fetch Key Metrics
-    // Note: specific queries will depend on actual DB volume. 
-    // For V1 reconstruction, we do simple counts.
-
-    // Total Students
-    const { count: totalStudents } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('role', 'student');
-
-    // Active Subscriptions
-    // Assuming subscription_plans relation or is_subscribed flag in profiles (based on user context previously)
-    // Let's use the profiles.is_subscribed flag for speed if available, or query subscriptions table
-    const { count: activeSubscriptions } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_subscribed', true);
-
-    // Total Revenue (Mock calculation for now as we don't have a payments table full history in context yet)
-    // detailed fetching would go here.
-    const totalRevenue = 1542000; // Mocked for initial view
-
-    // Active Sessions (Mocked/Real-time need presence, we use a placeholder or log table count)
-    const activeSessions = 42;
+    // Fetch Real Stats (Data Binding Overhaul)
+    const stats = await getDashboardStats();
 
     return (
         <div className="container mx-auto max-w-7xl">
@@ -42,10 +19,10 @@ export default async function AdminDashboard() {
 
             {/* Top Stats */}
             <StatsGrid
-                totalStudents={totalStudents || 0}
-                activeSubscriptions={activeSubscriptions || 0}
-                totalRevenue={totalRevenue}
-                activeSessions={activeSessions}
+                totalStudents={stats.totalStudents}
+                activeSubscriptions={stats.vipStudents}
+                totalRevenue={stats.totalRevenue}
+                activeSessions={stats.activeOnline}
             />
 
             {/* Charts Section */}
