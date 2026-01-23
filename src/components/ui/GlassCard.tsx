@@ -23,6 +23,11 @@ export function GlassCard({ children, className, ...props }: GlassCardProps) {
                 className
             )}
             {...props}
+            style={{
+                ...props.style,
+                transform: "translate3d(0,0,0)", // GPU Hack: Force new layer
+                willChange: "transform, backdrop-filter"
+            }}
         >
             {children}
         </div>

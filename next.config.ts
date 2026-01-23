@@ -25,7 +25,8 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
-    // Other experimental features can go here
+    // @ts-expect-error - Valid in Next.js 15+, missing in types
+    reactCompiler: true,
   },
   async headers() {
     return [
