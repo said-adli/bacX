@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -9,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export default function RightGlassSidebar() {
+const RightGlassSidebarComponent = function RightGlassSidebar() {
   const pathname = usePathname();
   const { isCollapsed, toggleCollapse } = useSidebar();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
@@ -28,7 +29,7 @@ export default function RightGlassSidebar() {
       initial={false}
       animate={{ width: isCollapsed ? 90 : 288 }} // Slightly wider collapsed state for the logo
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed right-0 top-0 h-full bg-black/20 backdrop-blur-xl border-l border-white/5 flex flex-col z-[90] shadow-[-10px_0_40px_rgba(0,0,0,0.5)] overflow-visible"
+      className="fixed right-0 top-0 h-full bg-black/80 backdrop-blur-md border-l border-white/5 flex flex-col z-[90] shadow-[-10px_0_40px_rgba(0,0,0,0.5)] overflow-visible gpu-accelerated"
     >
       {/* Toggle Button - Repositioned to prevent collision */}
       <button
@@ -161,4 +162,6 @@ export default function RightGlassSidebar() {
       </div>
     </motion.aside>
   );
-}
+};
+
+export default React.memo(RightGlassSidebarComponent);

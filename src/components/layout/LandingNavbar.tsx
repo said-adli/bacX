@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -6,7 +7,7 @@ import Link from "next/link";
 import { BrainyLogo } from "@/components/ui/BrainyLogo";
 import { useEffect, useState } from "react";
 
-export function LandingNavbar() {
+const LandingNavbarComponent = function LandingNavbar() {
     const [isScrolled, setIsScrolled] = useState(false);
 
     // Scroll listener for header
@@ -64,4 +65,6 @@ export function LandingNavbar() {
             </div>
         </motion.header>
     );
-}
+};
+
+export const LandingNavbar = React.memo(LandingNavbarComponent);

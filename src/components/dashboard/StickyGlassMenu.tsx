@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 
 import { useState, useEffect, useRef } from "react";
 import { Search, Bell, ChevronDown, LogOut, User, Settings, CreditCard } from "lucide-react";
@@ -9,7 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { AnimatePresence, motion } from "framer-motion";
 
-export default function StickyGlassMenu() {
+const StickyGlassMenuComponent = function StickyGlassMenu() {
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -112,7 +113,7 @@ export default function StickyGlassMenu() {
                                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    className="absolute left-0 mt-2 w-80 bg-[#0B0E14]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-2xl z-[70] overflow-hidden"
+                                    className="absolute left-0 mt-2 w-80 bg-[#0B0E14]/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl z-[70] overflow-hidden gpu-accelerated"
                                 >
                                     <div className="flex items-center justify-between p-4 border-b border-white/5">
                                         <h3 className="font-bold text-white text-sm">الإشعارات {unreadCount > 0 && `(${unreadCount})`}</h3>
@@ -189,7 +190,7 @@ export default function StickyGlassMenu() {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                     transition={{ duration: 0.2 }}
-                                    className="absolute left-0 mt-2 w-64 bg-black/60 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[70] ring-1 ring-white/5"
+                                    className="absolute left-0 mt-2 w-64 bg-black/80 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[70] ring-1 ring-white/5 gpu-accelerated"
                                 >
                                     <div className="p-5 border-b border-white/5 bg-white/5 relative overflow-hidden">
                                         <div className="absolute inset-0 bg-blue-600/10 blur-xl opacity-50" />
@@ -247,4 +248,6 @@ export default function StickyGlassMenu() {
             </div>
         </div>
     );
-}
+};
+
+export default React.memo(StickyGlassMenuComponent);

@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 
 import { useRef, useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -15,7 +16,7 @@ interface Subject {
     [key: string]: any;
 }
 
-export function CrystalSubjectCard({ subject }: { subject: Subject }) {
+const CrystalSubjectCardComponent = function CrystalSubjectCard({ subject }: { subject: Subject }) {
     const cardRef = useRef<HTMLDivElement>(null);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [opacity, setOpacity] = useState(0);
@@ -64,4 +65,6 @@ export function CrystalSubjectCard({ subject }: { subject: Subject }) {
             </div>
         </Link>
     );
-}
+};
+
+export const CrystalSubjectCard = React.memo(CrystalSubjectCardComponent);

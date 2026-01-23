@@ -31,7 +31,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                     marginRight: isCollapsed ? 80 : 288, // 20 (5rem) vs 72 (18rem) or slightly different padding
                 }}
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="min-h-screen pt-28 px-4 md:px-12 pb-10 relative z-10"
+                className="min-h-screen pt-28 px-4 md:px-12 pb-10 relative z-10 gpu-accelerated"
             >
                 {children}
             </motion.main>

@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -34,7 +35,7 @@ const menuItems = [
     { icon: Settings, label: "الإعدادات", href: "/settings" },
 ];
 
-export function GlassSidebar() {
+const GlassSidebarComponent = function GlassSidebar() {
     const pathname = usePathname();
     const { logout } = useAuth();
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -54,7 +55,7 @@ export function GlassSidebar() {
                 initial={false}
                 animate={{ width: width }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="fixed top-0 right-0 h-screen z-50 border-l border-white/10 bg-[#050505]/80 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden"
+                className="fixed top-0 right-0 h-screen z-50 border-l border-white/10 bg-[#050505]/95 backdrop-blur-md shadow-2xl flex flex-col overflow-hidden gpu-accelerated"
             >
                 {/* Header: Logo & Toggle */}
                 <div className="flex items-center justify-between p-6 h-24 border-b border-white/5">
@@ -133,4 +134,6 @@ export function GlassSidebar() {
             </motion.aside>
         </>
     );
-}
+};
+
+export const GlassSidebar = React.memo(GlassSidebarComponent);
