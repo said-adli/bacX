@@ -70,28 +70,37 @@ export async function getStudents(
     };
 }
 
-// TOGGLE BAN
+// ACTIONS
+
+// TOGGLE BAN (Robust: Updates Auth + Profile)
 export async function toggleBanStudent(userId: string, shouldBan: boolean) {
+    // Note: To ban via Auth API, we need the Service Role (createAdminClient).
+    // Ensure you have utils/supabase/admin.ts setup with SERVICE_ROLE_KEY.
+    const { createAdminClient } = await import("@/utils/supabase/admin"); // Dynamic import to avoid cycles or if file missing
+    const supabaseAdmin = createAdminClient();
     const supabase = await createClient();
 
     // Verify Admin
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
 
-    // Update Profile (assuming is_banned column exists, if not we ignore for now or add to schema plan)
-    // We added schema migration for other things, but ban wasn't explicitly added effectively.
-    // Let's assume we maintain the existing logic or use a metadata field.
-    // PROPOSAL: Update user_metadata in auth.users (requires service role) OR profiles table.
-    // Using profiles table is safer for client access.
-
-    // Note: If 'is_banned' doesn't exist, this will fail. 
-    // Proceeding assuming it exists or was default.
-    const { error } = await supabase
+    // 1. Update Profile (Visual)
+    const { error: profileError } = await supabase
         .from('profiles')
         .update({ is_banned: shouldBan } as any)
         .eq('id', userId);
 
-    if (error) throw error;
+    if (profileError) throw profileError;
+
+    // 2. Update Auth User (Enforcement)
+    if (shouldBan) {
+        // Ban for 100 years
+        await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: "876000h" });
+        await supabaseAdmin.auth.admin.signOut(userId); // Force Logout
+    } else {
+        await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: "0" });
+    }
+
     revalidatePath('/admin/students');
 }
 
@@ -103,12 +112,38 @@ export async function manualsExpireSubscription(userId: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
 
-    // Logic: Set is_subscribed to false
     const { error } = await supabase
         .from('profiles')
         .update({
             is_subscribed: false,
-            subscription_end_date: new Date().toISOString() // Expire now
+            subscription_end_date: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+    if (error) throw error;
+    revalidatePath('/admin/students');
+}
+
+// EXTEND SUBSCRIPTION (New)
+export async function extendSubscription(userId: string, daysToAdd: number) {
+    const supabase = await createClient();
+
+    // Get current profile
+    const { data: profile } = await supabase.from('profiles').select('subscription_end_date, is_subscribed').eq('id', userId).single();
+    if (!profile) throw new Error("Profile not found");
+
+    let newEndDate = new Date();
+    // If currently valid, add to end date
+    if (profile.is_subscribed && profile.subscription_end_date && new Date(profile.subscription_end_date) > new Date()) {
+        newEndDate = new Date(profile.subscription_end_date);
+    }
+    newEndDate.setDate(newEndDate.getDate() + daysToAdd);
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({
+            is_subscribed: true,
+            subscription_end_date: newEndDate.toISOString()
         })
         .eq('id', userId);
 

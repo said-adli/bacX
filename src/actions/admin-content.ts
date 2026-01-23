@@ -62,6 +62,22 @@ export async function getContentTree() {
     return data as any[]; // Type simplified for speed
 }
 
+// createSubject
+export async function createSubject(name: string, icon: string = 'Folder', order: number = 0) {
+    const supabase = await createClient();
+    const { error } = await supabase.from('subjects').insert([{ name, icon, order }]);
+    if (error) throw error;
+    revalidatePath('/admin/content');
+}
+
+// deleteSubject
+export async function deleteSubject(id: string) {
+    const supabase = await createClient();
+    const { error } = await supabase.from('subjects').delete().eq('id', id);
+    if (error) throw error;
+    revalidatePath('/admin/content');
+}
+
 // CRUD ACTIONS
 
 // createUnit
@@ -114,6 +130,15 @@ export async function deleteLesson(id: string) {
     const supabase = await createClient();
     const { error } = await supabase.from('lessons').delete().eq('id', id);
     if (error) throw error;
+    revalidatePath('/admin/content');
+}
+
+// deleteLessonResource
+export async function deleteLessonResource(id: string) {
+    const supabase = await createClient();
+    const { error } = await supabase.from('lesson_resources').delete().eq('id', id);
+    if (error) throw error;
+    // No revalidatePath needed usually as this is fetched in client logic, but good practice if rendered server side elsewhere
     revalidatePath('/admin/content');
 }
 
