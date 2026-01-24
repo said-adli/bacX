@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import {
     User, MapPin, Loader2, BookOpen, GraduationCap, Shield, FileText,
-    Edit3, X, Save, Clock, CheckCircle, AlertTriangle, Phone
+    Edit3, X, Save, Clock, CheckCircle, AlertTriangle, Phone, RefreshCw, ShieldOff
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { createClient } from "@/utils/supabase/client";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { SmartButton } from "@/components/ui/SmartButton";
 import { toast } from "sonner";
 import { submitProfileChangeRequest, getPendingChangeRequest } from "@/actions/profile";
+import { useProfileData } from "@/hooks/useProfileData";
 
 // Algerian Wilayas List
 const WILAYAS = [
@@ -35,11 +35,14 @@ const MAJOR_LABELS: Record<string, string> = {
 };
 
 export default function ProfilePage() {
-    const { user, profile: contextProfile, refreshProfile } = useAuth();
-    const supabase = createClient();
+    const { profile: contextProfile } = useAuth();
 
-    const [loading, setLoading] = useState(true);
-    const [fetchedProfile, setFetchedProfile] = useState<any>(null);
+    // NEW: Production-grade hook with timeout, retry, and RLS detection
+    const { profile: fetchedProfile, loading, error, isAccessDenied, retry } = useProfileData({
+        timeoutMs: 10000,
+        maxRetries: 3
+    });
+
     const [pendingRequest, setPendingRequest] = useState<any>(null);
 
     // Edit Mode State
@@ -56,93 +59,36 @@ export default function ProfilePage() {
         phone: ""
     });
 
-    // Fetch profile and pending request
+    // Sync form data when profile loads from hook
+    useEffect(() => {
+        if (fetchedProfile) {
+            setFormData({
+                full_name: fetchedProfile.full_name || "",
+                wilaya: fetchedProfile.wilaya || "",
+                major: fetchedProfile.major || "",
+                study_system: fetchedProfile.study_system || "",
+                bio: fetchedProfile.bio || "",
+                phone: fetchedProfile.phone_number || "",
+            });
+        }
+    }, [fetchedProfile]);
+
+    // Fetch pending change request (separate from profile)
     useEffect(() => {
         let isMounted = true;
-
-        const fetchData = async () => {
-            console.log("[Profile] Starting fetch...");
-
+        const fetchPending = async () => {
             try {
-                // Create fresh client inside effect to avoid stale reference
-                const client = createClient();
-
-                // STEP 1: Always get auth user first (for metadata fallback)
-                const { data: { user: authUser }, error: authError } = await client.auth.getUser();
-
-                if (authError || !authUser) {
-                    console.log("[Profile] No auth user found:", authError);
-                    if (isMounted) setLoading(false);
-                    return;
+                const { data: pendingData } = await getPendingChangeRequest();
+                if (isMounted && pendingData) {
+                    setPendingRequest(pendingData);
                 }
-
-                console.log("[Profile] Auth user:", authUser.id);
-                console.log("[Profile] Auth metadata:", authUser.user_metadata);
-
-                // STEP 2: Try to fetch from profiles table
-                const { data: profileData, error: profileError } = await client
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', authUser.id)
-                    .maybeSingle(); // Use maybeSingle to not throw on 0 rows
-
-                console.log("[Profile] Fetched Profile:", profileData);
-                console.log("[Profile] Fetch Error:", profileError);
-
-                // STEP 3: Build display data with auth metadata as fallback
-                const metadata = authUser.user_metadata || {};
-                const mergedProfile = {
-                    id: authUser.id,
-                    email: authUser.email,
-                    full_name: profileData?.full_name || metadata.full_name || "",
-                    wilaya: profileData?.wilaya || metadata.wilaya || "",
-                    major: profileData?.major || metadata.major || "",
-                    study_system: profileData?.study_system || metadata.study_system || "",
-                    bio: profileData?.bio || "",
-                    phone_number: profileData?.phone_number || metadata.phone || "",
-                    role: profileData?.role || "student",
-                    avatar_url: profileData?.avatar_url || metadata.avatar_url || "",
-                };
-
-                console.log("[Profile] Merged Profile:", mergedProfile);
-
-                if (isMounted) {
-                    setFetchedProfile(mergedProfile);
-                    setFormData({
-                        full_name: mergedProfile.full_name,
-                        wilaya: mergedProfile.wilaya,
-                        major: mergedProfile.major,
-                        study_system: mergedProfile.study_system,
-                        bio: mergedProfile.bio,
-                        phone: mergedProfile.phone_number,
-                    });
-                }
-
-                // Fetch pending request (wrapped in try-catch to not block)
-                try {
-                    const { data: pendingData } = await getPendingChangeRequest();
-                    console.log("[Profile] Pending Request:", pendingData);
-                    if (isMounted && pendingData) {
-                        setPendingRequest(pendingData);
-                    }
-                } catch (pendingErr) {
-                    console.warn("[Profile] Could not fetch pending requests:", pendingErr);
-                }
-
-            } catch (error) {
-                console.error("[Profile] Critical Error:", error);
-            } finally {
-                // GOLDEN RULE: Always stop loading
-                if (isMounted) setLoading(false);
+            } catch (err) {
+                console.warn("[Profile] Could not fetch pending requests:", err);
             }
         };
-
-        fetchData();
-
-        return () => {
-            isMounted = false;
-        };
-    }, []); // Empty deps - run once on mount
+        fetchPending();
+        return () => { isMounted = false; };
+    }, []);
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -193,6 +139,7 @@ export default function ProfilePage() {
         setIsEditing(false);
     };
 
+    // Loading State
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -201,7 +148,50 @@ export default function ProfilePage() {
         );
     }
 
-    const displayProfile = fetchedProfile || contextProfile || {};
+    // Access Denied State (RLS blocked)
+    if (isAccessDenied) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+                <GlassCard className="p-12 text-center max-w-md mx-auto space-y-4 border-red-500/20">
+                    <div className="w-20 h-20 rounded-full bg-red-500/10 mx-auto flex items-center justify-center">
+                        <ShieldOff className="w-10 h-10 text-red-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white">تم رفض الوصول</h2>
+                    <p className="text-white/60">ليس لديك صلاحية للوصول إلى هذا الملف الشخصي.</p>
+                </GlassCard>
+            </div>
+        );
+    }
+
+    // Error State
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+                <GlassCard className="p-12 text-center max-w-md mx-auto space-y-4 border-yellow-500/20">
+                    <div className="w-20 h-20 rounded-full bg-yellow-500/10 mx-auto flex items-center justify-center">
+                        <AlertTriangle className="w-10 h-10 text-yellow-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white">خطأ في الاتصال</h2>
+                    <p className="text-white/60">
+                        {error === "CONNECTION_TIMEOUT" ? "انتهت مهلة الاتصال. تحقق من اتصالك بالإنترنت." :
+                            error === "AUTH_FAILED" ? "يرجى تسجيل الدخول مرة أخرى." :
+                                "حدث خطأ أثناء تحميل الملف الشخصي."}
+                    </p>
+                    <button
+                        onClick={retry}
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex items-center gap-2 mx-auto transition-colors"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        إعادة المحاولة
+                    </button>
+                </GlassCard>
+            </div>
+        );
+    }
+
+    // Type for display - use profile from hook, fallback to context, or empty object
+    // Using 'as any' for type safety since the hook provides properly typed data
+    const displayProfile: any = fetchedProfile || contextProfile || {};
     const studySystemLabel = displayProfile.study_system === 'regular' ? 'طالب نظامي' :
         displayProfile.study_system === 'private' ? 'طالب حر' : "غير محدد";
 
@@ -368,7 +358,7 @@ export default function ProfilePage() {
                             </select>
                         ) : (
                             <p className="text-lg font-medium text-white">
-                                {MAJOR_LABELS[displayProfile.major] || displayProfile.major || "غير محدد"}
+                                {(displayProfile.major && MAJOR_LABELS[displayProfile.major]) || displayProfile.major || "غير محدد"}
                             </p>
                         )}
                     </div>

@@ -1,6 +1,14 @@
 import { createBrowserClient } from '@supabase/ssr'
 
+// SINGLETON PATTERN: Module-level cache to prevent connection leaks
+let supabaseInstance: ReturnType<typeof createBrowserClient> | null = null;
+
 export function createClient() {
+    // Return cached instance if it exists (CRITICAL for connection stability)
+    if (supabaseInstance) {
+        return supabaseInstance;
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -34,7 +42,8 @@ export function createClient() {
         } as any
     }
 
-    return createBrowserClient(supabaseUrl, supabaseKey, {
+    // Cache and return the new instance
+    supabaseInstance = createBrowserClient(supabaseUrl, supabaseKey, {
         auth: {
             storage: typeof window !== "undefined" ? window.sessionStorage : undefined,
             autoRefreshToken: true,
@@ -42,4 +51,6 @@ export function createClient() {
             detectSessionInUrl: true
         }
     })
+
+    return supabaseInstance;
 }

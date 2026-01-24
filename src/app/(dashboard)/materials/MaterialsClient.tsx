@@ -4,7 +4,7 @@ import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { createClient } from "@/utils/supabase/client";
 import { useEffect, useState } from "react";
-import { Zap } from "lucide-react";
+import { Zap, AlertTriangle, RefreshCw, ShieldOff } from "lucide-react";
 
 interface Subject {
     id: string;
@@ -17,29 +17,47 @@ interface Subject {
 }
 
 export default function MaterialsClient() {
-    const supabase = createClient();
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isAccessDenied, setIsAccessDenied] = useState(false);
+
+    const fetchSubjects = async () => {
+        setLoading(true);
+        setError(null);
+        setIsAccessDenied(false);
+
+        try {
+            const supabase = createClient();
+            const { data, error: fetchError } = await supabase.from('subjects').select('*');
+
+            // CRITICAL: Handle RLS/permission errors (Silent 403 fix)
+            if (fetchError) {
+                if (fetchError.code === '42501' || fetchError.code === 'PGRST301') {
+                    setIsAccessDenied(true);
+                    throw new Error("ACCESS_DENIED");
+                }
+                throw new Error(fetchError.message);
+            }
+
+            if (data) {
+                setSubjects(data.map((s: any) => ({
+                    ...s,
+                    unitCount: s.unitCount || 0,
+                    lessonCount: s.lessonCount || 0
+                })));
+            }
+        } catch (e: any) {
+            console.error("[MaterialsClient] Fetch error:", e);
+            if (e.message !== "ACCESS_DENIED") {
+                setError(e.message || "UNKNOWN_ERROR");
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        async function fetchSubjects() {
-            try {
-                // Fetch subjects (assuming unitCount/lessonCount logic exists or we mock it for now based on relations)
-                // For V24 Polish: If no counts in DB, default to 0.
-                const { data } = await supabase.from('subjects').select('*');
-                if (data) {
-                    setSubjects(data.map((s: any) => ({
-                        ...s,
-                        unitCount: s.unitCount || 0,
-                        lessonCount: s.lessonCount || 0
-                    })));
-                }
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setLoading(false);
-            }
-        }
         fetchSubjects();
     }, []);
 
@@ -52,6 +70,43 @@ export default function MaterialsClient() {
                         <div key={i} className="h-64 bg-white/5 rounded-2xl border border-white/5" />
                     ))}
                 </div>
+            </div>
+        );
+    }
+
+    // Access Denied State (RLS blocked)
+    if (isAccessDenied) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+                <GlassCard className="p-12 text-center max-w-md mx-auto space-y-4 border-red-500/20">
+                    <div className="w-20 h-20 rounded-full bg-red-500/10 mx-auto flex items-center justify-center">
+                        <ShieldOff className="w-10 h-10 text-red-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white">تم رفض الوصول</h2>
+                    <p className="text-white/60">ليس لديك صلاحية للوصول إلى المواد الدراسية.</p>
+                </GlassCard>
+            </div>
+        );
+    }
+
+    // Error State
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+                <GlassCard className="p-12 text-center max-w-md mx-auto space-y-4 border-yellow-500/20">
+                    <div className="w-20 h-20 rounded-full bg-yellow-500/10 mx-auto flex items-center justify-center">
+                        <AlertTriangle className="w-10 h-10 text-yellow-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white">خطأ في التحميل</h2>
+                    <p className="text-white/60">حدث خطأ أثناء تحميل المواد الدراسية.</p>
+                    <button
+                        onClick={fetchSubjects}
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex items-center gap-2 mx-auto transition-colors"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        إعادة المحاولة
+                    </button>
+                </GlassCard>
             </div>
         );
     }
