@@ -62,40 +62,50 @@ export default function ProfilePage() {
 
         const fetchData = async () => {
             if (!user) {
+                console.log("[Profile] No user found, stopping load.");
                 if (isMounted) setLoading(false);
                 return;
             }
 
+            console.log("[Profile] Fetching data for user:", user.id);
+
             try {
+                // Create fresh client inside effect to avoid stale reference
+                const client = createClient();
+
                 // Fetch profile
-                const { data: profileData, error: profileError } = await supabase
+                const { data: profileData, error: profileError } = await client
                     .from('profiles')
                     .select('*')
                     .eq('id', user.id)
                     .single();
+
+                console.log("[Profile] Fetched Profile:", profileData);
+                console.log("[Profile] Fetch Error:", profileError);
 
                 if (profileError) throw profileError;
 
                 if (profileData && isMounted) {
                     setFetchedProfile(profileData);
                     setFormData({
-                        full_name: profileData.full_name || "",
-                        wilaya: profileData.wilaya || "",
-                        major: profileData.major || "",
-                        study_system: profileData.study_system || "",
-                        bio: profileData.bio || "",
-                        phone: profileData.phone_number || ""
+                        full_name: profileData.full_name ?? "",
+                        wilaya: profileData.wilaya ?? "",
+                        major: profileData.major ?? "",
+                        study_system: profileData.study_system ?? "",
+                        bio: profileData.bio ?? "",
+                        phone: profileData.phone_number ?? ""
                     });
                 }
 
                 // Fetch pending request
                 const { data: pendingData } = await getPendingChangeRequest();
+                console.log("[Profile] Pending Request:", pendingData);
                 if (isMounted && pendingData) {
                     setPendingRequest(pendingData);
                 }
 
             } catch (error) {
-                console.error("Error fetching profile:", error);
+                console.error("[Profile] Error fetching profile:", error);
             } finally {
                 if (isMounted) setLoading(false);
             }
@@ -106,7 +116,7 @@ export default function ProfilePage() {
         return () => {
             isMounted = false;
         };
-    }, [user, supabase]);
+    }, [user]); // Removed supabase from deps - it's recreated each render
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
