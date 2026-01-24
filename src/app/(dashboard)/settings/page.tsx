@@ -1,127 +1,140 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/utils/supabase/client";
 import {
-    Shield, User, MapPin, BookOpen, GraduationCap,
-    Save, Loader2, Phone, FileText, Settings
+    Shield, Key, Loader2, Settings, Bell, Smartphone,
+    LogOut, Monitor, Clock, Mail, MessageSquare
 } from "lucide-react";
 import { toast } from "sonner";
-import { updateProfile } from "@/actions/profile";
 import { SmartButton } from "@/components/ui/SmartButton";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
-// Algerian Wilayas List (Simplified)
-const WILAYAS = [
-    "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar",
-    "Blida", "Bouira", "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers",
-    "Djelfa", "Jijel", "Sétif", "Saïda", "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma",
-    "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", "Ouargla", "Oran", "El Bayadh",
-    "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt", "El Oued",
-    "Khenchela", "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent",
-    "Ghardaïa", "Relizane", "El M'Ghair", "El Meniaa", "Ouled Djellal", "Bordj Baji Mokhtar",
-    "Béni Abbès", "Timimoun", "Touggourt", "Djanet", "In Salah", "In Guezzam"
-];
-
-// Validation Schema
-const profileSchema = z.object({
-    full_name: z.string().min(3, "الاسم الكامل مطلوب (على الأقل 3 أحرف)"),
-    phone: z.string().min(10, "رقم الهاتف غير صالح").optional().or(z.literal("")),
-    wilaya: z.string().min(1, "يرجى اختيار الولاية"),
-    major: z.string().min(1, "يرجى اختيار الشعبة").optional().or(z.literal("")),
-    study_system: z.string().optional(),
-    bio: z.string().max(250, "النبذة طويلة جداً").optional()
+// Password Change Schema
+const passwordSchema = z.object({
+    currentPassword: z.string().min(1, "كلمة المرور الحالية مطلوبة"),
+    newPassword: z.string().min(8, "كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل"),
+    confirmPassword: z.string().min(1, "تأكيد كلمة المرور مطلوب")
+}).refine((data) => data.newPassword === data.confirmPassword, {
+    message: "كلمات المرور غير متطابقة",
+    path: ["confirmPassword"]
 });
 
-type ProfileFormValues = z.infer<typeof profileSchema>;
+type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function SettingsPage() {
-    const { user } = useAuth();
-    const [isLoading, setIsLoading] = useState(true);
+    const { user, profile, logout } = useAuth();
+    const supabase = createClient();
 
-    const form = useForm<ProfileFormValues>({
-        resolver: zodResolver(profileSchema),
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
+    const [isSigningOutOthers, setIsSigningOutOthers] = useState(false);
+
+    // Notification States (local for now, will sync with DB)
+    const [notifyEmail, setNotifyEmail] = useState(true);
+    const [notifySms, setNotifySms] = useState(false);
+    const [isSavingNotifications, setIsSavingNotifications] = useState(false);
+
+    const passwordForm = useForm<PasswordFormValues>({
+        resolver: zodResolver(passwordSchema),
         defaultValues: {
-            full_name: "",
-            phone: "",
-            wilaya: "",
-            major: "",
-            study_system: "",
-            bio: ""
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: ""
         }
     });
 
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = form;
+    // --- CHANGE PASSWORD ---
+    const onPasswordSubmit = async (values: PasswordFormValues) => {
+        setIsChangingPassword(true);
+        try {
+            // First, verify current password by re-authenticating
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: user?.email || "",
+                password: values.currentPassword
+            });
 
-    // Fetch latest fresh data on mount
-    useEffect(() => {
-        let isMounted = true;
-
-        const fetchLatest = async () => {
-            // 1. Handle the "No User" case explicitly so we don't spin forever
-            if (!user) {
-                if (isMounted) setIsLoading(false);
+            if (signInError) {
+                toast.error("كلمة المرور الحالية غير صحيحة");
                 return;
             }
 
-            try {
-                const supabase = createClient();
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', user.id)
-                    .single();
+            // Update to new password
+            const { error: updateError } = await supabase.auth.updateUser({
+                password: values.newPassword
+            });
 
-                if (error) throw error;
-
-                if (data && isMounted) {
-                    reset({
-                        full_name: data.full_name || "",
-                        wilaya: data.wilaya || "",
-                        major: data.major || "",
-                        study_system: data.study_system || "",
-                        phone: data.phone_number || "",
-                        bio: data.bio || ""
-                    });
-                }
-            } catch (error) {
-                console.error("Error fetching profile:", error);
-                // Optional: toast.error("Failed to load profile data");
-            } finally {
-                // 2. The Golden Rule: Always stop loading in finally
-                if (isMounted) setIsLoading(false);
+            if (updateError) {
+                toast.error("حدث خطأ أثناء تغيير كلمة المرور");
+                console.error(updateError);
+                return;
             }
-        };
-        fetchLatest();
 
-        return () => {
-            isMounted = false;
-        };
-    }, [user, reset]);
-
-    const onSubmit = async (values: ProfileFormValues) => {
-        const formData = new FormData();
-        formData.append("full_name", values.full_name);
-        formData.append("wilaya", values.wilaya);
-        formData.append("major", values.major || "");
-        formData.append("study_system", values.study_system || "");
-        formData.append("phone", values.phone || "");
-        formData.append("bio", values.bio || "");
-
-        const result = await updateProfile(formData);
-
-        if (result.error) {
-            toast.error(result.error);
-        } else {
-            toast.success(result.success);
+            toast.success("تم تغيير كلمة المرور بنجاح");
+            passwordForm.reset();
+        } catch (error) {
+            console.error("Password change error:", error);
+            toast.error("حدث خطأ غير متوقع");
+        } finally {
+            setIsChangingPassword(false);
         }
     };
 
-    if (isLoading) return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="animate-spin text-white/30" /></div>;
+    // --- SIGN OUT OTHER DEVICES ---
+    const handleSignOutOtherDevices = async () => {
+        setIsSigningOutOthers(true);
+        try {
+            // Sign out all sessions except current
+            // This requires re-authentication for security
+            const { error } = await supabase.auth.signOut({ scope: "others" });
+
+            if (error) {
+                toast.error("حدث خطأ أثناء تسجيل الخروج من الأجهزة الأخرى");
+                console.error(error);
+                return;
+            }
+
+            toast.success("تم تسجيل الخروج من جميع الأجهزة الأخرى");
+        } catch (error) {
+            console.error("Sign out others error:", error);
+            toast.error("حدث خطأ غير متوقع");
+        } finally {
+            setIsSigningOutOthers(false);
+        }
+    };
+
+    // --- SAVE NOTIFICATION PREFERENCES ---
+    const handleSaveNotifications = async () => {
+        if (!user) return;
+
+        setIsSavingNotifications(true);
+        try {
+            const { error } = await supabase
+                .from("profiles")
+                .update({
+                    notify_email: notifyEmail,
+                    notify_sms: notifySms,
+                    updated_at: new Date().toISOString()
+                })
+                .eq("id", user.id);
+
+            if (error) {
+                toast.error("حدث خطأ أثناء حفظ التفضيلات");
+                console.error(error);
+                return;
+            }
+
+            toast.success("تم حفظ تفضيلات الإشعارات");
+        } catch (error) {
+            console.error("Save notifications error:", error);
+            toast.error("حدث خطأ غير متوقع");
+        } finally {
+            setIsSavingNotifications(false);
+        }
+    };
 
     return (
         <div className="max-w-4xl mx-auto pb-20 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pt-6">
@@ -133,159 +146,199 @@ export default function SettingsPage() {
                 </div>
                 <div>
                     <h1 className="text-3xl font-bold text-white font-serif">إعدادات الحساب</h1>
-                    <p className="text-white/40 text-sm">قم بتحديث معلوماتك الشخصية والدراسية</p>
+                    <p className="text-white/40 text-sm">إدارة الأمان والإشعارات</p>
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                {/* Main Form */}
+                {/* Main Settings */}
                 <div className="lg:col-span-2 space-y-6">
+
+                    {/* Password Change Section */}
                     <GlassCard className="p-6 space-y-6 border-white/10">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                            <User className="text-blue-400" size={20} />
-                            البيانات الشخصية
+                            <Key className="text-yellow-400" size={20} />
+                            تغيير كلمة المرور
                         </h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Full Name */}
+                        <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm text-white/60">الاسم الكامل</label>
-                                <div className="relative">
-                                    <input
-                                        {...register("full_name")}
-                                        className={`w-full bg-black/40 border rounded-xl px-4 py-3 pl-10 text-white focus:outline-none transition-all ${errors.full_name ? "border-red-500" : "border-white/10 focus:border-blue-500/50"}`}
-                                        placeholder="الاسم واللقب"
-                                    />
-                                    <User className="absolute left-3 top-3.5 text-white/20 w-4 h-4" />
-                                </div>
-                                {errors.full_name && <p className="text-red-400 text-xs">{errors.full_name.message}</p>}
-                            </div>
-
-                            {/* Phone */}
-                            <div className="space-y-2">
-                                <label className="text-sm text-white/60">رقم الهاتف</label>
-                                <div className="relative">
-                                    <input
-                                        {...register("phone")}
-                                        type="tel"
-                                        className={`w-full bg-black/40 border rounded-xl px-4 py-3 pl-10 text-white focus:outline-none transition-all ${errors.phone ? "border-red-500" : "border-white/10 focus:border-blue-500/50"}`}
-                                        dir="ltr"
-                                        placeholder="05 50 ..."
-                                    />
-                                    <Phone className="absolute left-3 top-3.5 text-white/20 w-4 h-4" />
-                                </div>
-                                {errors.phone && <p className="text-red-400 text-xs">{errors.phone.message}</p>}
-                            </div>
-                        </div>
-
-                        {/* Bio */}
-                        <div className="space-y-2">
-                            <label className="text-sm text-white/60">نبذة تعريفية</label>
-                            <div className="relative">
-                                <textarea
-                                    {...register("bio")}
-                                    className={`w-full bg-black/40 border rounded-xl px-4 py-3 pl-10 text-white focus:outline-none transition-all min-h-[100px] ${errors.bio ? "border-red-500" : "border-white/10 focus:border-blue-500/50"}`}
-                                    placeholder="اكتب شيئاً عن نفسك..."
+                                <label className="text-sm text-white/60">كلمة المرور الحالية</label>
+                                <input
+                                    {...passwordForm.register("currentPassword")}
+                                    type="password"
+                                    className={`w-full bg-black/40 border rounded-xl px-4 py-3 text-white focus:outline-none transition-all ${passwordForm.formState.errors.currentPassword ? "border-red-500" : "border-white/10 focus:border-yellow-500/50"}`}
+                                    placeholder="••••••••"
                                 />
-                                <FileText className="absolute left-3 top-3.5 text-white/20 w-4 h-4" />
+                                {passwordForm.formState.errors.currentPassword && (
+                                    <p className="text-red-400 text-xs">{passwordForm.formState.errors.currentPassword.message}</p>
+                                )}
                             </div>
-                            {errors.bio && <p className="text-red-400 text-xs">{errors.bio.message}</p>}
-                        </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm text-white/60">كلمة المرور الجديدة</label>
+                                <input
+                                    {...passwordForm.register("newPassword")}
+                                    type="password"
+                                    className={`w-full bg-black/40 border rounded-xl px-4 py-3 text-white focus:outline-none transition-all ${passwordForm.formState.errors.newPassword ? "border-red-500" : "border-white/10 focus:border-yellow-500/50"}`}
+                                    placeholder="••••••••"
+                                />
+                                {passwordForm.formState.errors.newPassword && (
+                                    <p className="text-red-400 text-xs">{passwordForm.formState.errors.newPassword.message}</p>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm text-white/60">تأكيد كلمة المرور الجديدة</label>
+                                <input
+                                    {...passwordForm.register("confirmPassword")}
+                                    type="password"
+                                    className={`w-full bg-black/40 border rounded-xl px-4 py-3 text-white focus:outline-none transition-all ${passwordForm.formState.errors.confirmPassword ? "border-red-500" : "border-white/10 focus:border-yellow-500/50"}`}
+                                    placeholder="••••••••"
+                                />
+                                {passwordForm.formState.errors.confirmPassword && (
+                                    <p className="text-red-400 text-xs">{passwordForm.formState.errors.confirmPassword.message}</p>
+                                )}
+                            </div>
+
+                            <SmartButton
+                                isLoading={isChangingPassword}
+                                type="submit"
+                                className="bg-yellow-600 hover:bg-yellow-500 text-black px-6 py-3 rounded-xl font-bold shadow-lg"
+                            >
+                                <Key className="w-4 h-4 ml-2" />
+                                تغيير كلمة المرور
+                            </SmartButton>
+                        </form>
                     </GlassCard>
 
+                    {/* Active Sessions Section */}
                     <GlassCard className="p-6 space-y-6 border-white/10">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                            <GraduationCap className="text-purple-400" size={20} />
-                            المعلومات الدراسية
+                            <Smartphone className="text-purple-400" size={20} />
+                            الجلسات النشطة
                         </h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Wilaya */}
-                            <div className="space-y-2">
-                                <label className="text-sm text-white/60">الولاية</label>
-                                <div className="relative">
-                                    <select
-                                        {...register("wilaya")}
-                                        className={`w-full bg-black/40 border rounded-xl px-4 py-3 text-white appearance-none focus:outline-none transition-all ${errors.wilaya ? "border-red-500" : "border-white/10 focus:border-purple-500/50"}`}
-                                    >
-                                        <option value="">اختر الولاية</option>
-                                        {WILAYAS.map((w) => (
-                                            <option key={w} value={w} className="bg-zinc-900">{w}</option>
-                                        ))}
-                                    </select>
-                                    <MapPin className="absolute left-3 top-3.5 text-white/20 w-4 h-4" />
+                        <div className="space-y-4">
+                            {/* Current Session */}
+                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                                        <Monitor className="w-5 h-5 text-green-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-white font-medium">هذا الجهاز</p>
+                                        <p className="text-white/40 text-xs flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            نشط الآن
+                                        </p>
+                                    </div>
                                 </div>
-                                {errors.wilaya && <p className="text-red-400 text-xs">{errors.wilaya.message}</p>}
+                                <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">
+                                    الجلسة الحالية
+                                </span>
                             </div>
 
-                            {/* Major */}
-                            <div className="space-y-2">
-                                <label className="text-sm text-white/60">الشعبة</label>
-                                <div className="relative">
-                                    <select
-                                        {...register("major")}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-purple-500/50 transition-all"
-                                    >
-                                        <option value="">اختر الشعبة</option>
-                                        <option value="science" className="bg-zinc-900">علوم تجريبية</option>
-                                        <option value="math" className="bg-zinc-900">رياضيات</option>
-                                        <option value="tech" className="bg-zinc-900">تقني رياضي</option>
-                                        <option value="gest" className="bg-zinc-900">تسيير واقتصاد</option>
-                                        <option value="letter" className="bg-zinc-900">آداب وفلسفة</option>
-                                        <option value="lang" className="bg-zinc-900">لغات أجنبية</option>
-                                    </select>
-                                    <BookOpen className="absolute left-3 top-3.5 text-white/20 w-4 h-4" />
-                                </div>
-                            </div>
+                            <p className="text-white/50 text-sm">
+                                إذا كنت تشك في أن حسابك قد تم استخدامه من جهاز آخر، يمكنك تسجيل الخروج من جميع الأجهزة الأخرى.
+                            </p>
 
-                            {/* Study System */}
-                            <div className="space-y-2">
-                                <label className="text-sm text-white/60">نظام الدراسة</label>
-                                <div className="relative">
-                                    <select
-                                        {...register("study_system")}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-purple-500/50 transition-all"
-                                    >
-                                        <option value="">اختر النظام</option>
-                                        <option value="regular" className="bg-zinc-900">طالب نظامي (متمدرس)</option>
-                                        <option value="private" className="bg-zinc-900">طالب حر (Libre)</option>
-                                    </select>
-                                    <GraduationCap className="absolute left-3 top-3.5 text-white/20 w-4 h-4" />
-                                </div>
-                            </div>
+                            <SmartButton
+                                isLoading={isSigningOutOthers}
+                                onClick={handleSignOutOtherDevices}
+                                className="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 px-6 py-3 rounded-xl font-bold"
+                            >
+                                <LogOut className="w-4 h-4 ml-2" />
+                                تسجيل الخروج من الأجهزة الأخرى
+                            </SmartButton>
                         </div>
                     </GlassCard>
 
-                    <div className="flex justify-end pt-4">
-                        <SmartButton
-                            isLoading={isSubmitting}
-                            type="submit"
-                            className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-900/20"
-                        >
-                            <Save className="w-5 h-5 ml-2" />
-                            حفظ التغييرات
-                        </SmartButton>
-                    </div>
+                    {/* Notification Preferences */}
+                    <GlassCard className="p-6 space-y-6 border-white/10">
+                        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                            <Bell className="text-blue-400" size={20} />
+                            تفضيلات الإشعارات
+                        </h2>
+
+                        <div className="space-y-4">
+                            {/* Email Toggle */}
+                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                                        <Mail className="w-5 h-5 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-white font-medium">إشعارات البريد الإلكتروني</p>
+                                        <p className="text-white/40 text-xs">استلام التحديثات عبر البريد</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setNotifyEmail(!notifyEmail)}
+                                    className={`relative w-12 h-6 rounded-full transition-colors ${notifyEmail ? "bg-blue-600" : "bg-white/20"}`}
+                                >
+                                    <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${notifyEmail ? "right-1" : "left-1"}`} />
+                                </button>
+                            </div>
+
+                            {/* SMS Toggle */}
+                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                                        <MessageSquare className="w-5 h-5 text-green-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-white font-medium">إشعارات SMS</p>
+                                        <p className="text-white/40 text-xs">استلام التنبيهات العاجلة عبر الرسائل</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setNotifySms(!notifySms)}
+                                    className={`relative w-12 h-6 rounded-full transition-colors ${notifySms ? "bg-green-600" : "bg-white/20"}`}
+                                >
+                                    <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${notifySms ? "right-1" : "left-1"}`} />
+                                </button>
+                            </div>
+
+                            <SmartButton
+                                isLoading={isSavingNotifications}
+                                onClick={handleSaveNotifications}
+                                className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg"
+                            >
+                                <Bell className="w-4 h-4 ml-2" />
+                                حفظ تفضيلات الإشعارات
+                            </SmartButton>
+                        </div>
+                    </GlassCard>
                 </div>
 
-                {/* Sidebar Info */}
+                {/* Sidebar */}
                 <div className="space-y-6">
                     <GlassCard className="p-6 border-white/10 bg-blue-600/5">
                         <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                             <Shield className="w-5 h-5 text-blue-400" />
-                            أمان الحساب
+                            نصائح أمنية
                         </h3>
+                        <ul className="text-sm text-white/60 space-y-2">
+                            <li>• استخدم كلمة مرور قوية ومختلفة</li>
+                            <li>• لا تشارك بيانات الدخول مع أحد</li>
+                            <li>• تحقق من الجلسات النشطة بانتظام</li>
+                            <li>• قم بتسجيل الخروج عند استخدام أجهزة عامة</li>
+                        </ul>
+                    </GlassCard>
+
+                    <GlassCard className="p-6 border-white/10 bg-red-600/5">
+                        <h3 className="text-lg font-bold text-white mb-2">حذف الحساب</h3>
                         <p className="text-sm text-white/60 mb-4">
-                            كلمة المرور وحماية 2FA تدار من صفحة الأمان المخصصة.
+                            هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع بياناتك نهائياً.
                         </p>
-                        <button type="button" className="text-xs text-blue-400 hover:text-white underline transition-colors">
-                            إدارة كلمة المرور
+                        <button className="text-xs text-red-400 hover:text-red-300 underline transition-colors">
+                            طلب حذف الحساب
                         </button>
                     </GlassCard>
                 </div>
-
-            </form>
+            </div>
         </div>
     );
 }
