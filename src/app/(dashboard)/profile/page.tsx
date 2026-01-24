@@ -61,52 +61,78 @@ export default function ProfilePage() {
         let isMounted = true;
 
         const fetchData = async () => {
-            if (!user) {
-                console.log("[Profile] No user found, stopping load.");
-                if (isMounted) setLoading(false);
-                return;
-            }
-
-            console.log("[Profile] Fetching data for user:", user.id);
+            console.log("[Profile] Starting fetch...");
 
             try {
                 // Create fresh client inside effect to avoid stale reference
                 const client = createClient();
 
-                // Fetch profile
+                // STEP 1: Always get auth user first (for metadata fallback)
+                const { data: { user: authUser }, error: authError } = await client.auth.getUser();
+
+                if (authError || !authUser) {
+                    console.log("[Profile] No auth user found:", authError);
+                    if (isMounted) setLoading(false);
+                    return;
+                }
+
+                console.log("[Profile] Auth user:", authUser.id);
+                console.log("[Profile] Auth metadata:", authUser.user_metadata);
+
+                // STEP 2: Try to fetch from profiles table
                 const { data: profileData, error: profileError } = await client
                     .from('profiles')
                     .select('*')
-                    .eq('id', user.id)
-                    .single();
+                    .eq('id', authUser.id)
+                    .maybeSingle(); // Use maybeSingle to not throw on 0 rows
 
                 console.log("[Profile] Fetched Profile:", profileData);
                 console.log("[Profile] Fetch Error:", profileError);
 
-                if (profileError) throw profileError;
+                // STEP 3: Build display data with auth metadata as fallback
+                const metadata = authUser.user_metadata || {};
+                const mergedProfile = {
+                    id: authUser.id,
+                    email: authUser.email,
+                    full_name: profileData?.full_name || metadata.full_name || "",
+                    wilaya: profileData?.wilaya || metadata.wilaya || "",
+                    major: profileData?.major || metadata.major || "",
+                    study_system: profileData?.study_system || metadata.study_system || "",
+                    bio: profileData?.bio || "",
+                    phone_number: profileData?.phone_number || metadata.phone || "",
+                    role: profileData?.role || "student",
+                    avatar_url: profileData?.avatar_url || metadata.avatar_url || "",
+                };
 
-                if (profileData && isMounted) {
-                    setFetchedProfile(profileData);
+                console.log("[Profile] Merged Profile:", mergedProfile);
+
+                if (isMounted) {
+                    setFetchedProfile(mergedProfile);
                     setFormData({
-                        full_name: profileData.full_name ?? "",
-                        wilaya: profileData.wilaya ?? "",
-                        major: profileData.major ?? "",
-                        study_system: profileData.study_system ?? "",
-                        bio: profileData.bio ?? "",
-                        phone: profileData.phone_number ?? ""
+                        full_name: mergedProfile.full_name,
+                        wilaya: mergedProfile.wilaya,
+                        major: mergedProfile.major,
+                        study_system: mergedProfile.study_system,
+                        bio: mergedProfile.bio,
+                        phone: mergedProfile.phone_number,
                     });
                 }
 
-                // Fetch pending request
-                const { data: pendingData } = await getPendingChangeRequest();
-                console.log("[Profile] Pending Request:", pendingData);
-                if (isMounted && pendingData) {
-                    setPendingRequest(pendingData);
+                // Fetch pending request (wrapped in try-catch to not block)
+                try {
+                    const { data: pendingData } = await getPendingChangeRequest();
+                    console.log("[Profile] Pending Request:", pendingData);
+                    if (isMounted && pendingData) {
+                        setPendingRequest(pendingData);
+                    }
+                } catch (pendingErr) {
+                    console.warn("[Profile] Could not fetch pending requests:", pendingErr);
                 }
 
             } catch (error) {
-                console.error("[Profile] Error fetching profile:", error);
+                console.error("[Profile] Critical Error:", error);
             } finally {
+                // GOLDEN RULE: Always stop loading
                 if (isMounted) setLoading(false);
             }
         };
@@ -116,7 +142,7 @@ export default function ProfilePage() {
         return () => {
             isMounted = false;
         };
-    }, [user]); // Removed supabase from deps - it's recreated each render
+    }, []); // Empty deps - run once on mount
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
