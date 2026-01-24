@@ -72,13 +72,42 @@ export async function approvePayment(receiptId: string, userId: string, planId: 
 }
 
 // Reject Payment
+// Reject Payment
 export async function rejectPayment(receiptId: string) {
     const supabase = await createClient();
+
+    // 1. Get Receipt to find User
+    const { data: receipt, error: fetchError } = await supabase
+        .from('payment_receipts')
+        .select('user_id')
+        .eq('id', receiptId)
+        .single();
+
+    if (fetchError || !receipt) throw new Error("Receipt not found");
+
+    // 2. Reject Receipt
     const { error } = await supabase
         .from('payment_receipts')
         .update({ status: 'rejected' })
         .eq('id', receiptId);
 
     if (error) throw error;
+
+    // 3. Revoke Access (Lockout)
+    // Ensures that if they were briefly live or pending-active, they are now shut down.
+    const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+            is_subscribed: false,
+            active_plan_id: null,
+            subscription_end_date: new Date().toISOString() // Expire immediately
+        })
+        .eq('id', receipt.user_id);
+
+    if (profileError) {
+        console.error("Critical: Failed to revoke access on rejection", profileError);
+        throw profileError;
+    }
+
     revalidatePath('/admin/payments');
 }

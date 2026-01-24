@@ -5,337 +5,262 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/utils/supabase/client";
 import {
-    Shield, Lock, Smartphone, Globe, Download,
-    AlertTriangle, LogOut, Eye, EyeOff, User, MapPin, BookOpen, GraduationCap, Edit, ExternalLink, Loader2
+    Shield, User, MapPin, BookOpen, GraduationCap,
+    Save, Loader2, Phone, FileText, Settings
 } from "lucide-react";
 import { toast } from "sonner";
-import Link from "next/link";
+import { updateProfile } from "@/actions/profile";
+import { SmartButton } from "@/components/ui/SmartButton";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+// Algerian Wilayas List (Simplified)
+const WILAYAS = [
+    "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar",
+    "Blida", "Bouira", "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers",
+    "Djelfa", "Jijel", "Sétif", "Saïda", "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma",
+    "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", "Ouargla", "Oran", "El Bayadh",
+    "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt", "El Oued",
+    "Khenchela", "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent",
+    "Ghardaïa", "Relizane", "El M'Ghair", "El Meniaa", "Ouled Djellal", "Bordj Baji Mokhtar",
+    "Béni Abbès", "Timimoun", "Touggourt", "Djanet", "In Salah", "In Guezzam"
+];
+
+// Validation Schema
+const profileSchema = z.object({
+    full_name: z.string().min(3, "الاسم الكامل مطلوب (على الأقل 3 أحرف)"),
+    phone: z.string().min(10, "رقم الهاتف غير صالح").optional().or(z.literal("")),
+    wilaya: z.string().min(1, "يرجى اختيار الولاية"),
+    major: z.string().min(1, "يرجى اختيار الشعبة").optional().or(z.literal("")),
+    study_system: z.string().optional(),
+    bio: z.string().max(250, "النبذة طويلة جداً").optional()
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function SettingsPage() {
-    // 1. Auth & Supabase
-    const { logout, user } = useAuth();
-    const supabase = createClient();
+    const { user } = useAuth();
+    const [isLoading, setIsLoading] = useState(true);
 
-    // 2. Local State
-    const [twoFactor, setTwoFactor] = useState(false);
-    const [incognito, setIncognito] = useState(false);
-    const [loadingExport, setLoadingExport] = useState(false);
-    const [loadingData, setLoadingData] = useState(true);
-
-    // Data State (Read Only)
-    const [profileData, setProfileData] = useState({
-        full_name: "",
-        wilaya: "",
-        major: "",
-        study_system: ""
+    const form = useForm<ProfileFormValues>({
+        resolver: zodResolver(profileSchema),
+        defaultValues: {
+            full_name: "",
+            phone: "",
+            wilaya: "",
+            major: "",
+            study_system: "",
+            bio: ""
+        }
     });
 
-    // 3. Fetch User Data
+    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = form;
+
+    // Fetch latest fresh data on mount
     useEffect(() => {
-        const fetchUserData = async () => {
-            if (!user) {
-                setLoadingData(false);
-                return;
+        const fetchLatest = async () => {
+            if (!user) return;
+            const supabase = createClient();
+            const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+            if (data) {
+                reset({
+                    full_name: data.full_name || "",
+                    wilaya: data.wilaya || "",
+                    major: data.major || "",
+                    study_system: data.study_system || "",
+                    phone: data.phone_number || "",
+                    bio: data.bio || ""
+                });
             }
-            try {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('full_name, wilaya, major, study_system')
-                    .eq('id', user.id)
-                    .single();
-
-                if (error) throw error;
-                if (data) {
-                    setProfileData({
-                        full_name: data.full_name || "غير محدد",
-                        wilaya: data.wilaya || "غير محدد",
-                        major: data.major || "غير محدد",
-                        study_system: data.study_system === 'regular' ? 'طالب نظامي' :
-                            data.study_system === 'private' ? 'طالب حر' : "غير محدد"
-                    });
-                }
-            } catch (error) {
-                console.error("Error fetching settings:", error);
-                toast.error("فشل في تحميل بيانات المستخدم");
-            } finally {
-                setLoadingData(false);
-            }
+            setIsLoading(false);
         };
+        fetchLatest();
+    }, [user, reset]);
 
-        fetchUserData();
-    }, [user, supabase]);
+    const onSubmit = async (values: ProfileFormValues) => {
+        const formData = new FormData();
+        formData.append("full_name", values.full_name);
+        formData.append("wilaya", values.wilaya);
+        formData.append("major", values.major || "");
+        formData.append("study_system", values.study_system || "");
+        formData.append("phone", values.phone || "");
+        formData.append("bio", values.bio || "");
 
-    // 4. Handlers
-    const handleGlobalLogout = async () => {
-        toast.promise(logout(), {
-            loading: "جاري تسجيل الخروج من جميع الأجهزة...",
-            success: "تم الخروج بنجاح",
-            error: "حدث خطأ أثناء تسجيل الخروج"
-        });
+        const result = await updateProfile(formData);
+
+        if (result.error) {
+            toast.error(result.error);
+        } else {
+            toast.success(result.success);
+        }
     };
 
-    const handleExportData = () => {
-        setLoadingExport(true);
-        setTimeout(() => {
-            setLoadingExport(false);
-            toast.success("تم تجهيز ملف بياناتك للتحميل");
-        }, 2000);
-    };
-
-    const handleDeleteAccount = async () => {
-        if (!confirm("هل أنت متأكد من حذف حسابك؟ هذا الإجراء لا يمكن التراجع عنه!")) return;
-        toast.error("يرجى التواصل مع الدعم الفني لحذف الحساب نهائياً لأسباب أمنية.");
-    };
-
-    if (loadingData) {
-        return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-            </div>
-        );
-    }
+    if (isLoading) return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="animate-spin text-white/30" /></div>;
 
     return (
-        <div className="space-y-8 animate-in fade-in zoom-in duration-500 pb-20">
+        <div className="max-w-4xl mx-auto pb-20 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pt-6">
 
             {/* Header */}
-            <div className="flex items-center gap-3 mb-8">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600/20 flex items-center justify-center border border-blue-500/30 shadow-[0_0_30px_rgba(37,99,235,0.3)]">
-                    <Shield className="w-6 h-6 text-blue-400" />
+            <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-blue-600/20 flex items-center justify-center border border-blue-500/30">
+                    <Settings className="w-6 h-6 text-blue-400" />
                 </div>
                 <div>
-                    <h1 className="text-3xl font-bold text-white font-serif">مركز الأمان والخصوصية</h1>
-                    <p className="text-white/40 text-sm">إدارة جلسات الدخول، حماية الحساب، والبيانات الشخصية</p>
+                    <h1 className="text-3xl font-bold text-white font-serif">إعدادات الحساب</h1>
+                    <p className="text-white/40 text-sm">قم بتحديث معلوماتك الشخصية والدراسية</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                {/* LEFT COLUMN: Profile & Privacy */}
-                <div className="space-y-6">
+                {/* Main Form */}
+                <div className="lg:col-span-2 space-y-6">
+                    <GlassCard className="p-6 space-y-6 border-white/10">
+                        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                            <User className="text-blue-400" size={20} />
+                            البيانات الشخصية
+                        </h2>
 
-                    {/* READ-ONLY PROFILE SECTION */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-white/90 flex items-center gap-2">
-                                <User className="w-5 h-5 text-blue-400" />
-                                المعلومات الشخصية
-                            </h2>
-                            <Link href="/profile" className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
-                                تعديل الملف
-                                <ExternalLink size={12} />
-                            </Link>
-                        </div>
-
-                        <GlassCard className="p-6 space-y-6 border-blue-500/20 relative overflow-hidden group">
-                            {/* Decorative Background */}
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-600/10 transition-all duration-700" />
-
-                            <div className="grid grid-cols-1 gap-6">
-                                {/* Name */}
-                                <div className="space-y-1">
-                                    <label className="text-xs text-white/40 flex items-center gap-2">
-                                        <User size={12} />
-                                        الاسم الكامل
-                                    </label>
-                                    <p className="text-lg font-bold text-white font-serif tracking-wide">{profileData.full_name}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Full Name */}
+                            <div className="space-y-2">
+                                <label className="text-sm text-white/60">الاسم الكامل</label>
+                                <div className="relative">
+                                    <input
+                                        {...register("full_name")}
+                                        className={`w-full bg-black/40 border rounded-xl px-4 py-3 pl-10 text-white focus:outline-none transition-all ${errors.full_name ? "border-red-500" : "border-white/10 focus:border-blue-500/50"}`}
+                                        placeholder="الاسم واللقب"
+                                    />
+                                    <User className="absolute left-3 top-3.5 text-white/20 w-4 h-4" />
                                 </div>
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    {/* Wilaya */}
-                                    <div className="space-y-1">
-                                        <label className="text-xs text-white/40 flex items-center gap-2">
-                                            <MapPin size={12} />
-                                            الولاية
-                                        </label>
-                                        <p className="text-base text-white/90">{profileData.wilaya}</p>
-                                    </div>
-
-                                    {/* Major */}
-                                    <div className="space-y-1">
-                                        <label className="text-xs text-white/40 flex items-center gap-2">
-                                            <BookOpen size={12} />
-                                            الشعبة
-                                        </label>
-                                        <p className="text-base text-white/90">{profileData.major}</p>
-                                    </div>
-                                </div>
-
-                                {/* Study System */}
-                                <div className="space-y-1 pt-2 border-t border-white/5">
-                                    <label className="text-xs text-white/40 flex items-center gap-2">
-                                        <GraduationCap size={12} />
-                                        نظام الدراسة
-                                    </label>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className={`w-2 h-2 rounded-full ${profileData.study_system.includes('نظامي') ? 'bg-green-500' : 'bg-purple-500'}`} />
-                                        <p className="text-base text-white/90">{profileData.study_system}</p>
-                                    </div>
-                                </div>
+                                {errors.full_name && <p className="text-red-400 text-xs">{errors.full_name.message}</p>}
                             </div>
-                        </GlassCard>
-                    </div>
 
-                    <h2 className="text-xl font-bold text-white/90 flex items-center gap-2 pt-4">
-                        <Eye className="w-5 h-5 text-purple-400" />
-                        الخصوصية والبيانات (Privacy)
-                    </h2>
-
-                    {/* Incognito Mode */}
-                    <GlassCard className="p-5 flex items-center justify-between border-purple-500/20">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-purple-600/20 flex items-center justify-center text-purple-400">
-                                {incognito ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-white text-sm">وضع التخفي (Incognito)</h3>
-                                <p className="text-xs text-white/50">إخفاء اسمك من قوائم الترتيب والدردشة العامة.</p>
+                            {/* Phone */}
+                            <div className="space-y-2">
+                                <label className="text-sm text-white/60">رقم الهاتف</label>
+                                <div className="relative">
+                                    <input
+                                        {...register("phone")}
+                                        type="tel"
+                                        className={`w-full bg-black/40 border rounded-xl px-4 py-3 pl-10 text-white focus:outline-none transition-all ${errors.phone ? "border-red-500" : "border-white/10 focus:border-blue-500/50"}`}
+                                        dir="ltr"
+                                        placeholder="05 50 ..."
+                                    />
+                                    <Phone className="absolute left-3 top-3.5 text-white/20 w-4 h-4" />
+                                </div>
+                                {errors.phone && <p className="text-red-400 text-xs">{errors.phone.message}</p>}
                             </div>
                         </div>
-                        <button
-                            onClick={() => {
-                                setIncognito(!incognito);
-                                toast(incognito ? "أنت الآن مرئي للجميع" : "تم تفعيل وضع التخفي");
-                            }}
-                            className={`w-12 h-6 rounded-full transition-all duration-300 relative ${incognito ? 'bg-purple-600 shadow-[0_0_15px_rgba(147,51,234,0.4)]' : 'bg-white/10'}`}
+
+                        {/* Bio */}
+                        <div className="space-y-2">
+                            <label className="text-sm text-white/60">نبذة تعريفية</label>
+                            <div className="relative">
+                                <textarea
+                                    {...register("bio")}
+                                    className={`w-full bg-black/40 border rounded-xl px-4 py-3 pl-10 text-white focus:outline-none transition-all min-h-[100px] ${errors.bio ? "border-red-500" : "border-white/10 focus:border-blue-500/50"}`}
+                                    placeholder="اكتب شيئاً عن نفسك..."
+                                />
+                                <FileText className="absolute left-3 top-3.5 text-white/20 w-4 h-4" />
+                            </div>
+                            {errors.bio && <p className="text-red-400 text-xs">{errors.bio.message}</p>}
+                        </div>
+                    </GlassCard>
+
+                    <GlassCard className="p-6 space-y-6 border-white/10">
+                        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                            <GraduationCap className="text-purple-400" size={20} />
+                            المعلومات الدراسية
+                        </h2>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Wilaya */}
+                            <div className="space-y-2">
+                                <label className="text-sm text-white/60">الولاية</label>
+                                <div className="relative">
+                                    <select
+                                        {...register("wilaya")}
+                                        className={`w-full bg-black/40 border rounded-xl px-4 py-3 text-white appearance-none focus:outline-none transition-all ${errors.wilaya ? "border-red-500" : "border-white/10 focus:border-purple-500/50"}`}
+                                    >
+                                        <option value="">اختر الولاية</option>
+                                        {WILAYAS.map((w) => (
+                                            <option key={w} value={w} className="bg-zinc-900">{w}</option>
+                                        ))}
+                                    </select>
+                                    <MapPin className="absolute left-3 top-3.5 text-white/20 w-4 h-4" />
+                                </div>
+                                {errors.wilaya && <p className="text-red-400 text-xs">{errors.wilaya.message}</p>}
+                            </div>
+
+                            {/* Major */}
+                            <div className="space-y-2">
+                                <label className="text-sm text-white/60">الشعبة</label>
+                                <div className="relative">
+                                    <select
+                                        {...register("major")}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-purple-500/50 transition-all"
+                                    >
+                                        <option value="">اختر الشعبة</option>
+                                        <option value="science" className="bg-zinc-900">علوم تجريبية</option>
+                                        <option value="math" className="bg-zinc-900">رياضيات</option>
+                                        <option value="tech" className="bg-zinc-900">تقني رياضي</option>
+                                        <option value="gest" className="bg-zinc-900">تسيير واقتصاد</option>
+                                        <option value="letter" className="bg-zinc-900">آداب وفلسفة</option>
+                                        <option value="lang" className="bg-zinc-900">لغات أجنبية</option>
+                                    </select>
+                                    <BookOpen className="absolute left-3 top-3.5 text-white/20 w-4 h-4" />
+                                </div>
+                            </div>
+
+                            {/* Study System */}
+                            <div className="space-y-2">
+                                <label className="text-sm text-white/60">نظام الدراسة</label>
+                                <div className="relative">
+                                    <select
+                                        {...register("study_system")}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-purple-500/50 transition-all"
+                                    >
+                                        <option value="">اختر النظام</option>
+                                        <option value="regular" className="bg-zinc-900">طالب نظامي (متمدرس)</option>
+                                        <option value="private" className="bg-zinc-900">طالب حر (Libre)</option>
+                                    </select>
+                                    <GraduationCap className="absolute left-3 top-3.5 text-white/20 w-4 h-4" />
+                                </div>
+                            </div>
+                        </div>
+                    </GlassCard>
+
+                    <div className="flex justify-end pt-4">
+                        <SmartButton
+                            isLoading={isSubmitting}
+                            type="submit"
+                            className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-900/20"
                         >
-                            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 ${incognito ? 'left-7' : 'left-1'}`} />
-                        </button>
-                    </GlassCard>
-
-                    {/* Data Export */}
-                    <GlassCard className="p-5 border-white/10 hover:border-white/20 transition-all">
-                        <div className="flex flex-col gap-4">
-                            <div className="flex items-center gap-3">
-                                <Download className="w-5 h-5 text-white/70" />
-                                <h3 className="font-bold text-white text-sm">نسخة من بياناتي</h3>
-                            </div>
-                            <p className="text-xs text-white/50 leading-relaxed">
-                                يمكنك تحميل ملف كامل يحتوي على سجلك الدراسي، علاماتك، وإنجازاتك بصيغة JSON أو PDF.
-                            </p>
-                            <button
-                                onClick={handleExportData}
-                                disabled={loadingExport}
-                                className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white transition-all flex items-center justify-center gap-2"
-                            >
-                                {loadingExport ? (
-                                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                ) : (
-                                    <>
-                                        <Download size={14} />
-                                        طلب الأرشيف
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </GlassCard>
-
+                            <Save className="w-5 h-5 ml-2" />
+                            حفظ التغييرات
+                        </SmartButton>
+                    </div>
                 </div>
 
-                {/* RIGHT COLUMN: Security */}
+                {/* Sidebar Info */}
                 <div className="space-y-6">
-                    <h2 className="text-xl font-bold text-white/90 flex items-center gap-2">
-                        <Lock className="w-5 h-5 text-green-400" />
-                        مركز الأمان (Security Hub)
-                    </h2>
-
-                    {/* Active Sessions */}
-                    <GlassCard className="p-0 overflow-hidden border-green-500/20 shadow-[0_0_30px_rgba(16,185,129,0.05)]">
-                        <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
-                            <span className="font-bold text-white text-sm">الجلسات النشطة</span>
-                            <span className="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20 animate-pulse">محمي</span>
-                        </div>
-                        <div className="p-4 space-y-4">
-                            {/* Current Device */}
-                            <div className="flex items-center justify-between group">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
-                                        <Globe className="w-5 h-5 text-blue-400" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-white">الجهاز الحالي</p>
-                                        <p className="text-xs text-green-400">نشط الآن • الجزائر</p>
-                                    </div>
-                                </div>
-                                <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" />
-                            </div>
-
-                            {/* Simulated Other Device */}
-                            <div className="flex items-center justify-between group opacity-60 hover:opacity-100 transition-opacity">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
-                                        <Smartphone className="w-5 h-5 text-purple-400" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-white">iPhone 14 Pro</p>
-                                        <p className="text-xs text-white/50">آخر نشاط: قبل 2 ساعة</p>
-                                    </div>
-                                </div>
-                                <button className="text-xs text-red-400 hover:text-red-300 hover:underline">إخراج</button>
-                            </div>
-                        </div>
-
-                        {/* Global Logout */}
-                        <div className="p-4 bg-red-500/5 border-t border-red-500/10 hover:bg-red-500/10 transition-colors">
-                            <button
-                                onClick={handleGlobalLogout}
-                                className="w-full flex items-center justify-center gap-2 text-red-500 font-bold text-sm py-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                            >
-                                <LogOut size={16} />
-                                تسجيل الخروج من جميع الأجهزة
-                            </button>
-                        </div>
-                    </GlassCard>
-
-                    {/* 2FA Toggle */}
-                    <GlassCard className="p-5 flex items-center justify-between border-blue-500/20">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400">
-                                <Shield className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-white text-sm">المصادقة الثنائية (2FA)</h3>
-                                <p className="text-xs text-white/50">زيادة أمان الحساب عبر رمز SMS.</p>
-                            </div>
-                        </div>
-                        {/* Premium Toggle Switch */}
-                        <button
-                            onClick={() => {
-                                setTwoFactor(!twoFactor);
-                                toast(twoFactor ? "تم إيقاف المصادقة الثنائية" : "تم تفعيل المصادقة الثنائية (محاكاة)");
-                            }}
-                            className={`w-12 h-6 rounded-full transition-all duration-300 relative ${twoFactor ? 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-white/10'}`}
-                        >
-                            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 ${twoFactor ? 'left-7' : 'left-1'}`} />
+                    <GlassCard className="p-6 border-white/10 bg-blue-600/5">
+                        <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                            <Shield className="w-5 h-5 text-blue-400" />
+                            أمان الحساب
+                        </h3>
+                        <p className="text-sm text-white/60 mb-4">
+                            كلمة المرور وحماية 2FA تدار من صفحة الأمان المخصصة.
+                        </p>
+                        <button type="button" className="text-xs text-blue-400 hover:text-white underline transition-colors">
+                            إدارة كلمة المرور
                         </button>
                     </GlassCard>
-
-                    {/* Danger Zone */}
-                    <div className="pt-8">
-                        <GlassCard className="p-0 border-red-500/20 overflow-hidden">
-                            <div className="p-4 bg-red-500/5 border-b border-red-500/10">
-                                <h3 className="text-sm font-bold text-red-500 flex items-center gap-2">
-                                    <AlertTriangle size={16} />
-                                    منطقة الخطر
-                                </h3>
-                            </div>
-                            <div className="p-4">
-                                <p className="text-xs text-white/40 mb-4">
-                                    حذف الحساب هو إجراء نهائي لا يمكن التراجع عنه. سيتم حذف جميع بياناتك واشتراكاتك.
-                                </p>
-                                <button
-                                    onClick={handleDeleteAccount}
-                                    className="w-full py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 text-xs font-bold transition-all"
-                                >
-                                    حذف حسابي نهائياً
-                                </button>
-                            </div>
-                        </GlassCard>
-                    </div>
-
                 </div>
 
-            </div>
+            </form>
         </div>
     );
 }

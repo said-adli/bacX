@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/auth-guard";
 
 // TYPES
 export interface Subject {
@@ -31,6 +32,7 @@ export interface Lesson {
 
 // FETCH TREE (Hierarchy)
 export async function getContentTree() {
+    await requireAdmin();
     const supabase = await createClient();
 
     // Fetch Subjects -> Units -> Lessons
@@ -64,6 +66,7 @@ export async function getContentTree() {
 
 // createSubject
 export async function createSubject(name: string, icon: string = 'Folder', order: number = 0) {
+    await requireAdmin();
     const supabase = await createClient();
     const { error } = await supabase.from('subjects').insert([{ name, icon, order }]);
     if (error) throw error;
@@ -72,6 +75,7 @@ export async function createSubject(name: string, icon: string = 'Folder', order
 
 // deleteSubject
 export async function deleteSubject(id: string) {
+    await requireAdmin();
     const supabase = await createClient();
     const { error } = await supabase.from('subjects').delete().eq('id', id);
     if (error) throw error;
@@ -82,6 +86,7 @@ export async function deleteSubject(id: string) {
 
 // createUnit
 export async function createUnit(subjectId: string, title: string) {
+    await requireAdmin();
     const supabase = await createClient();
     const { error } = await supabase
         .from('units')
@@ -93,6 +98,7 @@ export async function createUnit(subjectId: string, title: string) {
 
 // deleteUnit
 export async function deleteUnit(id: string) {
+    await requireAdmin();
     const supabase = await createClient();
     const { error } = await supabase.from('units').delete().eq('id', id);
     if (error) throw error;
@@ -101,6 +107,7 @@ export async function deleteUnit(id: string) {
 
 // createLesson
 export async function createLesson(data: Partial<Lesson>) {
+    await requireAdmin();
     const supabase = await createClient();
     const { data: newLesson, error } = await supabase
         .from('lessons')
@@ -117,6 +124,7 @@ export async function createLesson(data: Partial<Lesson>) {
 
 // updateLesson
 export async function updateLesson(id: string, data: Partial<Lesson>) {
+    await requireAdmin();
     const supabase = await createClient();
     const { error } = await supabase
         .from('lessons')
@@ -129,6 +137,7 @@ export async function updateLesson(id: string, data: Partial<Lesson>) {
 
 // deleteLesson
 export async function deleteLesson(id: string) {
+    await requireAdmin();
     const supabase = await createClient();
     const { error } = await supabase.from('lessons').delete().eq('id', id);
     if (error) throw error;
@@ -137,6 +146,7 @@ export async function deleteLesson(id: string) {
 
 // deleteLessonResource
 export async function deleteLessonResource(id: string) {
+    await requireAdmin();
     const supabase = await createClient();
     const { error } = await supabase.from('lesson_resources').delete().eq('id', id);
     if (error) throw error;
@@ -148,6 +158,7 @@ export async function deleteLessonResource(id: string) {
 
 // Helper to fetch single lesson for editing
 export async function getLessonById(id: string) {
+    await requireAdmin();
     const supabase = await createClient();
     const { data, error } = await supabase
         .from('lessons')
@@ -161,6 +172,7 @@ export async function getLessonById(id: string) {
 
 // Helper to ensure subjects exist (Initialization)
 export async function ensureSubjects() {
+    await requireAdmin();
     // Check if defaults exist, if not create them.
     // 'Mathematics' and 'Physics' (Arabic or English as per user? "Subjects: Hardcode 'Mathematics' and 'Physics'")
     // Assuming English keys for internal logic, but user might want Arabic. 

@@ -73,7 +73,9 @@ export function ResourceUploader({ onUploadComplete, className }: ResourceUpload
 
             const resource: ResourceFile = {
                 title: file.name.replace(`.${fileExt}`, ''), // Default title = filename
-                file_url: publicUrl,
+                file_url: publicUrl, // We store the Public URL. Access is blocked by RLS.
+                // The frontend (LessonContent) will parse this to extract the path 
+                // and request a Signed URL via Server Action.
                 file_type: type,
                 file_size: file.size
             };

@@ -9,6 +9,8 @@ import LiveStatus from "@/components/dashboard/LiveStatus";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { AnimatePresence, motion } from "framer-motion";
+import { BrainyLogo } from "@/components/ui/BrainyLogo";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 const StickyGlassMenuComponent = function StickyGlassMenu() {
     const pathname = usePathname();
@@ -41,26 +43,14 @@ const StickyGlassMenuComponent = function StickyGlassMenu() {
         <div className="fixed top-0 left-0 right-0 z-[60] px-4 md:px-12 pt-6 pointer-events-none">
             <div className="max-w-7xl mx-auto flex items-center justify-between pointer-events-auto">
 
-                {/* LEFT: Profile & Notifications (RTL Layout -> Actually Right on screen) */}
-                {/* Note: Project is RTL, so first item in flex logic is Right Side visually if dir="rtl", 
-                    but here we standardise flex order. 
-                    Let's assume dir="rtl" is set on body. 
-                    So: 
-                    Start = Right
-                    End = Left
-                */}
-
                 {/* 1. BRAND & LIVE (Right Side visually) */}
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         {/* Logo / Home Link */}
                         <Link href="/dashboard" className="flex items-center gap-3 group">
-                            <img
-                                src="/images/brainy-logo-black.png"
-                                alt="Brainy"
-                                className="h-[35px] md:h-[50px] w-auto object-contain transition-all duration-300 ease-in-out group-hover:scale-110"
-                                style={{ filter: 'invert(1) brightness(2)' }}
-                            />
+                            <div className="h-[35px] md:h-[50px] w-auto transition-transform duration-300 group-hover:scale-110">
+                                <BrainyLogo variant="icon" className="h-full w-auto" />
+                            </div>
                         </Link>
                     </div>
                     <LiveStatus />
@@ -144,25 +134,6 @@ const StickyGlassMenuComponent = function StickyGlassMenu() {
                                             ))
                                         )}
                                     </div>
-
-                                    {/* ADMIN PUSH (Visible to all for demo/admin) */}
-                                    <div className="p-3 border-t border-white/10 bg-white/5">
-                                        <p className="text-[10px] text-white/30 mb-2 uppercase tracking-wider font-bold">لوحة التحكم (Admin)</p>
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => pushNotification("بث مباشر بدأ!", "الأستاذ بدأ الدرس الآن.", "live", true)}
-                                                className="flex-1 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs rounded-lg border border-red-500/20 transition-all font-bold"
-                                            >
-                                                إرسال تنبيه بث
-                                            </button>
-                                            <button
-                                                onClick={() => pushNotification("تحديث جديد", "تم إضافة دروس جديدة.", "info", true)}
-                                                className="flex-1 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-xs rounded-lg border border-blue-500/20 transition-all font-bold"
-                                            >
-                                                إرسال إعلان
-                                            </button>
-                                        </div>
-                                    </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -175,10 +146,7 @@ const StickyGlassMenuComponent = function StickyGlassMenu() {
                             className={`flex items-center gap-2 pl-1 pr-1 py-1 rounded-full border transition-all ${isProfileOpen ? 'bg-white/10 border-white/20' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
                         >
                             <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/20 shadow-[0_0_15px_rgba(37,99,235,0.6)] group-hover:shadow-[0_0_25px_rgba(37,99,235,0.8)] transition-all duration-300">
-                                {/* Fallback Avatar if no image */}
-                                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white">
-                                    {profile?.full_name?.[0] || <User size={14} />}
-                                </div>
+                                <UserAvatar src={profile?.avatar_url} fallback={profile?.full_name} size="sm" />
                             </div>
                             <ChevronDown size={14} className={`text-white/50 transition-transform duration-300 ml-1 ${isProfileOpen ? 'rotate-180' : ''}`} />
                         </button>

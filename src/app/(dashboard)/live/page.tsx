@@ -2,25 +2,34 @@
 
 import { useAuth } from "@/context/AuthContext";
 import EncodedVideoPlayer from "@/components/lesson/VideoPlayer";
-import { Lock, MessageCircle, Users, Video } from "lucide-react";
+import { Lock, MessageCircle, Users, Video, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { useLiveInteraction } from "@/hooks/useLiveInteraction";
 import { RaiseHandButton } from "@/components/live/RaiseHandButton";
 import { LiveChat } from "@/components/live/LiveChat";
-
-// Mock Live ID (using a live stream placeholder or the demo one)
-const LIVE_STREAM_ID = "enc_live_jfKfPfyJRdk"; // lofi girl as mock live
-const IS_LIVE = true; // Toggle this manually to Start/Stop the stream in the UI
+import { useLiveStatus } from "@/hooks/useLiveStatus";
 
 export default function LiveSessionsPage() {
     const { profile } = useAuth();
     const isSubscribed = profile?.is_subscribed === true;
 
+    // [NEW] Real-Time Live Status Hook
+    const { isLive, youtubeId, loading, title } = useLiveStatus();
+
     // [NEW] Live Interaction Hook
     const { status, raiseHand, endCall, currentSpeaker } = useLiveInteraction();
 
-    if (!IS_LIVE) {
+    if (loading) {
+        return (
+            <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+                <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
+                <p className="text-white/50 animate-pulse">جاري الاتصال بغرفة البث...</p>
+            </div>
+        );
+    }
+
+    if (!isLive || !youtubeId) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-in fade-in zoom-in duration-700">
                 <GlassCard className="p-12 text-center max-w-2xl mx-auto space-y-6 border-white/10 shadow-2xl bg-black/40 backdrop-blur-xl">
@@ -61,7 +70,7 @@ export default function LiveSessionsPage() {
                     <div className="w-full aspect-video rounded-2xl overflow-hidden glass-panel relative border border-white/10 shadow-2xl">
                         {isSubscribed ? (
                             <EncodedVideoPlayer
-                                encodedVideoId={LIVE_STREAM_ID}
+                                encodedVideoId={youtubeId} // Real ID from DB
                                 shouldMute={status === 'live'} // Auto-Mute when student is speaking
                             />
                         ) : (
@@ -91,13 +100,13 @@ export default function LiveSessionsPage() {
 
                     <div className="glass-card p-6 flex flex-col md:flex-row items-start md:items-center gap-6 justify-between">
                         <div>
-                            <h2 className="text-2xl font-bold mb-1">مراجعة شاملة: الدوال الأسية</h2>
+                            <h2 className="text-2xl font-bold mb-1">{title || "بث مباشر"}</h2>
                             <p className="text-white/50">تقديم: الأستاذ محمد كريم</p>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2 text-white/40 bg-white/5 px-4 py-2 rounded-full text-sm">
                                 <Users size={16} />
-                                <span>1,240 مشاهد</span>
+                                <span>-- مشاهد</span>
                             </div>
                         </div>
                     </div>

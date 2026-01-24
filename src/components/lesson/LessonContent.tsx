@@ -66,11 +66,38 @@ export default function LessonContent({ id, title, description, videoUrl }: Less
         }
     }, [id]);
 
-    const handleDownload = (resource: LessonResource) => {
-        // Direct link opening. Storage RLS will enforce access.
-        // If authentication fails, Supabase returns 400/403 XML.
-        window.open(resource.file_url, '_blank');
-        toast.info(`جاري فتح ${resource.title}...`);
+    const handleDownload = async (resource: LessonResource) => {
+        try {
+            toast.info(`جاري تحضير الملف الآمن...`);
+            // Dynamically import the action to avoid server-module-in-client errors if not handled by Next.js automatically
+            // But since 'use server' is in the file, we can import it at the top. 
+            // However, let's keep it simple.
+
+            // Extract the storage path from the full URL or just store the path in DB?
+            // The DB stores `file_url`. If it's a full URL, we need to extract the path.
+            // Assuming `file_url` is something like "https://.../storage/v1/object/public/course-materials/filename.pdf"
+            // We need just "filename.pdf".
+
+            // If the upload stores just the path, great. If full URL, we parse.
+            // Based on ResourceUploader, it stores `publicUrl`. We need to extract the path relative to the bucket.
+            const urlObj = new URL(resource.file_url);
+            const pathParts = urlObj.pathname.split('/course-materials/');
+            if (pathParts.length < 2) {
+                // Fallback: maybe it's just the filename in the DB?
+                window.open(resource.file_url, '_blank');
+                return;
+            }
+            const storagePath = decodeURIComponent(pathParts[1]);
+
+            // Call Server Action
+            const { getLessonResource } = await import('@/actions/secure-storage');
+            const signedUrl = await getLessonResource(id, storagePath);
+
+            window.open(signedUrl, '_blank');
+        } catch (e: any) {
+            console.error("Download error:", e);
+            toast.error(e.message || "فشل تحميل الملف - اشتراكك لا يسمح بذلك");
+        }
     };
 
     return (

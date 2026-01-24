@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Menu, X, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Logo } from "@/components/ui/Logo";
 
 // ============================================================================
 // BRAINY NAVIGATION - QODER STYLE TRANSPARENT PILL
@@ -40,28 +41,7 @@ export function BrainyNav() {
                         href="/dashboard"
                         className="flex items-center gap-2 px-4 py-2 hover:bg-white/5 rounded-full transition-all duration-200"
                     >
-                        {/* Brainy Icon - Vibrant Green */}
-                        <div className="relative w-12 h-12 flex items-center justify-center">
-                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-green-500 rounded-xl blur-md opacity-60" />
-                            <div className="relative flex items-center justify-center w-full h-full bg-gradient-to-br from-emerald-400 to-green-500 rounded-xl">
-                                <svg
-                                    className="w-7 h-7 text-black"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth={2.5}
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                                    />
-                                </svg>
-                            </div>
-                        </div>
-                        <span className="text-lg font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                            Brainy
-                        </span>
+                        <Logo showText={true} className="h-10" />
                     </Link>
 
                     {/* Desktop Divider */}

@@ -39,7 +39,7 @@ export default function SubjectView({ subject, units, isSubscribed }: SubjectVie
                 router.refresh();
             })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'lessons' }, () => {
-                toast.info("Content updated");
+                // simple refresh implies easy sync
                 router.refresh();
             })
             .subscribe();
@@ -60,31 +60,7 @@ export default function SubjectView({ subject, units, isSubscribed }: SubjectVie
                 setActiveLessonId(units[0].lessons[0].id);
             }
         }
-    }, [units]);
-
-    // Realtime Content Sync
-    useEffect(() => {
-        const supabase = createClient();
-        const router = require("next/navigation").useRouter(); // Dynamic require or just import?
-        // Actually imports are at top. I will use the hook I likely imported or need to import.
-
-        const channel = supabase.channel('content-updates')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'units' }, () => {
-                toast.info("Updating course structure...");
-                router.refresh();
-            })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'lessons' }, () => {
-                // specific lesson updates might not need full refresh if we optimized, 
-                // but for "INSTANT" and "Sync", refresh is safest key.
-                toast.info("Content updated");
-                router.refresh();
-            })
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        }
-    }, []); // Empty dep to run once on mount
+    }, [units]); // Removed 'expandedUnits.size' from deps to avoid loop if size changes but units don't
 
     // Fetch Progress
     useEffect(() => {
@@ -94,6 +70,9 @@ export default function SubjectView({ subject, units, isSubscribed }: SubjectVie
             setCompletedLessonIds(completed);
         });
     }, [subject.id]);
+
+    // ... rest of the component
+    // (We rely on logic remaining same, just fixing the hook usage above)
 
     const handleLessonCompleted = async () => {
         if (!activeLessonId) return;
@@ -116,9 +95,19 @@ export default function SubjectView({ subject, units, isSubscribed }: SubjectVie
 
     const activeLesson = allLessons.find((l: any) => l.id === activeLessonId) || allLessons[0];
 
-    // Safety: If no lesson found (empty list?), handle it
+    // Safety: If no lesson found (empty list?), handle it without directing to 404 or crashing
+    if (!activeLesson && units.length > 0) {
+        // Just return a state asking to select lesson, or loading.
+        // Don't redirect.
+    }
+
+    if (units.length === 0) {
+        return <div className="p-10 text-center text-white/50 border border-dashed border-white/10 rounded-xl m-10">لا توجد دروس متاحة في هذا المقرر حتى الآن.</div>;
+    }
+
     if (!activeLesson) {
-        return <div className="p-10 text-center text-white/50">لا توجد دروس متاحة حالياً.</div>;
+        // Should realistically be covered by units check, but safety fallback
+        return <div className="p-10 text-center text-white/50">اختر درساً للبدء</div>;
     }
 
     return (
@@ -145,6 +134,7 @@ export default function SubjectView({ subject, units, isSubscribed }: SubjectVie
                             <PremiumLockScreen />
                         )}
                     </div>
+
 
                     {/* PDF Download Button - Moved Here directly under player */}
                     {activeLesson.pdf_url && (
