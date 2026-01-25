@@ -1,42 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Mail, Lock, AlertCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { loginAction } from "./actions";
+import { useEffect } from "react";
 
 // Zero JS Animations utilized via globals.css
 
 export default function LoginClient() {
-    const router = useRouter();
-    const { loginWithEmail, error } = useAuth();
-    const [loading, setLoading] = useState(false);
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [state, formAction] = useFormState(loginAction, { error: "" });
+    const { pending } = useFormStatus();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            await loginWithEmail(email, password);
-            toast.success("تم تسجيل الدخول بنجاح");
-            setTimeout(() => {
-                router.refresh();
-                router.push("/dashboard");
-            }, 600); // Slightly longer for effect
-        } catch (err: unknown) {
-            console.error(err);
-            const errorMessage = err instanceof Error ? err.message : "فشل تسجيل الدخول";
-            toast.error(errorMessage);
-        } finally {
-            setLoading(false);
+    // Show toast on error
+    useEffect(() => {
+        if (state?.error) {
+            toast.error(state.error);
         }
-    };
+    }, [state]);
 
     return (
         <main className="min-h-screen w-full bg-mesh-dynamic flex items-center justify-center p-4 relative overflow-hidden">
@@ -123,22 +108,21 @@ export default function LoginClient() {
                             </div>
 
                             {/* Error Message */}
-                            {error && (
+                            {state?.error && (
                                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3 text-red-300 text-sm backdrop-blur-sm animate-fade-in">
                                     <AlertCircle className="h-5 w-5 shrink-0" />
-                                    <span>{error}</span>
+                                    <span>{state.error}</span>
                                 </div>
                             )}
 
                             {/* Form */}
-                            <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                            <form action={formAction} className="space-y-6 relative z-10">
                                 <div className="space-y-4">
                                     <div className="relative group">
                                         <Input
+                                            name="email"
                                             type="email"
                                             placeholder="البريد الإلكتروني"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
                                             icon={Mail}
                                             required
                                             className="input-premium h-14 text-right pr-4 rounded-2xl text-white placeholder:text-white/30"
@@ -149,10 +133,9 @@ export default function LoginClient() {
                                     <div className="space-y-2">
                                         <div className="relative group">
                                             <Input
+                                                name="password"
                                                 type="password"
                                                 placeholder="كلمة المرور"
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
                                                 icon={Lock}
                                                 required
                                                 className="input-premium h-14 text-right pr-4 rounded-2xl text-white placeholder:text-white/30"
@@ -172,9 +155,9 @@ export default function LoginClient() {
                                         type="submit"
                                         className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold h-14 rounded-2xl shadow-[0_0_30px_rgba(37,99,235,0.4)] hover:shadow-[0_0_50px_rgba(37,99,235,0.6)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-lg border border-white/20"
                                         size="lg"
-                                        isLoading={loading}
+                                        isLoading={pending}
                                     >
-                                        {loading ? (
+                                        {pending ? (
                                             <div className="flex items-center gap-2">
                                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                                 <span>جاري الدخول...</span>

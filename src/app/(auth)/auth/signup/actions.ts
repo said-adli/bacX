@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 
 export interface SignupState {
@@ -89,6 +91,7 @@ export async function signupAction(prevState: SignupState, formData: FormData): 
         }
     }
 
-    return { success: true };
+    revalidatePath('/', 'layout');
+    redirect('/login?message=Account created successfully');
 }
 
