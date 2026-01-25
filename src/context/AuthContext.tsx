@@ -236,22 +236,35 @@ export function AuthProvider({
     }, [state.session, state.user, supabase]);
     // --- LOGIN ---
     const loginWithEmail = async (email: string, password: string) => {
+        console.log("🔐 [LOGIN] Starting login for:", email);
         setState(prev => ({ ...prev, loading: true, error: null }));
 
         // 1. Supabase Auth (Credentials Check)
+        console.log("🔐 [LOGIN] Calling signInWithPassword...");
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error) {
+            console.error("❌ [LOGIN] signInWithPassword FAILED!");
+            console.error("❌ [LOGIN] Error Message:", error.message);
+            console.error("❌ [LOGIN] Error Code:", error.code);
+            console.error("❌ [LOGIN] Error Status:", error.status);
+            console.error("❌ [LOGIN] Full Error:", JSON.stringify(error, null, 2));
             setState(prev => ({ ...prev, loading: false, error: error.message }));
             throw error;
         }
 
+        console.log("✅ [LOGIN] signInWithPassword SUCCESS!");
+        console.log("✅ [LOGIN] User ID:", data.user?.id);
+        console.log("✅ [LOGIN] Session exists:", !!data.session);
+
         // 2. Wait for cookies to propagate (race condition fix)
-        // The SSR client needs time to sync the session cookie
+        console.log("⏳ [LOGIN] Waiting 100ms for cookie propagation...");
         await new Promise(resolve => setTimeout(resolve, 100));
 
         // 3. Force a session refresh to ensure cookies are set
-        await supabase.auth.getSession();
+        console.log("🔄 [LOGIN] Forcing session refresh...");
+        const { data: sessionData } = await supabase.auth.getSession();
+        console.log("🔄 [LOGIN] Session after refresh:", !!sessionData.session);
 
         // 4. DEVICE LIMIT CHECK (Post-Auth Enforcement)
         if (data.user) {
