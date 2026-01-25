@@ -16,6 +16,8 @@ export async function sendGlobalAnnouncement(message: string, type: 'info' | 'wa
             message,
             type,
             is_global: true, // Marker for "For Everyone"
+            user_id: null,
+            target_audience: null,
             created_at: new Date().toISOString()
         });
 

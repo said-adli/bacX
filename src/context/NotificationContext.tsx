@@ -14,6 +14,7 @@ export interface Notification {
     created_at: string;
     is_global: boolean;
     user_id?: string;
+    target_audience?: string; // Backward compatibility
     read_by?: string[];
 }
 
@@ -97,7 +98,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
                 message,
                 type,
                 is_global: isGlobal,
-                user_id: isGlobal ? null : user.id, // For demo, specific user ID logic would go here if not global
+                user_id: isGlobal ? null : user.id,
+                target_audience: isGlobal ? null : user.id, // Backward compatibility
                 created_at: new Date().toISOString(),
             });
 
