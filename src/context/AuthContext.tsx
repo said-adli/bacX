@@ -306,37 +306,48 @@ export function AuthProvider({
     };
 
     const logout = async () => {
+        // FORCE a redirect FIRST - don't wait for network
+        // This ensures logout ALWAYS works even if Supabase is down
+        const performRedirect = () => {
+            if (typeof window !== 'undefined') {
+                window.localStorage.clear();
+                window.sessionStorage.clear();
+                // Clear all cookies
+                document.cookie.split(";").forEach((c) => {
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                });
+                // Force hard redirect - bypasses React Router completely
+                window.location.href = '/';
+            }
+        };
+
         try {
             console.log("Logging out...");
 
-            // 1. Unregister Device (Free up slot)
+            // Best-effort: Unregister Device
             const deviceId = window.localStorage.getItem('brainy_device_id');
             if (deviceId) {
-                const { unregisterDevice } = await import("@/actions/auth-device");
-                await unregisterDevice(deviceId);  // Best effort
+                try {
+                    const { unregisterDevice } = await import("@/actions/auth-device");
+                    await unregisterDevice(deviceId);
+                } catch (e) {
+                    console.warn("Device unregister failed (non-blocking):", e);
+                }
             }
 
-            // 2. Sign Out
-            await supabase.auth.signOut();
-            console.log("Logged out from Supabase success");
+            // Best-effort: Sign Out from Supabase
+            try {
+                await supabase.auth.signOut();
+                console.log("Logged out from Supabase");
+            } catch (e) {
+                console.warn("Supabase signOut failed (non-blocking):", e);
+            }
         } catch (error) {
             console.error("Logout error (non-blocking):", error);
         } finally {
-            console.log("Redirecting to login...");
-            if (typeof window !== 'undefined') {
-                window.localStorage.removeItem('brainy_device_id'); // Clear device ID? 
-                // Wait, if they logout, they might login again on same device. 
-                // Clearing it means they generate a NEW ID next time, appearing as a NEW device.
-                // BETTER: Keep ID, but we removed it from DB. Next login re-registers same ID.
-                // However, user usually wants to "Clear Slot". 
-                // If I keep ID, and re-login, it inserts same ID. OK.
-                // If I clear ID, I generate new ID. It inserts new ID. OK.
-                // Let's clear to be clean.
-                window.localStorage.clear();
-                window.sessionStorage.clear();
-            }
-            router.push("/");
-            router.refresh();
+            // ALWAYS redirect - even if everything above failed
+            console.log("Force redirecting to home...");
+            performRedirect();
         }
     };
 
