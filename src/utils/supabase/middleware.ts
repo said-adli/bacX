@@ -17,7 +17,7 @@ export async function updateSession(request: NextRequest) {
                     return request.cookies.getAll()
                 },
                 setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value }) => {
+                    cookiesToSet.forEach(({ name, value, options }) => {
                         request.cookies.set(name, value)
                     })
                     response = NextResponse.next({
@@ -37,6 +37,10 @@ export async function updateSession(request: NextRequest) {
 
     // Protected Routes
     const path = request.nextUrl.pathname
+
+    // Add logic here if needed, but the primary goal is ensuring session update works
+    // The previous implementation had redirection logic here, preserving it.
+
     const isProtectedRoute =
         path.startsWith('/dashboard') ||
         path.startsWith('/admin') ||

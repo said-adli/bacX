@@ -14,15 +14,15 @@ export async function signupAction(prevState: SignupState, formData: FormData): 
     const fullName = formData.get("fullName") as string;
 
     // Extract all fields from form
+    // CRITICAL for Data Save: Capture these fields or they will be NULL
     const wilayaId = formData.get("wilaya_id") as string;
     const majorId = formData.get("major_id") as string;
     const studySystem = formData.get("study_system") as string;
-    const phone = formData.get("phone") as string | null; // Optional field
+    const phone = formData.get("phone") as string | null;
 
     const supabase = await createClient();
 
-    // Fetch the labels for IDs to store human-readable values
-    // This is important because the trigger stores these as text, not foreign keys
+    // 1. Fetch Labels (Human Readable)
     let wilayaLabel = "";
     let majorLabel = "";
 
@@ -44,22 +44,21 @@ export async function signupAction(prevState: SignupState, formData: FormData): 
         majorLabel = majorData?.label || majorId;
     }
 
-    // Sign Up User + Pass ALL Metadata for Trigger
-    // CRITICAL: The trigger expects 'wilaya', 'major', 'study_system', 'phone'
+    // 2. Sign Up with Metadata
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
             data: {
                 full_name: fullName,
-                wilaya: wilayaLabel,        // Human-readable label, not ID
-                wilaya_id: wilayaId,        // Also store ID for relational queries
-                major: majorLabel,          // Human-readable label, not ID
-                major_id: majorId,          // Also store ID for relational queries
-                study_system: studySystem,  // 'regular' or 'private'
-                phone: phone || "",         // Phone number (optional)
-                role: "student",            // Default role
-                is_profile_complete: true,  // Mark as complete since all required fields provided
+                wilaya: wilayaLabel,
+                wilaya_id: wilayaId,
+                major: majorLabel,
+                major_id: majorId,
+                study_system: studySystem,
+                phone: phone || "",
+                role: "student",
+                is_profile_complete: true,
             },
         },
     });
@@ -68,10 +67,9 @@ export async function signupAction(prevState: SignupState, formData: FormData): 
         return { error: error.message };
     }
 
-    // MANUAL INGESTION: Guarantee Profile Creation
-    // We manually insert/upsert the profile to ensure it exists even if the SQL trigger fails.
+    // 3. MANUAL INSERTION (Anti-Choking Layer)
+    // If the database trigger fails or hangs, this ensures the profile exists.
     if (data.user) {
-        // Redundant Upsert
         const { error: profileError } = await supabase.from('profiles').upsert({
             id: data.user.id,
             email: email,
@@ -86,12 +84,11 @@ export async function signupAction(prevState: SignupState, formData: FormData): 
         });
 
         if (profileError) {
-            console.error("Manual Profile Creation Failed:", profileError);
-            // We do not stop the flow, as the trigger might have succeeded.
+            console.error("CRITICAL: Manual Profile Insert Failed", profileError);
+            // We proceed anyway, hoping the trigger worked, but this error log is vital.
         }
     }
 
-    // Success
     return { success: true };
 }
 
