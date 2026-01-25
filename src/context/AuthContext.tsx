@@ -246,7 +246,14 @@ export function AuthProvider({
             throw error;
         }
 
-        // 2. DEVICE LIMIT CHECK (Post-Auth Enforcement)
+        // 2. Wait for cookies to propagate (race condition fix)
+        // The SSR client needs time to sync the session cookie
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // 3. Force a session refresh to ensure cookies are set
+        await supabase.auth.getSession();
+
+        // 4. DEVICE LIMIT CHECK (Post-Auth Enforcement)
         if (data.user) {
             // Get or Create Device ID (Persistent)
             let deviceId = window.localStorage.getItem('brainy_device_id');
