@@ -40,6 +40,7 @@ export interface AuthContextType extends AuthState {
     completeOnboarding: (data: { fullName: string; wilaya: string; major: string }) => Promise<void>;
     logout: () => Promise<void>;
     refreshProfile: () => Promise<void>;
+    hydrateProfile: (profile: UserProfile) => void;
     role: "admin" | "student" | null;
 }
 
@@ -272,6 +273,15 @@ export function AuthProvider({
         router.replace('/dashboard');
     };
 
+    // Hydrate profile from server-fetched data (prevents redundant DB calls)
+    const hydrateProfile = useCallback((profile: UserProfile) => {
+        setState(prev => ({
+            ...prev,
+            profile,
+            loading: false
+        }));
+    }, []);
+
     // --- RENDER ---
     return (
         <AuthContext.Provider value={{
@@ -280,6 +290,7 @@ export function AuthProvider({
             signupWithEmail,
             logout,
             refreshProfile,
+            hydrateProfile,
             completeOnboarding,
             role: state.profile?.role || null
         }}>
