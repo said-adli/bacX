@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect, useRef } from "react";
 import { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 // --- TYPES ---
 
@@ -12,14 +12,13 @@ export interface UserProfile {
     email: string;
     full_name?: string;
     wilaya_id?: string;
-    wilaya?: string; // Derived or mapped
+    wilaya?: string;
     major_id?: string;
-    major?: string;  // Derived or mapped
+    major?: string;
     study_system?: string;
     role: "admin" | "student";
     is_profile_complete: boolean;
     is_subscribed?: boolean;
-    subscription_end_date?: string;
     avatar_url?: string;
     created_at: string;
     last_session_id?: string;
@@ -31,6 +30,7 @@ export interface AuthState {
     session: Session | null;
     loading: boolean;
     error: string | null;
+    connectionError: boolean; // NEW: Global connection status
 }
 
 export interface AuthContextType extends AuthState {
@@ -38,417 +38,229 @@ export interface AuthContextType extends AuthState {
     signupWithEmail: (data: { email: string, password: string, fullName: string, wilaya: string, major: string, studySystem?: string }) => Promise<void>;
     logout: () => Promise<void>;
     refreshProfile: () => Promise<void>;
-    hydrateProfile: (profile: UserProfile | null) => Promise<void>;
-    checkProfileStatus: () => Promise<boolean>;
-    completeOnboarding: (data: { fullName: string; wilaya: string; major: string }) => Promise<void>;
-    role: "admin" | "student" | null; // Direct Accessor
+    role: "admin" | "student" | null;
 }
 
-// ... CONTEXT ...
+// --- CONTEXT ---
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({
-    children,
-    initialUser = null,
-    hydratedProfile = null
+    children
 }: {
     children: ReactNode;
-    initialUser?: User | null;
-    hydratedProfile?: UserProfile | null;
 }) {
     const supabase = createClient();
     const router = useRouter();
 
+    // FAIL-SAFE INITIAL STATE: Loading is TRUE by default to prevent UI flash
     const [state, setState] = useState<AuthState>({
-        user: initialUser,
-        profile: hydratedProfile,
+        user: null,
+        profile: null,
         session: null,
-        loading: false, // OPTIMISTIC: Never block UI on auth - trust SSR hydration
+        loading: true,
         error: null,
+        connectionError: false
     });
 
-    // --- HELPERS ---
+    const isMounted = useRef(false);
 
-    const fetchProfile = useCallback(async (userId: string) => {
-        // FIX: Removed JOINs (wilayas, majors) to prevent 404/500 if relations are broken
-        // We fetch raw IDs first to ensure data loads.
-        const { data, error } = await supabase
-            .from("profiles")
-            .select('*')
-            .eq("id", userId)
-            .single();
+    // --- HELPER: ROBUST PROFILE FETCH ---
+    const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
+        try {
+            const { data, error } = await supabase
+                .from("profiles")
+                .select('*')
+                .eq("id", userId)
+                .single();
 
-        if (error) {
-            console.error("Error fetching profile:", error);
-            // Don't kill the app, return null but log it
+            if (error) {
+                console.error("[Auth] Profile Fetch Error:", error);
+
+                // CRITICAL: If fetch fails (RLS/Network), return a Safe Fallback instead of null
+                // This allows the user to access the app (maybe in read-only mode)
+                // rather than getting stuck in a spinner.
+
+                // Check if it's a connection issue (Network or 500)
+                if (error.message && (error.message.includes('fetch') || error.code === '500')) {
+                    setState(prev => ({ ...prev, connectionError: true }));
+                }
+
+                // Fallback Profile
+                return {
+                    id: userId,
+                    email: "", // Will be filled from Auth User
+                    role: "student",
+                    is_profile_complete: false,
+                    created_at: new Date().toISOString()
+                };
+            }
+
+            return {
+                ...data,
+                wilaya: data.wilaya_id || "Unknown",
+                major: data.major_id || "Unknown",
+                is_profile_complete: !!(data.major_id && data.wilaya_id)
+            };
+
+        } catch (err) {
+            console.error("[Auth] Critical Profile Exception:", err);
+            setState(prev => ({ ...prev, connectionError: true }));
             return null;
         }
-
-        // Manual Mapping (Temporary fix until Relations are solid)
-        // ideally we would fetch labels here if needed, but for now we unblock the UI
-        const profile: UserProfile = {
-            ...data,
-            // Fallback: If joined data missing, use IDs or empty strings
-            // If you have a lookup function/object, use it here.
-            wilaya: data.wilaya_id || "Unknown Wilaya",
-            major: data.major_id || "Unknown Major",
-            // Helper checking
-            is_profile_complete: !!(data.major_id && data.wilaya_id)
-        };
-
-        return profile;
     }, [supabase]);
 
-    // Track if we've completed initial auth check
-    const hasInitialized = useRef(!!initialUser);
-    // Track current user ID to avoid duplicate fetches
-    const userIdRef = useRef<string | undefined>(initialUser?.id);
-
+    // --- MAIN AUTH LISTENER ---
     useEffect(() => {
-        // BACKGROUND AUTH LISTENER: Never blocks navigation
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-            // Skip INITIAL_SESSION if we already have SSR data
-            if (event === 'INITIAL_SESSION' && hasInitialized.current) {
-                // Just sync the session object, don't re-fetch profile
-                if (session) {
-                    setState(prev => ({ ...prev, session }));
-                }
+        isMounted.current = true;
+
+        const initAuth = async () => {
+            // 1. Get Session directly first (faster than waiting for event)
+            const { data: { session }, error } = await supabase.auth.getSession();
+
+            if (error) {
+                console.error("[Auth] Session Init Error:", error);
+                if (isMounted.current) setState(prev => ({ ...prev, loading: false }));
                 return;
             }
 
             if (session?.user) {
-                const user = session.user;
-
-                if (!hasInitialized.current) {
-                    // First client-side auth - silently hydrate
-                    hasInitialized.current = true;
-                    userIdRef.current = user.id;
-                    const profile = await fetchProfile(user.id);
-                    setState(prev => ({ ...prev, user, session, profile }));
-                } else if (user.id !== userIdRef.current) {
-                    // User actually changed (rare: account switch)
-                    userIdRef.current = user.id;
-                    const profile = await fetchProfile(user.id);
-                    setState(prev => ({ ...prev, user, session, profile }));
-                } else {
-                    // Same user, just session refresh - update session only
-                    setState(prev => ({ ...prev, session }));
+                const profile = await fetchProfile(session.user.id);
+                if (isMounted.current) {
+                    setState(prev => ({
+                        ...prev,
+                        session,
+                        user: session.user,
+                        profile: { ...profile!, email: session.user.email! }, // Merge email
+                        loading: false
+                    }));
                 }
-            } else if (hasInitialized.current && userIdRef.current) {
-                // Actual logout (not initial empty state)
-                userIdRef.current = undefined;
-                setState(prev => ({
-                    ...prev,
-                    user: null,
-                    session: null,
-                    profile: null
-                }));
+            } else {
+                if (isMounted.current) setState(prev => ({ ...prev, loading: false }));
             }
+        };
 
-            // ANTI-SHARING: Update last_session_id on login/restore
-            if (session?.user?.id && session?.access_token) {
-                if (event === 'SIGNED_IN') {
-                    const newDeviceId = crypto.randomUUID();
-                    if (typeof window !== 'undefined') {
-                        // Store in Session Storage (Client side checks)
-                        window.sessionStorage.setItem('brainy_device_id', newDeviceId);
-                        // Store in Cookie (Server side/Middleware checks) - Valid for session only
-                        document.cookie = `x-device-id=${newDeviceId}; path=/; Secure; SameSite=Strict`;
+        initAuth();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
+            console.log(`[Auth] Event: ${event}`);
+
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                if (session?.user) {
+                    // Update session immediately
+                    setState(prev => ({ ...prev, session, user: session.user }));
+
+                    // Fetch profile if missing or user changed
+                    if (!state.user || state.user.id !== session.user.id) {
+                        const profile = await fetchProfile(session.user.id);
+                        if (isMounted.current) {
+                            setState(prev => ({
+                                ...prev,
+                                profile: { ...profile!, email: session.user.email! }
+                            }));
+                        }
                     }
-
-                    // Update DB with this new device ID
-                    supabase.from('profiles').update({
-                        last_session_id: newDeviceId
-                    }).eq('id', session.user.id).then(({ error }: { error: any }) => {
-                        if (error) console.error("Failed to update session tracking:", error);
+                }
+            } else if (event === 'SIGNED_OUT') {
+                if (isMounted.current) {
+                    setState({
+                        user: null,
+                        profile: null,
+                        session: null,
+                        loading: false,
+                        error: null,
+                        connectionError: false
                     });
-                } else if (event === 'INITIAL_SESSION') {
-                    // Ensure cookie sync if missing?
-                    const storedDeviceId = window.sessionStorage.getItem('brainy_device_id');
-                    if (storedDeviceId) {
-                        document.cookie = `x-device-id=${storedDeviceId}; path=/; Secure; SameSite=Strict`;
-                    }
+                    router.refresh(); // Clear server cache
+                    router.replace('/');
                 }
             }
         });
 
-
-
         return () => {
+            isMounted.current = false;
             subscription.unsubscribe();
         };
-    }, [supabase, fetchProfile]);
+    }, [supabase, fetchProfile, router]);
 
-    // --- IDLE TIMEOUT (30 Minutes) ---
-    useEffect(() => {
-        if (!state.session) return;
 
-        let timeoutId: NodeJS.Timeout;
-        const TIMEOUT_DURATION = 30 * 60 * 1000; // 30 minutes
+    // --- ACTIONS ---
 
-        const resetTimer = () => {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => {
-                console.log("Creation Idle Timeout Triggered. Logging out...");
-                logout();
-            }, TIMEOUT_DURATION);
-        };
-
-        // Events to monitor
-        const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
-
-        // Attach listeners
-        const setupListeners = () => events.forEach(event => window.addEventListener(event, resetTimer));
-        const cleanupListeners = () => events.forEach(event => window.removeEventListener(event, resetTimer));
-
-        setupListeners();
-        resetTimer(); // Start timer
-
-        return () => {
-            cleanupListeners();
-            clearTimeout(timeoutId);
-        };
-    }, [state.session]); // Re-bind when session changes
-
-    // --- HEARTBEAT CHECK (Anti-Sharing) ---
-    useEffect(() => {
-        if (!state.session || !state.user) return;
-
-        const checkSessionValidity = async () => {
-            const storedDeviceId = typeof window !== 'undefined' ? window.sessionStorage.getItem('brainy_device_id') : null;
-            if (!storedDeviceId) return; // Should be set on login
-
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('last_session_id')
-                .eq('id', state.user!.id) // Non-null assertion safe due to check above
-                .single();
-
-            if (error || !data) return;
-
-            // Strict check
-            if (data.last_session_id && data.last_session_id !== storedDeviceId) {
-                console.warn("Session invalidated by newer login on another device.");
-                logout();
-            }
-        };
-
-        // Check every 30 seconds
-        const heartbeatInterval = setInterval(checkSessionValidity, 30000);
-
-        // Initial check
-        checkSessionValidity();
-
-        return () => clearInterval(heartbeatInterval);
-    }, [state.session, state.user, supabase]);
-    // --- LOGIN ---
     const loginWithEmail = async (email: string, password: string) => {
-        console.log("🔐 [LOGIN] Starting login for:", email);
         setState(prev => ({ ...prev, loading: true, error: null }));
 
-        // 1. Supabase Auth (Credentials Check)
-        console.log("🔐 [LOGIN] Calling signInWithPassword...");
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-        if (error) {
-            console.error("❌ [LOGIN] signInWithPassword FAILED!");
-            console.error("❌ [LOGIN] Error Message:", error.message);
-            console.error("❌ [LOGIN] Error Code:", error.code);
-            console.error("❌ [LOGIN] Error Status:", error.status);
-            console.error("❌ [LOGIN] Full Error:", JSON.stringify(error, null, 2));
+        try {
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+        } catch (error: any) {
             setState(prev => ({ ...prev, loading: false, error: error.message }));
             throw error;
         }
-
-        console.log("✅ [LOGIN] signInWithPassword SUCCESS!");
-        console.log("✅ [LOGIN] User ID:", data.user?.id);
-        console.log("✅ [LOGIN] Session exists:", !!data.session);
-
-        // 2. Wait for cookies to propagate (race condition fix)
-        console.log("⏳ [LOGIN] Waiting 100ms for cookie propagation...");
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // 3. Force a session refresh to ensure cookies are set
-        console.log("🔄 [LOGIN] Forcing session refresh...");
-        const { data: sessionData } = await supabase.auth.getSession();
-        console.log("🔄 [LOGIN] Session after refresh:", !!sessionData.session);
-
-        // 4. DEVICE LIMIT CHECK (Post-Auth Enforcement)
-        if (data.user) {
-            // Get or Create Device ID (Persistent)
-            let deviceId = window.localStorage.getItem('brainy_device_id');
-            if (!deviceId) {
-                deviceId = crypto.randomUUID();
-                window.localStorage.setItem('brainy_device_id', deviceId);
-            }
-
-            // Sync to Cookie for Middleware
-            document.cookie = `x-device-id=${deviceId}; path=/; Secure; SameSite=Strict`;
-
-            // Server Check
-            const { checkAndRegisterDevice } = await import("@/actions/auth-device");
-            const result = await checkAndRegisterDevice(deviceId, navigator.userAgent);
-
-            if (!result.success) {
-                console.error("Device Limit Reached:", result.error);
-
-                // CRITICAL: Rollback (Logout immediately)
-                await supabase.auth.signOut();
-
-                setState(prev => ({
-                    ...prev,
-                    user: null,
-                    session: null,
-                    loading: false,
-                    error: result.error ?? null
-                }));
-
-                // Throw error to stop UI redirect
-                throw new Error(result.error);
-            }
-        }
     };
 
-    const signupWithEmail = async ({ email, password, fullName, wilaya, major, studySystem }: { email: string, password: string, fullName: string, wilaya: string, major: string, studySystem?: string }) => {
+    const signupWithEmail = async (data: any) => {
         setState(prev => ({ ...prev, loading: true, error: null }));
-        const { error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    full_name: fullName,
-                    wilaya: wilaya,
-                    major: major,
-                    study_system: studySystem || "",
-                    role: "student",
-                    is_profile_complete: true
+        try {
+            const { error } = await supabase.auth.signUp({
+                email: data.email,
+                password: data.password,
+                options: {
+                    data: {
+                        full_name: data.fullName,
+                        wilaya: data.wilaya,
+                        major: data.major,
+                        role: "student"
+                    }
                 }
-            }
-        });
-
-        if (error) {
+            });
+            if (error) throw error;
+        } catch (error: any) {
             setState(prev => ({ ...prev, loading: false, error: error.message }));
             throw error;
         }
     };
 
     const logout = async () => {
-        // FORCE a redirect FIRST - don't wait for network
-        // This ensures logout ALWAYS works even if Supabase is down
-        const performRedirect = () => {
-            if (typeof window !== 'undefined') {
-                window.localStorage.clear();
-                window.sessionStorage.clear();
-                // Clear all cookies
-                document.cookie.split(";").forEach((c) => {
-                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-                });
-                // Force hard redirect - bypasses React Router completely
-                window.location.href = '/';
-            }
-        };
-
         try {
-            console.log("Logging out...");
-
-            // Best-effort: Unregister Device
-            const deviceId = window.localStorage.getItem('brainy_device_id');
-            if (deviceId) {
-                try {
-                    const { unregisterDevice } = await import("@/actions/auth-device");
-                    await unregisterDevice(deviceId);
-                } catch (e) {
-                    console.warn("Device unregister failed (non-blocking):", e);
-                }
-            }
-
-            // Best-effort: Sign Out from Supabase
-            try {
-                await supabase.auth.signOut();
-                console.log("Logged out from Supabase");
-            } catch (e) {
-                console.warn("Supabase signOut failed (non-blocking):", e);
-            }
+            await supabase.auth.signOut();
         } catch (error) {
-            console.error("Logout error (non-blocking):", error);
-        } finally {
-            // ALWAYS redirect - even if everything above failed
-            console.log("Force redirecting to home...");
-            performRedirect();
+            console.error("Logout error:", error);
+            // Force local cleanup anyway
+            if (isMounted.current) {
+                setState({ user: null, profile: null, session: null, loading: false, error: null, connectionError: false });
+                router.replace('/');
+            }
         }
     };
 
     const refreshProfile = async () => {
         if (state.user) {
             const profile = await fetchProfile(state.user.id);
-            setState(prev => ({ ...prev, profile }));
-        }
-    };
-
-    const hydrateProfile = async (profile: UserProfile | null) => {
-        setState(prev => ({ ...prev, profile }));
-    };
-
-    const checkProfileStatus = async () => {
-        if (!state.user) return false;
-        // If we have local profile, check it
-        if (state.profile) {
-            return !!(state.profile.major_id && state.profile.wilaya_id);
-        }
-
-        // Otherwise fetch
-        const profile = await fetchProfile(state.user.id);
-        return !!(profile?.major_id && profile?.wilaya_id);
-    };
-
-    const completeOnboarding = async (data: { fullName: string; wilaya: string; major: string }) => {
-        if (!state.user) throw new Error("No user logged in");
-
-        const { error: profileError } = await supabase
-            .from('profiles')
-            .update({
-                full_name: data.fullName,
-                wilaya_id: data.wilaya, // Assuming the input 'wilaya' is actually the ID from the form
-                major_id: data.major,   // Assuming the input 'major' is actually the ID from the form
-                is_profile_complete: true,
-                updated_at: new Date().toISOString(),
-            })
-            .eq('id', state.user.id);
-
-        if (profileError) throw profileError;
-
-        await supabase.auth.updateUser({
-            data: {
-                full_name: data.fullName,
-                // We keep metadata for backup/display if needed
-                wilaya: data.wilaya,
-                major: data.major,
-                is_profile_complete: true
+            if (profile) {
+                setState(prev => ({ ...prev, profile: { ...profile, email: state.user!.email! } }));
             }
-        });
-
-        await refreshProfile();
-        router.replace('/dashboard');
+        }
     };
-
-
 
     // --- RENDER ---
+    return (
+        <AuthContext.Provider value={{
+            ...state,
+            loginWithEmail,
+            signupWithEmail,
+            logout,
+            refreshProfile,
+            role: state.profile?.role || null
+        }}>
+            {/* GLOBAL CONNECTION ERROR BANNER */}
+            {state.connectionError && (
+                <div className="bg-red-500/10 border-b border-red-500/20 text-red-500 px-4 py-2 text-center text-sm font-bold animate-pulse">
+                    Connection Interrupted. Some data may be unavailable.
+                </div>
+            )}
 
-    const value: AuthContextType = {
-        ...state,
-        loginWithEmail,
-        signupWithEmail,
-        logout,
-        refreshProfile,
-        hydrateProfile,
-        checkProfileStatus,
-        completeOnboarding,
-        role: state.profile?.role || null
-    };
-
-
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+            {children}
+        </AuthContext.Provider>
+    );
 }
 
 export const useAuth = () => {
