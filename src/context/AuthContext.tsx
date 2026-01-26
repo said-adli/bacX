@@ -67,15 +67,25 @@ export function AuthProvider({
 
     const isMounted = useRef(false);
 
-    // --- HELPER: ROBUST PROFILE FETCH ---
+    // --- HELPER: ROBUST PROFILE FETCH WITH TIMEOUT ---
     const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
         console.log('👤 AuthContext: Fetching Profile for user:', userId);
+
+        // Timeout wrapper to prevent infinite hanging
+        const timeoutMs = 10000; // 10 seconds
+        const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('PROFILE_FETCH_TIMEOUT')), timeoutMs);
+        });
+
         try {
-            const { data, error } = await supabase
+            const queryPromise = supabase
                 .from("profiles")
                 .select('*')
                 .eq("id", userId)
                 .single();
+
+            // Race between query and timeout
+            const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
 
             if (error) {
                 console.error('❌ AuthContext: Profile Fetch FAILED:', error.message, error.code);
@@ -108,10 +118,18 @@ export function AuthProvider({
             console.log('✅ AuthContext: Profile Loaded:', profile.id, profile.role);
             return profile;
 
-        } catch (err) {
-            console.error('❌ AuthContext: Critical Profile EXCEPTION:', err);
+        } catch (err: any) {
+            console.error('❌ AuthContext: Critical Profile EXCEPTION:', err.message || err);
             setState(prev => ({ ...prev, connectionError: true }));
-            return null;
+
+            // Return fallback profile on timeout/error instead of null
+            return {
+                id: userId,
+                email: "",
+                role: "student",
+                is_profile_complete: false,
+                created_at: new Date().toISOString()
+            };
         }
     }, [supabase]);
 
