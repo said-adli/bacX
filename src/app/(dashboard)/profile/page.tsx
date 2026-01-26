@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import {
     User, MapPin, Loader2, BookOpen, GraduationCap, Shield, FileText,
-    Edit3, X, Save, Clock, CheckCircle, AlertTriangle, Phone, RefreshCw, ShieldOff
+    Edit3, X, Save, Clock, CheckCircle, AlertTriangle, RefreshCw, ShieldOff
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/ui/UserAvatar";
@@ -24,15 +24,6 @@ const WILAYAS = [
     "Ghardaïa", "Relizane", "El M'Ghair", "El Meniaa", "Ouled Djellal", "Bordj Baji Mokhtar",
     "Béni Abbès", "Timimoun", "Touggourt", "Djanet", "In Salah", "In Guezzam"
 ];
-
-const MAJOR_LABELS: Record<string, string> = {
-    science: "علوم تجريبية",
-    math: "رياضيات",
-    tech: "تقني رياضي",
-    gest: "تسيير واقتصاد",
-    letter: "آداب وفلسفة",
-    lang: "لغات أجنبية"
-};
 
 export default function ProfilePage() {
     const { profile: contextProfile } = useAuth();
@@ -55,8 +46,7 @@ export default function ProfilePage() {
         wilaya: "",
         major: "",
         study_system: "",
-        bio: "",
-        phone: ""
+        bio: ""
     });
 
     // Sync form data when profile loads from hook
@@ -64,11 +54,10 @@ export default function ProfilePage() {
         if (fetchedProfile) {
             setFormData({
                 full_name: fetchedProfile.full_name || "",
-                wilaya: fetchedProfile.wilaya || "",
-                major: fetchedProfile.major || "",
+                wilaya: fetchedProfile.wilaya_id || "",
+                major: fetchedProfile.major_id || "",
                 study_system: fetchedProfile.study_system || "",
-                bio: fetchedProfile.bio || "",
-                phone: fetchedProfile.phone_number || "",
+                bio: fetchedProfile.bio || ""
             });
         }
     }, [fetchedProfile]);
@@ -103,7 +92,6 @@ export default function ProfilePage() {
             formDataObj.append("major", formData.major);
             formDataObj.append("study_system", formData.study_system);
             formDataObj.append("bio", formData.bio);
-            formDataObj.append("phone", formData.phone);
 
             const result = await submitProfileChangeRequest(formDataObj);
 
@@ -129,11 +117,10 @@ export default function ProfilePage() {
         if (fetchedProfile) {
             setFormData({
                 full_name: fetchedProfile.full_name || "",
-                wilaya: fetchedProfile.wilaya || "",
-                major: fetchedProfile.major || "",
+                wilaya: fetchedProfile.wilaya_id || "",
+                major: fetchedProfile.major_id || "",
                 study_system: fetchedProfile.study_system || "",
-                bio: fetchedProfile.bio || "",
-                phone: fetchedProfile.phone_number || ""
+                bio: fetchedProfile.bio || ""
             });
         }
         setIsEditing(false);
@@ -236,10 +223,10 @@ export default function ProfilePage() {
                                     {studySystemLabel}
                                 </span>
                             )}
-                            {displayProfile.major && (
+                            {displayProfile.major_name && (
                                 <span className="px-3 py-1 bg-white/5 rounded-full border border-white/10 flex items-center gap-1">
                                     <BookOpen className="w-3 h-3" />
-                                    {MAJOR_LABELS[displayProfile.major] || displayProfile.major}
+                                    {displayProfile.major_name}
                                 </span>
                             )}
                             <span className="px-3 py-1 bg-white/5 rounded-full border border-white/10 flex items-center gap-1">
@@ -294,26 +281,6 @@ export default function ProfilePage() {
                         )}
                     </div>
 
-                    {/* Phone */}
-                    <div className="space-y-2">
-                        <label className="text-sm text-white/40 flex items-center gap-2">
-                            <Phone className="w-4 h-4" />
-                            رقم الهاتف
-                        </label>
-                        {isEditing ? (
-                            <input
-                                type="tel"
-                                value={formData.phone}
-                                onChange={(e) => handleInputChange("phone", e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50"
-                                dir="ltr"
-                                placeholder="05 50 ..."
-                            />
-                        ) : (
-                            <p className="text-lg font-medium text-white" dir="ltr">{displayProfile.phone_number || "غير محدد"}</p>
-                        )}
-                    </div>
-
                     {/* Wilaya */}
                     <div className="space-y-2">
                         <label className="text-sm text-white/40 flex items-center gap-2">
@@ -332,7 +299,7 @@ export default function ProfilePage() {
                                 ))}
                             </select>
                         ) : (
-                            <p className="text-lg font-medium text-white">{displayProfile.wilaya || "غير محدد"}</p>
+                            <p className="text-lg font-medium text-white">{displayProfile.wilaya_name || "لم يتم التحديد"}</p>
                         )}
                     </div>
 
@@ -358,7 +325,7 @@ export default function ProfilePage() {
                             </select>
                         ) : (
                             <p className="text-lg font-medium text-white">
-                                {(displayProfile.major && MAJOR_LABELS[displayProfile.major]) || displayProfile.major || "غير محدد"}
+                                {displayProfile.major_name || "لم يتم التحديد"}
                             </p>
                         )}
                     </div>

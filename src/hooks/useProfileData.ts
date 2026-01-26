@@ -7,11 +7,16 @@ interface ProfileData {
     id: string;
     email: string | null;
     full_name: string;
-    wilaya: string;
-    major: string;
+    wilaya_id: string;
+    major_id: string;
+    // Nested relation objects from FK joins
+    majors: { name: string } | null;
+    wilayas: { name: string } | null;
+    // Computed display names (human-readable)
+    major_name: string;
+    wilaya_name: string;
     study_system: string;
     bio: string;
-    phone_number: string;
     role: string;
     avatar_url: string;
 }
@@ -69,11 +74,11 @@ export function useProfileData(
                 throw new Error("AUTH_FAILED");
             }
 
-            // Step 2: Fetch profile with timeout race
+            // Step 2: Fetch profile with FK joins for human-readable names
             const profileResult = await Promise.race([
                 supabase
                     .from('profiles')
-                    .select('*')
+                    .select('*, majors(name), wilayas(name)')
                     .eq('id', authUser.id)
                     .maybeSingle(),
                 timeoutPromise
@@ -91,19 +96,23 @@ export function useProfileData(
                 throw new Error(profileError.message);
             }
 
-            // Step 4: Build profile with metadata fallback
+            // Step 4: Build profile with human-readable names from FK joins
             const metadata = authUser.user_metadata || {};
             const mergedProfile: ProfileData = {
                 id: authUser.id,
                 email: authUser.email || null,
                 full_name: profileData?.full_name || metadata.full_name || "",
-                // Manual Mapping for robustness
-                wilaya: profileData?.wilaya_id || metadata.wilaya || "",
-                major: profileData?.major_id || metadata.major || "",
-
+                // Raw IDs
+                wilaya_id: profileData?.wilaya_id || "",
+                major_id: profileData?.major_id || "",
+                // Nested relation objects
+                majors: profileData?.majors || null,
+                wilayas: profileData?.wilayas || null,
+                // Human-readable names (computed from FK joins)
+                major_name: profileData?.majors?.name || metadata.major || "",
+                wilaya_name: profileData?.wilayas?.name || metadata.wilaya || "",
                 study_system: profileData?.study_system || metadata.study_system || "",
                 bio: profileData?.bio || "",
-                phone_number: profileData?.phone_number || metadata.phone || "",
                 role: profileData?.role || "student",
                 avatar_url: profileData?.avatar_url || metadata.avatar_url || "",
             };
