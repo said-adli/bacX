@@ -33,6 +33,9 @@ const CrystalSubjectCardComponent = function CrystalSubjectCard({ subject }: { s
         setOpacity(0);
     };
 
+    // 🔍 DEBUG: Inspect the data being rendered to check for "undefined" or wrong property names
+    console.log("🔍 DEBUG ITEM (SubjectCard):", JSON.stringify(subject, null, 2));
+
     return (
         <Link href={`/materials/${subject.id}`}>
             <div
