@@ -198,7 +198,8 @@ export function AuthProvider({
             isMounted.current = false;
             subscription.unsubscribe();
         };
-    }, [supabase, fetchProfile, router]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fetchProfile, router]); // Removed supabase - it's a singleton but reference changes
 
 
     // --- ACTIONS ---

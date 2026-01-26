@@ -110,13 +110,16 @@ export function useProfileData(
 
             if (isMountedRef.current) {
                 setProfile(mergedProfile);
+                setLoading(false); // ✅ Set loading false on success
                 retryCountRef.current = 0; // Reset on success
+                console.log('[useProfileData] ✅ Profile loaded successfully');
             }
 
         } catch (err: any) {
             if (!isMountedRef.current) return;
 
             const errorMessage = err.message || "UNKNOWN_ERROR";
+            console.log('[useProfileData] Error:', errorMessage);
 
             // Auto-retry with exponential backoff (except for auth/access errors)
             if (retryCountRef.current < maxRetries &&
@@ -131,12 +134,17 @@ export function useProfileData(
                 setTimeout(() => {
                     if (isMountedRef.current) fetchProfile();
                 }, delay);
+                // Keep loading=true during retries, don't fall through to finally
                 return;
             }
 
+            // Only set error if retries exhausted or critical error
             setError(errorMessage);
+            setLoading(false); // Explicitly set loading false on final error
         } finally {
-            if (isMountedRef.current) {
+            // Only set loading false here if we didn't return early (retry case)
+            // This is handled by the success path
+            if (isMountedRef.current && retryCountRef.current >= maxRetries) {
                 setLoading(false);
             }
         }
