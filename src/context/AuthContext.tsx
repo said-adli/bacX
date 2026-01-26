@@ -37,6 +37,7 @@ export interface AuthState {
 export interface AuthContextType extends AuthState {
     loginWithEmail: (email: string, password: string) => Promise<void>;
     signupWithEmail: (data: { email: string, password: string, fullName: string, wilaya: string, major: string, studySystem?: string }) => Promise<void>;
+    completeOnboarding: (data: { fullName: string; wilaya: string; major: string }) => Promise<void>;
     logout: () => Promise<void>;
     refreshProfile: () => Promise<void>;
     role: "admin" | "student" | null;
@@ -242,6 +243,35 @@ export function AuthProvider({
         }
     };
 
+    const completeOnboarding = async (data: { fullName: string; wilaya: string; major: string }) => {
+        if (!state.user) throw new Error("No user logged in");
+
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+                full_name: data.fullName,
+                wilaya_id: data.wilaya,
+                major_id: data.major,
+                is_profile_complete: true,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', state.user.id);
+
+        if (profileError) throw profileError;
+
+        await supabase.auth.updateUser({
+            data: {
+                full_name: data.fullName,
+                wilaya: data.wilaya,
+                major: data.major,
+                is_profile_complete: true
+            }
+        });
+
+        await refreshProfile();
+        router.replace('/dashboard');
+    };
+
     // --- RENDER ---
     return (
         <AuthContext.Provider value={{
@@ -250,6 +280,7 @@ export function AuthProvider({
             signupWithEmail,
             logout,
             refreshProfile,
+            completeOnboarding,
             role: state.profile?.role || null
         }}>
             {/* GLOBAL CONNECTION ERROR BANNER */}
