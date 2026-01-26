@@ -1,13 +1,11 @@
-"use client";
-
+import { Suspense } from "react";
+import { getDashboardData } from "@/actions/dashboard";
 import { GlassCard } from "@/components/ui/GlassCard";
 import CinematicHero from "@/components/dashboard/CinematicHero";
 import { CrystalSubjectCard } from "@/components/dashboard/CrystalSubjectCard";
 import { Clock, TrendingUp, Zap } from "lucide-react";
-import { createClient } from "@/utils/supabase/client";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+export const dynamic = 'force-dynamic';
 
 // Types
 interface Subject {
@@ -19,89 +17,30 @@ interface Subject {
     lessons: { id: string; title: string }[];
 }
 
-interface Stats {
-    courses: number;
-    hours: number;
-    rank: string;
-}
+export default async function DashboardPage({
+    searchParams,
+}: {
+    searchParams: { [key: string]: string | string[] | undefined };
+}) {
+    const query = (typeof searchParams.q === 'string' ? searchParams.q : "")?.toLowerCase();
 
-export default function DashboardPage() {
-    const searchParams = useSearchParams();
-    const query = searchParams.get("q")?.toLowerCase() || "";
-    const supabase = createClient();
+    // Fetch Data on Server
+    const data = await getDashboardData();
 
-    const [subjects, setSubjects] = useState<Subject[]>([]);
-    const [stats, setStats] = useState<Stats>({ courses: 0, hours: 0, rank: "--" });
-    const [loading, setLoading] = useState(true);
-    const [isSubscribed, setIsSubscribed] = useState(false);
+    if ('error' in data) {
+        return (
+            <div className="flex items-center justify-center min-h-[50vh]">
+                <div className="text-red-400">Unable to load dashboard. Please try again later.</div>
+            </div>
+        );
+    }
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // 0. User & Auth Status
-                const { data: { user } } = await supabase.auth.getUser();
+    const { subjects, stats, isSubscribed } = data;
 
-                if (!user) {
-                    console.warn("No user found in Dashboard fetchData");
-                    // Optionally redirect here or let Middleware handle it. 
-                    // For now, stop loading to avoid infinite spinner.
-                    setLoading(false);
-                    return;
-                }
-
-                if (user) {
-                    // Safe Check for subscription
-                    const { data: profile } = await supabase
-                        .from('profiles')
-                        .select('is_subscribed')
-                        .eq('id', user.id)
-                        .maybeSingle(); // Use maybeSingle to avoid 406/404 errors if row missing
-
-                    if (profile) setIsSubscribed(profile.is_subscribed);
-                }
-
-                // 1. Fetch Subjects
-                const { data: subjectData, error: subjectError } = await supabase
-                    .from('subjects')
-                    .select('*, lessons(id, title)');
-
-                if (subjectError) {
-                    console.error("Error fetching subjects:", subjectError);
-                    // Don't throw, just log. 
-                }
-
-                if (subjectData) setSubjects(subjectData);
-
-                // 2. Fetch Stats (Real Counts)
-                const { count: subjectCount, error: countError } = await supabase
-                    .from('subjects')
-                    .select('*', { count: 'exact', head: true });
-
-                if (countError) console.error("Error fetching stats:", countError);
-
-                // For "Hours", we'd sum durations. For now, zero or random placeholder if no real data.
-                const hours = 0;
-
-                setStats({
-                    courses: subjectCount || 0,
-                    hours: hours,
-                    rank: "#--"
-                });
-
-            } catch (error) {
-                console.error("Critical Error in Dashboard fetching:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
-
-    const filteredSubjects = subjects.filter(s => {
-        // Search Filter
+    // Filter Logic (Server Side - In Memory)
+    const filteredSubjects = subjects.filter((s: any) => {
         if (!query) return true;
         const matchesSubject = s.name.toLowerCase().includes(query);
-        // Note: This search only checks direct lessons. If we move to units, we need deep search.
         const matchesLesson = s.lessons?.some((l: any) => l.title.toLowerCase().includes(query));
         return matchesSubject || matchesLesson;
     });
@@ -109,50 +48,38 @@ export default function DashboardPage() {
     return (
         <div className="space-y-16 animate-in fade-in zoom-in duration-700 pb-20">
 
-            {/* 1. HERO SECTION (PLANET) */}
+            {/* 1. HERO SECTION */}
             <CinematicHero />
 
-            {/* 2. STATS (Transparent Glass) */}
+            {/* 2. STATS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-4 md:px-0">
-                {loading ? (
-                    // Loading Skeletons
-                    [1, 2, 3].map((i) => (
-                        <div key={i} className="glass-card p-6 flex items-center justify-between border-white/5">
-                            <div className="space-y-2">
-                                <div className="h-4 w-24 bg-white/10 rounded animate-pulse" />
-                                <div className="h-8 w-16 bg-white/10 rounded animate-pulse" />
-                            </div>
-                            <div className="w-12 h-12 rounded-full bg-white/5 animate-pulse" />
+                {[
+                    { label: "المواد المتاحة", value: stats.courses, icon: Zap, color: "text-yellow-400" },
+                    { label: "ساعات التعلم", value: stats.hours, icon: Clock, color: "text-blue-400" },
+                    { label: "الترتيب العام", value: stats.rank, icon: TrendingUp, color: "text-green-400" },
+                ].map((stat, i) => (
+                    <div key={i} className="glass-card p-6 flex items-center justify-between hover:bg-white/10 cursor-default">
+                        <div>
+                            <p className="text-sm text-white/40 mb-1">{stat.label}</p>
+                            <p className="text-3xl font-bold font-serif">{stat.value}</p>
                         </div>
-                    ))
-                ) : (
-                    // Real Data
-                    [
-                        { label: "المواد المتاحة", value: stats.courses, icon: Zap, color: "text-yellow-400" },
-                        { label: "ساعات التعلم", value: stats.hours, icon: Clock, color: "text-blue-400" },
-                        { label: "الترتيب العام", value: stats.rank, icon: TrendingUp, color: "text-green-400" },
-                    ].map((stat, i) => (
-                        <div key={i} className="glass-card p-6 flex items-center justify-between hover:bg-white/10 cursor-default">
-                            <div>
-                                <p className="text-sm text-white/40 mb-1">{stat.label}</p>
-                                <p className="text-3xl font-bold font-serif">{stat.value}</p>
-                            </div>
-                            <div className={`w-12 h-12 rounded-full bg-white/5 flex items-center justify-center ${stat.color}`}>
-                                <stat.icon size={24} />
-                            </div>
+                        <div className={`w-12 h-12 rounded-full bg-white/5 flex items-center justify-center ${stat.color}`}>
+                            <stat.icon size={24} />
                         </div>
-                    ))
-                )}
+                    </div>
+                ))}
             </div>
 
             {/* 3. CRYSTAL GRID (Subjects) */}
             <div className="space-y-6">
                 <div className="flex items-center justify-between px-2">
-                    <h2 className="text-2xl font-bold text-white">مسار التعلم {query && <span className="text-sm text-blue-400 font-normal">(نتائج البحث: {query})</span>}</h2>
+                    <h2 className="text-2xl font-bold text-white">
+                        مسار التعلم {query && <span className="text-sm text-blue-400 font-normal">(نتائج البحث: {query})</span>}
+                    </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {filteredSubjects.length > 0 ? (
-                        filteredSubjects.map((subject) => (
+                        filteredSubjects.map((subject: any) => (
                             <CrystalSubjectCard key={subject.id} subject={subject} />
                         ))
                     ) : (
@@ -169,12 +96,11 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            {/* 4. SUBSCRIPTION / OFFERS SECTION (Dynamic) */}
-            {!loading && !isSubscribed && (
+            {/* 4. SUBSCRIPTION / OFFERS SECTION */}
+            {!isSubscribed && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* 2. PREMIUM CARD: FULL ACCESS */}
+                    {/* PREMIUM CARD: FULL ACCESS */}
                     <GlassCard className="p-6 flex flex-col justify-between relative overflow-hidden group border-purple-500/30 hover:border-purple-500/60 transition-all duration-500">
-                        {/* Glow Effect */}
                         <div className="absolute inset-0 bg-purple-600/5 group-hover:bg-purple-600/10 transition-colors duration-500" />
                         <div className="absolute -right-10 -top-10 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl group-hover:bg-purple-500/30 transition-all" />
 
@@ -194,9 +120,8 @@ export default function DashboardPage() {
                         </button>
                     </GlassCard>
 
-                    {/* 3. PREMIUM CARD: TEACHER VIP */}
+                    {/* PREMIUM CARD: TEACHER VIP */}
                     <GlassCard className="p-6 flex flex-col justify-between relative overflow-hidden group border-blue-500/30 hover:border-blue-500/60 transition-all duration-500">
-                        {/* Glow Effect */}
                         <div className="absolute inset-0 bg-blue-600/5 group-hover:bg-blue-600/10 transition-colors duration-500" />
                         <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl group-hover:bg-blue-500/30 transition-all" />
 
@@ -218,10 +143,8 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            {/* If Subscribed, show Progress maybe? (Future enhancement) */}
             {/* 4. CONTENT SECTIONS */}
             <div className="grid grid-cols-1 gap-8">
-                {/* Empty State / Coming Soon for News */}
                 <div className="p-8 border border-white/5 rounded-2xl bg-white/5 flex flex-col items-center justify-center text-center">
                     <Clock className="w-12 h-12 text-blue-400 mb-4 opacity-50" />
                     <h3 className="text-xl font-bold text-white mb-2">المستجدات والمواعيد</h3>

@@ -13,6 +13,7 @@ interface Subject {
     icon: string;
     description: string;
     color?: string;
+    lessons?: { id: string; title: string }[];
     [key: string]: any;
 }
 
