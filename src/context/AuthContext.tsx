@@ -67,14 +67,18 @@ export function AuthProvider({
 
     const isMounted = useRef(false);
 
-    // --- HELPER: CLEAN PROFILE FETCH ---
     const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
-        console.log('👤 AuthContext: Fetching Profile for user:', userId);
+        console.log('👤 AuthContext: Fetching Profile with Explicit Joins for:', userId);
 
         try {
+            // FIX: Use explicit foreign key syntax to avoid ambiguity
             const { data, error } = await supabase
                 .from("profiles")
-                .select('*')
+                .select(`
+                    *,
+                    majors:major_id ( name ),
+                    wilayas:wilaya_id ( name )
+                `)
                 .eq("id", userId)
                 .single();
 
@@ -83,15 +87,28 @@ export function AuthProvider({
                 return null;
             }
 
-            const profile = {
-                ...data,
-                // Use raw IDs for now (no FK joins)
-                wilaya: data.wilaya_id || "",
-                major: data.major_id || "",
-                is_profile_complete: !!(data.major_id && data.wilaya_id)
+            // Type assertion for the joined data structure
+            const rawData = data as any;
+
+            const profile: UserProfile = {
+                ...rawData,
+                // Map nested objects to flat strings
+                // Use optional chaining just in case the join returns null (though it shouldn't if ID exists)
+                wilaya: rawData.wilayas?.name || "",
+                major: rawData.majors?.name || "",
+                // Ensure IDs are strings
+                wilaya_id: rawData.wilaya_id || "",
+                major_id: rawData.major_id || "",
+                is_profile_complete: !!(rawData.major_id && rawData.wilaya_id)
             };
 
-            console.log('✅ AuthContext: Profile Loaded:', profile.id, profile.role);
+            console.log('✅ AuthContext: Profile Loaded & Mapped:', {
+                id: profile.id,
+                role: profile.role,
+                wilaya: profile.wilaya,
+                major: profile.major
+            });
+
             return profile;
 
         } catch (err: any) {
