@@ -67,52 +67,56 @@ export function AuthProvider({
 
     const isMounted = useRef(false);
 
-    const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
-        console.log('👤 AuthContext: Fetching Profile with Explicit Joins for:', userId);
-
+    const fetchProfile = useCallback(async (userId: string) => {
         try {
-            // FIX: Use explicit foreign key syntax to avoid ambiguity
-            const { data, error } = await supabase
-                .from("profiles")
-                .select(`
-                    *,
-                    majors:major_id ( label ),
-                    wilayas:wilaya_id ( full_label )
-                `)
-                .eq("id", userId)
+            console.log("👤 AuthContext: Step 1 - Fetching Profile ONLY (No Joins)...");
+
+            // 1. Fetch raw profile (Fast & Safe from Deadlocks)
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
                 .single();
 
-            if (error) {
-                console.error('❌ AuthContext: Profile Fetch FAILED:', error.message, error.code);
+            if (error || !profile) {
+                console.error("❌ Profile Error:", error.message);
                 return null;
             }
 
-            // Type assertion for the joined data structure
-            const rawData = data as any;
+            // 2. Fetch Details in Parallel (if IDs exist)
+            let majorName = null;
+            let wilayaName = null;
 
-            const profile: UserProfile = {
-                ...rawData,
-                // Map nested objects to flat strings
-                // Use optional chaining just in case the join returns null (though it shouldn't if ID exists)
-                wilaya: rawData.wilayas?.full_label || "",
-                major: rawData.majors?.label || "",
-                // Ensure IDs are strings
-                wilaya_id: rawData.wilaya_id || "",
-                major_id: rawData.major_id || "",
-                is_profile_complete: !!(rawData.major_id && rawData.wilaya_id)
-            };
+            const promises = [];
 
-            console.log('✅ AuthContext: Profile Loaded & Mapped:', {
-                id: profile.id,
-                role: profile.role,
-                wilaya: profile.wilaya,
-                major: profile.major
-            });
+            if (profile.major_id) {
+                promises.push(
+                    supabase.from('majors').select('label').eq('id', profile.major_id).single()
+                        .then(({ data }: any) => majorName = data?.label)
+                );
+            }
 
-            return profile;
+            if (profile.wilaya_id) {
+                promises.push(
+                    supabase.from('wilayas').select('full_label').eq('id', profile.wilaya_id).single()
+                        .then(({ data }: any) => wilayaName = data?.full_label)
+                );
+            }
 
-        } catch (err: any) {
-            console.error('❌ AuthContext: Profile Exception:', err.message || err);
+            await Promise.all(promises);
+
+            // 3. Construct final object (Cast to any to avoid TS errors on new fields)
+            const finalProfile = {
+                ...profile,
+                major_name: majorName,
+                wilaya_name: wilayaName
+            } as any;
+
+            console.log("✅ Profile Loaded via Split Strategy:", finalProfile);
+            return finalProfile;
+
+        } catch (err) {
+            console.error("💥 Critical Fetch Error:", err);
             return null;
         }
     }, [supabase]);
