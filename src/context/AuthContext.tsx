@@ -221,6 +221,29 @@ export function AuthProvider({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fetchProfile, router]); // Removed supabase - it's a singleton but reference changes
 
+    // --- DEBUG: SAFETY TIMEOUT ---
+    useEffect(() => {
+        let safetyTimer: NodeJS.Timeout;
+
+        if (state.loading) {
+            safetyTimer = setTimeout(() => {
+                console.error("🚨 DEBUG: LOADER TIMED OUT! Forcing UI to render to see errors.");
+
+                setState(prev => {
+                    console.log("🚨 DEBUG STATE REPORT:", {
+                        user: prev.user,
+                        session: prev.session,
+                        error: prev.error,
+                        profile: prev.profile
+                    });
+                    return { ...prev, loading: false };
+                });
+            }, 4000);
+        }
+
+        return () => clearTimeout(safetyTimer);
+    }, [state.loading]);
+
 
     // --- ACTIONS ---
 
