@@ -117,6 +117,24 @@ export function AuthProvider({
         }
     }, [supabase]);
 
+    // --- DEBUG: SAFETY TIMEOUT ---
+    // Forces the app to "wake up" if Supabase hangs
+    useEffect(() => {
+        let safetyTimer: NodeJS.Timeout;
+
+        if (state.loading) {
+            safetyTimer = setTimeout(() => {
+                console.error("🚨 DEBUG: LOADER TIMED OUT! Forcing UI to render.");
+                setState(prev => {
+                    console.log("🚨 DEBUG STATE SNAPSHOT:", prev);
+                    return { ...prev, loading: false };
+                });
+            }, 5000); // 5 seconds max
+        }
+
+        return () => clearTimeout(safetyTimer);
+    }, [state.loading]);
+
     // --- MAIN AUTH LISTENER ---
     useEffect(() => {
         console.log('🔄 AuthContext: Effect Running - Initial Mount');
@@ -124,6 +142,8 @@ export function AuthProvider({
 
         const initAuth = async () => {
             console.log('🔄 AuthContext: initAuth() starting...');
+            // Measure execution time
+            const start = performance.now();
 
             try {
                 // 1. Get Session directly first (faster than waiting for event)
@@ -132,14 +152,15 @@ export function AuthProvider({
 
                 if (error) {
                     console.error('❌ AuthContext: Session Init Error:', error);
-                    // We don't return here, we let the finally block handle loading state
-                    // But we should stop processing if session error
                     return;
                 }
 
                 if (session?.user) {
                     console.log('🔄 AuthContext: Session found, fetching profile for:', session.user.id);
+
+                    console.time("profile-fetch");
                     const profile = await fetchProfile(session.user.id);
+                    console.timeEnd("profile-fetch");
 
                     if (isMounted.current) {
                         if (profile) {
@@ -152,22 +173,19 @@ export function AuthProvider({
                                 loading: false
                             }));
                         } else {
-                            // Profile fetch failed but we have a user. 
-                            // We should still allow them in (perhaps in a limited state) or just show user without profile
                             console.warn('⚠️ AuthContext: Profile missing for logged in user.');
                             setState(prev => ({
                                 ...prev,
                                 session,
                                 user: session.user,
-                                profile: null, // Allow null profile, app should handle it
+                                profile: null,
                                 loading: false,
-                                connectionError: true // Flag this as a partial load
+                                connectionError: true
                             }));
                         }
                     }
                 } else {
                     console.log('🔄 AuthContext: No session found');
-                    // No session is a valid state, just stop loading
                 }
 
             } catch (err) {
@@ -176,10 +194,10 @@ export function AuthProvider({
                     setState(prev => ({ ...prev, error: "Failed to initialize session.", connectionError: true }));
                 }
             } finally {
+                const duration = performance.now() - start;
+                console.log(`🏁 AuthContext: initAuth finished in ${duration.toFixed(2)}ms. Force stopping loading.`);
+
                 if (isMounted.current) {
-                    console.log('🏁 AuthContext: initAuth finished. Force stopping loading.');
-                    // use functional update to ensure we don't overwrite other parallel state changes if any (though unlikely here)
-                    // But simpler: just force loading false if it's still true
                     setState(prev => ({ ...prev, loading: false }));
                 }
             }
