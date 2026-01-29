@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { getDashboardData } from "@/actions/dashboard";
 import { GlassCard } from "@/components/ui/GlassCard";
 import CinematicHero from "@/components/dashboard/CinematicHero";
-import { SubjectCard } from "@/components/dashboard/SubjectCard"; // UPDATED IMPORT
+import { SubjectCards } from "@/components/dashboard/SubjectCards"; // UPDATED IMPORT
 import { Clock, TrendingUp, Zap } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
@@ -38,15 +38,7 @@ export default async function DashboardPage({
         );
     }
 
-    const { subjects, stats, isSubscribed } = data;
-
-    // Filter Logic (Server Side - In Memory)
-    const filteredSubjects = subjects.filter((s: any) => {
-        if (!query) return true;
-        const matchesSubject = s.name.toLowerCase().includes(query);
-        const matchesLesson = s.lessons?.some((l: any) => l.title.toLowerCase().includes(query));
-        return matchesSubject || matchesLesson;
-    });
+    const { stats, isSubscribed } = data;
 
     return (
         <div className="space-y-16 animate-in fade-in zoom-in duration-700 pb-20">
@@ -80,23 +72,8 @@ export default async function DashboardPage({
                         مسار التعلم {query && <span className="text-sm text-blue-400 font-normal">(نتائج البحث: {query})</span>}
                     </h2>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {filteredSubjects.length > 0 ? (
-                        filteredSubjects.map((subject: any) => (
-                            <SubjectCard key={subject.id} subject={subject} />
-                        ))
-                    ) : (
-                        <div className="col-span-1 md:col-span-2 py-12 flex flex-col items-center justify-center text-center opacity-50 space-y-4 rounded-2xl border border-white/5 bg-white/5">
-                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
-                                <Clock className="w-8 h-8 text-white/40" />
-                            </div>
-                            <h3 className="text-xl font-bold text-white">ابدأ رحلتك التعليمية</h3>
-                            <p className="text-sm text-white/40 max-w-md">
-                                لا توجد مواد متاحة حالياً. يرجى تصفح المسارات أو التواصل مع الإدارة.
-                            </p>
-                        </div>
-                    )}
-                </div>
+                {/* CLIENT COMPONENT FOR SUBJECTS (No Timeout) */}
+                <SubjectCards query={query} />
             </div>
 
             {/* 4. SUBSCRIPTION / OFFERS SECTION */}
