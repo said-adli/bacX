@@ -14,8 +14,10 @@ export default async function SubjectPage({ params }: PageProps) {
     const { subjectId } = await params;
 
     // 0. UUID Validation (Prevent 500 Invalid Syntax Errors)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(subjectId)) {
+    // 0. ID Validation (Allow UUIDs and Slugs)
+    // Supports: "math", "physics-101", "123e4567-..."
+    const idRegex = /^[a-zA-Z0-9-_]+$/;
+    if (!idRegex.test(subjectId)) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
                 <GlassCard className="p-8 text-center max-w-md border-red-500/20">
