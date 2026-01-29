@@ -71,6 +71,7 @@ export function AuthProvider({
     const isMounted = useRef(false);
 
     // --- FETCH STRATEGY: SPLIT FETCH (ROBUST) ---
+    /*
     const fetchProfile = useCallback(async (userId: string) => {
         try {
             console.log("👤 AuthContext: Step 1 - Fetching Profile Row...");
@@ -133,6 +134,30 @@ export function AuthProvider({
             throw err;
         }
     }, [supabase]);
+    */
+
+    // 🛑 DEBUG MODE: STATIC BYPASS
+    // This function ignores Supabase and returns instant mock data
+    const fetchProfile = useCallback(async (userId: string) => {
+        console.log("🚀 DEBUG: Bypassing Database Connection...");
+
+        // Return a valid mock object immediately
+        return {
+            id: userId,
+            full_name: "Debug User (No DB)",
+            name: "Debug User (No DB)",
+            role: "student",
+            email: "debug@test.com",
+            avatar: null,
+            major_id: null,
+            wilaya_id: null,
+            major_name: "Static Major",
+            wilaya_name: "Static Wilaya",
+            // Mandatory fields for TS
+            is_profile_complete: true,
+            created_at: new Date().toISOString()
+        } as any;
+    }, []);
 
     // --- MAIN INITIALIZATION EFFECT ---
     useEffect(() => {
@@ -252,7 +277,7 @@ export function AuthProvider({
             isMounted.current = false;
             subscription.unsubscribe();
         };
-    }, [supabase, fetchProfile, router, state.profile]);
+    }, [supabase, fetchProfile, router]); // Fixed: Removed state.profile to prevent loop
 
 
     // --- ACTIONS ---
