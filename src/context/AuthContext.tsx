@@ -70,22 +70,29 @@ export function AuthProvider({
 
     const isMounted = useRef(false);
 
-    // --- FETCH STRATEGY: SPLIT FETCH (ROBUST) ---
-    /*
+    // --- FETCH STRATEGY: TIMEOUT-GUARDED SPLIT FETCH ---
     const fetchProfile = useCallback(async (userId: string) => {
+        console.log("👤 Connecting to Real DB with 3s Timeout...");
         try {
-            console.log("👤 AuthContext: Step 1 - Fetching Profile Row...");
-
-            // STEP 1: Fetch Profile Row ONLY
-            const { data: profile, error } = await supabase
+            // STEP 1: Define the Real Request (Optimized Columns)
+            // Adapting 'name' -> 'full_name' and 'avatar' -> 'avatar_url' to match schema/interface
+            const dbQuery = supabase
                 .from('profiles')
-                .select('*')
+                .select('id, full_name, role, avatar_url, major_id, wilaya_id, is_profile_complete')
                 .eq('id', userId)
                 .single();
 
+            // STEP 2: Define the Timeout
+            const timeout = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("REQUEST_TIMEOUT")), 3000)
+            );
+
+            // STEP 3: Race them
+            const { data: profile, error } = await Promise.race([dbQuery, timeout]) as any;
+
             if (error) {
-                console.error("❌ Profile Error:", error.message);
-                throw new Error(`Profile fetch failed: ${error.message}`);
+                console.error("❌ Profile Error or Timeout:", error.message || error);
+                throw error;
             }
 
             if (!profile) {
@@ -93,7 +100,9 @@ export function AuthProvider({
                 throw new Error("Profile Not Found");
             }
 
-            // STEP 2: Fetch Foreign Key Details in Parallel
+            console.log("✅ Real Data Loaded (row only):", profile);
+
+            // STEP 4: Fetch Details in Parallel (Majors/Wilayas)
             let majorName = null;
             let wilayaName = null;
             const promises = [];
@@ -116,48 +125,21 @@ export function AuthProvider({
 
             await Promise.all(promises);
 
-            // STEP 3: Merge and Return
-            // We cast to any to safely add extended properties without TS yelling
-            // ensuring the base structural integrity matches UserProfile
+            // STEP 5: Merge and Return
             const finalProfile = {
                 ...profile,
                 major_name: majorName,
                 wilaya_name: wilayaName
             } as any;
 
-            console.log("✅ Profile Loaded:", finalProfile);
+            console.log("✅ Profile Fully Loaded:", finalProfile);
             return finalProfile;
 
-        } catch (err) {
-            console.error("💥 Critical Fetch Error:", err);
-            // We do NOT return fake data. We let the caller handle the failure.
-            throw err;
+        } catch (err: any) {
+            console.error("💥 DB Connection Failed/Timed out:", err);
+            return null;
         }
     }, [supabase]);
-    */
-
-    // 🛑 DEBUG MODE: STATIC BYPASS
-    // This function ignores Supabase and returns instant mock data
-    const fetchProfile = useCallback(async (userId: string) => {
-        console.log("🚀 DEBUG: Bypassing Database Connection...");
-
-        // Return a valid mock object immediately
-        return {
-            id: userId,
-            full_name: "Debug User (No DB)",
-            name: "Debug User (No DB)",
-            role: "student",
-            email: "debug@test.com",
-            avatar: null,
-            major_id: null,
-            wilaya_id: null,
-            major_name: "Static Major",
-            wilaya_name: "Static Wilaya",
-            // Mandatory fields for TS
-            is_profile_complete: true,
-            created_at: new Date().toISOString()
-        } as any;
-    }, []);
 
     // --- MAIN INITIALIZATION EFFECT ---
     useEffect(() => {
