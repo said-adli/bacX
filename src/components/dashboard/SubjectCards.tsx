@@ -35,7 +35,7 @@ export function SubjectCards({ query }: SubjectCardsProps) {
             // Order by order_index if available, else created_at
             const { data, error } = await supabase
                 .from('subjects')
-                .select('*, lessons(id, title)')
+                .select('id, name, icon, description, color, lessons(id, title)')
                 .order('created_at', { ascending: true }); // Fallback sorting
 
             if (error) throw error;

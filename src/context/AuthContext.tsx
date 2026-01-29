@@ -85,7 +85,7 @@ export function AuthProvider({
 
             // STEP 2: Define the Timeout
             const timeout = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error("REQUEST_TIMEOUT")), 3000)
+                setTimeout(() => reject(new Error("REQUEST_TIMEOUT")), 15000)
             );
 
             // STEP 3: Race them
