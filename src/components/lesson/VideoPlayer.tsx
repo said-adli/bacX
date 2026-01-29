@@ -1,131 +1,173 @@
-// ... imports
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { GlassCard } from "../ui/GlassCard";
-import { ShieldAlert } from "lucide-react";
+// import { GlassCard } from "../ui/GlassCard"; // Unused
+import { ShieldAlert, Play, Pause, Volume2, VolumeX, Maximize, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useLiveSync } from "@/hooks/useLiveSync"; // [NEW] Import Sync Hook
 
 interface EncodedVideoPlayerProps {
-    encodedVideoId: string; // SALT + ID + SALT (Base64)
-    shouldMute?: boolean;   // [NEW] Allow external muting
-    onEnded?: () => void;   // [NEW] Callback when video ends
+    encodedVideoId: string;
+    shouldMute?: boolean;
+    onEnded?: () => void;
+    isLive?: boolean; // [NEW] Live Mode Flag
 }
 
-export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false, onEnded }: EncodedVideoPlayerProps) {
+export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false, onEnded, isLive = false }: EncodedVideoPlayerProps) {
     const [decodedId, setDecodedId] = useState<string | null>(null);
     const [securityWarning, setSecurityWarning] = useState(false);
+
+    // Player State
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [progress, setProgress] = useState(0); // 0-100
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [isMuted, setIsMuted] = useState(shouldMute);
+    const [volume, setVolume] = useState(100);
+    const [isHovering, setIsHovering] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
     const { user } = useAuth();
     const [sessionIp] = useState("192.168.x.x");
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const progressInterval = useRef<NodeJS.Timeout | null>(null);
 
-    // [NEW] Progress Tracking
-    useEffect(() => {
-        if (!iframeRef.current) return;
-
-        const handleMessage = (event: MessageEvent) => {
-            // YouTube IFrame API sends messages. We look for 'infoDelivery' with 'playerState'
-            // State 0 = Ended.
-            if (event.source === iframeRef.current?.contentWindow) {
-                const data = JSON.parse(event.data);
-                if (data.event === 'infoDelivery' && data.info && data.info.playerState === 0) {
-                    // Video Ended
-                    // Trigger server action (we need lessonId passed prop or context, current component only has encodedVideoId)
-                    // Issue: VideoPlayer doesn't know LessonID. 
-                    // Solution: We need to pass lessonId or handle it in parent.
-                    // But user asked to "Update VideoPlayer". 
-                    // Let's dispatch a custom event that active view can listen to? 
-                    // Or better: Assume EncodedVideoPlayer is generic and parent handles completion?
-                    // BUT requirement: "Update VideoPlayer component to trigger completion".
-                    // Ideally we add `onEnded` prop to VideoPlayer.
-                }
-            }
-        };
-        // Just adding logic scaffold. Real implementation needs onEnded prop.
-        // I will add onEnded prop to component signature first.
-    }, []);
-
-    // [NEW] Toggle Mute without reload
-    useEffect(() => {
+    // 2. Command Helper
+    const sendCommand = useCallback((func: string, args: any[] = []) => {
         if (!iframeRef.current?.contentWindow) return;
-
-        const command = shouldMute ? "mute" : "unMute";
         iframeRef.current.contentWindow.postMessage(
-            JSON.stringify({ event: 'command', func: command, args: [] }),
+            JSON.stringify({ event: 'command', func, args }),
             '*'
         );
-    }, [shouldMute, decodedId]);
+    }, []);
 
-    // [NEW] Listen for Video End
+    // [NEW] Live Sync Integration
+    useLiveSync({
+        currentTime,
+        duration,
+        isLive,
+        onSeek: (time) => sendCommand('seekTo', [time, true]),
+        threshold: 5,   // Alert if >5s behind
+        targetBuffer: 2 // Jump to 2s behind live edge
+    });
+
+    // 1. Decryption Logic (Preserved)
+    useEffect(() => {
+        let mounted = true;
+        async function fetchDecodedId() {
+            try {
+                if (encodedVideoId.startsWith("enc_")) {
+                    const parts = encodedVideoId.split("_");
+                    if (parts.length >= 3 && mounted) {
+                        setDecodedId(parts[2]);
+                        return;
+                    }
+                }
+                const res = await fetch('/api/video/decrypt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ encodedId: encodedVideoId })
+                });
+                if (!res.ok) throw new Error("Decryption failed");
+                const data = await res.json();
+                if (mounted && data.videoId) setDecodedId(data.videoId);
+                else setDecodedId("invalid_token");
+            } catch (e) {
+                console.warn("Decryption failed, using fallback");
+                if (mounted) setDecodedId("M7lc1UVf-VE");
+            }
+        }
+        fetchDecodedId();
+        return () => { mounted = false; };
+    }, [encodedVideoId]);
+
+    // 3. Status Listener (YouTube API)
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
             if (iframeRef.current && event.source === iframeRef.current.contentWindow) {
                 try {
                     const data = JSON.parse(event.data);
-                    // YouTube API: infoDelivery -> info -> playerState: 0 (ENDED)
-                    if (data.event === 'infoDelivery' && data.info && data.info.playerState === 0) {
-                        if (onEnded) onEnded();
+
+                    // Initial Load Info
+                    if (data.event === 'infoDelivery' && data.info) {
+                        if (data.info.duration) setDuration(data.info.duration);
+                        if (data.info.currentTime) setCurrentTime(data.info.currentTime);
+                        // Player State: 1 = Playing, 2 = Paused, 0 = Ended
+                        if (data.info.playerState === 1) {
+                            setIsPlaying(true);
+                            setIsLoading(false);
+                        } else if (data.info.playerState === 2) {
+                            setIsPlaying(false);
+                        } else if (data.info.playerState === 0 && onEnded) {
+                            setIsPlaying(false);
+                            onEnded();
+                        }
                     }
-                } catch (e) {
-                    // Ignore non-JSON messages
-                }
+                } catch (e) { /* Ignore */ }
             }
         };
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
     }, [onEnded]);
 
+    // 4. Progress Polling 
     useEffect(() => {
-        let mounted = true;
-
-        async function fetchDecodedId() {
-            try {
-                // MOCK/DEV BYPASS: Check if it's a mock ID from our new library
-                // Mock format: "enc_LESSONID_REALYOUTUBEID"
-                if (encodedVideoId.startsWith("enc_")) {
-                    const parts = encodedVideoId.split("_");
-                    // parts[0] = "enc", parts[1] = lessonId, parts[2] = youtubeId
-                    if (parts.length >= 3) {
-                        if (mounted) setDecodedId(parts[2]);
-                        return;
-                    }
-                }
-
-                const res = await fetch('/api/video/decrypt', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ encodedId: encodedVideoId })
-                });
-
-                if (!res.ok) throw new Error("Decryption failed");
-
-                const data = await res.json();
-                if (mounted && data.videoId) {
-                    setDecodedId(data.videoId);
-                } else {
-                    setDecodedId("invalid_token");
-                }
-            } catch (e) {
-                // DEVELOPMENT FALLBACK for demo purposes if API fails
-                console.warn("Decryption API failed, using fallback for demo");
-                // Fallback to a safe educational video if everything fails
-                if (mounted) setDecodedId("M7lc1UVf-VE");
-            }
+        if (isPlaying || isLive) {
+            progressInterval.current = setInterval(() => {
+                // We rely mostly on 'infoDelivery' now, but could poll explicit 'getCurrentTime' if needed
+            }, 1000);
+        } else {
+            if (progressInterval.current) clearInterval(progressInterval.current);
         }
+        return () => { if (progressInterval.current) clearInterval(progressInterval.current); };
+    }, [isPlaying, isLive]);
 
-        fetchDecodedId();
+    // 5. Controls Logic
+    const togglePlay = () => {
+        if (isPlaying) {
+            sendCommand('pauseVideo');
+            setIsPlaying(false);
+        } else {
+            sendCommand('playVideo');
+            setIsPlaying(true);
+        }
+    };
 
-        return () => { mounted = false; };
-    }, [encodedVideoId]);
+    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // [MOD] If Live, seeking might be restricted or jump to live. 
+        const newTime = (parseFloat(e.target.value) / 100) * duration;
+        setProgress(parseFloat(e.target.value));
+        setCurrentTime(newTime);
+        sendCommand('seekTo', [newTime, true]);
+    };
 
-    // 2. Anti-Inspect Logic
+    const toggleMute = () => {
+        if (isMuted) {
+            sendCommand('unMute');
+            setIsMuted(false);
+        } else {
+            sendCommand('mute');
+            setIsMuted(true);
+        }
+    };
+
+    const toggleFullscreen = () => {
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        } else if (containerRef.current) {
+            containerRef.current.requestFullscreen();
+        }
+    };
+
+    // 6. Security & Anti-Inspect
     useEffect(() => {
         const handleContextMenu = (e: MouseEvent) => e.preventDefault();
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "F12" || (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J")) || (e.ctrlKey && e.key === "U")) {
+            if (e.key === "F12" || (e.ctrlKey && (e.key === "I" || e.key === "u"))) {
                 e.preventDefault();
                 setSecurityWarning(true);
             }
         };
-
         document.addEventListener("contextmenu", handleContextMenu);
         document.addEventListener("keydown", handleKeyDown);
         return () => {
@@ -134,37 +176,121 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
         };
     }, []);
 
-    if (securityWarning) {
-        return (
-            <GlassCard className="w-full aspect-video flex flex-col items-center justify-center bg-red-950/20 border-red-500/20 text-center p-8">
-                <ShieldAlert className="w-16 h-16 text-red-500 mb-4 animate-pulse" />
-                <h3 className="text-xl font-bold text-white mb-2">تنبيه أمني</h3>
-                <p className="text-zinc-400">تم اكتشاف محاولة اختراق.</p>
-                <button onClick={() => setSecurityWarning(false)} className="mt-6 px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm">متابعة المشاهدة</button>
-            </GlassCard>
-        )
-    }
-
-    if (!decodedId) return <div className="w-full aspect-video bg-zinc-900 animate-pulse rounded-2xl" />;
-
-    return (
-        <div className="relative w-full aspect-video rounded-2xl overflow-hidden group select-none shadow-[0_0_50px_rgba(37,99,235,0.25)] border border-blue-500/20">
-            <iframe
-                ref={iframeRef}
-                src={`https://www.youtube-nocookie.com/embed/${decodedId}?rel=0&modestbranding=1&controls=1&showinfo=0&fs=1&enablejsapi=1`}
-                className="w-full h-full object-cover"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-            />
-            {/* Hardened Overlay: Blocks clicks on title/share/watch later */}
-            <div className="absolute top-0 left-0 right-0 h-[15%] z-20" />
-
-            {/* Watermark Overlay */}
-            <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden opacity-30">
-                <div className="absolute top-10 left-10 text-[10px] text-white/10 -rotate-12 whitespace-nowrap">{user?.email} • ID: {user?.id.substring(0, 8)}</div>
-                <div className="absolute bottom-20 right-20 text-[10px] text-white/10 -rotate-12 whitespace-nowrap">{user?.email} • {sessionIp}</div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[14px] font-bold text-white/5 -rotate-45 whitespace-nowrap">BRAINY • {user?.email}</div>
-            </div>
+    if (securityWarning) return (
+        <div className="w-full aspect-video flex flex-col items-center justify-center bg-red-950/20 border-red-500/20 text-center p-8 backdrop-blur-md rounded-2xl">
+            <ShieldAlert className="w-16 h-16 text-red-500 mb-4 animate-pulse" />
+            <h3 className="text-xl font-bold text-white mb-2">Security Alert</h3>
+            <button onClick={() => setSecurityWarning(false)} className="px-6 py-2 bg-red-600 rounded">Return</button>
         </div>
     );
+
+    if (!decodedId) return <div className="w-full aspect-video bg-zinc-900 animate-pulse rounded-2xl flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>;
+
+    return (
+        <div
+            ref={containerRef}
+            className="relative w-full aspect-video rounded-2xl overflow-hidden group select-none shadow-[0_0_50px_rgba(37,99,235,0.25)] border border-blue-500/20 bg-black"
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+        >
+            {/* 1. THE IFRAME (GHOST MODE) */}
+            <iframe
+                ref={iframeRef}
+                src={`https://www.youtube-nocookie.com/embed/${decodedId}?enablejsapi=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+                className="w-full h-full object-cover pointer-events-none scale-[1.01]"
+                allow="autoplay; encrypted-media"
+                title="Lesson Video"
+            />
+
+            {/* 2. THE GLASS SHIELD (CLICK INTERCEPTOR) */}
+            <div
+                className="absolute inset-0 z-10 cursor-pointer"
+                onClick={togglePlay}
+                onDoubleClick={toggleFullscreen}
+            />
+
+            {/* 3. WATERMARK (UNDER CONTROLS) */}
+            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-20">
+                <div className="absolute top-10 left-10 text-[10px] text-white/10 -rotate-12">{user?.email} • {user?.id.slice(0, 8)}</div>
+                <div className="absolute bottom-1/3 right-1/3 text-[14px] font-bold text-white/5 -rotate-45">BRAINY PROTECTION</div>
+            </div>
+
+            {/* 4. CUSTOM CONTROLS UI */}
+            <div className={cn(
+                "absolute bottom-0 left-0 right-0 z-20 px-4 py-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent transition-opacity duration-300",
+                ((isPlaying && !isHovering) && !isLive) ? "opacity-0" : "opacity-100"
+            )}>
+                {/* Progress Bar */}
+                {isLive ? (
+                    <div className="w-full h-1 bg-white/20 rounded-full mb-4 flex justify-end">
+                        <div className="h-full bg-red-500 w-full animate-pulse shadow-[0_0_10px_red]" />
+                    </div>
+                ) : (
+                    <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={duration > 0 ? (currentTime / duration) * 100 : 0}
+                        onChange={handleSeek}
+                        className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 hover:[&::-webkit-slider-thumb]:scale-125 transition-all mb-4"
+                    />
+                )}
+
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        {/* Play/Pause */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+                            className="text-white hover:text-blue-400 transition-colors"
+                        >
+                            {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}
+                        </button>
+
+                        {/* Formatting Time or LIVE Badge */}
+                        {isLive ? (
+                            <div className="flex items-center gap-2 px-2 py-0.5 bg-red-500/20 border border-red-500/50 rounded text-red-400 text-xs font-bold">
+                                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                LIVE
+                            </div>
+                        ) : (
+                            <div className="text-xs text-white/80 font-mono">
+                                {formatTime(currentTime)} / {formatTime(duration)}
+                            </div>
+                        )}
+
+                        {/* Volume */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+                            className="text-white/80 hover:text-white transition-colors"
+                        >
+                            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                        </button>
+                    </div>
+
+                    {/* Fullscreen */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+                        className="text-white hover:text-blue-400 transition-colors"
+                    >
+                        <Maximize size={20} />
+                    </button>
+                </div>
+            </div>
+
+            {/* Loading Spinner / Big Play Button Overlay */}
+            {!isPlaying && (
+                <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center animate-in fade-in zoom-in duration-300">
+                        <Play size={32} fill="white" className="text-white ml-1" />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function formatTime(seconds: number) {
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
+    return `${min}:${sec < 10 ? '0' : ''}${sec}`;
 }

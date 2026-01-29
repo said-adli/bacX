@@ -72,6 +72,7 @@ export default function LiveSessionsPage() {
                             <EncodedVideoPlayer
                                 encodedVideoId={youtubeId} // Real ID from DB
                                 shouldMute={status === 'live'} // Auto-Mute when student is speaking
+                                isLive={true} // [NEW] Enable Live Sync Mode
                             />
                         ) : (
                             // GATEKEPT
