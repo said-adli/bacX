@@ -1,7 +1,10 @@
 // Force TS Update
 import { createClient } from "@/utils/supabase/server";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import SubjectView from "./SubjectViewComp";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { AlertTriangle, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 interface PageProps {
     params: Promise<{ subjectId: string }>;
@@ -9,6 +12,28 @@ interface PageProps {
 
 export default async function SubjectPage({ params }: PageProps) {
     const { subjectId } = await params;
+
+    // 0. UUID Validation (Prevent 500 Invalid Syntax Errors)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(subjectId)) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
+                <GlassCard className="p-8 text-center max-w-md border-red-500/20">
+                    <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-white mb-2">رابط غير صحيح</h2>
+                    <p className="text-white/60 mb-6">المادة المطلوبة غير موجودة أو الرابط تالف.</p>
+                    <Link
+                        href="/materials"
+                        className="inline-flex items-center gap-2 px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors"
+                    >
+                        <ArrowLeft size={16} />
+                        العودة للمواد
+                    </Link>
+                </GlassCard>
+            </div>
+        );
+    }
+
     const supabase = await createClient();
 
     // 1. Auth Check
@@ -36,7 +61,25 @@ export default async function SubjectPage({ params }: PageProps) {
         .single();
 
     if (subjectError || !subject) {
-        return notFound();
+        console.error("Subject Fetch Error:", subjectError);
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
+                <GlassCard className="p-8 text-center max-w-md border-yellow-500/20">
+                    <AlertTriangle className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-white mb-2">المادة غير متوفرة</h2>
+                    <p className="text-white/60 mb-6">
+                        لم يتم العثور على المادة "Subject ID: {subjectId}". قد تكون حذفت أو غير متاحة.
+                    </p>
+                    <Link
+                        href="/materials"
+                        className="inline-flex items-center gap-2 px-6 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-200 rounded-lg transition-colors border border-yellow-500/20"
+                    >
+                        <ArrowLeft size={16} />
+                        العودة للمواد
+                    </Link>
+                </GlassCard>
+            </div>
+        );
     }
 
     // 4. Fetch Units (Public)
@@ -99,10 +142,6 @@ export default async function SubjectPage({ params }: PageProps) {
             };
         });
     }
-
-    // Also fetch legacy lessons (direct subject_id, no unit) for backward compatibility?
-    // User requested "Subject -> Unit -> Content". We can assume legacy is deprecated or handle it as "General Unit".
-    // For now, let's stick to Units.
 
     return (
         <SubjectView
