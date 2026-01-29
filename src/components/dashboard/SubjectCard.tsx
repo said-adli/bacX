@@ -41,7 +41,10 @@ export const SubjectCard = ({ subject }: { subject: Subject }) => {
     const Icon = config.icon;
 
     return (
-        <Link href={`/materials/${subject.id}`}>
+        <Link
+            href={`/materials/${subject.id}`}
+            onClick={() => console.log('Navigating to subject ID:', subject.id)}
+        >
             <div className={`glass-card relative h-48 overflow-hidden group hover:scale-[1.02] cursor-pointer transition-all duration-300 border border-white/5 ${config.border}`}>
 
                 {/* Content Container */}

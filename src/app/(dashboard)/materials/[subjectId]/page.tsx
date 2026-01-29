@@ -56,14 +56,41 @@ export default async function SubjectPage({ params }: PageProps) {
     const isAdmin = profile.role === 'admin';
 
     // 3. Fetch Subject
-    const { data: subject, error: subjectError } = await supabase
-        .from('subjects')
-        .select('*')
-        .eq('id', subjectId)
-        .single();
+    // 3. Fetch Subject (Defensive)
+    let subject = null;
+    try {
+        const { data, error } = await supabase
+            .from('subjects')
+            .select('*')
+            .eq('id', subjectId)
+            .single();
 
-    if (subjectError || !subject) {
-        console.error("Subject Fetch Error:", subjectError);
+        if (error) throw error;
+        subject = data;
+    } catch (err: any) {
+        console.error("Subject Fetch Critical Error:", err);
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
+                <GlassCard className="p-8 text-center max-w-md border-red-500/20 bg-red-900/10">
+                    <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-white mb-2">FAILED TO LOAD SUBJECT</h2>
+                    <p className="text-red-200 mb-4 font-mono text-sm text-left dir-ltr">
+                        Error: {err.message || "Unknown Error"}<br />
+                        ID Tried: {subjectId}
+                    </p>
+                    <Link
+                        href="/dashboard"
+                        className="inline-flex items-center gap-2 px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg transition-colors"
+                    >
+                        <ArrowLeft size={16} />
+                        العودة للرئيسية
+                    </Link>
+                </GlassCard>
+            </div>
+        );
+    }
+
+    if (!subject) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
                 <GlassCard className="p-8 text-center max-w-md border-yellow-500/20">
