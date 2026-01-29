@@ -23,6 +23,9 @@ export interface UserProfile {
     avatar_url?: string;
     created_at: string;
     last_session_id?: string;
+    // Extended properties
+    major_name?: string;
+    wilaya_name?: string;
 }
 
 export interface AuthState {
@@ -31,7 +34,7 @@ export interface AuthState {
     session: Session | null;
     loading: boolean;
     error: string | null;
-    connectionError: boolean; // NEW: Global connection status
+    connectionError: boolean;
 }
 
 export interface AuthContextType extends AuthState {
@@ -55,7 +58,7 @@ export function AuthProvider({
     const supabase = createClient();
     const router = useRouter();
 
-    // FAIL-SAFE INITIAL STATE: Loading is TRUE by default to prevent UI flash
+    // FAIL-SAFE INITIAL STATE: Loading is TRUE by default
     const [state, setState] = useState<AuthState>({
         user: null,
         profile: null,
@@ -67,172 +70,163 @@ export function AuthProvider({
 
     const isMounted = useRef(false);
 
+    // --- FETCH STRATEGY: SPLIT FETCH (ROBUST) ---
     const fetchProfile = useCallback(async (userId: string) => {
         try {
-            console.log("👤 AuthContext: Step 1 - Fetching Profile ONLY (No Joins)...");
+            console.log("👤 AuthContext: Step 1 - Fetching Profile Row...");
 
-            // 1. Fetch raw profile (Fast & Safe from Deadlocks)
+            // STEP 1: Fetch Profile Row ONLY
             const { data: profile, error } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', userId)
                 .single();
 
-            if (error || !profile) {
+            if (error) {
                 console.error("❌ Profile Error:", error.message);
-                return null;
+                throw new Error(`Profile fetch failed: ${error.message}`);
             }
 
-            // 2. Fetch Details in Parallel (if IDs exist)
+            if (!profile) {
+                console.error("❌ Profile Missing for ID:", userId);
+                throw new Error("Profile Not Found");
+            }
+
+            // STEP 2: Fetch Foreign Key Details in Parallel
             let majorName = null;
             let wilayaName = null;
-
             const promises = [];
 
             if (profile.major_id) {
                 promises.push(
                     supabase.from('majors').select('label').eq('id', profile.major_id).single()
-                        .then(({ data }: any) => majorName = data?.label)
+                        .then(({ data }: { data: any }) => { if (data) majorName = data.label; })
+                        .catch((err: any) => console.warn("⚠️ Failed to fetch major:", err))
                 );
             }
 
             if (profile.wilaya_id) {
                 promises.push(
                     supabase.from('wilayas').select('full_label').eq('id', profile.wilaya_id).single()
-                        .then(({ data }: any) => wilayaName = data?.full_label)
+                        .then(({ data }: { data: any }) => { if (data) wilayaName = data.full_label; })
+                        .catch((err: any) => console.warn("⚠️ Failed to fetch wilaya:", err))
                 );
             }
 
             await Promise.all(promises);
 
-            // 3. Construct final object (Cast to any to avoid TS errors on new fields)
+            // STEP 3: Merge and Return
+            // We cast to any to safely add extended properties without TS yelling
+            // ensuring the base structural integrity matches UserProfile
             const finalProfile = {
                 ...profile,
                 major_name: majorName,
                 wilaya_name: wilayaName
             } as any;
 
-            console.log("✅ Profile Loaded via Split Strategy:", finalProfile);
+            console.log("✅ Profile Loaded:", finalProfile);
             return finalProfile;
 
         } catch (err) {
             console.error("💥 Critical Fetch Error:", err);
-            return null;
+            // We do NOT return fake data. We let the caller handle the failure.
+            throw err;
         }
     }, [supabase]);
 
-    // --- DEBUG: SAFETY TIMEOUT ---
-    // Forces the app to "wake up" if Supabase hangs
+    // --- MAIN INITIALIZATION EFFECT ---
     useEffect(() => {
-        let safetyTimer: NodeJS.Timeout;
-
-        if (state.loading) {
-            safetyTimer = setTimeout(() => {
-                console.error("🚨 DEBUG: LOADER TIMED OUT! Forcing UI to render.");
-                setState(prev => {
-                    console.log("🚨 DEBUG STATE SNAPSHOT:", prev);
-                    return { ...prev, loading: false };
-                });
-            }, 5000); // 5 seconds max
-        }
-
-        return () => clearTimeout(safetyTimer);
-    }, [state.loading]);
-
-    // --- MAIN AUTH LISTENER ---
-    useEffect(() => {
-        console.log('🔄 AuthContext: Effect Running - Initial Mount');
+        console.log('🔄 AuthContext: Mount');
         isMounted.current = true;
 
         const initAuth = async () => {
-            console.log('🔄 AuthContext: initAuth() starting...');
-            // Measure execution time
-            const start = performance.now();
-
+            console.log('🔄 AuthContext: initAuth()');
             try {
-                // 1. Get Session directly first (faster than waiting for event)
+                // 1. Get Session
                 const { data: { session }, error } = await supabase.auth.getSession();
-                console.log('🔄 AuthContext: getSession result - Session exists:', !!session, 'Error:', error?.message || 'none');
 
-                if (error) {
-                    console.error('❌ AuthContext: Session Init Error:', error);
-                    return;
-                }
+                if (error) throw error;
 
                 if (session?.user) {
-                    console.log('🔄 AuthContext: Session found, fetching profile for:', session.user.id);
+                    console.log('🔄 AuthContext: Session found. Fetching profile...');
+                    try {
+                        const profile = await fetchProfile(session.user.id);
 
-                    console.time("profile-fetch");
-                    const profile = await fetchProfile(session.user.id);
-                    console.timeEnd("profile-fetch");
-
-                    if (isMounted.current) {
-                        if (profile) {
-                            console.log('⏳ AuthContext: Loading State -> FALSE (profile loaded)');
+                        if (isMounted.current) {
                             setState(prev => ({
                                 ...prev,
                                 session,
                                 user: session.user,
-                                profile: { ...profile, email: session.user.email || profile.email }, // Safe merge
-                                loading: false
+                                profile: { ...profile, email: session.user.email || profile.email },
+                                loading: false,
+                                error: null,
+                                connectionError: false
                             }));
-                        } else {
-                            console.warn('⚠️ AuthContext: Profile missing for logged in user.');
+                        }
+                    } catch (fetchErr) {
+                        console.error("⚠️ AuthContext: Failed to load profile for valid session.", fetchErr);
+                        if (isMounted.current) {
+                            // User is valid, but profile failed. 
+                            // We treat this as a semi-authenticated state or connection error.
                             setState(prev => ({
                                 ...prev,
                                 session,
                                 user: session.user,
                                 profile: null,
-                                loading: false,
+                                loading: false, // STOP SPINNER
                                 connectionError: true
                             }));
                         }
                     }
                 } else {
-                    console.log('🔄 AuthContext: No session found');
+                    console.log('🔄 AuthContext: No session.');
+                    if (isMounted.current) {
+                        setState(prev => ({ ...prev, loading: false }));
+                    }
                 }
-
-            } catch (err) {
-                console.error('💥 AuthContext: Critical Crash in initAuth:', err);
+            } catch (err: any) {
+                console.error("💥 AuthContext: initAuth crashed:", err);
                 if (isMounted.current) {
-                    setState(prev => ({ ...prev, error: "Failed to initialize session.", connectionError: true }));
-                }
-            } finally {
-                const duration = performance.now() - start;
-                console.log(`🏁 AuthContext: initAuth finished in ${duration.toFixed(2)}ms. Force stopping loading.`);
-
-                if (isMounted.current) {
-                    setState(prev => ({ ...prev, loading: false }));
+                    setState(prev => ({
+                        ...prev,
+                        loading: false, // GUARANTEED TERMINATION
+                        error: err.message || "Initialization Failed"
+                    }));
                 }
             }
         };
 
+        // Run Init
         initAuth();
 
+        // Listen for changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
             console.log(`[Auth] Event: ${event}`);
 
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            if (!isMounted.current) return;
+
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
                 if (session?.user) {
-                    // Update session immediately
+                    // Optimistic update of session
                     setState(prev => ({ ...prev, session, user: session.user }));
 
-                    // Fetch profile if missing or user changed
-                    if (!state.user || state.user.id !== session.user.id) {
-                        const profile = await fetchProfile(session.user.id);
-                        if (isMounted.current) {
-                            if (profile) {
+                    // Fetch profile if we don't have it or if user ID changed
+                    // (Or if we just want to ensure freshness on sign-in)
+                    if (event === 'SIGNED_IN' || !state.profile || state.profile.id !== session.user.id) {
+                        try {
+                            const profile = await fetchProfile(session.user.id);
+                            if (isMounted.current) {
                                 setState(prev => ({
                                     ...prev,
-                                    profile: { ...profile, email: session.user.email || profile.email }
+                                    profile: { ...profile, email: session.user.email || profile.email },
+                                    loading: false,
+                                    error: null
                                 }));
-                            } else {
-                                // Handle missing profile on auth change
-                                console.warn('⚠️ AuthContext: Profile missing after auth change.');
-                                setState(prev => ({
-                                    ...prev,
-                                    profile: null
-                                }));
+                            }
+                        } catch (err) {
+                            console.error("⚠️ AuthContext: Profile fetch failed on AuthChange.", err);
+                            if (isMounted.current) {
+                                setState(prev => ({ ...prev, loading: false, connectionError: true }));
                             }
                         }
                     }
@@ -243,49 +237,48 @@ export function AuthProvider({
                         user: null,
                         profile: null,
                         session: null,
-                        loading: false,
+                        loading: false, // GUARANTEED TERMINATION
                         error: null,
                         connectionError: false
                     });
-                    router.refresh(); // Clear server cache
                     router.replace('/');
+                    router.refresh();
                 }
             }
         });
 
         return () => {
+            console.log('🔄 AuthContext: Unmount');
             isMounted.current = false;
             subscription.unsubscribe();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [fetchProfile, router]); // Removed supabase - it's a singleton but reference changes
+    }, [supabase, fetchProfile, router, state.profile]);
+
 
     // --- ACTIONS ---
 
     const loginWithEmail = async (email: string, password: string) => {
-        setState(prev => ({ ...prev, loading: true, error: null }));
+        if (isMounted.current) setState(prev => ({ ...prev, loading: true, error: null }));
 
         try {
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) throw error;
+            // Native auth change listener will handle the rest
         } catch (error: any) {
-            setState(prev => ({ ...prev, error: error.message }));
+            console.error("Login Error:", error);
+            if (isMounted.current) {
+                setState(prev => ({ ...prev, loading: false, error: error.message }));
+            }
             throw error;
-        } finally {
-            // Always stop loading, even if auth state change handles the session update
-            // We use a small timeout to allow redirect/state update to process if needed, 
-            // but strictly speaking, we just need to ensure we don't hang.
-            // However, strictly, if we succeed, onAuthStateChanged will handle it.
-            // But if we fail, we MUST stop loading. 
-            // The user requested: "ensure setLoading(false) is inside a finally block"
-            // But for login success, we might want to stay loading until redirect? 
-            // Actually, sticking to the request: stop spinner.
-            setState(prev => ({ ...prev, loading: false }));
         }
+        // No finally block needed here because:
+        // 1. If success: onAuthStateChange handles loading -> false
+        // 2. If error: catch block handles loading -> false
+        // 3. We don't want to prematurely set loading=false if successful before the profile fetch completes in the listener
     };
 
     const signupWithEmail = async (data: any) => {
-        setState(prev => ({ ...prev, loading: true, error: null }));
+        if (isMounted.current) setState(prev => ({ ...prev, loading: true, error: null }));
         try {
             const { error } = await supabase.auth.signUp({
                 email: data.email,
@@ -301,10 +294,14 @@ export function AuthProvider({
             });
             if (error) throw error;
         } catch (error: any) {
-            setState(prev => ({ ...prev, error: error.message }));
+            console.error("Signup Error:", error);
+            if (isMounted.current) {
+                setState(prev => ({ ...prev, error: error.message }));
+            }
             throw error;
         } finally {
-            setState(prev => ({ ...prev, loading: false }));
+            // For signup, we usually want to stop loading to show "Check your email" or similar
+            if (isMounted.current) setState(prev => ({ ...prev, loading: false }));
         }
     };
 
@@ -313,7 +310,8 @@ export function AuthProvider({
             await supabase.auth.signOut();
         } catch (error) {
             console.error("Logout error:", error);
-            // Force local cleanup anyway
+        } finally {
+            // Force local cleanup
             if (isMounted.current) {
                 setState({ user: null, profile: null, session: null, loading: false, error: null, connectionError: false });
                 router.replace('/');
@@ -322,17 +320,21 @@ export function AuthProvider({
     };
 
     const refreshProfile = async () => {
-        if (state.user) {
+        if (!state.user) return;
+        try {
             const profile = await fetchProfile(state.user.id);
-            if (profile) {
+            if (isMounted.current && profile) {
                 setState(prev => ({ ...prev, profile: { ...profile, email: state.user!.email! } }));
             }
+        } catch (err) {
+            console.error("Refresh profile failed", err);
         }
     };
 
     const completeOnboarding = async (data: { fullName: string; wilaya: string; major: string }) => {
         if (!state.user) throw new Error("No user logged in");
 
+        // Direct update
         const { error: profileError } = await supabase
             .from('profiles')
             .update({
@@ -346,6 +348,7 @@ export function AuthProvider({
 
         if (profileError) throw profileError;
 
+        // Update Auth Metadata as well
         await supabase.auth.updateUser({
             data: {
                 full_name: data.fullName,
@@ -359,13 +362,14 @@ export function AuthProvider({
         router.replace('/dashboard');
     };
 
-    // Hydrate profile from server-fetched data (prevents redundant DB calls)
     const hydrateProfile = useCallback((profile: UserProfile) => {
-        setState(prev => ({
-            ...prev,
-            profile,
-            loading: false
-        }));
+        if (isMounted.current) {
+            setState(prev => ({
+                ...prev,
+                profile,
+                loading: false
+            }));
+        }
     }, []);
 
     // --- RENDER ---
