@@ -16,12 +16,41 @@ interface Subject {
     lessonCount: number;
 }
 
+const getSubjectConfig = (name: string) => {
+    const normalized = name.toLowerCase();
+    if (normalized.includes('رياضيات') || normalized.includes('math')) {
+        return { icon: Calculator, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'group-hover:border-blue-500/30' };
+    }
+    if (normalized.includes('فيزياء') || normalized.includes('physics')) {
+        return { icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'group-hover:border-yellow-500/30' };
+    }
+    if (normalized.includes('علوم') || normalized.includes('science')) {
+        return { icon: Microscope, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'group-hover:border-emerald-500/30' };
+    }
+    if (normalized.includes('أدب') || normalized.includes('literature') || normalized.includes('عربية')) {
+        return { icon: BookOpen, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'group-hover:border-purple-500/30' };
+    }
+    if (normalized.includes('فلسفة') || normalized.includes('philosophy')) {
+        return { icon: Feather, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'group-hover:border-pink-500/30' };
+    }
+    if (normalized.includes('انجليزية') || normalized.includes('english')) {
+        return { icon: Globe, color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'group-hover:border-indigo-500/30' };
+    }
+    // Default
+    return { icon: LayoutGrid, color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'group-hover:border-slate-500/30' };
+};
+
+import { Calculator, Microscope, BookOpen, Feather, Globe, LayoutGrid } from "lucide-react";
+
+// ... (Subject Interface)
+
 export default function MaterialsClient() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isAccessDenied, setIsAccessDenied] = useState(false);
 
+    // ... (fetchSubjects and useEffect - Unchanged)
     const fetchSubjects = async () => {
         setLoading(true);
         setError(null);
@@ -61,13 +90,14 @@ export default function MaterialsClient() {
         fetchSubjects();
     }, []);
 
+
     if (loading) {
         return (
             <div className="space-y-8 animate-pulse">
                 <div className="h-20 w-1/3 bg-white/5 rounded-2xl" />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {[1, 2, 3].map(i => (
-                        <div key={i} className="h-64 bg-white/5 rounded-2xl border border-white/5" />
+                        <div key={i} className="h-48 bg-white/5 rounded-2xl border border-white/5" />
                     ))}
                 </div>
             </div>
@@ -112,7 +142,7 @@ export default function MaterialsClient() {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
             <div className="flex flex-col gap-2">
                 <h1 className="text-4xl font-serif font-bold text-white tracking-wide">المواد الدراسية</h1>
@@ -120,44 +150,46 @@ export default function MaterialsClient() {
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {subjects.length > 0 ? (
-                    subjects.map((subject) => (
-                        <Link key={subject.id} href={`/materials/${subject.id}`}>
-                            <GlassCard className="group h-full p-0 overflow-hidden hover:bg-white/10 transition-all duration-300 border-white/5 hover:border-white/20 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)] cursor-pointer relative">
+                    subjects.map((subject) => {
+                        const config = getSubjectConfig(subject.name);
+                        const Icon = config.icon;
 
-                                {/* Colorful Gradient Header */}
-                                <div className={`h-32 w-full bg-gradient-to-br ${getGradient(subject.color)} relative overflow-hidden flex items-center justify-center`}>
-                                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500" />
-                                    <span className="text-6xl drop-shadow-lg transform group-hover:scale-110 transition-transform duration-300">{subject.icon}</span>
-                                </div>
+                        return (
+                            <Link key={subject.id} href={`/materials/${subject.id}`}>
+                                <GlassCard className={`group h-full p-6 hover:bg-white/[0.08] transition-all duration-300 border-white/5 ${config.border} hover:shadow-[0_0_30px_rgba(255,255,255,0.05)] cursor-pointer flex flex-col justify-between min-h-[180px]`}>
 
-                                {/* Content */}
-                                <div className="p-6 space-y-4">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${config.bg} ${config.color} border border-white/5 group-hover:scale-110 transition-transform duration-500`}>
+                                            <Icon size={28} strokeWidth={1.5} />
+                                        </div>
+
+                                        {/* Hover Arrow */}
+                                        <div className="opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                                            <span className="text-white/40 group-hover:text-white text-xl">←</span>
+                                        </div>
+                                    </div>
+
                                     <div>
-                                        <h3 className="text-2xl font-bold mb-1 group-hover:text-blue-400 transition-colors">{subject.name}</h3>
-                                        <p className="text-sm text-white/40 line-clamp-2">{subject.description}</p>
-                                    </div>
+                                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-white transition-colors">{subject.name}</h3>
+                                        <p className="text-sm text-white/40 line-clamp-2 leading-relaxed mb-4">{subject.description}</p>
 
-                                    <div className="flex items-center gap-4 text-xs font-medium text-white/60 pt-2 border-t border-white/5">
-                                        <span className="flex items-center gap-1">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                            {subject.unitCount} وحدات
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                            {subject.lessonCount} درس
-                                        </span>
+                                        <div className="flex items-center gap-4 text-xs font-medium text-white/40 pt-4 border-t border-white/5 group-hover:border-white/10 transition-colors">
+                                            <span className="flex items-center gap-1.5">
+                                                <div className={`w-1 h-1 rounded-full ${config.color.replace('text-', 'bg-')}`} />
+                                                {subject.unitCount} وحدات
+                                            </span>
+                                            <span className="flex items-center gap-1.5">
+                                                <div className="w-1 h-1 rounded-full bg-white/20" />
+                                                {subject.lessonCount} درس
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-
-                                {/* Hover Reveal Arrow */}
-                                <div className="absolute bottom-6 left-6 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
-                                    <span className="text-blue-400">←</span>
-                                </div>
-                            </GlassCard>
-                        </Link>
-                    ))
+                                </GlassCard>
+                            </Link>
+                        );
+                    })
                 ) : (
                     // Empty State Card
                     <div className="col-span-full py-16 flex flex-col items-center justify-center text-center opacity-50">
@@ -169,16 +201,4 @@ export default function MaterialsClient() {
             </div>
         </div>
     );
-}
-
-function getGradient(color: string) {
-    switch (color) {
-        case 'blue': return "from-blue-600/40 to-cyan-600/40";
-        case 'purple': return "from-purple-600/40 to-pink-600/40";
-        case 'green': return "from-emerald-600/40 to-teal-600/40";
-        case 'emerald': return "from-green-600/40 to-emerald-600/40";
-        case 'orange': return "from-orange-600/40 to-amber-600/40";
-        case 'red': return "from-red-600/40 to-rose-600/40";
-        default: return "from-blue-600/40 to-indigo-600/40";
-    }
 }
