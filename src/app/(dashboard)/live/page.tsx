@@ -1,7 +1,9 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import EncodedVideoPlayer from "@/components/lesson/VideoPlayer";
+// import EncodedVideoPlayer from "@/components/lesson/VideoPlayer";
+import { usePlayer } from "@/context/PlayerContext";
+import { useRef, useEffect } from "react";
 import { Lock, MessageCircle, Users, Video, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -19,6 +21,23 @@ export default function LiveSessionsPage() {
 
     // [NEW] Live Interaction Hook
     const { status, raiseHand, endCall, currentSpeaker } = useLiveInteraction();
+
+    // [NEW] Ghost Player Integration (Live Mode)
+    const { loadVideo, registerHeroTarget } = usePlayer();
+    const heroTargetRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (heroTargetRef.current) {
+            registerHeroTarget(heroTargetRef.current);
+        }
+        return () => registerHeroTarget(null);
+    }, [registerHeroTarget]);
+
+    useEffect(() => {
+        if (isLive && youtubeId) {
+            loadVideo(youtubeId, title || "Live Session", true); // isLive = true
+        }
+    }, [isLive, youtubeId, title, loadVideo]);
 
     if (loading) {
         return (
@@ -69,10 +88,10 @@ export default function LiveSessionsPage() {
                 <div className="lg:col-span-3 space-y-4">
                     <div className="w-full aspect-video rounded-2xl overflow-hidden glass-panel relative border border-white/10 shadow-2xl">
                         {isSubscribed ? (
-                            <EncodedVideoPlayer
-                                encodedVideoId={youtubeId} // Real ID from DB
-                                shouldMute={status === 'live'} // Auto-Mute when student is speaking
-                                isLive={true} // [NEW] Enable Live Sync Mode
+                            /* HERO PLAYER TARGET */
+                            <div
+                                ref={heroTargetRef}
+                                className="w-full h-full bg-black/50"
                             />
                         ) : (
                             // GATEKEPT

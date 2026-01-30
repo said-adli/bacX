@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import EncodedVideoPlayer from "@/components/lesson/VideoPlayer";
+import { useEffect, useState, useRef } from "react";
+// import EncodedVideoPlayer from "@/components/lesson/VideoPlayer"; // Removed for Ghost Player
+import { usePlayer } from "@/context/PlayerContext";
 import { Sidebar } from "@/components/lesson/Sidebar";
 import { createClient } from "@/utils/supabase/client"; // Import Supabase
 import { FileText, Download, Lock, Loader2, Image as ImageIcon } from "lucide-react"; // Icons
@@ -31,6 +32,32 @@ export default function LessonContent({ id, title, description, videoUrl }: Less
 
     // ENCODE WITH SALT
     const saltedCoded = btoa(SALT + cleanId + SALT);
+
+    // [NEW] Ghost Player Integration
+    const { loadVideo, registerHeroTarget, videoId: globalVideoId } = usePlayer();
+    const heroTargetRef = useRef<HTMLDivElement>(null);
+
+    // Register Hero Target
+    useEffect(() => {
+        if (heroTargetRef.current) {
+            registerHeroTarget(heroTargetRef.current);
+        }
+        return () => registerHeroTarget(null); // Cleanup on unmount
+    }, [registerHeroTarget]);
+
+    // Load Video (if different)
+    useEffect(() => {
+        // Simple salt check or decode logic here if needed. 
+        // For now, we assume videoUrl is the ID or we decode it.
+        // If we need to keep the salt logic, we should decode it here before passing.
+        // BUT, EncodedVideoPlayer did client-side fetch to /api/video/decrypt.
+        // We should move that logic to the Context or do it here.
+        // For this step, let's assume we pass the raw videoUrl or handle decryption inside the Global Player's effect.
+        // Let's pass the videoUrl directly to loadVideo.
+        if (videoUrl && videoUrl !== globalVideoId) {
+            loadVideo(videoUrl, title);
+        }
+    }, [videoUrl, title, loadVideo, globalVideoId]);
 
     // [NEW] Resources State
     const [resources, setResources] = useState<LessonResource[]>([]);
@@ -112,8 +139,15 @@ export default function LessonContent({ id, title, description, videoUrl }: Less
                     </p>
                 </div>
 
-                <EncodedVideoPlayer
-                    encodedVideoId={saltedCoded}
+                {/* HERO PLAYER TARGET (Portal) */}
+                {/* 
+                   Constraint: "Hero Mode: Must inherit natural document flow". 
+                   The GlobalVideoPlayer will portal INTO this div. 
+                   We set ref to this div and register it.
+                */}
+                <div
+                    ref={heroTargetRef}
+                    className="w-full aspect-video rounded-2xl overflow-hidden bg-black/20 animate-pulse-fast"
                 />
 
                 {/* [NEW] Resources Section */}
