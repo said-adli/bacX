@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 interface Subject {
     id: string;
     name: string;
-    icon: string;
+    icon: string; // [FIX] Added icon
     description: string;
     color: string;
     lessons: { id: string; title: string }[];

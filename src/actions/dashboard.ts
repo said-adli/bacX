@@ -39,7 +39,7 @@ export async function getDashboardData(): Promise<DashboardData | { error: strin
             // Fetch Subjects (and lessons count if needed)
             supabase
                 .from('subjects')
-                .select('*, lessons(id, title, required_plan_id, is_free)') // Fetch access info
+                .select('*, icon, lessons(id, title, required_plan_id, is_free)') // Fetch access info
                 .in('name', ['Mathematics', 'Physics', 'الرياضيات', 'الفيزياء']) // Strict Filtering
                 .order('order_index', { ascending: true }),
 

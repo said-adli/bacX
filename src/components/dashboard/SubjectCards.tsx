@@ -9,7 +9,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 interface Subject {
     id: string;
     name: string;
-    icon: string;
+    icon: string; // [FIX] Added icon
     description: string;
     color: string;
     lessons: { id: string; title: string }[];
@@ -25,11 +25,13 @@ export function SubjectCards({ query }: SubjectCardsProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchSubjects = async () => {
+    const fetchSubjects = async (retries = 3, delay = 1000) => {
         setLoading(true);
         setError(null);
         try {
             const supabase = createClient();
+
+            console.log(`📡 Fetching Subjects... (Attempts left: ${retries})`);
 
             // 🚀 FETCHER: No timeout, wait as long as DB needs
             // Order by order_index if available, else created_at
@@ -45,11 +47,16 @@ export function SubjectCards({ query }: SubjectCardsProps) {
                 if (!isValidUUID) console.warn("⚠️ Skipping Subject with Invalid ID:", s.id, s.name);
                 return isValidUUID;
             }));
+            setLoading(false); // Success
         } catch (err: any) {
             console.error("Fetch failed", err);
-            setError(err.message || "Failed to load subjects");
-        } finally {
-            setLoading(false);
+            if (retries > 0) {
+                console.warn(`⚠️ Retrying in ${delay}ms...`);
+                setTimeout(() => fetchSubjects(retries - 1, delay * 2), delay); // Exponential Backoff
+            } else {
+                setError(err.message || "Failed to load subjects");
+                setLoading(false);
+            }
         }
     };
 
@@ -83,7 +90,7 @@ export function SubjectCards({ query }: SubjectCardsProps) {
                 <h3 className="text-xl font-bold text-white mb-2">تعذر تحميل المواد</h3>
                 <p className="text-white/60 mb-6">{error}</p>
                 <button
-                    onClick={fetchSubjects}
+                    onClick={() => fetchSubjects()}
                     className="flex items-center gap-2 px-6 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg mx-auto transition-colors"
                 >
                     <RefreshCw size={16} />
