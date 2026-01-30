@@ -34,6 +34,7 @@ export default function SettingsPage() {
     const [isSigningOutOthers, setIsSigningOutOthers] = useState(false);
 
     // [FIX 1] Notification States (Synced with DB)
+    // Default to 'true' (Email) and 'false' (SMS) to match DB defaults
     const [notifyEmail, setNotifyEmail] = useState(true);
     const [notifySms, setNotifySms] = useState(false);
     const [isSavingNotifications, setIsSavingNotifications] = useState(false);
@@ -78,6 +79,8 @@ export default function SettingsPage() {
         async function fetchSettings() {
             if (!user) return;
             try {
+                // Explicitly select columns to verify they exist
+                // If this fails (e.g. column missing), catch block handles it
                 const { data, error } = await supabase
                     .from("profiles")
                     .select("notify_email, notify_sms")
@@ -85,19 +88,23 @@ export default function SettingsPage() {
                     .single();
 
                 if (error) {
-                    console.warn("Failed to fetch settings:", error);
+                    console.warn("Failed to fetch settings (Column might be missing or RLS blocking):", error);
+                    // Do not update state, keep defaults
                     return;
                 }
 
                 if (mounted && data) {
-                    // Start Update State
-                    // Defaults should match DB columns if they are not null
-                    // If columns are null, we keep default state
-                    if (data.notify_email !== null) setNotifyEmail(data.notify_email);
-                    if (data.notify_sms !== null) setNotifySms(data.notify_sms);
+                    // Update State only if explicit values returned
+                    // We check for undefined/null explicitly because false is a valid value
+                    if (data.notify_email !== undefined && data.notify_email !== null) {
+                        setNotifyEmail(data.notify_email);
+                    }
+                    if (data.notify_sms !== undefined && data.notify_sms !== null) {
+                        setNotifySms(data.notify_sms);
+                    }
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Critical Fetch Error:", err);
             } finally {
                 if (mounted) setIsLoadingSettings(false);
             }
@@ -174,6 +181,7 @@ export default function SettingsPage() {
             const { error } = await supabase
                 .from("profiles")
                 .update({
+                    // Ensure column names match migration
                     notify_email: notifyEmail,
                     notify_sms: notifySms,
                     updated_at: new Date().toISOString()
