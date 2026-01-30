@@ -30,9 +30,7 @@ BEGIN
     -- 3. Update Profiles
     IF target_plan_id IS NOT NULL THEN
         -- Link existing subscribed users to the plan
-        UPDATE public.profiles
-        SET plan_id = target_plan_id
-        WHERE is_subscribed = true 
-        AND plan_id IS NULL;
+        -- Use EXECUTE to avoid analysis error since column might have just been added
+        EXECUTE format('UPDATE public.profiles SET plan_id = %L WHERE is_subscribed = true AND plan_id IS NULL', target_plan_id);
     END IF;
 END $$;
