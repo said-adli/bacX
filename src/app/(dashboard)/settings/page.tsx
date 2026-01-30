@@ -33,15 +33,14 @@ export default function SettingsPage() {
     const [isChangingPassword, setIsChangingPassword] = useState(false);
     const [isSigningOutOthers, setIsSigningOutOthers] = useState(false);
 
-    // [FIX 1] Notification States (Synced with DB)
-    // Default to 'true' (Email) and 'false' (SMS) to match DB defaults
+    // Notification States - Default to true/false, will be overwritten by DB
     const [notifyEmail, setNotifyEmail] = useState(true);
     const [notifySms, setNotifySms] = useState(false);
     const [isSavingNotifications, setIsSavingNotifications] = useState(false);
     const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
-    // [FIX 2] Real Session Info
-    const [sessionInfo, setSessionInfo] = useState({ os: "Unknown", browser: "Unknown" });
+    // Device Info - MUST be inside useEffect to avoid SSR hydration errors
+    const [sessionInfo, setSessionInfo] = useState({ os: "جاري التحميل...", browser: "" });
 
     const passwordForm = useForm<PasswordFormValues>({
         resolver: zodResolver(passwordSchema),
@@ -52,59 +51,82 @@ export default function SettingsPage() {
         }
     });
 
-    // --- INITIALIZATION: FETCH SETTINGS & DEVICE INFO ---
+    // =====================================================
+    // MAIN INITIALIZATION EFFECT - FRESH REWRITE
+    // =====================================================
     useEffect(() => {
         let mounted = true;
 
-        // 1. Get Device Info
-        if (typeof window !== "undefined") {
+        // -------------------------------------------------
+        // 1. DEVICE DETECTION (Inside useEffect for SSR safety)
+        // -------------------------------------------------
+        if (typeof window !== "undefined" && window.navigator) {
             const ua = window.navigator.userAgent;
-            let os = "Unknown OS";
-            if (ua.indexOf("Win") !== -1) os = "Windows";
-            if (ua.indexOf("Mac") !== -1) os = "MacOS";
-            if (ua.indexOf("Linux") !== -1) os = "Linux";
-            if (ua.indexOf("Android") !== -1) os = "Android";
-            if (ua.indexOf("like Mac") !== -1) os = "iOS";
+            console.log("DEBUG: Raw User Agent:", ua);
 
-            let browser = "Web Browser";
-            if (ua.indexOf("Chrome") !== -1) browser = "Chrome";
-            if (ua.indexOf("Firefox") !== -1) browser = "Firefox";
-            if (ua.indexOf("Safari") !== -1) browser = "Safari";
-            if (ua.indexOf("Edge") !== -1) browser = "Edge";
+            let os = "نظام غير معروف";
+            if (ua.includes("Win")) os = "Windows";
+            else if (ua.includes("Mac")) os = "MacOS";
+            else if (ua.includes("Linux")) os = "Linux";
+            else if (ua.includes("Android")) os = "Android";
+            else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
 
+            let browser = "متصفح";
+            if (ua.includes("Edg/")) browser = "Edge";
+            else if (ua.includes("Chrome")) browser = "Chrome";
+            else if (ua.includes("Firefox")) browser = "Firefox";
+            else if (ua.includes("Safari")) browser = "Safari";
+
+            console.log("DEBUG: Detected OS:", os, "| Browser:", browser);
             if (mounted) setSessionInfo({ os, browser });
         }
 
-        // 2. Fetch Notification Preferences
+        // -------------------------------------------------
+        // 2. FETCH NOTIFICATION PREFERENCES FROM DATABASE
+        // -------------------------------------------------
         async function fetchSettings() {
-            if (!user) return;
+            if (!user) {
+                console.log("DEBUG: No user found, skipping fetch");
+                if (mounted) setIsLoadingSettings(false);
+                return;
+            }
+
+            console.log("DEBUG: Fetching settings for user:", user.id);
+
             try {
-                // Explicitly select columns to verify they exist
-                // If this fails (e.g. column missing), catch block handles it
+                // CRITICAL: Use the CORRECT column names that exist in the database
                 const { data, error } = await supabase
                     .from("profiles")
-                    .select("notify_email, notify_sms")
+                    .select("email_notifications, sms_notifications")
                     .eq("id", user.id)
                     .single();
 
+                console.log("DEBUG: Supabase Response - data:", data);
+                console.log("DEBUG: Supabase Response - error:", error);
+
                 if (error) {
-                    console.warn("Failed to fetch settings (Column might be missing or RLS blocking):", error);
-                    // Do not update state, keep defaults
+                    // Log specific error for debugging
+                    console.error("DEBUG: Fetch failed with code:", error.code);
+                    console.error("DEBUG: Fetch failed with message:", error.message);
+                    console.error("DEBUG: Fetch failed with details:", error.details);
+                    console.error("DEBUG: Fetch failed with hint:", error.hint);
+                    // Keep defaults, don't crash
                     return;
                 }
 
                 if (mounted && data) {
-                    // Update State only if explicit values returned
-                    // We check for undefined/null explicitly because false is a valid value
-                    if (data.notify_email !== undefined && data.notify_email !== null) {
-                        setNotifyEmail(data.notify_email);
-                    }
-                    if (data.notify_sms !== undefined && data.notify_sms !== null) {
-                        setNotifySms(data.notify_sms);
-                    }
+                    // Use nullish coalescing - only default if null/undefined
+                    const emailPref = data.email_notifications ?? true;
+                    const smsPref = data.sms_notifications ?? false;
+
+                    console.log("DEBUG: Setting email pref to:", emailPref);
+                    console.log("DEBUG: Setting sms pref to:", smsPref);
+
+                    setNotifyEmail(emailPref);
+                    setNotifySms(smsPref);
                 }
             } catch (err) {
-                console.error("Critical Fetch Error:", err);
+                console.error("DEBUG: Critical fetch error:", err);
             } finally {
                 if (mounted) setIsLoadingSettings(false);
             }
@@ -115,11 +137,13 @@ export default function SettingsPage() {
         return () => { mounted = false; };
     }, [user, supabase]);
 
-    // --- CHANGE PASSWORD ---
+    // =====================================================
+    // PASSWORD CHANGE HANDLER
+    // =====================================================
     const onPasswordSubmit = async (values: PasswordFormValues) => {
         setIsChangingPassword(true);
         try {
-            // First, verify current password by re-authenticating
+            // Verify current password by re-authenticating
             const { error: signInError } = await supabase.auth.signInWithPassword({
                 email: user?.email || "",
                 password: values.currentPassword
@@ -151,7 +175,9 @@ export default function SettingsPage() {
         }
     };
 
-    // --- SIGN OUT OTHER DEVICES ---
+    // =====================================================
+    // SIGN OUT OTHER DEVICES HANDLER
+    // =====================================================
     const handleSignOutOtherDevices = async () => {
         setIsSigningOutOthers(true);
         try {
@@ -172,25 +198,40 @@ export default function SettingsPage() {
         }
     };
 
-    // --- SAVE NOTIFICATION PREFERENCES ---
+    // =====================================================
+    // SAVE NOTIFICATION PREFERENCES HANDLER
+    // =====================================================
     const handleSaveNotifications = async () => {
-        if (!user) return;
+        if (!user) {
+            console.log("DEBUG: Cannot save - no user");
+            return;
+        }
 
+        console.log("DEBUG: Saving notifications - email:", notifyEmail, "| sms:", notifySms);
         setIsSavingNotifications(true);
+
         try {
-            const { error } = await supabase
+            const updatePayload = {
+                email_notifications: notifyEmail,
+                sms_notifications: notifySms,
+                updated_at: new Date().toISOString()
+            };
+
+            console.log("DEBUG: Update payload:", updatePayload);
+
+            const { data, error } = await supabase
                 .from("profiles")
-                .update({
-                    // Ensure column names match migration
-                    notify_email: notifyEmail,
-                    notify_sms: notifySms,
-                    updated_at: new Date().toISOString()
-                })
-                .eq("id", user.id);
+                .update(updatePayload)
+                .eq("id", user.id)
+                .select();
+
+            console.log("DEBUG: Update response - data:", data);
+            console.log("DEBUG: Update response - error:", error);
 
             if (error) {
                 toast.error("حدث خطأ أثناء حفظ التفضيلات");
-                console.error(error);
+                console.error("DEBUG: Update error code:", error.code);
+                console.error("DEBUG: Update error message:", error.message);
                 return;
             }
 
@@ -288,7 +329,7 @@ export default function SettingsPage() {
                         </h2>
 
                         <div className="space-y-4">
-                            {/* Current Session - [FIX 2] Real Data */}
+                            {/* Current Session - Dynamic Device Info */}
                             <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
@@ -348,7 +389,8 @@ export default function SettingsPage() {
                                 </div>
                                 <button
                                     onClick={() => setNotifyEmail(!notifyEmail)}
-                                    className={`relative w-12 h-6 rounded-full transition-colors ${notifyEmail ? "bg-blue-600" : "bg-white/20"}`}
+                                    disabled={isLoadingSettings}
+                                    className={`relative w-12 h-6 rounded-full transition-colors ${notifyEmail ? "bg-blue-600" : "bg-white/20"} ${isLoadingSettings ? "opacity-50 cursor-not-allowed" : ""}`}
                                 >
                                     <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${notifyEmail ? "right-1" : "left-1"}`} />
                                 </button>
@@ -367,7 +409,8 @@ export default function SettingsPage() {
                                 </div>
                                 <button
                                     onClick={() => setNotifySms(!notifySms)}
-                                    className={`relative w-12 h-6 rounded-full transition-colors ${notifySms ? "bg-green-600" : "bg-white/20"}`}
+                                    disabled={isLoadingSettings}
+                                    className={`relative w-12 h-6 rounded-full transition-colors ${notifySms ? "bg-green-600" : "bg-white/20"} ${isLoadingSettings ? "opacity-50 cursor-not-allowed" : ""}`}
                                 >
                                     <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${notifySms ? "right-1" : "left-1"}`} />
                                 </button>
@@ -376,6 +419,7 @@ export default function SettingsPage() {
                             <SmartButton
                                 isLoading={isSavingNotifications}
                                 onClick={handleSaveNotifications}
+                                disabled={isLoadingSettings}
                                 className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg"
                             >
                                 <Bell className="w-4 h-4 ml-2" />
@@ -400,17 +444,19 @@ export default function SettingsPage() {
                         </ul>
                     </GlassCard>
 
-                    {/* [FIX 3] Delete Account via Mailto */}
+                    {/* DELETE ACCOUNT - HARDCODED MAILTO LINK */}
                     <GlassCard className="p-6 border-white/10 bg-red-600/5">
                         <h3 className="text-lg font-bold text-white mb-2">حذف الحساب</h3>
                         <p className="text-sm text-white/60 mb-4">
                             لأسباب أمنية وتاريخية، لا يمكن حذف الحساب تلقائيًا. يرجى التواصل مع الدعم.
                         </p>
+                        {/* HARDCODED MAILTO - NO JAVASCRIPT */}
                         <a
-                            href={`mailto:support@bac-x.com?subject=Request Account Deletion (${user?.email})&body=Hello Support Team,%0D%0A%0D%0AI would like to request the deletion of my account associated with ${user?.email}.%0D%0A%0D%0AReason:%0D%0A[Type reason here]`}
-                            className="text-xs text-red-400 hover:text-red-300 underline transition-colors"
+                            href={`mailto:support@bac-x.com?subject=${encodeURIComponent("طلب حذف الحساب - " + (user?.email || ""))}&body=${encodeURIComponent("مرحباً فريق الدعم،\n\nأرغب في طلب حذف حسابي المرتبط بالبريد الإلكتروني: " + (user?.email || "") + "\n\nالسبب:\n[اكتب السبب هنا]\n\nشكراً")}`}
+                            className="inline-flex items-center gap-2 text-sm text-red-400 hover:text-red-300 underline transition-colors"
                         >
-                            طلب حذف الحساب
+                            <Mail className="w-4 h-4" />
+                            طلب حذف الحساب عبر البريد الإلكتروني
                         </a>
                     </GlassCard>
                 </div>
