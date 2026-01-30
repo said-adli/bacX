@@ -18,6 +18,8 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
 
     // Player State
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isReady, setIsReady] = useState(false); // [NEW] Anti-Red Flash
+    const [isBuffering, setIsBuffering] = useState(false); // [NEW] Custom Buffering
     const [progress, setProgress] = useState(0); // 0-100
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -90,16 +92,24 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
 
                     // Initial Load Info
                     if (data.event === 'infoDelivery' && data.info) {
+                        setIsReady(true); // [NEW] Player is communicating, safe to show
+
                         if (data.info.duration) setDuration(data.info.duration);
                         if (data.info.currentTime) setCurrentTime(data.info.currentTime);
-                        // Player State: 1 = Playing, 2 = Paused, 0 = Ended
+
+                        // Player State: 1 = Playing, 2 = Paused, 3 = Buffering, 0 = Ended
                         if (data.info.playerState === 1) {
                             setIsPlaying(true);
                             setIsLoading(false);
+                            setIsBuffering(false);
                         } else if (data.info.playerState === 2) {
                             setIsPlaying(false);
+                            setIsBuffering(false);
+                        } else if (data.info.playerState === 3) {
+                            setIsBuffering(true);
                         } else if (data.info.playerState === 0 && onEnded) {
                             setIsPlaying(false);
+                            setIsBuffering(false);
                             onEnded();
                         }
                     }
@@ -197,7 +207,10 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
             <iframe
                 ref={iframeRef}
                 src={`https://www.youtube-nocookie.com/embed/${decodedId}?enablejsapi=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
-                className="w-full h-full object-cover pointer-events-none scale-[1.01]"
+                className={cn(
+                    "w-full h-full object-cover pointer-events-none scale-[1.01] transition-opacity duration-700 ease-in-out",
+                    isReady ? "opacity-100" : "opacity-0"
+                )}
                 allow="autoplay; encrypted-media"
                 title="Lesson Video"
             />
@@ -278,11 +291,18 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
             </div>
 
             {/* Loading Spinner / Big Play Button Overlay */}
-            {!isPlaying && (
+            {(!isPlaying && !isBuffering) && (
                 <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
                     <div className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center animate-in fade-in zoom-in duration-300">
                         <Play size={32} fill="white" className="text-white ml-1" />
                     </div>
+                </div>
+            )}
+
+            {/* [NEW] Buffering / Initial Load Spinner */}
+            {(isBuffering || !isReady) && (
+                <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
                 </div>
             )}
         </div>
