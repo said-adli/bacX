@@ -56,7 +56,7 @@ export async function getContentTree() {
             )
         `)
         .order('created_at', { ascending: true })
-        .in('name', ['Mathematics', 'Physics', 'الرياضيات', 'الفيزياء']); // Strict Filtering
+        .order('created_at', { ascending: true });
 
     if (error) {
         console.error("Tree fetch error:", error);
