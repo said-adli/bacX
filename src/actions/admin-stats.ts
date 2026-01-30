@@ -14,18 +14,14 @@ export interface DashboardStats {
 
 export async function getDashboardStats(): Promise<DashboardStats> {
     try {
-        const supabase = await createClient();
         const adminClient = createAdminClient();
 
-        await verifyAdmin();
-
-        // 1. Total Students
+        // 1. Total Students & VIPs
         const { count: totalStudents } = await adminClient
             .from('profiles')
             .select('*', { count: 'exact', head: true })
             .eq('role', 'student');
 
-        // 2. VIP Students (Subscribed)
         const { count: vipStudents } = await adminClient
             .from('profiles')
             .select('*', { count: 'exact', head: true })
@@ -33,34 +29,28 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
         const regularStudents = (totalStudents || 0) - (vipStudents || 0);
 
-        // 3. Active Online (From security_logs past 24h)
-        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        // Note: Supabase doesn't support SELECT DISTINCT in simple client calls easily.
-        // We will fetch logs and unique them in JS for now or use a dedicated RPC if performance demands.
-        // For V1 (Small Scale), fetching logs is acceptable.
-        // Optimization: Use head=false and check user_id.
+        // 2. Active Online (Last 15 Minutes)
+        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
         const { data: logs } = await adminClient
-            .from('security_logs') // or 'auth_logs' depending on system
+            .from('security_logs')
             .select('user_id')
-            .gte('created_at', oneDayAgo);
+            .gte('created_at', fifteenMinutesAgo);
 
-        const activeOnline = logs ? new Set(logs.map(l => l.user_id)).size : 0;
+        // Count unique user_ids
+        const uniqueActiveUsers = new Set(logs?.map(l => l.user_id)).size;
 
-
-        // 4. Total Revenue
-        // Assuming 'payments' table exists and has 'amount' and 'status'
+        // 3. Total Revenue
         const { data: payments } = await adminClient
             .from('payments')
             .select('amount')
-            .eq('status', 'approved');
+            .eq('status', 'succeeded'); // Valid status check
 
         let totalRevenue = 0;
         if (payments) {
             payments.forEach(p => {
-                // handle if amount is number or string "2500 DA"
-                const val = typeof p.amount === 'string'
-                    ? parseFloat(p.amount.replace(/[^0-9.]/g, ''))
-                    : Number(p.amount);
+                // Ensure amount is treated as string for replacement, then parsed
+                const amountStr = String(p.amount);
+                const val = parseFloat(amountStr.replace(/[^0-9.]/g, ''));
                 if (!isNaN(val)) totalRevenue += val;
             });
         }
@@ -70,7 +60,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
             regularStudents: regularStudents || 0,
             vipStudents: vipStudents || 0,
             totalRevenue,
-            activeOnline
+            activeOnline: uniqueActiveUsers
         };
 
     } catch (err: any) {

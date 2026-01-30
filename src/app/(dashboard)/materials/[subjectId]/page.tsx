@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
 import EncodedVideoPlayer from "@/components/lesson/VideoPlayer";
+import { PremiumLockScreen } from "@/components/dashboard/PremiumLockScreen"; // Import Lock Screen
 
 // --- Types ---
 interface Lesson {
@@ -29,6 +30,7 @@ interface Lesson {
     is_free: boolean;
     unit_id: string;
     created_at: string;
+    required_plan_id?: string | null; // Granular Access
 }
 
 interface Unit {
@@ -53,6 +55,7 @@ export default function SubjectDetailsPage() {
     // State
     const [loading, setLoading] = useState(true);
     const [subject, setSubject] = useState<Subject | null>(null);
+    const [userProfile, setUserProfile] = useState<any>(null); // For access control
     const [error, setError] = useState<string | null>(null);
 
     const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
@@ -77,21 +80,29 @@ export default function SubjectDetailsPage() {
                     throw new Error(`Invalid ID format: "${subjectId}"`);
                 }
 
-                // 2. Fetch Hierarchy
-                // Query: Subject -> Units -> Lessons
-                const { data, error: fetchError } = await supabase
-                    .from('subjects')
-                    .select('*, units(*, lessons(*))')
-                    .eq('id', subjectId)
-                    .single();
+                // 2. Fetch Hierarchy & User Profile
 
-                if (fetchError) {
-                    if (fetchError.code === 'PGRST116') { // code for no rows found
+                // Parallel Fetch
+                const [subjectResult, userResult] = await Promise.all([
+                    supabase
+                        .from('subjects')
+                        .select('*, units(*, lessons(*))')
+                        .eq('id', subjectId)
+                        .single(),
+                    supabase.auth.getUser().then(({ data }: { data: { user: any } }) =>
+                        data.user ? supabase.from('profiles').select('*').eq('id', data.user.id).single() : { data: null }
+                    )
+                ]);
+
+                if (subjectResult.error) {
+                    if (subjectResult.error.code === 'PGRST116') {
                         throw new Error("Subject not found in Database");
                     }
-                    console.error("Supabase Error:", fetchError);
-                    throw new Error("Connection Failed");
+                    throw subjectResult.error;
                 }
+
+                const data = subjectResult.data;
+                setUserProfile(userResult.data); // Store profile
 
                 if (!data) {
                     throw new Error("Subject not found in Database");
@@ -202,6 +213,19 @@ export default function SubjectDetailsPage() {
     // 3. Success (Empty State?)
     if (!subject) return null; // Should be handled by error state, but typescript safety
 
+    // 4. Access Check Helper
+    const hasAccess = (lesson: Lesson) => {
+        if (!userProfile) return false;
+        if (userProfile.role === 'admin' || userProfile.role === 'super_admin') return true;
+        if (lesson.is_free) return true;
+
+        // Plan Check
+        if (userProfile.is_subscribed) return true; // Full Access
+        // Granular check if implemented: if (lesson.required_plan_id === userProfile.plan_id) ...
+
+        return false;
+    };
+
     return (
         <div className="min-h-screen bg-black text-white p-4 md:p-8 font-sans" dir="rtl">
             {/* Header */}
@@ -248,18 +272,21 @@ export default function SubjectDetailsPage() {
                 <div className="lg:col-span-8 flex flex-col gap-6">
                     <div className="relative w-full aspect-video bg-black/40 rounded-2xl border border-white/10 overflow-hidden shadow-2xl flex items-center justify-center group">
                         {activeLesson ? (
-                            activeLesson.video_url ? (
-                                <EncodedVideoPlayer
-                                    encodedVideoId={activeLesson.video_url}
-                                // onEnded={() => {}} // Could attach progress logic here
-                                />
-                            ) : (
-                                <div className="text-center p-8">
-                                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                                        <Lock className="w-8 h-8 text-white/30" />
+                            hasAccess(activeLesson) ? (
+                                activeLesson.video_url ? (
+                                    <EncodedVideoPlayer
+                                        encodedVideoId={activeLesson.video_url}
+                                    />
+                                ) : (
+                                    <div className="text-center p-8">
+                                        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                                            <Lock className="w-8 h-8 text-white/30" />
+                                        </div>
+                                        <p className="text-white/50">لا يوجد فيديو لهذا الدرس</p>
                                     </div>
-                                    <p className="text-white/50">لا يوجد فيديو لهذا الدرس</p>
-                                </div>
+                                )
+                            ) : (
+                                <PremiumLockScreen />
                             )
                         ) : (
                             <div className="text-center p-8">
@@ -345,8 +372,13 @@ export default function SubjectDetailsPage() {
                                                         <div className={`
                                                             w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors
                                                             ${activeLesson?.id === lesson.id ? 'bg-blue-500/20' : 'bg-white/5 group-hover:bg-white/10'}
+                                                            ${!hasAccess(lesson) ? 'bg-red-500/10 text-red-400' : ''}
                                                         `}>
-                                                            <PlayCircle size={16} className={activeLesson?.id === lesson.id ? "fill-blue-500/20" : ""} />
+                                                            {hasAccess(lesson) ? (
+                                                                <PlayCircle size={16} className={activeLesson?.id === lesson.id ? "fill-blue-500/20" : ""} />
+                                                            ) : (
+                                                                <Lock size={14} className="opacity-80" />
+                                                            )}
                                                         </div>
                                                         <div className="min-w-0">
                                                             <p className="text-sm font-medium truncate">{lesson.title}</p>

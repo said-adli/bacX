@@ -55,7 +55,8 @@ export async function getContentTree() {
                 )
             )
         `)
-        .order('created_at', { ascending: true }); // Simplification for ordering
+        .order('created_at', { ascending: true })
+        .in('name', ['Mathematics', 'Physics', 'الرياضيات', 'الفيزياء']); // Strict Filtering
 
     if (error) {
         console.error("Tree fetch error:", error);
@@ -70,7 +71,9 @@ export async function createSubject(name: string, icon: string = 'Folder', order
     const supabase = await createClient();
     const { error } = await supabase.from('subjects').insert([{ name, icon, order }]);
     if (error) throw error;
+    if (error) throw error;
     revalidatePath('/admin/content');
+    revalidatePath('/dashboard');
 }
 
 // deleteSubject
@@ -79,7 +82,9 @@ export async function deleteSubject(id: string) {
     const supabase = await createClient();
     const { error } = await supabase.from('subjects').delete().eq('id', id);
     if (error) throw error;
+    if (error) throw error;
     revalidatePath('/admin/content');
+    revalidatePath('/dashboard');
 }
 
 // CRUD ACTIONS
@@ -93,7 +98,9 @@ export async function createUnit(subjectId: string, title: string) {
         .insert([{ subject_id: subjectId, title }]);
 
     if (error) throw error;
+    if (error) throw error;
     revalidatePath('/admin/content');
+    revalidatePath('/dashboard');
 }
 
 // deleteUnit
@@ -102,7 +109,9 @@ export async function deleteUnit(id: string) {
     const supabase = await createClient();
     const { error } = await supabase.from('units').delete().eq('id', id);
     if (error) throw error;
+    if (error) throw error;
     revalidatePath('/admin/content');
+    revalidatePath('/dashboard');
 }
 
 // createLesson
@@ -132,7 +141,10 @@ export async function updateLesson(id: string, data: Partial<Lesson>) {
         .eq('id', id);
 
     if (error) throw error;
+    if (error) throw error;
     revalidatePath('/admin/content');
+    revalidatePath('/dashboard');
+    revalidatePath('/materials', 'layout');
 }
 
 // deleteLesson
@@ -141,7 +153,10 @@ export async function deleteLesson(id: string) {
     const supabase = await createClient();
     const { error } = await supabase.from('lessons').delete().eq('id', id);
     if (error) throw error;
+    if (error) throw error;
     revalidatePath('/admin/content');
+    revalidatePath('/dashboard');
+    revalidatePath('/materials', 'layout');
 }
 
 // deleteLessonResource
