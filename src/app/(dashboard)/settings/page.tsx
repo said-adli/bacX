@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/utils/supabase/client";
@@ -27,16 +27,20 @@ const passwordSchema = z.object({
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function SettingsPage() {
-    const { user, profile, logout } = useAuth();
+    const { user } = useAuth();
     const supabase = createClient();
 
     const [isChangingPassword, setIsChangingPassword] = useState(false);
     const [isSigningOutOthers, setIsSigningOutOthers] = useState(false);
 
-    // Notification States (local for now, will sync with DB)
+    // [FIX 1] Notification States (Synced with DB)
     const [notifyEmail, setNotifyEmail] = useState(true);
     const [notifySms, setNotifySms] = useState(false);
     const [isSavingNotifications, setIsSavingNotifications] = useState(false);
+    const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+
+    // [FIX 2] Real Session Info
+    const [sessionInfo, setSessionInfo] = useState({ os: "Unknown", browser: "Unknown" });
 
     const passwordForm = useForm<PasswordFormValues>({
         resolver: zodResolver(passwordSchema),
@@ -46,6 +50,63 @@ export default function SettingsPage() {
             confirmPassword: ""
         }
     });
+
+    // --- INITIALIZATION: FETCH SETTINGS & DEVICE INFO ---
+    useEffect(() => {
+        let mounted = true;
+
+        // 1. Get Device Info
+        if (typeof window !== "undefined") {
+            const ua = window.navigator.userAgent;
+            let os = "Unknown OS";
+            if (ua.indexOf("Win") !== -1) os = "Windows";
+            if (ua.indexOf("Mac") !== -1) os = "MacOS";
+            if (ua.indexOf("Linux") !== -1) os = "Linux";
+            if (ua.indexOf("Android") !== -1) os = "Android";
+            if (ua.indexOf("like Mac") !== -1) os = "iOS";
+
+            let browser = "Web Browser";
+            if (ua.indexOf("Chrome") !== -1) browser = "Chrome";
+            if (ua.indexOf("Firefox") !== -1) browser = "Firefox";
+            if (ua.indexOf("Safari") !== -1) browser = "Safari";
+            if (ua.indexOf("Edge") !== -1) browser = "Edge";
+
+            if (mounted) setSessionInfo({ os, browser });
+        }
+
+        // 2. Fetch Notification Preferences
+        async function fetchSettings() {
+            if (!user) return;
+            try {
+                const { data, error } = await supabase
+                    .from("profiles")
+                    .select("notify_email, notify_sms")
+                    .eq("id", user.id)
+                    .single();
+
+                if (error) {
+                    console.warn("Failed to fetch settings:", error);
+                    return;
+                }
+
+                if (mounted && data) {
+                    // Start Update State
+                    // Defaults should match DB columns if they are not null
+                    // If columns are null, we keep default state
+                    if (data.notify_email !== null) setNotifyEmail(data.notify_email);
+                    if (data.notify_sms !== null) setNotifySms(data.notify_sms);
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                if (mounted) setIsLoadingSettings(false);
+            }
+        }
+
+        fetchSettings();
+
+        return () => { mounted = false; };
+    }, [user, supabase]);
 
     // --- CHANGE PASSWORD ---
     const onPasswordSubmit = async (values: PasswordFormValues) => {
@@ -87,8 +148,6 @@ export default function SettingsPage() {
     const handleSignOutOtherDevices = async () => {
         setIsSigningOutOthers(true);
         try {
-            // Sign out all sessions except current
-            // This requires re-authentication for security
             const { error } = await supabase.auth.signOut({ scope: "others" });
 
             if (error) {
@@ -221,14 +280,16 @@ export default function SettingsPage() {
                         </h2>
 
                         <div className="space-y-4">
-                            {/* Current Session */}
+                            {/* Current Session - [FIX 2] Real Data */}
                             <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
                                         <Monitor className="w-5 h-5 text-green-400" />
                                     </div>
                                     <div>
-                                        <p className="text-white font-medium">هذا الجهاز</p>
+                                        <p className="text-white font-medium">
+                                            {sessionInfo.os} — {sessionInfo.browser}
+                                        </p>
                                         <p className="text-white/40 text-xs flex items-center gap-1">
                                             <Clock className="w-3 h-3" />
                                             نشط الآن
@@ -257,10 +318,13 @@ export default function SettingsPage() {
 
                     {/* Notification Preferences */}
                     <GlassCard className="p-6 space-y-6 border-white/10">
-                        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                            <Bell className="text-blue-400" size={20} />
-                            تفضيلات الإشعارات
-                        </h2>
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                                <Bell className="text-blue-400" size={20} />
+                                تفضيلات الإشعارات
+                            </h2>
+                            {isLoadingSettings && <Loader2 className="w-4 h-4 text-white/50 animate-spin" />}
+                        </div>
 
                         <div className="space-y-4">
                             {/* Email Toggle */}
@@ -328,14 +392,18 @@ export default function SettingsPage() {
                         </ul>
                     </GlassCard>
 
+                    {/* [FIX 3] Delete Account via Mailto */}
                     <GlassCard className="p-6 border-white/10 bg-red-600/5">
                         <h3 className="text-lg font-bold text-white mb-2">حذف الحساب</h3>
                         <p className="text-sm text-white/60 mb-4">
-                            هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع بياناتك نهائياً.
+                            لأسباب أمنية وتاريخية، لا يمكن حذف الحساب تلقائيًا. يرجى التواصل مع الدعم.
                         </p>
-                        <button className="text-xs text-red-400 hover:text-red-300 underline transition-colors">
+                        <a
+                            href={`mailto:support@bac-x.com?subject=Request Account Deletion (${user?.email})&body=Hello Support Team,%0D%0A%0D%0AI would like to request the deletion of my account associated with ${user?.email}.%0D%0A%0D%0AReason:%0D%0A[Type reason here]`}
+                            className="text-xs text-red-400 hover:text-red-300 underline transition-colors"
+                        >
                             طلب حذف الحساب
-                        </button>
+                        </a>
                     </GlassCard>
                 </div>
             </div>
