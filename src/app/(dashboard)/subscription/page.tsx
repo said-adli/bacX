@@ -77,13 +77,13 @@ export default function SubscriptionPage() {
             name: profile.plan_name || "باقة غير معروفة", // Fetched from DB relation
             type: "VIP Member",
             expiry: profile.subscription_end_date ? new Date(profile.subscription_end_date).toLocaleDateString('ar-DZ') : "غير محدود",
-            progress: 45 // TODO: Calculate dynamically based on dates
+            isActive: true
         }
         : {
             name: "الباقة المجانية",
             type: "Free Tier",
             expiry: "غير محدود",
-            progress: 100
+            isActive: false
         };
 
     const handleApplyPromo = async () => {
@@ -133,16 +133,21 @@ export default function SubscriptionPage() {
                         </div>
                     </div>
 
-                    <div className="relative z-10 mt-8">
-                        <div className="flex justify-between text-sm text-white/60 mb-2">
-                            <span>صلاحية الباقة</span>
-                            <span>{currentPlan.expiry}</span>
+                    <div className="relative z-10 mt-8 flex items-center justify-between border-t border-white/5 pt-6">
+                        <div>
+                            <div className="text-sm text-white/60 mb-1">صلاحية الباقة</div>
+                            <div className="text-xl font-mono text-white">{currentPlan.expiry}</div>
                         </div>
-                        <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 gpu-accelerated"
-                                style={{ width: `${currentPlan.progress}%` }}
-                            />
+
+                        {/* Status Badge */}
+                        <div className={`px-4 py-2 rounded-xl border flex items-center gap-2 ${currentPlan.isActive
+                            ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                            : 'bg-zinc-500/10 border-zinc-500/20 text-zinc-400'
+                            }`}>
+                            <div className={`w-2 h-2 rounded-full ${currentPlan.isActive ? 'bg-green-500 animate-pulse' : 'bg-zinc-500'}`} />
+                            <span className="text-sm font-bold">
+                                {currentPlan.isActive ? 'اشتراك نشط' : 'غير نشط'}
+                            </span>
                         </div>
                     </div>
 

@@ -45,7 +45,7 @@ export const SubjectCard = ({ subject }: { subject: Subject }) => {
     return (
         <Link
             href={`/materials/${subject.id}`}
-            onClick={() => { }}
+
         >
             <div className={`glass-card relative h-52 overflow-hidden group hover:scale-[1.02] cursor-pointer transition-all duration-300 border border-white/5 ${config.border}`}>
 
