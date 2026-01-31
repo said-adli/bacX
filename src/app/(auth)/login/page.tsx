@@ -1,4 +1,5 @@
 import LoginClient from "./LoginClient";
+import { AuthLayoutShell } from "@/components/layout/AuthLayoutShell";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function LoginPage() {
-    return <LoginClient />;
+    return (
+        <AuthLayoutShell title="Login">
+            <LoginClient />
+        </AuthLayoutShell>
+    );
 }

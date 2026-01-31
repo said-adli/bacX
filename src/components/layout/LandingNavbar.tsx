@@ -7,7 +7,7 @@ import Link from "next/link";
 import { BrainyLogo } from "@/components/ui/BrainyLogo";
 import { useEffect, useState } from "react";
 
-const LandingNavbarComponent = function LandingNavbar() {
+const LandingNavbarComponent = function LandingNavbar({ authButton }: { authButton: React.ReactNode }) {
     const [isScrolled, setIsScrolled] = useState(false);
 
     // Scroll listener for header
@@ -58,10 +58,10 @@ const LandingNavbarComponent = function LandingNavbar() {
                     ))}
                 </nav>
 
-                {/* Left Side: Login */}
-                <Link href="/login" className="relative px-6 py-2 rounded-full border border-white/10 text-white/80 hover:text-white hover:border-white/30 transition-all text-xs uppercase tracking-widest font-medium group overflow-hidden bg-white/5 hover:bg-white/10">
-                    <span className="relative z-10 font-cinzel text-xs font-bold">تسجيل الدخول</span>
-                </Link>
+                {/* Left Side: Login / Auth - Dynamic Slot */}
+                <div className="relative z-20">
+                    {authButton}
+                </div>
             </div>
         </motion.header>
     );

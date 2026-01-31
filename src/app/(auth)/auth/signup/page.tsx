@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import SignupForm from "./SignupForm";
+import { AuthLayoutShell } from "@/components/layout/AuthLayoutShell";
 
 export const metadata = {
     title: "انشاء حساب | Brainy",
@@ -28,9 +29,11 @@ export default async function SignupPage() {
     }
 
     return (
-        <SignupForm
-            wilayas={wilayas || []}
-            majors={majors || []}
-        />
+        <AuthLayoutShell title="Create Account">
+            <SignupForm
+                wilayas={wilayas || []}
+                majors={majors || []}
+            />
+        </AuthLayoutShell>
     );
 }
