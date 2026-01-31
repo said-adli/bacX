@@ -48,14 +48,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             </div>
 
             {/* Main Content Area - Animating Margin */}
-            <motion.main
-                initial={false}
-                animate={{
-                    // On mobile, margin is 0. On desktop, it depends on sidebar state.
-                    marginRight: isMobile ? 0 : (isCollapsed ? 90 : 288),
-                }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="min-h-screen px-4 md:px-12 pb-32 md:pb-10 relative z-10 gpu-accelerated"
+            {/* Main Content Area - CSS Transition for Margin */}
+            <main
+                className={`min-h-screen px-4 md:px-12 pb-32 md:pb-10 relative z-10 gpu-accelerated
+                    transition-[margin] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
+                    ${isMobile ? "mr-0" : (isCollapsed ? "mr-[90px]" : "mr-[288px]")}
+                `}
             >
                 {/* BROADCAST RECEIVER */}
                 <div className="max-w-7xl mx-auto pt-6">
@@ -63,7 +61,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                 </div>
 
                 {children}
-            </motion.main>
+            </main>
 
             {/* SPACER SHIM (Prevents Mini Player from covering content on mobile) */}
             {/* Height = Mini Player Height (approx 200px) + Padding */}

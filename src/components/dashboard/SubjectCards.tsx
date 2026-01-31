@@ -18,16 +18,22 @@ interface Subject {
     [key: string]: any;
 }
 
+// ... imports
+
 interface SubjectCardsProps {
     query?: string;
+    initialSubjects?: Subject[]; // [NEW] Server data
 }
 
-export function SubjectCards({ query }: SubjectCardsProps) {
-    const [subjects, setSubjects] = useState<Subject[]>([]);
-    const [loading, setLoading] = useState(true);
+export function SubjectCards({ query, initialSubjects = [] }: SubjectCardsProps) {
+    const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
+    const [loading, setLoading] = useState(!initialSubjects.length);
     const [error, setError] = useState<string | null>(null);
 
+    // Only fetch if NO initial data (fallback)
     const fetchSubjects = async (retries = 3, delay = 1000) => {
+        if (initialSubjects.length > 0) return; // Skip if hydrated
+
         setLoading(true);
         setError(null);
         try {

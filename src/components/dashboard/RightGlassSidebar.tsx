@@ -25,11 +25,11 @@ const RightGlassSidebarComponent = function RightGlassSidebar() {
   ];
 
   return (
-    <motion.aside
-      initial={false}
-      animate={{ width: isCollapsed ? 90 : 288 }} // Slightly wider collapsed state for the logo
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed right-0 top-0 h-full bg-black/80 backdrop-blur-md border-l border-white/5 flex flex-col z-[90] shadow-[-10px_0_40px_rgba(0,0,0,0.5)] overflow-visible gpu-accelerated"
+    <aside
+      className={`fixed right-0 top-0 h-full bg-black/80 backdrop-blur-md border-l border-white/5 flex flex-col z-[90] shadow-[-10px_0_40px_rgba(0,0,0,0.5)] overflow-visible gpu-accelerated
+        transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
+        ${isCollapsed ? "w-[90px]" : "w-[288px]"}
+      `}
     >
       {/* Toggle Button - Repositioned to prevent collision */}
       <button
@@ -160,7 +160,7 @@ const RightGlassSidebarComponent = function RightGlassSidebar() {
           )}
         </div>
       </div>
-    </motion.aside>
+    </aside>
   );
 };
 

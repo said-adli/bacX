@@ -27,11 +27,22 @@ interface LastLesson {
     };
 }
 
-export default function ContinueWatching() {
-    const [data, setData] = useState<LastLesson | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+// ... imports
+
+interface ContinueWatchingProps {
+    initialData?: LastLesson | null;
+}
+
+export default function ContinueWatching({ initialData }: ContinueWatchingProps) {
+    const [data, setData] = useState<LastLesson | null>(initialData || null);
+    const [isLoading, setIsLoading] = useState(!initialData);
 
     useEffect(() => {
+        if (initialData) {
+            setIsLoading(false);
+            return;
+        }
+
         const fetchLastLesson = async () => {
             try {
                 const result = await getLastAccessedLesson();
@@ -45,7 +56,7 @@ export default function ContinueWatching() {
             }
         };
         fetchLastLesson();
-    }, []);
+    }, [initialData]);
 
     // Hide completely if loading or no data
     if (isLoading) {

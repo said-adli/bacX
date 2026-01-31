@@ -477,7 +477,7 @@ main {
 }
 
 .gpu-accelerated {
-  will-change: transform, opacity;
+  will-change: transform, opacity, width, margin;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   backface-visibility: hidden;

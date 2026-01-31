@@ -16,62 +16,57 @@ export interface DashboardData {
 }
 
 export async function getDashboardData(): Promise<DashboardData | { error: string }> {
+    // Legacy support wrapper
+    const api = await import("@/actions/dashboard"); // Self-import to use new functions
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    try {
-        // 1. Get User Session
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
 
-        if (authError || !user) {
-            console.error("[Dashboard] Auth Error:", authError);
-            return { error: "Unauthorized" };
-        }
+    const [profile, subjects, stats] = await Promise.all([
+        api.getProfileData(user.id),
+        api.getSubjectsData(),
+        api.getStatsData()
+    ]);
 
-        // 2. Parallel Fetching for Performance
-        const [profileResult, subjectsResult, statsResult] = await Promise.all([
-            // Fetch Profile
-            supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single(),
+    return {
+        user,
+        profile,
+        subjects,
+        stats,
+        isSubscribed: profile?.is_subscribed || false
+    };
+}
 
-            // Fetch Subjects (and lessons count if needed)
-            supabase
-                .from('subjects')
-                .select('*, icon, lessons(id, title, required_plan_id, is_free)') // Fetch access info
-                .in('name', ['Mathematics', 'Physics', 'الرياضيات', 'الفيزياء']) // Strict Filtering
-                .order('order_index', { ascending: true }),
+// ----------------------------------------------------------------------
+// GRANULAR ACTIONS (For Streaming)
+// ----------------------------------------------------------------------
 
-            // Fetch Stats (Count)
-            supabase
-                .from('subjects')
-                .select('*', { count: 'exact', head: true })
-        ]);
+export async function getProfileData(userId: string) {
+    const supabase = await createClient();
+    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    return data;
+}
 
-        const profile = profileResult.data;
-        const subjects = subjectsResult.data || [];
-        const subjectCount = statsResult.count || 0;
+export async function getSubjectsData() {
+    const supabase = await createClient();
+    const { data } = await supabase
+        .from('subjects')
+        .select('*, icon, lessons(id, title, required_plan_id, is_free)') // Fetch access info
+        .in('name', ['Mathematics', 'Physics', 'الرياضيات', 'الفيزياء']) // Strict Filtering
+        .order('order_index', { ascending: true });
 
-        // 3. Process Data
-        // Calculate "Hours" or other derived stats here if possible
-        // For now, placeholder or derived from real data
-        const hours = 0; // Future: sum(lessons.duration)
+    return data || [];
+}
 
-        return {
-            user,
-            profile,
-            subjects,
-            stats: {
-                courses: subjectCount,
-                hours: hours,
-                rank: "#--" // Placeholder for now
-            },
-            isSubscribed: profile?.is_subscribed || false
-        };
+export async function getStatsData() {
+    const supabase = await createClient();
+    // Optimized: Use count instead of fetching all rows
+    const { count } = await supabase.from('subjects').select('*', { count: 'exact', head: true });
 
-    } catch (error) {
-        console.error("[Dashboard] Critical Error:", error);
-        return { error: "Internal Server Error" };
-    }
+    return {
+        courses: count || 0,
+        hours: 0, // Placeholder
+        rank: "#--"
+    };
 }
