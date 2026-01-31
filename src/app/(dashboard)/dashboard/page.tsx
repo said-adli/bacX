@@ -2,6 +2,11 @@ import { Suspense } from "react";
 import CinematicHero from "@/components/dashboard/CinematicHero";
 import { Clock } from "lucide-react";
 
+// Service Layer
+import { getDashboardView } from "@/services/dashboard.service";
+import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
+
 // Async Components (Streaming)
 import StatsOverview from "@/components/dashboard/StatsOverview";
 import ContinueWatchingSection from "@/components/dashboard/ContinueWatchingSection";
@@ -17,12 +22,25 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-export default function DashboardPage({
+export default async function DashboardPage({
     searchParams,
 }: {
-    searchParams: { [key: string]: string | string[] | undefined };
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-    const query = (typeof searchParams.q === 'string' ? searchParams.q : "")?.toLowerCase();
+    // 1. Auth Check
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        redirect("/login");
+    }
+
+    // 2. Parse Query (Await searchParams as it is a Promise in Next.js 15+)
+    const params = await searchParams;
+    const query = (typeof params.q === 'string' ? params.q : "")?.toLowerCase();
+
+    // 3. Fetch Data via Service Layer (Safe & Typed)
+    const subjects = await getDashboardView(user.id);
 
     return (
         <div className="space-y-16 pb-20">
@@ -42,7 +60,7 @@ export default function DashboardPage({
                 <ContinueWatchingSection />
             </Suspense>
 
-            {/* 4. CRYSTAL GRID (Subjects) */}
+            {/* 4. CRYSTAL GRID (Subjects) - Now explicitly passed data */}
             <div className="space-y-6">
                 <div className="flex items-center justify-between px-2">
                     <h2 className="text-2xl font-bold text-white">
@@ -50,9 +68,10 @@ export default function DashboardPage({
                     </h2>
                 </div>
 
-                <Suspense fallback={<SubjectsSkeleton />}>
-                    <SubjectsGrid query={query} />
-                </Suspense>
+                {/* Using Suspense here might be redundant if we await data above, 
+                    but kept for structure if we move to streaming later. 
+                    Since we await 'subjects' above, this part renders immediately with the page. */}
+                <SubjectsGrid query={query} subjects={subjects} />
             </div>
 
             {/* 4. SUBSCRIPTION / OFFERS SECTION */}
