@@ -29,10 +29,10 @@ CREATE TABLE IF NOT EXISTS public.student_requests (
 );
 
 -- 2. Create indexes for performance
-CREATE INDEX idx_student_requests_user_id ON public.student_requests(user_id);
-CREATE INDEX idx_student_requests_status ON public.student_requests(status);
-CREATE INDEX idx_student_requests_type ON public.student_requests(request_type);
-CREATE INDEX idx_student_requests_created_at ON public.student_requests(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_student_requests_user_id ON public.student_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_student_requests_status ON public.student_requests(status);
+CREATE INDEX IF NOT EXISTS idx_student_requests_type ON public.student_requests(request_type);
+CREATE INDEX IF NOT EXISTS idx_student_requests_created_at ON public.student_requests(created_at DESC);
 
 -- 3. Enable RLS
 ALTER TABLE public.student_requests ENABLE ROW LEVEL SECURITY;
@@ -40,6 +40,7 @@ ALTER TABLE public.student_requests ENABLE ROW LEVEL SECURITY;
 -- 4. RLS Policies
 
 -- Users can INSERT their own requests
+DROP POLICY IF EXISTS "Users can create their own requests" ON public.student_requests;
 CREATE POLICY "Users can create their own requests"
 ON public.student_requests
 FOR INSERT
@@ -47,6 +48,7 @@ TO authenticated
 WITH CHECK (auth.uid() = user_id);
 
 -- Users can SELECT only their own requests
+DROP POLICY IF EXISTS "Users can view their own requests" ON public.student_requests;
 CREATE POLICY "Users can view their own requests"
 ON public.student_requests
 FOR SELECT
@@ -54,6 +56,7 @@ TO authenticated
 USING (auth.uid() = user_id);
 
 -- Admins can SELECT all requests (for admin panel)
+DROP POLICY IF EXISTS "Admins can view all requests" ON public.student_requests;
 CREATE POLICY "Admins can view all requests"
 ON public.student_requests
 FOR SELECT
@@ -66,6 +69,7 @@ USING (
 );
 
 -- Admins can UPDATE all requests (approve/reject)
+DROP POLICY IF EXISTS "Admins can update all requests" ON public.student_requests;
 CREATE POLICY "Admins can update all requests"
 ON public.student_requests
 FOR UPDATE
@@ -92,6 +96,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_student_requests_updated_at ON public.student_requests;
 CREATE TRIGGER trigger_update_student_requests_updated_at
     BEFORE UPDATE ON public.student_requests
     FOR EACH ROW
