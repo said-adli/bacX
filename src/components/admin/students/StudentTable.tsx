@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useOptimistic, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
     Search,
@@ -21,7 +21,20 @@ import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/useDebounce";
 import { ManageSubscriptionModal } from "./ManageSubscriptionModal"; // [NEW]
 
-export function StudentTable({ students, totalPages }: { students: any[], totalPages: number }) {
+interface Student {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    wilaya: string | null;
+    study_system: string | null;
+    is_banned: boolean;
+    is_subscribed: boolean;
+    created_at: string;
+    avatar_url?: string;
+    subscription_end_date?: string | null;
+}
+
+export function StudentTable({ students, totalPages }: { students: Student[], totalPages: number }) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -46,17 +59,29 @@ export function StudentTable({ students, totalPages }: { students: any[], totalP
     // Filter Logic can be added here pushing to URL
     // e.g. ?filter=expired
 
+    // [NEW] Optimistic UI
+    const [optimisticStudents, setOptimisticStatus] = useOptimistic<Student[], { id: string; is_banned: boolean }>(
+        students,
+        (state, { id, is_banned }) =>
+            state.map((s) => (s.id === id ? { ...s, is_banned } : s))
+    );
+
     const handleBan = async (id: string, currentStatus: boolean) => {
-        if (!confirm(currentStatus ? "Unban this student?" : "Ban this student?")) return;
-        setIsLoading(true);
+        // Optimistic Update (Instant Red/Green Toggle)
+        // Optimistic Update (Instant Red/Green Toggle)
+        const newStatus = !currentStatus;
+        startTransition(() => {
+            setOptimisticStatus({ id, is_banned: newStatus });
+        });
+
         try {
-            await toggleBanStudent(id, !currentStatus);
-            toast.success("Student status updated");
+            await toggleBanStudent(id, newStatus);
+            toast.success(newStatus ? "User Banned" : "User Unbanned");
             router.refresh();
         } catch (e) {
             toast.error("Action failed");
-        } finally {
-            setIsLoading(false);
+            // Revert is automatic on refresh, but ideally we'd revert optimistic state here if needed.
+            // Since router.refresh() re-fetches, it corrects itself.
         }
     };
 
@@ -192,7 +217,7 @@ export function StudentTable({ students, totalPages }: { students: any[], totalP
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5 text-right">
-                        {students.map((student) => (
+                        {optimisticStudents.map((student) => (
                             <tr
                                 key={student.id}
                                 className={`group transition-colors cursor-pointer ${selectedIds.has(student.id) ? 'bg-blue-900/10' : 'hover:bg-white/5'}`}
@@ -225,11 +250,11 @@ export function StudentTable({ students, totalPages }: { students: any[], totalP
                                 <td className="p-4 text-zinc-400">{student.study_system || "-"}</td>
                                 <td className="p-4">
                                     {student.is_banned ? (
-                                        <span className="px-3 py-1 rounded-full bg-red-500/10 text-red-500 text-xs font-bold border border-red-500/20 flex w-fit items-center gap-1">
+                                        <span className="px-3 py-1 rounded-full bg-red-500/10 text-red-500 text-xs font-bold border border-red-500/20 flex w-fit items-center gap-1 animate-in fade-in zoom-in duration-300">
                                             <ShieldAlert size={12} /> BANNED
                                         </span>
                                     ) : student.is_subscribed ? (
-                                        <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 flex w-fit items-center gap-1">
+                                        <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 flex w-fit items-center gap-1 animate-in fade-in zoom-in duration-300">
                                             <CheckCircle size={12} /> ACTIVE
                                         </span>
                                     ) : (
@@ -241,7 +266,10 @@ export function StudentTable({ students, totalPages }: { students: any[], totalP
                                 <td className="p-4">
                                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
-                                            onClick={() => handleBan(student.id, student.is_banned)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleBan(student.id, student.is_banned);
+                                            }}
                                             className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
                                             title={student.is_banned ? "Unban" : "Ban User"}
                                         >
@@ -250,7 +278,10 @@ export function StudentTable({ students, totalPages }: { students: any[], totalP
 
                                         {student.is_subscribed && (
                                             <button
-                                                onClick={() => handleTerminate(student.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleTerminate(student.id)
+                                                }}
                                                 className="p-2 rounded-lg bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-colors"
                                                 title="Terminate Subscription"
                                             >

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { StudentTable } from "@/components/admin/students/StudentTable";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { getStudents } from "@/actions/admin-students";
 
 export default async function AdminStudentsPage(props: {
@@ -28,7 +29,7 @@ export default async function AdminStudentsPage(props: {
                 </button>
             </div>
 
-            <Suspense fallback={<div className="text-white">Loading students...</div>}>
+            <Suspense fallback={<TableSkeleton />}>
                 <StudentTable students={students} totalPages={totalPages} />
             </Suspense>
         </div>

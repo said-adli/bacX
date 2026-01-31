@@ -14,6 +14,8 @@ export interface StudentProfile {
     is_restored: boolean;
     is_subscribed: boolean;
     subscription_end_date: string | null;
+    is_banned: boolean;     // [NEW]
+    avatar_url?: string;    // [NEW]
 }
 
 // FETCH STUDENTS
@@ -331,16 +333,16 @@ export async function setStudentPlan(userId: string, planId: string | null, isSu
     if (isSubscribed) {
         if (!planId) throw new Error("Plan ID is required for active subscriptions");
         updateData.plan_id = planId;
-        
+
         // If enabling subscription, ensure valid end date if expired
         // We can fetch plan duration to be precise, or default to 1 year.
         // For MANUAL linkage, if we are just "fixing" a record, we might preserve existing date 
         // OR reset it. Let's reset to 1 year from now to be safe, or 30 days if not specified.
         // BETTER: Fetch Plan Duration.
         if (planId) {
-             const { data: plan } = await supabaseAdmin.from('subscription_plans').select('duration_days').eq('id', planId).single();
-             const days = plan?.duration_days || 365;
-             updateData.subscription_end_date = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+            const { data: plan } = await supabaseAdmin.from('subscription_plans').select('duration_days').eq('id', planId).single();
+            const days = plan?.duration_days || 365;
+            updateData.subscription_end_date = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
         }
     } else {
         // If deactivating, maybe clear plan_id? Or keep it for history?

@@ -16,39 +16,43 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     try {
         const adminClient = createAdminClient();
 
-        // 1. Total Students & VIPs
-        const { count: totalStudents } = await adminClient
-            .from('profiles')
-            .select('*', { count: 'exact', head: true })
-            .eq('role', 'student');
+        const [
+            allMapResult,
+            activeResult,
+            paymentsResult
+        ] = await Promise.all([
+            // 1. Fetch Student Counts (Regular & VIP)
+            // We can do two count queries in parallel or one generic one. 
+            // For max speed, separate exact counts might be faster or slower depending on index.
+            // Let's optimize by running them in parallel.
+            Promise.all([
+                adminClient.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
+                adminClient.from('profiles').select('*', { count: 'exact', head: true }).eq('is_subscribed', true)
+            ]),
 
-        const { count: vipStudents } = await adminClient
-            .from('profiles')
-            .select('*', { count: 'exact', head: true })
-            .eq('is_subscribed', true);
+            // 2. Active Online
+            (async () => {
+                const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+                const { data: logs } = await adminClient
+                    .from('security_logs')
+                    .select('user_id')
+                    .gte('created_at', fifteenMinutesAgo);
+                return logs ? new Set(logs.map(l => l.user_id)).size : 0;
+            })(),
 
-        const regularStudents = (totalStudents || 0) - (vipStudents || 0);
+            // 3. Revenue
+            adminClient.from('payments').select('amount').eq('status', 'succeeded')
+        ]);
 
-        // 2. Active Online (Last 15 Minutes)
-        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-        const { data: logs } = await adminClient
-            .from('security_logs')
-            .select('user_id')
-            .gte('created_at', fifteenMinutesAgo);
+        const totalStudents = allMapResult[0].count || 0;
+        const vipStudents = allMapResult[1].count || 0;
+        const regularStudents = totalStudents - vipStudents;
+        const activeOnline = activeResult;
 
-        // Count unique user_ids
-        const uniqueActiveUsers = new Set(logs?.map(l => l.user_id)).size;
-
-        // 3. Total Revenue
-        const { data: payments } = await adminClient
-            .from('payments')
-            .select('amount')
-            .eq('status', 'succeeded'); // Valid status check
-
+        // Calculate Revenue
         let totalRevenue = 0;
-        if (payments) {
-            payments.forEach(p => {
-                // Ensure amount is treated as string for replacement, then parsed
+        if (paymentsResult.data) {
+            paymentsResult.data.forEach(p => {
                 const amountStr = String(p.amount);
                 const val = parseFloat(amountStr.replace(/[^0-9.]/g, ''));
                 if (!isNaN(val)) totalRevenue += val;
@@ -56,11 +60,11 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         }
 
         return {
-            totalStudents: totalStudents || 0,
-            regularStudents: regularStudents || 0,
-            vipStudents: vipStudents || 0,
+            totalStudents,
+            regularStudents,
+            vipStudents,
             totalRevenue,
-            activeOnline: uniqueActiveUsers
+            activeOnline
         };
 
     } catch (err: any) {
