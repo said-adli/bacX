@@ -76,17 +76,6 @@ export function RealtimeSystemStatus() {
         );
     }
 
-    // Live Banner (Floating)
-    if (live) {
-        return (
-            <div className="fixed top-20 right-8 z-50 animate-in slide-in-from-right-10 duration-500">
-                <div className="flex items-center gap-3 px-4 py-2 bg-red-600 rounded-full shadow-[0_0_20px_rgba(220,38,38,0.4)] cursor-pointer hover:scale-105 transition-transform">
-                    <Radio size={16} className="text-white animate-pulse" />
-                    <span className="text-white font-bold text-sm tracking-wide">LIVE NOW</span>
-                </div>
-            </div>
-        );
-    }
-
+    // Live logic moved to <LiveBanner /> attached in DashboardShell
     return null;
 }

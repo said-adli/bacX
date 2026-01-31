@@ -36,15 +36,8 @@ export default async function AdminDashboard() {
             </div>
 
             {/* Recent Activity / Quick Actions could go here */}
-            <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-500/20 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div>
-                    <h3 className="text-xl font-bold text-white">System Status: HEALTHY</h3>
-                    <p className="text-blue-200/60 text-sm">All systems operational. Next backup scheduled in 2h.</p>
-                </div>
-                <button className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold transition-all shadow-[0_0_15px_rgba(37,99,235,0.4)]">
-                    Run Diagnostics
-                </button>
-            </div>
+            {/* Dashboard Footer / Space */}
+            <div className="h-4" />
         </div>
     );
 }

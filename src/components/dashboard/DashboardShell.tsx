@@ -4,6 +4,8 @@ import { useSidebar } from "@/context/SidebarContext";
 import RightGlassSidebar from "./RightGlassSidebar";
 import StickyGlassMenu from "./StickyGlassMenu";
 import MobileBottomNav from "./MobileBottomNav"; // [NEW]
+import LiveBanner from "./LiveBanner"; // [NEW]
+import BroadcastReceiver from "./BroadcastReceiver"; // [NEW]
 import { motion } from "framer-motion";
 import { useEffect, useRef } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query"; // [NEW]
@@ -39,6 +41,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             {/* Top Bar (Fixed) */}
             <StickyGlassMenu />
 
+            {/* LIVE BANNER (Fixed below sticky menu or at top) */}
+            <div className="relative z-30 pt-20">
+                {/* pt-20 to offset fixed menu if needed, or adjust based on layout */}
+                <LiveBanner />
+            </div>
+
             {/* Main Content Area - Animating Margin */}
             <motion.main
                 initial={false}
@@ -47,8 +55,13 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                     marginRight: isMobile ? 0 : (isCollapsed ? 90 : 288),
                 }}
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="min-h-screen pt-28 px-4 md:px-12 pb-32 md:pb-10 relative z-10 gpu-accelerated"
+                className="min-h-screen px-4 md:px-12 pb-32 md:pb-10 relative z-10 gpu-accelerated"
             >
+                {/* BROADCAST RECEIVER */}
+                <div className="max-w-7xl mx-auto pt-6">
+                    <BroadcastReceiver />
+                </div>
+
                 {children}
             </motion.main>
 

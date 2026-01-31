@@ -36,7 +36,7 @@ export default async function AdminLayout({
             {/* Main Content Area */}
             <div className="flex flex-col flex-1 h-full relative overflow-hidden">
                 {/* Header */}
-                <AdminHeader />
+                <AdminHeader user={user} />
 
                 {/* Dynamic Page Content */}
                 <main className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
