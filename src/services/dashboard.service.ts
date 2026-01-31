@@ -1,4 +1,5 @@
 import { getAllSubjectsRaw, getUserProgressMapRaw } from "@/lib/data/raw-db";
+import { createClient } from "@/utils/supabase/server";
 
 /**
  * Data Transfer Object for Dashboard Subjects.
@@ -14,16 +15,40 @@ export interface DashboardSubjectDTO {
     href: string;
 }
 
+export interface AnnouncementDTO {
+    id: string;
+    title: string | null;
+    content: string;
+    createdAt: Date;
+    isNew: boolean;
+}
+
+export interface DashboardViewDTO {
+    subjects: DashboardSubjectDTO[];
+    announcements: AnnouncementDTO[];
+}
+
 /**
  * Service to orchestrate dashboard data fetching.
  * Merges raw database data with user progress safely.
  */
-export async function getDashboardView(userId: string): Promise<DashboardSubjectDTO[]> {
+export async function getDashboardView(userId: string): Promise<DashboardViewDTO> {
+    const supabase = await createClient();
+
     // Step A: Fetch data in parallel
-    const [subjects, progressMap] = await Promise.all([
+    const [subjectsRes, progressMap, announcementsRes] = await Promise.all([
         getAllSubjectsRaw(),
-        getUserProgressMapRaw(userId)
+        getUserProgressMapRaw(userId),
+        supabase
+            .from("announcements")
+            .select("id, title, content, created_at")
+            .eq("is_active", true)
+            .order("created_at", { ascending: false })
+            .limit(5)
     ]);
+
+    const subjects = subjectsRes; // Already raw data
+    const announcementsData = announcementsRes.data || [];
 
     // Step B & C: Merge and Transform
     const dashboardSubjects: DashboardSubjectDTO[] = subjects.map((subject) => {
@@ -42,5 +67,14 @@ export async function getDashboardView(userId: string): Promise<DashboardSubject
         };
     });
 
-    return dashboardSubjects;
+    // Step E: Transform Announcements
+    const announcements: AnnouncementDTO[] = announcementsData.map((a: any) => ({
+        id: a.id,
+        title: a.title || "تحديث جديد", // Fallback if title missing
+        content: a.content,
+        createdAt: new Date(a.created_at),
+        isNew: (new Date().getTime() - new Date(a.created_at).getTime()) < (7 * 24 * 60 * 60 * 1000) // New if < 7 days
+    }));
+
+    return { subjects: dashboardSubjects, announcements };
 }

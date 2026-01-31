@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import CinematicHero from "@/components/dashboard/CinematicHero";
-import { Clock } from "lucide-react";
 
 // Service Layer
 import { getDashboardView } from "@/services/dashboard.service";
@@ -12,6 +11,7 @@ import StatsOverview from "@/components/dashboard/StatsOverview";
 import ContinueWatchingSection from "@/components/dashboard/ContinueWatchingSection";
 import SubjectsGrid from "@/components/dashboard/SubjectsGrid";
 import SmartSubscriptionCards from "@/components/dashboard/SmartSubscriptionCards";
+import UpdatesSection from "@/components/dashboard/UpdatesSection";
 
 // Skeletons (Loading States)
 import {
@@ -35,19 +35,23 @@ export default async function DashboardPage({
         redirect("/login");
     }
 
-    // 2. Parse Query (Await searchParams as it is a Promise in Next.js 15+)
+    // 2. Parse Query
     const params = await searchParams;
     const query = (typeof params.q === 'string' ? params.q : "")?.toLowerCase();
 
     // 3. Fetch Data via Service Layer (Safe & Typed)
-    const subjects = await getDashboardView(user.id);
+    // Now returns { subjects, announcements }
+    const { subjects, announcements } = await getDashboardView(user.id);
+
+    // Check for new announcements for the notification pill
+    const hasNewAnnouncements = announcements.some(a => a.isNew);
 
     return (
         <div className="space-y-16 pb-20">
 
             {/* 1. HERO SECTION (Static/Client - Loads Instantly) */}
             <div className="animate-in fade-in zoom-in duration-700">
-                <CinematicHero />
+                <CinematicHero hasNotification={hasNewAnnouncements} />
             </div>
 
             {/* 2. STATS (Streams in parallel) */}
@@ -60,7 +64,7 @@ export default async function DashboardPage({
                 <ContinueWatchingSection />
             </Suspense>
 
-            {/* 4. CRYSTAL GRID (Subjects) - Now explicitly passed data */}
+            {/* 4. CRYSTAL GRID (Subjects) */}
             <div className="space-y-6">
                 <div className="flex items-center justify-between px-2">
                     <h2 className="text-2xl font-bold text-white">
@@ -68,13 +72,15 @@ export default async function DashboardPage({
                     </h2>
                 </div>
 
-                {/* Using Suspense here might be redundant if we await data above, 
-                    but kept for structure if we move to streaming later. 
-                    Since we await 'subjects' above, this part renders immediately with the page. */}
                 <SubjectsGrid query={query} subjects={subjects} />
             </div>
 
-            {/* 4. SUBSCRIPTION / OFFERS SECTION */}
+            {/* 5. UPDATES & SCHEDULE (New 2-Column Grid) */}
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
+                <UpdatesSection announcements={announcements} />
+            </div>
+
+            {/* 6. SUBSCRIPTION / OFFERS SECTION */}
             <Suspense fallback={
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
                     <div className="h-64 bg-white/5 rounded-2xl" />
@@ -83,15 +89,6 @@ export default async function DashboardPage({
             }>
                 <SmartSubscriptionCards />
             </Suspense>
-
-            {/* 5. CONTENT SECTIONS */}
-            <div className="grid grid-cols-1 gap-8">
-                <div className="p-8 border border-white/5 rounded-2xl bg-white/5 flex flex-col items-center justify-center text-center">
-                    <Clock className="w-12 h-12 text-blue-400 mb-4 opacity-50" />
-                    <h3 className="text-xl font-bold text-white mb-2">المستجدات والمواعيد</h3>
-                    <p className="text-white/40">سيتم نشر جداول الحصص المباشرة والاختبارات قريباً.</p>
-                </div>
-            </div>
         </div>
     );
 }

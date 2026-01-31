@@ -1,11 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles, Bell } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
-export default function CinematicHero() {
+export default function CinematicHero({ hasNotification = false }: { hasNotification?: boolean }) {
     return (
         <div className="relative w-full h-[75vh] min-h-[700px] flex items-center justify-center overflow-hidden rounded-[2.5rem] mb-12 group border border-white/10 border-t-white/30 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.8)]">
 
@@ -34,10 +34,20 @@ export default function CinematicHero() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
-                    className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md shadow-[0_0_20px_rgba(0,0,0,0.2)]"
+                    className="flex flex-col items-center gap-4"
                 >
-                    <Sparkles className="w-3.5 h-3.5 text-blue-300" />
-                    <span className="text-xs font-bold tracking-[0.25em] text-blue-100/90 uppercase">Daily Inspiration</span>
+                    {/* Notification Pill */}
+                    {hasNotification && (
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 backdrop-blur-md shadow-[0_0_20px_rgba(59,130,246,0.2)] animate-pulse">
+                            <Bell className="w-3.5 h-3.5 text-blue-300" />
+                            <span className="text-xs font-bold text-blue-100">تحديثات جديدة متاحة</span>
+                        </div>
+                    )}
+
+                    <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-300" />
+                        <span className="text-xs font-bold tracking-[0.25em] text-blue-100/90 uppercase">Daily Inspiration</span>
+                    </div>
                 </motion.div>
 
                 {/* Main Arabic Quote */}
