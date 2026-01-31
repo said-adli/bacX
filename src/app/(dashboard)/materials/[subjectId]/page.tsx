@@ -18,7 +18,9 @@ import {
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
 import EncodedVideoPlayer from "@/components/lesson/VideoPlayer";
-import { PremiumLockScreen } from "@/components/dashboard/PremiumLockScreen"; // Import Lock Screen
+import { PremiumLockScreen } from "@/components/dashboard/PremiumLockScreen";
+import MarkCompleteButton from "@/components/lesson/MarkCompleteButton";
+import LessonNotes from "@/components/lesson/LessonNotes";
 
 // --- Types ---
 interface Lesson {
@@ -324,22 +326,31 @@ export default function SubjectDetailsPage() {
                                             <Clock size={16} className="text-blue-400" />
                                             {activeLesson.duration || "غير محدد"}
                                         </div>
-                                        {/* Add more metadata if needed */}
                                     </div>
                                 </div>
-                                {activeLesson.pdf_url && (
-                                    <a
-                                        href={activeLesson.pdf_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 rounded-lg transition-colors border border-blue-600/20 text-sm font-medium"
-                                    >
-                                        <FileText size={18} />
-                                        تحميل PDF
-                                    </a>
-                                )}
+                                <div className="flex items-center gap-3">
+                                    {hasAccess(activeLesson) && (
+                                        <MarkCompleteButton lessonId={activeLesson.id} />
+                                    )}
+                                    {activeLesson.pdf_url && (
+                                        <a
+                                            href={activeLesson.pdf_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 rounded-lg transition-colors border border-blue-600/20 text-sm font-medium"
+                                        >
+                                            <FileText size={18} />
+                                            تحميل PDF
+                                        </a>
+                                    )}
+                                </div>
                             </div>
                         </div>
+                    )}
+
+                    {/* Notes Tab */}
+                    {activeLesson && hasAccess(activeLesson) && (
+                        <LessonNotes lessonId={activeLesson.id} />
                     )}
                 </div>
 

@@ -5,14 +5,16 @@ import { createClient } from "@/utils/supabase/client";
 import { SubjectCard } from "./SubjectCard";
 import { Clock, RefreshCw, AlertTriangle } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { getSubjectProgress } from "@/lib/actions/progress";
 
 interface Subject {
     id: string;
     name: string;
-    icon: string; // [FIX] Added icon
+    icon: string;
     description: string;
     color: string;
     lessons: { id: string; title: string }[];
+    progress?: number; // NEW: progress percentage
     [key: string]: any;
 }
 
@@ -33,26 +35,39 @@ export function SubjectCards({ query }: SubjectCardsProps) {
 
             console.log(`📡 Fetching Subjects... (Attempts left: ${retries})`);
 
-            // 🚀 FETCHER: No timeout, wait as long as DB needs
-            // Order by order_index if available, else created_at
             const { data, error } = await supabase
                 .from('subjects')
                 .select('id, name, icon, description, color, lessons(id, title)')
-                .order('created_at', { ascending: true }); // Fallback sorting
+                .order('created_at', { ascending: true });
 
             if (error) throw error;
 
-            setSubjects((data || []).filter((s: any) => {
+            const validSubjects = (data || []).filter((s: any) => {
                 const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s.id);
                 if (!isValidUUID) console.warn("⚠️ Skipping Subject with Invalid ID:", s.id, s.name);
                 return isValidUUID;
-            }));
-            setLoading(false); // Success
+            });
+
+            // Fetch progress for each subject
+            const subjectsWithProgress = await Promise.all(
+                validSubjects.map(async (subject: any) => {
+                    try {
+                        const progressData = await getSubjectProgress(subject.id);
+                        return { ...subject, progress: progressData.percentage };
+                    } catch (e) {
+                        console.warn("Failed to fetch progress for", subject.id);
+                        return { ...subject, progress: 0 };
+                    }
+                })
+            );
+
+            setSubjects(subjectsWithProgress);
+            setLoading(false);
         } catch (err: any) {
             console.error("Fetch failed", err);
             if (retries > 0) {
                 console.warn(`⚠️ Retrying in ${delay}ms...`);
-                setTimeout(() => fetchSubjects(retries - 1, delay * 2), delay); // Exponential Backoff
+                setTimeout(() => fetchSubjects(retries - 1, delay * 2), delay);
             } else {
                 setError(err.message || "Failed to load subjects");
                 setLoading(false);
@@ -77,7 +92,7 @@ export function SubjectCards({ query }: SubjectCardsProps) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
                 {[1, 2].map((i) => (
-                    <div key={i} className="h-48 rounded-2xl bg-white/5 border border-white/5" />
+                    <div key={i} className="h-52 rounded-2xl bg-white/5 border border-white/5" />
                 ))}
             </div>
         );
@@ -126,3 +141,4 @@ export function SubjectCards({ query }: SubjectCardsProps) {
         </div>
     );
 }
+

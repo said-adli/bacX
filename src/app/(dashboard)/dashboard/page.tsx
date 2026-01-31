@@ -3,6 +3,7 @@ import { getDashboardData } from "@/actions/dashboard";
 import CinematicHero from "@/components/dashboard/CinematicHero";
 import { SubjectCards } from "@/components/dashboard/SubjectCards";
 import { SubscriptionCards } from "@/components/dashboard/SubscriptionCards";
+import ContinueWatching from "@/components/dashboard/ContinueWatching";
 import { Clock, TrendingUp, Zap } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
@@ -65,7 +66,10 @@ export default async function DashboardPage({
                 ))}
             </div>
 
-            {/* 3. CRYSTAL GRID (Subjects) */}
+            {/* 3. CONTINUE WATCHING (Dynamic based on student progress) */}
+            <ContinueWatching />
+
+            {/* 4. CRYSTAL GRID (Subjects) */}
             <div className="space-y-6">
                 <div className="flex items-center justify-between px-2">
                     <h2 className="text-2xl font-bold text-white">
