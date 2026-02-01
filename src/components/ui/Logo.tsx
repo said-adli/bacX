@@ -11,7 +11,7 @@ export const Logo = ({ className, width, height }: LogoProps) => {
     <img
       src="/images/logo.png"
       alt="Brainy Platform Logo"
-      className={cn("w-auto h-auto object-contain", className)}
+      className={cn("w-auto h-auto object-contain dark:invert", className)}
       width={width}
       height={height}
     />

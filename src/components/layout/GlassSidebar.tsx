@@ -93,10 +93,8 @@ const GlassSidebarComponent = function GlassSidebar() {
             >
                 {/* Header: Logo & Toggle */}
                 <div className="flex flex-col items-center p-4 border-b border-white/5">
-                    {/* Logo - Only shown when expanded */}
-                    {!isCollapsed && (
-                        <Logo className="w-16 h-16 my-2 invert" />
-                    )}
+                    {/* Logo - Single clean instance */}
+                    <Logo className="w-16 h-16 mx-auto mb-6 block" />
 
                     {/* Toggle Button */}
                     <button
