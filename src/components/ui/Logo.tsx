@@ -5,31 +5,44 @@ interface LogoProps extends React.SVGProps<SVGSVGElement> {
   className?: string;
 }
 
+/**
+ * Brand Logo Component
+ * Geometric interlocking triangle design with parallel stripes.
+ * Uses currentColor for automatic theme adaptation.
+ */
 export function Logo({ className, ...props }: LogoProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 100 100"
+      viewBox="0 0 100 94"
       fill="currentColor"
       className={cn("w-10 h-10 select-none", className)}
+      aria-label="Logo"
       {...props}
     >
-      {/* 
-        Geometric Triangle Logo
-        Constructed with 3 interlocking segments creating an impossible triangle effect.
-        Optimized paths for precision.
-      */}
-      <path
-        d="M50 15L85 80H15L50 15ZM50 28L29 68H71L50 28Z"
-        fillRule="evenodd"
-        className="opacity-90"
-      />
+      {/* Outer Triangle Frame - Left Leg */}
+      <path d="M50 0 L8 72 L0 88 L4 94 L20 94 L16 88 L50 28 L58 42 L50 54 L34 88 L38 94 L46 94 L66 58" />
 
-      {/* Accent/Interlocking Details to make it look premium */}
-      <path d="M48 5L10 75L15 85L55 15L48 5Z" className="opacity-60" /> {/* Left Wing Shadow */}
-      <path d="M52 5L90 75L85 85L45 15L52 5Z" className="opacity-40" /> {/* Right Wing Shadow */}
-      <path d="M15 80L85 80L85 86L15 86L15 80Z" className="opacity-80" /> {/* Bottom Bar Base */}
+      {/* Outer Triangle Frame - Right Leg */}
+      <path d="M50 0 L92 72 L100 88 L96 94 L80 94 L84 88 L50 28" />
 
+      {/* Bottom Base Bar */}
+      <path d="M4 94 L96 94 L92 86 L8 86 Z" />
+
+      {/* Second Stripe Layer - Left */}
+      <path d="M50 14 L18 70 L12 80 L20 80 L50 28 Z" />
+
+      {/* Second Stripe Layer - Right */}
+      <path d="M50 14 L82 70 L88 80 L80 80 L50 28 Z" />
+
+      {/* Second Base Stripe */}
+      <path d="M12 80 L88 80 L84 72 L16 72 Z" />
+
+      {/* Inner Accent - Top Right Diagonal */}
+      <path d="M58 14 L74 42 L82 42 L62 8 Z" />
+
+      {/* Inner Gap/Notch on Right */}
+      <path d="M66 50 L74 64 L82 64 L70 44 Z" />
     </svg>
   );
 }
