@@ -50,9 +50,9 @@ export const metadata: Metadata = {
     template: "%s | BRAINY",
   },
   icons: {
-    icon: '/images/logo.png',
-    shortcut: '/images/logo.png',
-    apple: '/images/logo.png',
+    icon: '/images/favicon.png',
+    shortcut: '/images/favicon.png',
+    apple: '/images/favicon.png',
   },
   description: "رحلة سينمائية نحو النجاح في البكالوريا.",
   keywords: ["brainy", "bac dz", "bac algeria", "تعليم", "بكالوريا", "دروس", "منصة تعليمية"],
