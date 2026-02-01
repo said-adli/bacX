@@ -117,7 +117,7 @@ export default function TracksPage() {
                                             <span className="text-blue-400 font-bold mx-1">
                                                 {STREAMS.find(s => s.id === selectedStream)?.label}
                                             </span>
-                                            لامتياز البكالوريا.
+                                            البكالوريا.
                                         </p>
 
                                         <div className="px-5 py-2 rounded-full bg-white/20 border border-white/20 text-xs font-mono text-white/70">
