@@ -32,7 +32,7 @@ const LandingNavbarComponent = function LandingNavbar({ authButton }: { authButt
         >
             <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
                 {/* Brand Side (LTR: Left) */}
-                <div className="relative group select-none flex items-center gap-4 z-20">
+                <div className="relative group select-none flex items-center gap-2 z-20">
                     <div className="h-[50px] md:h-[65px] w-auto flex items-center justify-center">
                         {/* Logo is white since the dark background/header requires it (previously inverted black logo) */}
                         <Logo className="h-full w-auto invert brightness-0 drop-shadow-xl" />
