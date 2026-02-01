@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import ProfileFormSkeleton from "@/components/ui/skeletons/ProfileFormSkeleton";
 
 export default function EditProfilePage() {
     const { user } = useAuth();
@@ -96,11 +97,7 @@ export default function EditProfilePage() {
     };
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-            </div>
-        );
+        return <ProfileFormSkeleton />;
     }
 
     return (

@@ -11,6 +11,7 @@ import { useLiveInteraction } from "@/hooks/useLiveInteraction";
 import { RaiseHandButton } from "@/components/live/RaiseHandButton";
 import { LiveChat } from "@/components/live/LiveChat";
 import { useLiveStatus } from "@/hooks/useLiveStatus";
+import LiveSessionSkeleton from "@/components/ui/skeletons/LiveSessionSkeleton";
 
 export default function LiveSessionsPage() {
     const { profile } = useAuth();
@@ -40,12 +41,7 @@ export default function LiveSessionsPage() {
     }, [isLive, youtubeId, title, loadVideo]);
 
     if (loading) {
-        return (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
-                <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-                <p className="text-white/50 animate-pulse">جاري الاتصال بغرفة البث...</p>
-            </div>
-        );
+        return <LiveSessionSkeleton />;
     }
 
     if (!isLive || !youtubeId) {

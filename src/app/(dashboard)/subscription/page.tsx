@@ -12,6 +12,7 @@ import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { getActivePlans, SubscriptionPlan } from "@/actions/admin-plans";
 import Link from "next/link";
+import { PlansGridSkeleton, BillingHistorySkeleton } from "@/components/ui/skeletons/SubscriptionSkeleton";
 
 interface BillingTransaction {
     id: string;
@@ -196,8 +197,8 @@ export default function SubscriptionPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {loadingPlans ? (
-                        <div className="col-span-full py-12 text-center text-white/40">
-                            جاري تحميل الباقات...
+                        <div className="col-span-full">
+                            <PlansGridSkeleton />
                         </div>
                     ) : plans.length === 0 ? (
                         <div className="col-span-full py-12 text-center text-white/40">
@@ -267,8 +268,8 @@ export default function SubscriptionPage() {
                             <tbody className="divide-y divide-white/5">
                                 {loadingHistory ? (
                                     <tr>
-                                        <td colSpan={6} className="p-8 text-center text-white/40">
-                                            جاري تحميل السجل...
+                                        <td colSpan={6} className="p-0">
+                                            <BillingHistorySkeleton />
                                         </td>
                                     </tr>
                                 ) : history.length === 0 ? (
