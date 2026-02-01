@@ -1,6 +1,5 @@
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Home, BookOpen, Video, ChevronRight, ChevronLeft, Settings, User, Sparkles } from "lucide-react";
 import { useSidebar } from "@/context/SidebarContext";
@@ -9,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Logo } from "@/components/ui/Logo";
 
 const RightGlassSidebarComponent = function RightGlassSidebar() {
   const pathname = usePathname();
@@ -42,36 +42,14 @@ const RightGlassSidebarComponent = function RightGlassSidebar() {
       {/* Inner Container for Scrolling */}
       <div className="flex flex-col h-full w-full overflow-y-auto glass-scrollbar pt-6 pb-2">
 
-        {/* Brand / Logo Area - FINAL V12.0 SINGLE IMAGE */}
-        <div
-          className={`w-full flex justify-center items-center pt-8 mb-12 transition-all duration-500`}
-        >
-          <motion.div
-            layout
-            className="relative z-10 flex items-center justify-center gpu-accelerated"
-            animate={{
-              width: 40,
-              height: 40
-            }}
-            transition={{ duration: 0.3 }}
+        {/* Brand / Logo Area */}
+        <div className="w-full flex justify-center items-center pt-8 mb-10">
+          <Link
+            href="/dashboard"
+            className="block transition-all duration-300 hover:scale-105 hover:drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]"
           >
-            <Link
-              href="/dashboard"
-              className="relative block w-full h-full cursor-pointer transition-all duration-300 hover:brightness-125 hover:drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] hover:scale-105"
-            >
-              <Image
-                src="/images/brainy-logo-black.png"
-                alt="Brainy V12.1"
-                fill
-                className="object-contain"
-                style={{
-                  filter: 'invert(1) brightness(2)',
-                  animation: "energyPulse 4s ease-in-out infinite",
-                }}
-                priority
-              />
-            </Link>
-          </motion.div>
+            <Logo className="w-12 h-12" />
+          </Link>
         </div>
 
         <nav className="flex-1 px-3 space-y-2 mt-4">
