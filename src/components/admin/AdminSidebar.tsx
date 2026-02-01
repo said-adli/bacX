@@ -10,10 +10,10 @@ import {
     Receipt,
     Layers,
     Settings,
-    Hexagon,
     LogOut,
     ShieldAlert
 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -42,7 +42,7 @@ export function AdminSidebar() {
             {/* Logo Area */}
             <div className="flex items-center gap-3 mb-10 px-2 pt-2">
                 <div className="w-12 h-12 bg-blue-600/20 rounded-xl flex items-center justify-center border border-blue-500/30 shadow-[0_0_15px_rgba(37,99,235,0.3)]">
-                    <Hexagon className="text-blue-500" size={28} />
+                    <Logo className="text-blue-500 w-7 h-7" />
                 </div>
                 <div>
                     <h1 className="font-bold text-2xl tracking-wider text-white">COMMAND</h1>

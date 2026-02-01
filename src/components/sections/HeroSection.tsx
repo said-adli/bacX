@@ -5,7 +5,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowLeft, Play } from "lucide-react";
 import Link from "next/link";
 import { NeuralBackground } from "@/components/ui/NeuralBackground";
-import { BrainyLogo } from "@/components/ui/BrainyLogo";
+import { Logo } from "@/components/ui/Logo";
 import { usePageVisibility } from "@/hooks/usePageVisibility";
 
 export function HeroSection() {
@@ -72,7 +72,7 @@ export function HeroSection() {
                     </motion.div>
 
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0 pointer-events-none">
-                        <BrainyLogo variant="watermark" className="w-[600px] h-[600px] opacity-[0.03] blur-xl" />
+                        <Logo className="w-[600px] h-[600px] opacity-[0.03] blur-xl text-white" />
                     </div>
 
                     {/* GPU Accelerated Text - LCP PRIORITY - Rendered initially visible, then animated */}

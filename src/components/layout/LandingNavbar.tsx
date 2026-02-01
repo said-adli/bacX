@@ -4,7 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { BrainyLogo } from "@/components/ui/BrainyLogo";
+import { Logo } from "@/components/ui/Logo";
 import { useEffect, useState } from "react";
 
 const LandingNavbarComponent = function LandingNavbar({ authButton }: { authButton: React.ReactNode }) {
@@ -32,12 +32,10 @@ const LandingNavbarComponent = function LandingNavbar({ authButton }: { authButt
             <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
                 {/* Right Side: Brand */}
                 <div className="relative group select-none flex items-center gap-6 z-20">
-                    <img
-                        src="/images/brainy-logo-black.png"
-                        alt="Brainy"
-                        className="h-[50px] md:h-[65px] w-auto object-contain transition-all duration-300 ease-in-out drop-shadow-xl"
-                        style={{ filter: 'invert(1) brightness(2)' }}
-                    />
+                    <div className="h-[50px] md:h-[65px] w-auto flex items-center justify-center">
+                        {/* Logo is white since the dark background/header requires it (previously inverted black logo) */}
+                        <Logo className="h-full w-auto text-white drop-shadow-xl" />
+                    </div>
                 </div>
 
                 {/* Center: Navigation Pill */}

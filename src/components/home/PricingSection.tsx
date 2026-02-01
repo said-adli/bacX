@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Check, Crown, Zap, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { BrainyLogo } from "@/components/ui/BrainyLogo";
+
 import { SubscriptionPlan } from "@/actions/admin-plans";
 
 interface PricingSectionProps {

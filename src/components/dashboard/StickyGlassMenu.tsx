@@ -9,7 +9,7 @@ import LiveStatus from "@/components/dashboard/LiveStatus";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { AnimatePresence, motion } from "framer-motion";
-import { BrainyLogo } from "@/components/ui/BrainyLogo";
+import { Logo } from "@/components/ui/Logo";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 
 const StickyGlassMenuComponent = function StickyGlassMenu() {
@@ -49,7 +49,7 @@ const StickyGlassMenuComponent = function StickyGlassMenu() {
                         {/* Logo / Home Link */}
                         <Link href="/dashboard" className="flex items-center gap-3 group">
                             <div className="h-[45px] md:h-[60px] w-auto transition-transform duration-300 group-hover:scale-110">
-                                <BrainyLogo variant="icon" className="h-full w-auto" />
+                                <Logo className="h-full w-auto text-white" />
                             </div>
                         </Link>
                     </div>

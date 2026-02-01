@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { Logo } from "@/components/ui/Logo";
 
 export default function AuthLayout({
     children,
@@ -25,15 +25,8 @@ export default function AuthLayout({
 
             {/* Logo Section - Fixed at Top */}
             <div className="relative z-20 mb-8 flex flex-col items-center animate-fade-in">
-                <div className="relative w-20 h-20 mb-4">
-                    <Image
-                        src="/images/brainy-logo-black.png"
-                        alt="Brainy"
-                        fill
-                        className="object-contain"
-                        style={{ filter: 'invert(1) brightness(1.8)' }}
-                        priority
-                    />
+                <div className="relative mb-4">
+                    <Logo className="w-20 h-20 text-white" />
                 </div>
                 <span className="text-4xl font-bold tracking-tight text-white/90">Brainy</span>
             </div>

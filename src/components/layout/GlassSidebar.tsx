@@ -101,7 +101,7 @@ const GlassSidebarComponent = function GlassSidebar() {
                                 exit={{ opacity: 0, x: 20 }}
                                 className="flex items-center gap-3 overflow-hidden"
                             >
-                                <Logo showText={true} className="h-10" />
+                                <Logo className="h-10 text-white" />
                             </motion.div>
                         )}
                     </AnimatePresence>
