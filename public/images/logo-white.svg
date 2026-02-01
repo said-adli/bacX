@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Brainy Geometric Triangle Logo - White Version -->
+  
+  <!-- Main Triangle Frame -->
+  <path d="M256 40 L480 440 L32 440 Z M256 100 L420 400 L92 400 Z" fill-rule="evenodd" fill="#ffffff"/>
+  
+  <!-- Top Arrow/Peak Detail -->
+  <path d="M256 40 L276 80 L256 65 L236 80 Z" fill="#ffffff"/>
+  <path d="M256 80 L270 100 L256 90 L242 100 Z" fill="#ffffff"/>
+  
+  <!-- Left Side Horizontal Bar -->
+  <path d="M80 360 L200 360 L200 390 L100 390 Z" fill="#ffffff"/>
+  
+  <!-- Right Side Interlocking Element -->
+  <path d="M312 360 L432 360 L412 390 L312 390 Z" fill="#ffffff"/>
+  
+  <!-- Center Connector -->
+  <path d="M200 340 L312 340 L312 370 L200 370 Z" fill="#ffffff"/>
+  
+  <!-- Left Vertical Connector -->
+  <path d="M160 280 L190 280 L190 360 L160 360 Z" fill="#ffffff"/>
+  
+  <!-- Right Vertical Connector -->
+  <path d="M322 280 L352 280 L352 360 L322 360 Z" fill="#ffffff"/>
+  
+  <!-- Inner Triangle Lines -->
+  <path d="M256 140 L180 300 L210 300 L256 200 L302 300 L332 300 Z" fill="#ffffff"/>
+</svg>
