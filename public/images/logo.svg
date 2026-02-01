@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="512" height="512">
+  <!-- Brainy Logo - Optimized for Favicon (tight viewBox, bold paths) -->
+  
+  <!-- Outer Triangle Frame -->
+  <polygon points="50,2 98,88 2,88" fill="none" stroke="#000" stroke-width="8" stroke-linejoin="round"/>
+  
+  <!-- Inner Triangle Frame -->
+  <polygon points="50,22 82,72 18,72" fill="none" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  
+  <!-- Top Arrow Peak -->
+  <polygon points="50,2 56,14 50,10 44,14" fill="#000"/>
+  <polygon points="50,14 54,20 50,17 46,20" fill="#000"/>
+  
+  <!-- Horizontal Bar (Lower Section) -->
+  <rect x="12" y="66" width="32" height="8" fill="#000"/>
+  <rect x="56" y="66" width="32" height="8" fill="#000"/>
+  
+  <!-- Center Connector -->
+  <rect x="38" y="58" width="24" height="8" fill="#000"/>
+  
+  <!-- Left Vertical -->
+  <rect x="28" y="44" width="8" height="24" fill="#000"/>
+  
+  <!-- Right Vertical -->
+  <rect x="64" y="44" width="8" height="24" fill="#000"/>
+  
+  <!-- Inner Peak Lines -->
+  <polygon points="50,28 38,52 44,52 50,40 56,52 62,52" fill="#000"/>
+</svg>
