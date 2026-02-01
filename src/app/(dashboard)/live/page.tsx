@@ -20,7 +20,7 @@ export default function LiveSessionsPage() {
     const { isLive, youtubeId, loading, title } = useLiveStatus();
 
     // [NEW] Live Interaction Hook
-    const { status, raiseHand, endCall, currentSpeaker } = useLiveInteraction();
+    const { status, raiseHand, endCall, currentSpeaker, messages, sendMessage } = useLiveInteraction();
 
     // [NEW] Ghost Player Integration (Live Mode)
     const { loadVideo, registerHeroTarget } = usePlayer();
@@ -134,7 +134,7 @@ export default function LiveSessionsPage() {
 
                 {/* Real-Time Live Chat */}
                 <div className="lg:col-span-1 h-[600px] flex flex-col">
-                    <LiveChat />
+                    <LiveChat messages={messages} onSendMessage={sendMessage} />
                 </div>
 
             </div>
