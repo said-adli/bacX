@@ -1,5 +1,5 @@
-import { getAllSubjectsRaw, getUserProgressMapRaw } from "@/lib/data/raw-db";
-import { createClient } from "@/utils/supabase/server";
+import { getCachedSubjects, getCachedAnnouncements } from "@/lib/cache/cached-data";
+import { getUserProgressMapRaw } from "@/lib/data/raw-db";
 
 /**
  * Data Transfer Object for Dashboard Subjects.
@@ -30,25 +30,17 @@ export interface DashboardViewDTO {
 
 /**
  * Service to orchestrate dashboard data fetching.
- * Merges raw database data with user progress safely.
+ * Uses CACHED subjects/announcements + FRESH user progress.
  */
 export async function getDashboardView(userId: string): Promise<DashboardViewDTO> {
-    const supabase = await createClient();
-
     // Step A: Fetch data in parallel
-    const [subjectsRes, progressMap, announcementsRes] = await Promise.all([
-        getAllSubjectsRaw(),
-        getUserProgressMapRaw(userId),
-        supabase
-            .from("announcements")
-            .select("id, title, content, created_at")
-            .eq("is_active", true)
-            .order("created_at", { ascending: false })
-            .limit(5)
+    // ⚡ Cached: subjects, announcements (stateless, instant)
+    // 🔒 Fresh: user progress (user-specific, requires auth)
+    const [subjects, progressMap, announcementsData] = await Promise.all([
+        getCachedSubjects(),           // ⚡ From Next.js cache
+        getUserProgressMapRaw(userId), // 🔒 Fresh query per user
+        getCachedAnnouncements(5),     // ⚡ From Next.js cache
     ]);
-
-    const subjects = subjectsRes; // Already raw data
-    const announcementsData = announcementsRes.data || [];
 
     // Step B & C: Merge and Transform
     const dashboardSubjects: DashboardSubjectDTO[] = subjects.map((subject) => {
@@ -68,13 +60,14 @@ export async function getDashboardView(userId: string): Promise<DashboardViewDTO
     });
 
     // Step E: Transform Announcements
-    const announcements: AnnouncementDTO[] = announcementsData.map((a: any) => ({
+    const announcements: AnnouncementDTO[] = announcementsData.map((a) => ({
         id: a.id,
         title: a.title || "تحديث جديد", // Fallback if title missing
         content: a.content,
-        createdAt: new Date(a.created_at),
-        isNew: (new Date().getTime() - new Date(a.created_at).getTime()) < (7 * 24 * 60 * 60 * 1000) // New if < 7 days
+        createdAt: new Date(a.createdAt),
+        isNew: (new Date().getTime() - new Date(a.createdAt).getTime()) < (7 * 24 * 60 * 60 * 1000) // New if < 7 days
     }));
 
     return { subjects: dashboardSubjects, announcements };
 }
+

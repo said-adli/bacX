@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth-guard";
+import { revalidateSubjects, revalidateLessons, revalidateCurriculum } from "@/lib/cache/revalidate";
 
 // TYPES
 export interface Subject {
@@ -71,7 +72,7 @@ export async function createSubject(name: string, icon: string = 'Folder', order
     const supabase = await createClient();
     const { error } = await supabase.from('subjects').insert([{ name, icon, order }]);
     if (error) throw error;
-    if (error) throw error;
+    revalidateSubjects(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
 }
@@ -82,7 +83,7 @@ export async function deleteSubject(id: string) {
     const supabase = await createClient();
     const { error } = await supabase.from('subjects').delete().eq('id', id);
     if (error) throw error;
-    if (error) throw error;
+    revalidateSubjects(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
 }
@@ -98,7 +99,7 @@ export async function createUnit(subjectId: string, title: string) {
         .insert([{ subject_id: subjectId, title }]);
 
     if (error) throw error;
-    if (error) throw error;
+    revalidateCurriculum(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
 }
@@ -109,7 +110,7 @@ export async function deleteUnit(id: string) {
     const supabase = await createClient();
     const { error } = await supabase.from('units').delete().eq('id', id);
     if (error) throw error;
-    if (error) throw error;
+    revalidateCurriculum(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
 }
@@ -125,9 +126,10 @@ export async function createLesson(data: Partial<Lesson>) {
         .single();
 
     if (error) throw error;
+    revalidateLessons(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
-    revalidatePath('/dashboard'); // Update Student Dashboard
-    revalidatePath('/materials', 'layout'); // Update all material pages
+    revalidatePath('/dashboard');
+    revalidatePath('/materials', 'layout');
     return newLesson;
 }
 
@@ -141,7 +143,7 @@ export async function updateLesson(id: string, data: Partial<Lesson>) {
         .eq('id', id);
 
     if (error) throw error;
-    if (error) throw error;
+    revalidateLessons(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
     revalidatePath('/materials', 'layout');
@@ -153,7 +155,7 @@ export async function deleteLesson(id: string) {
     const supabase = await createClient();
     const { error } = await supabase.from('lessons').delete().eq('id', id);
     if (error) throw error;
-    if (error) throw error;
+    revalidateLessons(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
     revalidatePath('/materials', 'layout');

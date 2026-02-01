@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { revalidateAnnouncements } from "@/lib/cache/revalidate";
 
 export async function createAnnouncement(formData: FormData) {
     const supabase = await createClient();
@@ -30,6 +31,7 @@ export async function createAnnouncement(formData: FormData) {
         throw new Error("Failed to create announcement");
     }
 
+    revalidateAnnouncements(); // Invalidate Next.js cache
     revalidatePath("/dashboard");
     revalidatePath("/admin/announcements");
 }
@@ -48,6 +50,7 @@ export async function deleteAnnouncement(id: string) {
         throw new Error("Failed to delete announcement");
     }
 
+    revalidateAnnouncements(); // Invalidate Next.js cache
     revalidatePath("/dashboard");
     revalidatePath("/admin/announcements");
 }
