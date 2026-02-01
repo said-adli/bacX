@@ -1,4 +1,5 @@
 import { Logo } from "@/components/ui/Logo";
+import Link from "next/link";
 
 export default function AuthLayout({
     children,
@@ -24,12 +25,16 @@ export default function AuthLayout({
             <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-gradient-radial from-indigo-600/8 to-transparent rounded-full blur-[100px] pointer-events-none" />
 
             {/* Logo Section - Fixed at Top */}
-            <div className="relative z-20 mb-8 mt-12 flex flex-col items-center animate-fade-in">
+            {/* Logo Section - Fixed at Top */}
+            <Link
+                href="/"
+                className="relative z-20 mb-8 mt-12 flex flex-col items-center animate-fade-in cursor-pointer hover:opacity-80 transition-opacity"
+            >
                 <div className="relative mb-4">
                     <Logo className="w-20 h-20 text-white brightness-0 invert" />
                 </div>
                 <span className="text-4xl font-bold tracking-tight text-white/90">Brainy</span>
-            </div>
+            </Link>
 
             {/* Glass Card Container */}
             <div className="relative z-10 w-full max-w-md px-4">
