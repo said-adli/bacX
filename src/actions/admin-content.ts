@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth-guard";
 import { revalidateSubjects, revalidateLessons, revalidateCurriculum } from "@/lib/cache/revalidate";
@@ -57,7 +58,8 @@ export async function getContentTree() {
             )
         `)
         .order('created_at', { ascending: true })
-        .order('created_at', { ascending: true });
+        .order('order_index', { ascending: true }) // Primary sort
+        .order('created_at', { ascending: true }); // Fallback
 
     if (error) {
         console.error("Tree fetch error:", error);
