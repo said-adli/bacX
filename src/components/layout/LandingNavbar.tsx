@@ -24,18 +24,20 @@ const LandingNavbarComponent = function LandingNavbar({ authButton }: { authButt
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
+            dir="ltr"
             className={cn(
                 "fixed top-0 left-0 right-0 z-50 px-6 py-4 flex items-center justify-between transition-all duration-500",
                 isScrolled ? "bg-[#0A0A0F]/70 backdrop-blur-lg border-b border-white/5 py-3" : "bg-transparent py-5"
             )}
         >
             <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-                {/* Right Side: Brand */}
-                <div className="relative group select-none flex items-center gap-6 z-20">
+                {/* Brand Side (LTR: Left) */}
+                <div className="relative group select-none flex items-center gap-4 z-20">
                     <div className="h-[50px] md:h-[65px] w-auto flex items-center justify-center">
                         {/* Logo is white since the dark background/header requires it (previously inverted black logo) */}
                         <Logo className="h-full w-auto invert brightness-0 drop-shadow-xl" />
                     </div>
+                    <span className="text-2xl font-bold tracking-tight text-white/90">Brainy</span>
                 </div>
 
                 {/* Center: Navigation Pill */}
