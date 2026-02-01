@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
             {/* Back to Login */}
             <div className="mt-8 pt-6 border-t border-white/5 text-center">
                 <Link
-                    href="/auth/login"
+                    href="/login"
                     className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors group"
                 >
                     <ArrowRight className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
