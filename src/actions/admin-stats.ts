@@ -78,3 +78,66 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         };
     }
 }
+
+export interface RevenueData {
+    name: string;
+    revenue: number;
+}
+
+export async function getRevenueStats(): Promise<RevenueData[]> {
+    try {
+        const adminClient = createAdminClient();
+
+        // Fetch last 12 months of successful payments
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        const { data: payments } = await adminClient
+            .from('payments')
+            .select('amount, created_at')
+            .eq('status', 'succeeded')
+            .gte('created_at', oneYearAgo.toISOString())
+            .order('created_at', { ascending: true });
+
+        if (!payments) return [];
+
+        // Aggregate by Month
+        const monthlyRevenue: { [key: string]: number } = {};
+
+        payments.forEach(p => {
+            const date = new Date(p.created_at);
+            const monthKey = date.toLocaleString('default', { month: 'short' }); // "Jan", "Feb"
+
+            const amountStr = String(p.amount);
+            const val = parseFloat(amountStr.replace(/[^0-9.]/g, ''));
+
+            if (!isNaN(val)) {
+                monthlyRevenue[monthKey] = (monthlyRevenue[monthKey] || 0) + val;
+            }
+        });
+
+        // Ensure chronological order (simple approach: mapped from date objects)
+        // Or simpler: Just map the result to the interface format. 
+        // Note: The simple aggregation above loses sorting if we iterate object keys. 
+        // Better: Iterate last 6-7 months and fill gaps.
+
+        const result: RevenueData[] = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const monthName = d.toLocaleString('en-US', { month: 'short' });
+
+            result.push({
+                name: monthName,
+                revenue: monthlyRevenue[monthName] || 0
+            });
+        }
+
+        return result;
+
+    } catch (e) {
+        console.error("Revenue Stats Error:", e);
+        return [];
+    }
+}
+

@@ -1,26 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { Copy, Check, UploadCloud, ChevronRight, CreditCard, ShieldCheck } from "lucide-react";
+import { Copy, Check, UploadCloud, ChevronRight, CreditCard, ShieldCheck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { getSubscriptionPlan } from "@/actions/checkout";
+import { SubscriptionPlan } from "@/actions/admin-plans";
+import { Loader2 } from "lucide-react";
 
 export default function CheckoutPage({ params }: { params: { planId: string } }) {
     const { user } = useAuth();
     const router = useRouter();
     const supabase = createClient();
-    const [uploading, setUploading] = useState(false);
 
-    // Mock Plan Data (Ideally fetch this based on params.planId)
-    const plan = {
-        name: params.planId === 'vip' ? 'باقة VIP' : 'الباقة الذهبية',
-        price: '2500 دج',
-        features: ['جميع المواد', 'حصص مباشرة', 'تمارين محلولة']
-    };
+    // States
+    const [uploading, setUploading] = useState(false);
+    const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
+    const [loadingPlan, setLoadingPlan] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Fetch Plan on Mount
+    useEffect(() => {
+        async function fetchPlan() {
+            setLoadingPlan(true);
+            const { success, plan, error } = await getSubscriptionPlan(params.planId);
+
+            if (success && plan) {
+                setPlan(plan);
+            } else {
+                setError(error || "Plan not found");
+                // Optional: Redirect after delay or let user choose
+                toast.error(error || "Invalid Plan");
+            }
+            setLoadingPlan(false);
+        }
+
+        if (params.planId) {
+            fetchPlan();
+        }
+    }, [params.planId]);
 
     const CCP_INFO = {
         name: "منصة برايني للتعليم",
@@ -36,7 +58,7 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !user) return;
+        if (!file || !user || !plan) return;
 
         setUploading(true);
         const toastId = toast.loading("جاري رفع الوصل وتأكيد الطلب...");
@@ -54,10 +76,10 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
             // 3. Create Payment Request
             const { error: dbError } = await supabase.from('payment_requests').insert({
                 user_id: user.id,
-                plan_id: params.planId, // Using planId from URL
+                plan_id: plan.id, // Using real plan ID
                 receipt_url: publicUrl,
                 status: 'pending',
-                amount: 2500, // Dynamic later
+                amount: plan.discount_price || plan.price, // Real Price
                 method: 'ccp'
             });
 
@@ -73,6 +95,30 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
             setUploading(false);
         }
     };
+
+    if (loadingPlan) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="animate-spin text-white w-8 h-8" />
+            </div>
+        );
+    }
+
+    if (error || !plan) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center p-4">
+                <AlertTriangle className="text-red-500 w-12 h-12" />
+                <h1 className="text-2xl font-bold text-white">عذراً، الباقة غير متوفرة</h1>
+                <p className="text-white/50">{error}</p>
+                <button
+                    onClick={() => router.push('/subscription')}
+                    className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors"
+                >
+                    العودة لصفحة الاشتراكات
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
@@ -186,7 +232,14 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
                             </div>
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-white/60">السعر</span>
-                                <span className="font-bold text-white">{plan.price}</span>
+                                <span className="font-bold text-white">
+                                    {plan.discount_price ? (
+                                        <>
+                                            <span className="line-through text-white/30 mr-2 text-xs">{plan.price}</span>
+                                            {plan.discount_price}
+                                        </>
+                                    ) : plan.price} دج
+                                </span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-white/60">المدة</span>
@@ -196,11 +249,13 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
 
                         <div className="flex justify-between items-center mb-6">
                             <span className="font-bold text-lg text-white">المجموع</span>
-                            <span className="font-bold text-2xl text-blue-400">{plan.price}</span>
+                            <span className="font-bold text-2xl text-blue-400">
+                                {plan.discount_price || plan.price} دج
+                            </span>
                         </div>
 
                         <div className="space-y-3">
-                            {plan.features.map((feature, i) => (
+                            {plan.features?.map((feature, i) => (
                                 <div key={i} className="flex items-center gap-2 text-xs text-white/50">
                                     <div className="w-4 h-4 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
                                         <Check size={8} className="text-green-500" />
