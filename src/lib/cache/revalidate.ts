@@ -71,3 +71,30 @@ export function revalidateCurriculum(): void {
     revalidateTag(CACHE_TAGS.CURRICULUM, "max");
     console.log("[CACHE] Revalidated curriculum cache");
 }
+
+/**
+ * Revalidate plans/offers cache.
+ * Call after creating, updating, or deleting subscription plans.
+ */
+export function revalidatePlans(): void {
+    revalidateTag(CACHE_TAGS.PLANS, "max");
+    console.log("[CACHE] Revalidated plans cache");
+}
+
+/**
+ * Revalidate users cache.
+ * Call after banning/unbanning users.
+ */
+export function revalidateUsers(): void {
+    revalidateTag(CACHE_TAGS.USERS, "max");
+    console.log("[CACHE] Revalidated users cache");
+}
+
+/**
+ * Revalidate platform updates cache.
+ * Call after creating, updating, or deleting changelog entries.
+ */
+export function revalidatePlatformUpdates(): void {
+    revalidateTag(CACHE_TAGS.PLATFORM_UPDATES, "max");
+    console.log("[CACHE] Revalidated platform updates cache");
+}

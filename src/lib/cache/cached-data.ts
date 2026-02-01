@@ -21,6 +21,10 @@ export const CACHE_TAGS = {
     CURRICULUM: "curriculum",
     ANNOUNCEMENTS: "announcements",
     SITE_CONFIG: "site-config",
+    // New tags for RPC pattern
+    PLANS: "plans",
+    USERS: "users",
+    PLATFORM_UPDATES: "platform-updates",
 } as const;
 
 // ============================================================================
