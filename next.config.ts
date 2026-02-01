@@ -1,19 +1,33 @@
 import type { NextConfig } from "next";
 
+import { withSentryConfig } from '@sentry/nextjs';
+
 const nextConfig: NextConfig = {
+  // ... existing config (images, headers, etc) preserved by TypeScript since we're just wrapping the export
   images: {
-    domains: [
-      'firebasestorage.googleapis.com',
-      'lh3.googleusercontent.com', // Google Auth Avatars
-      'via.placeholder.com' // Testing
-    ],
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
       {
         protocol: 'https',
         hostname: '**.googleusercontent.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+      }
     ],
   },
+  experimental: {
+    // Other experimental features
+  },
+  reactCompiler: true,
   async headers() {
     return [
       {
@@ -47,4 +61,17 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // For all available options, see:
+  // https://github.com/getsentry/sentry-webpack-plugin#options
+  org: "bacx", // Inferred from project ID usually, but safe to default
+  project: "bacx",
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  reactComponentAnnotation: {
+    enabled: true,
+  },
+  tunnelRoute: "/monitoring",
+  disableLogger: true,
+  automaticVercelMonitors: true,
+});

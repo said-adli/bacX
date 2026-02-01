@@ -1,0 +1,871 @@
+﻿npx : open 
+supabase\.temp\profile: The 
+system cannot find the file 
+specified.
+Au caractère Ligne:1 : 10
++ echo y | npx supabase db 
+push --debug 2>&1 | Out-File 
+-FilePath "C:\b ...
++          ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
+    + CategoryInfo           
+   : NotSpecified: (open su  
+  pabase\....file specifie   
+ d.:String) [], RemoteExc    
+eption
+    + FullyQualifiedErrorId  
+   : NativeCommandError
+ 
+Loading project ref from 
+file: 
+supabase\.temp\project-ref
+Using connection pooler: post
+gresql://postgres.tmyajzmkqlb
+owfinlgpp@aws-1-eu-west-1.poo
+ler.supabase.com:5432/postgre
+s
+Initialising login role...
+Using access token for 
+profile: supabase
+Supabase CLI 2.74.4
+Using profile: supabase 
+(supabase.co)
+Connecting to remote 
+database...
+2026/01/31 00:52:47 PG Send: 
+{"Type":"StartupMessage","Pro
+tocolVersion":196608,"Paramet
+ers":{"database":"postgres","
+user":"cli_login_postgres.tmy
+ajzmkqlbowfinlgpp"}}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"AuthenticationSASL",
+"AuthMechanisms":["SCRAM-SHA-
+256"]}
+2026/01/31 00:52:47 PG Send: 
+{"Type":"SASLInitialResponse"
+,"AuthMechanism":"SCRAM-SHA-2
+56","Data":"n,,n=,r=Qj0A8EXa5
+AEGmVYEi9uK8Zhf"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"AuthenticationSASLCo
+ntinue","Data":"r=Qj0A8EXa5AE
+GmVYEi9uK8ZhfRURoUlhaL1BCQ3cw
+R3NldEdOZjRucXNUdEFOQw==,s=0O
+n2LOEz52kiQoKca8290w==,i=4096
+"}
+2026/01/31 00:52:47 PG Send: 
+{"Type":"SASLResponse","Data"
+:"c=biws,r=Qj0A8EXa5AEGmVYEi9
+uK8ZhfRURoUlhaL1BCQ3cwR3NldEd
+OZjRucXNUdEFOQw==,p=QfXN+b5UY
+7EbmkGTT54xiQOsCgynJlH1yQH8ac
+kqkck="}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"AuthenticationSASLFi
+nal","Data":"v=UdL6t5+aYwhXcM
+CbJqm5QgjTfc1NDwsqeUPvhPpAbco
+="}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"AuthenticationOK"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ParameterStatus","Na
+me":"DateStyle","Value":"ISO,
+ MDY"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ParameterStatus","Na
+me":"IntervalStyle","Value":"
+postgres"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ParameterStatus","Na
+me":"TimeZone","Value":"UTC"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ParameterStatus","Na
+me":"application_name","Value
+":"Supavisor"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ParameterStatus","Na
+me":"client_encoding","Value"
+:"UTF8"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ParameterStatus","Na
+me":"default_transaction_read
+_only","Value":"off"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ParameterStatus","Na
+me":"in_hot_standby","Value":
+"off"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ParameterStatus","Na
+me":"integer_datetimes","Valu
+e":"on"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ParameterStatus","Na
+me":"is_superuser","Value":"o
+ff"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ParameterStatus","Na
+me":"scram_iterations","Value
+":"4096"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ParameterStatus","Na
+me":"server_encoding","Value"
+:"UTF8"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ParameterStatus","Na
+me":"server_version","Value":
+"17.6"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ParameterStatus","Na
+me":"session_authorization","
+Value":"cli_login_postgres"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ParameterStatus","Na
+me":"standard_conforming_stri
+ngs","Value":"on"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"BackendKeyData","Pro
+cessID":18247068,"SecretKey":
+3343546995}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ReadyForQuery","TxSt
+atus":"I"}
+2026/01/31 00:52:47 PG Send: 
+{"Type":"Query","String":"SET
+ SESSION ROLE postgres"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"CommandComplete","Co
+mmandTag":"SET"}
+2026/01/31 00:52:47 PG Recv: 
+{"Type":"ReadyForQuery","TxSt
+atus":"I"}
+2026/01/31 00:52:47 PG Send: 
+{"Type":"Parse","Name":"lrups
+c_1_0","Query":"SELECT 
+version FROM supabase_migrati
+ons.schema_migrations ORDER 
+BY version","ParameterOIDs":n
+ull}
+2026/01/31 00:52:47 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"S","Name":"lrupsc_1_0"}
+2026/01/31 00:52:47 PG Send: 
+{"Type":"Sync"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"ParseComplete"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"ParameterDescription
+","ParameterOIDs":[]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"RowDescription","Fie
+lds":[{"Name":"version","Tabl
+eOID":38178,"TableAttributeNu
+mber":1,"DataTypeOID":25,"Dat
+aTypeSize":-1,"TypeModifier":
+-1,"Format":0}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"ReadyForQuery","TxSt
+atus":"I"}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"lrupsc_1_0","ParameterFormat
+Codes":null,"Parameters":[],"
+ResultFormatCodes":[0]}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Sync"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"BindComplete"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"RowDescription","Fie
+lds":[{"Name":"version","Tabl
+eOID":38178,"TableAttributeNu
+mber":1,"DataTypeOID":25,"Dat
+aTypeSize":-1,"TypeModifier":
+-1,"Format":0}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20240121000000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260122100000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260123100000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260123120000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260124100000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260124110000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260124150000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260124160000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260124170000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260124180000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260124200000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260126000000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260126010000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260126020000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260126030000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260129161000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260129162500"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260129170000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260130000000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260130142500"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260130224800"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260130231200"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260131000000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260131001500"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260131002000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"DataRow","Values":[{
+"text":"20260131003000"}]}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"CommandComplete","Co
+mmandTag":"SELECT 26"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"ReadyForQuery","TxSt
+atus":"I"}
+Do you want to push these 
+migrations to the remote 
+database?
+ ΓÇó 20260131004000_optimize_
+critical_indexes.sql
+
+ [Y/n] y
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Parse","Name":"","Qu
+ery":"SET lock_timeout = 
+'4s'","ParameterOIDs":null}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"","ParameterFormatCodes":nul
+l,"Parameters":[],"ResultForm
+atCodes":[]}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Parse","Name":"","Qu
+ery":"CREATE SCHEMA IF NOT 
+EXISTS supabase_migrations","
+ParameterOIDs":null}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"","ParameterFormatCodes":nul
+l,"Parameters":[],"ResultForm
+atCodes":[]}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Parse","Name":"","Qu
+ery":"CREATE TABLE IF NOT 
+EXISTS supabase_migrations.sc
+hema_migrations (version 
+text NOT NULL PRIMARY 
+KEY)","ParameterOIDs":null}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"","ParameterFormatCodes":nul
+l,"Parameters":[],"ResultForm
+atCodes":[]}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Parse","Name":"","Qu
+ery":"ALTER TABLE supabase_mi
+grations.schema_migrations 
+ADD COLUMN IF NOT EXISTS 
+statements 
+text[]","ParameterOIDs":null}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"","ParameterFormatCodes":nul
+l,"Parameters":[],"ResultForm
+atCodes":[]}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Parse","Name":"","Qu
+ery":"ALTER TABLE supabase_mi
+grations.schema_migrations 
+ADD COLUMN IF NOT EXISTS 
+name 
+text","ParameterOIDs":null}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"","ParameterFormatCodes":nul
+l,"Parameters":[],"ResultForm
+atCodes":[]}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Sync"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"ParseComplete"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"BindComplete"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"NoData"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"CommandComplete","Co
+mmandTag":"SET"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"ParseComplete"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"BindComplete"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"NoData"}
+2026/01/31 00:52:48 PG Recv: 
+{"Severity":"NOTICE","Severit
+yUnlocalized":"NOTICE","Code"
+:"42P06","Message":"schema 
+\"supabase_migrations\" 
+already exists, skipping","De
+tail":"","Hint":"","Position"
+:0,"InternalPosition":0,"Inte
+rnalQuery":"","Where":"","Sch
+emaName":"","TableName":"","C
+olumnName":"","DataTypeName":
+"","ConstraintName":"","File"
+:"schemacmds.c","Line":132,"R
+outine":"CreateSchemaCommand"
+,"UnknownFields":null}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"CommandComplete","Co
+mmandTag":"CREATE SCHEMA"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"ParseComplete"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"BindComplete"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"NoData"}
+2026/01/31 00:52:48 PG Recv: 
+{"Severity":"NOTICE","Severit
+yUnlocalized":"NOTICE","Code"
+:"42P07","Message":"relation 
+\"schema_migrations\" 
+already exists, skipping","De
+tail":"","Hint":"","Position"
+:0,"InternalPosition":0,"Inte
+rnalQuery":"","Where":"","Sch
+emaName":"","TableName":"","C
+olumnName":"","DataTypeName":
+"","ConstraintName":"","File"
+:"parse_utilcmd.c","Line":207
+,"Routine":"transformCreateSt
+mt","UnknownFields":null}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"CommandComplete","Co
+mmandTag":"CREATE TABLE"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"ParseComplete"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"BindComplete"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"NoData"}
+2026/01/31 00:52:48 PG Recv: 
+{"Severity":"NOTICE","Severit
+yUnlocalized":"NOTICE","Code"
+:"42701","Message":"column 
+\"statements\" of relation 
+\"schema_migrations\" 
+already exists, skipping","De
+tail":"","Hint":"","Position"
+:0,"InternalPosition":0,"Inte
+rnalQuery":"","Where":"","Sch
+emaName":"","TableName":"","C
+olumnName":"","DataTypeName":
+"","ConstraintName":"","File"
+:"tablecmds.c","Line":7471,"R
+outine":"check_for_column_nam
+e_collision","UnknownFields":
+null}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"CommandComplete","Co
+mmandTag":"ALTER TABLE"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"ParseComplete"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"BindComplete"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"NoData"}
+2026/01/31 00:52:48 PG Recv: 
+{"Severity":"NOTICE","Severit
+yUnlocalized":"NOTICE","Code"
+:"42701","Message":"column 
+\"name\" of relation 
+\"schema_migrations\" 
+already exists, skipping","De
+tail":"","Hint":"","Position"
+:0,"InternalPosition":0,"Inte
+rnalQuery":"","Where":"","Sch
+emaName":"","TableName":"","C
+olumnName":"","DataTypeName":
+"","ConstraintName":"","File"
+:"tablecmds.c","Line":7471,"R
+outine":"check_for_column_nam
+e_collision","UnknownFields":
+null}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"CommandComplete","Co
+mmandTag":"ALTER TABLE"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"ReadyForQuery","TxSt
+atus":"I"}
+Applying migration 2026013100
+4000_optimize_critical_indexe
+s.sql...
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Query","String":"RES
+ET ALL"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"CommandComplete","Co
+mmandTag":"RESET"}
+2026/01/31 00:52:48 PG Recv: 
+{"Type":"ReadyForQuery","TxSt
+atus":"I"}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Parse","Name":"","Qu
+ery":"-- Migration: 
+Performance Optimization 
+(Indexes)\r\n-- Description: 
+Adds B-Tree indexes to 
+critical columns to prevent 
+Timeout errors.\r\n\r\n-- 1. 
+Optimize Profiles Table (The 
+most critical one)\r\n-- 
+Speed up checking 
+subscription status (Jumping 
+to plan_id 
+instantly)\r\nCREATE INDEX 
+IF NOT EXISTS 
+idx_profiles_plan_id ON 
+public.profiles (plan_id)","P
+arameterOIDs":null}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"","ParameterFormatCodes":nul
+l,"Parameters":[],"ResultForm
+atCodes":[]}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Parse","Name":"","Qu
+ery":"-- Speed up Login 
+\u0026 Auth lookups (Finding 
+user by email)\r\nCREATE 
+INDEX IF NOT EXISTS 
+idx_profiles_email ON 
+public.profiles (email)","Par
+ameterOIDs":null}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"","ParameterFormatCodes":nul
+l,"Parameters":[],"ResultForm
+atCodes":[]}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Parse","Name":"","Qu
+ery":"-- Speed up Wilaya 
+lookups (Since you are 
+joining with 
+wilayas)\r\nCREATE INDEX IF 
+NOT EXISTS 
+idx_profiles_wilaya_id ON 
+public.profiles (wilaya_id)",
+"ParameterOIDs":null}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"","ParameterFormatCodes":nul
+l,"Parameters":[],"ResultForm
+atCodes":[]}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Parse","Name":"","Qu
+ery":"-- 2. Optimize Plans 
+Table\r\n-- Ensure we 
+quickly find \"Active\" 
+plans without scanning 
+archived ones\r\n-- Table is 
+named 'subscription_plans'\r\
+nCREATE INDEX IF NOT EXISTS 
+idx_plans_is_active ON 
+public.subscription_plans (is
+_active)","ParameterOIDs":nul
+l}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"","ParameterFormatCodes":nul
+l,"Parameters":[],"ResultForm
+atCodes":[]}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Parse","Name":"","Qu
+ery":"-- 3. Optimize 
+Subjects/Content Table\r\n-- 
+Speed up loading the 
+dashboard by ignoring hidden 
+subjects instantly\r\nCREATE 
+INDEX IF NOT EXISTS 
+idx_subjects_is_active ON 
+public.subjects (is_active)",
+"ParameterOIDs":null}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"","ParameterFormatCodes":nul
+l,"Parameters":[],"ResultForm
+atCodes":[]}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Parse","Name":"","Qu
+ery":"-- Extra indexes from 
+previous optimization 
+attempt\r\nCREATE INDEX IF 
+NOT EXISTS idx_subjects_name 
+ON public.subjects(name)","Pa
+rameterOIDs":null}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"","ParameterFormatCodes":nul
+l,"Parameters":[],"ResultForm
+atCodes":[]}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Parse","Name":"","Qu
+ery":"CREATE INDEX IF NOT 
+EXISTS 
+idx_subjects_order_index ON p
+ublic.subjects(order_index)",
+"ParameterOIDs":null}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"","ParameterFormatCodes":nul
+l,"Parameters":[],"ResultForm
+atCodes":[]}
+2026/01/31 00:52:48 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:49 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:49 PG Send: 
+{"Type":"Parse","Name":"","Qu
+ery":"CREATE INDEX IF NOT 
+EXISTS 
+idx_subjects_created_at ON pu
+blic.subjects(created_at)","P
+arameterOIDs":null}
+2026/01/31 00:52:49 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"","ParameterFormatCodes":nul
+l,"Parameters":[],"ResultForm
+atCodes":[]}
+2026/01/31 00:52:49 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:49 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:49 PG Send: 
+{"Type":"Parse","Name":"","Qu
+ery":"INSERT INTO supabase_mi
+grations.schema_migrations(ve
+rsion, name, statements) 
+VALUES($1, $2, $3)","Paramete
+rOIDs":[25,25,1009]}
+2026/01/31 00:52:49 PG Send: 
+{"Type":"Bind","DestinationPo
+rtal":"","PreparedStatement":
+"","ParameterFormatCodes":[0,
+0,1],"Parameters":[{"text":"2
+0260131004000"},{"text":"opti
+mize_critical_indexes"},{"bin
+ary":"00000001000000000000001
+90000000800000001000001542d2d
+204d6967726174696f6e3a2050657
+2666f726d616e6365204f7074696d
+697a6174696f6e2028496e6465786
+573290d0a2d2d2044657363726970
+74696f6e3a204164647320422d547
+2656520696e646578657320746f20
+637269746963616c20636f6c756d6
+e7320746f2070726576656e742054
+696d656f7574206572726f72732e0
+d0a0d0a2d2d20312e204f7074696d
+697a652050726f66696c657320546
+1626c652028546865206d6f737420
+637269746963616c206f6e65290d0
+a2d2d205370656564207570206368
+65636b696e6720737562736372697
+074696f6e2073746174757320284a
+756d70696e6720746f20706c616e5
+f696420696e7374616e746c79290d
+0a43524541544520494e444558204
+946204e4f54204558495354532069
+64785f70726f66696c65735f706c6
+16e5f6964204f4e207075626c6963
+2e70726f66696c65732028706c616
+e5f696429000000822d2d20537065
+6564207570204c6f67696e2026204
+1757468206c6f6f6b757073202846
+696e64696e6720757365722062792
+0656d61696c290d0a435245415445
+20494e444558204946204e4f54204
+55849535453206964785f70726f66
+696c65735f656d61696c204f4e207
+075626c69632e70726f66696c6573
+2028656d61696c29000000912d2d2
+053706565642075702057696c6179
+61206c6f6f6b757073202853696e6
+36520796f7520617265206a6f696e
+696e6720776974682077696c61796
+173290d0a43524541544520494e44
+4558204946204e4f5420455849535
+453206964785f70726f66696c6573
+5f77696c6179615f6964204f4e207
+075626c69632e70726f66696c6573
+202877696c6179615f69642900000
+0e42d2d20322e204f7074696d697a
+6520506c616e73205461626c650d0
+a2d2d20456e737572652077652071
+7569636b6c792066696e642022416
+3746976652220706c616e73207769
+74686f7574207363616e6e696e672
+06172636869766564206f6e65730d
+0a2d2d205461626c65206973206e6
+16d65642027737562736372697074
+696f6e5f706c616e73270d0a43524
+541544520494e444558204946204e
+4f5420455849535453206964785f7
+06c616e735f69735f616374697665
+204f4e207075626c69632e7375627
+36372697074696f6e5f706c616e73
+202869735f6163746976652900000
+0c02d2d20332e204f7074696d697a
+65205375626a656374732f436f6e7
+4656e74205461626c650d0a2d2d20
+5370656564207570206c6f6164696
+e67207468652064617368626f6172
+642062792069676e6f72696e67206
+8696464656e207375626a65637473
+20696e7374616e746c790d0a43524
+541544520494e444558204946204e
+4f5420455849535453206964785f7
+375626a656374735f69735f616374
+697665204f4e207075626c69632e7
+375626a65637473202869735f6163
+74697665290000007a2d2d2045787
+4726120696e64657865732066726f
+6d2070726576696f7573206f70746
+96d697a6174696f6e20617474656d
+70740d0a43524541544520494e444
+558204946204e4f54204558495354
+53206964785f7375626a656374735
+f6e616d65204f4e207075626c6963
+2e7375626a65637473286e616d652
+90000005343524541544520494e44
+4558204946204e4f5420455849535
+453206964785f7375626a65637473
+5f6f726465725f696e646578204f4
+e207075626c69632e7375626a6563
+7473286f726465725f696e6465782
+90000005143524541544520494e44
+4558204946204e4f5420455849535
+453206964785f7375626a65637473
+5f637265617465645f6174204f4e2
+07075626c69632e7375626a656374
+7328637265617465645f617429"}]
+,"ResultFormatCodes":[]}
+2026/01/31 00:52:49 PG Send: 
+{"Type":"Describe","ObjectTyp
+e":"P","Name":""}
+2026/01/31 00:52:49 PG Send: 
+{"Type":"Execute","Portal":""
+,"MaxRows":0}
+2026/01/31 00:52:49 PG Send: 
+{"Type":"Sync"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"ParseComplete"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"BindComplete"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"NoData"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"CommandComplete","Co
+mmandTag":"CREATE INDEX"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"ParseComplete"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"BindComplete"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"NoData"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"CommandComplete","Co
+mmandTag":"CREATE INDEX"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"ParseComplete"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"BindComplete"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"NoData"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"CommandComplete","Co
+mmandTag":"CREATE INDEX"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"ParseComplete"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"BindComplete"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"NoData"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"CommandComplete","Co
+mmandTag":"CREATE INDEX"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"ParseComplete"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"BindComplete"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"NoData"}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"ErrorResponse","Seve
+rity":"ERROR","SeverityUnloca
+lized":"ERROR","Code":"42703"
+,"Message":"column 
+\"is_active\" does not exist"
+,"Detail":"","Hint":"","Posit
+ion":0,"InternalPosition":0,"
+InternalQuery":"","Where":"",
+"SchemaName":"","TableName":"
+","ColumnName":"","DataTypeNa
+me":"","ConstraintName":"","F
+ile":"indexcmds.c","Line":188
+8,"Routine":"ComputeIndexAttr
+s","UnknownFields":null}
+2026/01/31 00:52:49 PG Recv: 
+{"Type":"ReadyForQuery","TxSt
+atus":"I"}
+ERROR: column "is_active" 
+does not exist (SQLSTATE 
+42703)                       
+At statement: 4              
+                             
+                      
+-- 3. Optimize 
+Subjects/Content Table       
+                             
+       
+-- Speed up loading the 
+dashboard by ignoring hidden 
+subjects instantly         
+CREATE INDEX IF NOT EXISTS 
+idx_subjects_is_active ON 
+public.subjects (is_active)

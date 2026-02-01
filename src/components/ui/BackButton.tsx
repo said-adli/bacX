@@ -25,7 +25,7 @@ export function BackButton() {
                     className={cn(
                         "fixed top-6 left-6 z-50", // Left side for RTL back (or right? RTL usually means back is Right arrow pointing Left, but positioning depends on design. Apple stores Back on Top-Left in LTR. In RTL it should optionally be Top-Right. Let's stick to user request: 'top-right (for RTL)'
                         // Actually, in RTL specific IOS apps, 'Back' is Top-Right with Arrow pointing Right.
-                        "right-6",
+                        "left-6",
                         "w-10 h-10 rounded-full bg-black/20 backdrop-blur-md border border-white/10 flex items-center justify-center text-white shadow-lg transition-colors cursor-pointer"
                     )}
                 >
