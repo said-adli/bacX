@@ -43,12 +43,12 @@ const RightGlassSidebarComponent = function RightGlassSidebar() {
       <div className="flex flex-col h-full w-full overflow-y-auto glass-scrollbar pt-6 pb-2">
 
         {/* Brand / Logo Area */}
-        <div className="w-full flex justify-center items-center pt-8 mb-10">
+        <div className="w-full flex justify-center items-center py-6">
           <Link
             href="/dashboard"
-            className="block transition-all duration-300 hover:scale-105 hover:drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]"
+            className="block transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_25px_rgba(59,130,246,0.6)]"
           >
-            <Logo className="w-12 h-12" />
+            <Logo className="h-20 w-auto mx-auto invert brightness-200" />
           </Link>
         </div>
 
