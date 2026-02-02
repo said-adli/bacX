@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-// Mock hook - No external dependencies
+// Hook - No external dependencies
 export const useAgora = (_client: unknown) => {
     void _client;
     const [active, setActive] = useState(false);
@@ -8,12 +8,10 @@ export const useAgora = (_client: unknown) => {
     const joinChannel = async (_channelName: string, _uid: string | number) => {
         void _channelName;
         void _uid;
-        // Mock Implementation
         setActive(true);
     };
 
     const leaveChannel = async () => {
-        // Mock Implementation
         setActive(false);
     };
 

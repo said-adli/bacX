@@ -66,7 +66,6 @@ export const useLiveInteraction = () => {
         });
 
         peer.on('open', (id) => {
-            console.log('My Peer ID is: ' + id);
             setPeerId(id);
             setConnectionError(null);
         });

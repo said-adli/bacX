@@ -26,15 +26,14 @@ export async function uploadReceipt(file: File, userId: string): Promise<string 
 
         if (uploadError) {
             console.error('Upload Error:', uploadError);
-            // Fallback for demo if bucket doesn't exist
-            return URL.createObjectURL(file);
+            return null;
         }
 
         const { data } = supabase.storage.from('receipts').getPublicUrl(filePath);
         return data.publicUrl;
     } catch (e) {
         console.error('Unexpected Upload Error:', e);
-        return URL.createObjectURL(file); // Demo fallback
+        return null;
     }
 }
 
@@ -53,13 +52,13 @@ export async function createSubscriptionRequest(userId: string, plan: string, re
 
         if (error) {
             console.error('DB Insert Error:', error);
-            // If table doesn't exist, we just simulate success for the UI demo
-            return { success: true, mock: true };
+            // If table doesn't exist, we error out now instead of simulating success
+            return { success: false, error: "Database unavailable" };
         }
 
         return { success: true };
     } catch (e) {
         console.error('Unexpected DB Error:', e);
-        return { success: true, mock: true }; // Demo fallback
+        return { success: false, error: "Unexpected error" };
     }
 }

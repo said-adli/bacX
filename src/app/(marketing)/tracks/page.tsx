@@ -24,7 +24,6 @@ interface Subject {
     streamTags: string[]; // e.g., ['science', 'math']
 }
 
-// Mock Data (Empty for now as requested)
 const SUBJECTS: Subject[] = [];
 
 export default function TracksPage() {

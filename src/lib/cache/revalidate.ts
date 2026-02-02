@@ -25,7 +25,6 @@ export function revalidateAllContent(): void {
     revalidateTag(CACHE_TAGS.LESSONS, "max");
     revalidateTag(CACHE_TAGS.CURRICULUM, "max");
     revalidateTag(CACHE_TAGS.ANNOUNCEMENTS, "max");
-    console.log("[CACHE] Revalidated all content caches");
 }
 
 /**
@@ -35,7 +34,6 @@ export function revalidateAllContent(): void {
 export function revalidateSubjects(): void {
     revalidateTag(CACHE_TAGS.SUBJECTS, "max");
     revalidateTag(CACHE_TAGS.CURRICULUM, "max");
-    console.log("[CACHE] Revalidated subjects cache");
 }
 
 /**
@@ -48,9 +46,6 @@ export function revalidateLessons(subjectId?: string): void {
 
     if (subjectId) {
         revalidateTag(`lessons:${subjectId}`, "max");
-        console.log(`[CACHE] Revalidated lessons cache for subject: ${subjectId}`);
-    } else {
-        console.log("[CACHE] Revalidated all lessons cache");
     }
 }
 
@@ -60,7 +55,6 @@ export function revalidateLessons(subjectId?: string): void {
  */
 export function revalidateAnnouncements(): void {
     revalidateTag(CACHE_TAGS.ANNOUNCEMENTS, "max");
-    console.log("[CACHE] Revalidated announcements cache");
 }
 
 /**
@@ -69,7 +63,6 @@ export function revalidateAnnouncements(): void {
  */
 export function revalidateCurriculum(): void {
     revalidateTag(CACHE_TAGS.CURRICULUM, "max");
-    console.log("[CACHE] Revalidated curriculum cache");
 }
 
 /**
@@ -78,7 +71,6 @@ export function revalidateCurriculum(): void {
  */
 export function revalidatePlans(): void {
     revalidateTag(CACHE_TAGS.PLANS, "max");
-    console.log("[CACHE] Revalidated plans cache");
 }
 
 /**
@@ -87,7 +79,6 @@ export function revalidatePlans(): void {
  */
 export function revalidateUsers(): void {
     revalidateTag(CACHE_TAGS.USERS, "max");
-    console.log("[CACHE] Revalidated users cache");
 }
 
 /**
@@ -96,5 +87,4 @@ export function revalidateUsers(): void {
  */
 export function revalidatePlatformUpdates(): void {
     revalidateTag(CACHE_TAGS.PLATFORM_UPDATES, "max");
-    console.log("[CACHE] Revalidated platform updates cache");
 }

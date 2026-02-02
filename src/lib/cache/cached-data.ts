@@ -10,6 +10,7 @@
 
 import { unstable_cache } from "next/cache";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { SubjectDTO } from "@/types/subject";
 
 // ============================================================================
 // CACHE TAGS - Used for selective revalidation
@@ -65,30 +66,10 @@ export interface CachedAnnouncement {
  * Get all subjects - CACHED for 1 hour, revalidated on admin mutation.
  * Uses admin client (stateless, no cookies).
  */
-// NEW: Import Strict DTO
-import { SubjectDTO } from "@/types/subject";
-
-// ... (imports)
-
-// remove local CachedSubject interface if generic, or keep for internal use but mapped to DTO
-// For simplicity, we will use SubjectDTO as the return type.
-
-/**
- * Get all subjects - CACHED for 1 hour, revalidated on admin mutation.
- * Uses admin client (stateless, no cookies).
- */
 export const getCachedSubjects = unstable_cache(
     async (): Promise<SubjectDTO[]> => {
         try {
-            // DEBUG: Verify env vars are present
-            const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-            const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-            console.log("[CACHE] Env check - URL:", url ? "SET" : "MISSING", "| Service Key:", hasServiceKey ? "SET" : "MISSING");
-
             const supabase = createAdminClient();
-
-            console.log("[CACHE] Starting subjects query...");
-            const startTime = Date.now();
 
             const { data, error } = await supabase
                 .from("subjects")
@@ -96,23 +77,9 @@ export const getCachedSubjects = unstable_cache(
                 .eq("is_active", true)
                 .order("created_at", { ascending: true });
 
-            const elapsed = Date.now() - startTime;
-            console.log(`[CACHE] Query completed in ${elapsed}ms`);
-
             if (error) {
-                // Log FULL error object for 406/connection issues
-                console.error("[CACHE] Supabase Error:", JSON.stringify({
-                    message: error.message,
-                    code: error.code,
-                    details: error.details,
-                    hint: error.hint,
-                }, null, 2));
+                console.error("[CACHE] Supabase Error:", error);
                 return [];
-            }
-
-            console.log("[CACHE] getCachedSubjects returned:", data?.length || 0, "subjects");
-            if (data && data.length > 0) {
-                console.log("[CACHE] First subject:", data[0].name);
             }
 
             if (!data) return [];
@@ -131,13 +98,7 @@ export const getCachedSubjects = unstable_cache(
                 progress: 0
             }));
         } catch (err: any) {
-            // Catch network/timeout errors
-            console.error("[CACHE] CRITICAL ERROR in getCachedSubjects:", {
-                name: err?.name,
-                message: err?.message,
-                cause: err?.cause,
-                stack: err?.stack?.substring(0, 500)
-            });
+            console.error("[CACHE] CRITICAL ERROR in getCachedSubjects:", err);
             return [];
         }
     },
@@ -195,41 +156,29 @@ export const getCachedAnnouncements = unstable_cache(
         try {
             const supabase = createAdminClient();
 
-            console.log("[CACHE] Starting announcements query...");
-
             const { data, error } = await supabase
                 .from("announcements")
-                // FIXED: Removed 'title' - column doesn't exist in DB
                 .select("id, content, created_at, is_active")
                 .eq("is_active", true)
                 .order("created_at", { ascending: false })
                 .limit(limit);
 
             if (error) {
-                console.error("[CACHE] Failed to fetch announcements:", JSON.stringify({
-                    message: error.message,
-                    code: error.code,
-                    details: error.details,
-                }, null, 2));
+                console.error("[CACHE] Failed to fetch announcements:", error);
                 return [];
             }
-
-            console.log("[CACHE] getCachedAnnouncements returned:", data?.length || 0, "announcements");
 
             if (!data) return [];
 
             return data.map((a) => ({
                 id: a.id,
-                title: null, // DB doesn't have title column
+                title: null,
                 content: a.content,
                 createdAt: a.created_at,
                 isActive: a.is_active,
             }));
         } catch (err: any) {
-            console.error("[CACHE] CRITICAL ERROR in getCachedAnnouncements:", {
-                name: err?.name,
-                message: err?.message,
-            });
+            console.error("[CACHE] CRITICAL ERROR in getCachedAnnouncements:", err);
             return [];
         }
     },

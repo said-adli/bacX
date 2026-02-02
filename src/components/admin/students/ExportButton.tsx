@@ -43,7 +43,7 @@ export function ExportButton() {
 
             toast.success("تم تصدير ملف الطلاب بنجاح");
         } catch (error) {
-            console.error("Export failed:", error);
+            // Fail silently or toast
             toast.error("فشل في تصدير الملف");
         } finally {
             setIsLoading(false);

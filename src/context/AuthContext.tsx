@@ -73,12 +73,9 @@ export function AuthProvider({
     const isMounted = useRef(false);
 
     // --- FETCH STRATEGY: TIMEOUT-GUARDED SPLIT FETCH ---
-    // --- FETCH STRATEGY: TIMEOUT-GUARDED SPLIT FETCH ---
     const fetchProfile = useCallback(async (userId: string) => {
-        console.log("👤 Connecting to Real DB with 15s Timeout...");
         try {
             // STEP 1: Define the Real Request (Optimized Columns)
-            // ✅ CORRECTION: 'full_name' is the real column, 'avatar_url' does NOT exist.
             const dbQuery = supabase
                 .from('profiles')
                 .select('id, full_name, role, email, major_id, wilaya_id, is_profile_complete, is_subscribed, subscription_end_date, plan_id')
@@ -102,8 +99,6 @@ export function AuthProvider({
                 console.error("❌ Profile Missing for ID:", userId);
                 throw new Error("Profile Not Found");
             }
-
-            console.log("✅ Real Data Loaded (row only):", profile);
 
             // STEP 4: Fetch Details in Parallel (Majors/Wilayas/Plans)
             let majorName = null;
@@ -148,7 +143,6 @@ export function AuthProvider({
                 plan_name: planName
             } as any;
 
-            console.log("✅ Profile Fully Loaded:", finalProfile);
             return finalProfile;
 
         } catch (err: any) {
@@ -159,11 +153,9 @@ export function AuthProvider({
 
     // --- MAIN INITIALIZATION EFFECT ---
     useEffect(() => {
-        console.log('🔄 AuthContext: Mount');
         isMounted.current = true;
 
         const initAuth = async () => {
-            console.log('🔄 AuthContext: initAuth()');
             try {
                 // 1. Get Session
                 const { data: { session }, error } = await supabase.auth.getSession();
@@ -171,7 +163,6 @@ export function AuthProvider({
                 if (error) throw error;
 
                 if (session?.user) {
-                    console.log('🔄 AuthContext: Session found. Fetching profile...');
                     try {
                         const profile = await fetchProfile(session.user.id);
 
@@ -202,7 +193,6 @@ export function AuthProvider({
                         }
                     }
                 } else {
-                    console.log('🔄 AuthContext: No session.');
                     if (isMounted.current) {
                         setState(prev => ({ ...prev, loading: false }));
                     }
@@ -224,8 +214,6 @@ export function AuthProvider({
 
         // Listen for changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-            console.log(`[Auth] Event: ${event}`);
-
             if (!isMounted.current) return;
 
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
@@ -271,11 +259,10 @@ export function AuthProvider({
         });
 
         return () => {
-            console.log('🔄 AuthContext: Unmount');
             isMounted.current = false;
             subscription.unsubscribe();
         };
-    }, [supabase, fetchProfile, router]); // Fixed: Removed state.profile to prevent loop
+    }, [supabase, fetchProfile, router]);
 
 
     // --- ACTIONS ---
@@ -294,10 +281,6 @@ export function AuthProvider({
             }
             throw error;
         }
-        // No finally block needed here because:
-        // 1. If success: onAuthStateChange handles loading -> false
-        // 2. If error: catch block handles loading -> false
-        // 3. We don't want to prematurely set loading=false if successful before the profile fetch completes in the listener
     };
 
     const signupWithEmail = async (data: any) => {
@@ -323,7 +306,6 @@ export function AuthProvider({
             }
             throw error;
         } finally {
-            // For signup, we usually want to stop loading to show "Check your email" or similar
             if (isMounted.current) setState(prev => ({ ...prev, loading: false }));
         }
     };
@@ -334,7 +316,6 @@ export function AuthProvider({
         } catch (error) {
             console.error("Logout error:", error);
         } finally {
-            // Force local cleanup
             if (isMounted.current) {
                 setState({ user: null, profile: null, session: null, loading: false, error: null, connectionError: false });
                 router.replace('/');

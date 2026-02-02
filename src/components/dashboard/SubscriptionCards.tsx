@@ -86,19 +86,16 @@ export function SubscriptionCards() {
     }, []);
 
     const handleSubscribeClick = (plan: SubscriptionPlan) => {
-        console.log("🎯 Selected Plan:", plan.id, plan.name, plan.price);
         setSelectedPlan(plan);
         setIsModalOpen(true);
     };
 
     const handlePaymentSubmit = async (file: File) => {
         if (!selectedPlan || !user) return;
-        console.log("📤 Submitting payment for plan:", selectedPlan.id);
 
         // 1. Upload receipt
         const receiptUrl = await uploadReceipt(file, user.id);
         if (!receiptUrl) {
-            console.error("Failed to upload receipt");
             return;
         }
 

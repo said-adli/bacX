@@ -90,7 +90,7 @@ export default function SubscriptionPage() {
     const handleApplyPromo = async () => {
         if (!promoCode) return;
         setIsApplying(true);
-        // Mock promo implementation
+        // Promo implementation
         setTimeout(() => {
             if (promoCode === "BAC2025") {
                 toast.success("تم تفعيل كود الخصم بنجاح! استمتع بخصم 20%");

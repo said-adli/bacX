@@ -7,28 +7,14 @@ import { createClient } from "@/utils/supabase/server";
  * Called immediately after Client-Side Login.
  */
 export async function checkAndRegisterDevice(deviceId: string, userAgent: string) {
-    console.log("🔍 [DEVICE CHECK] Starting device check...");
-    console.log("🔍 [DEVICE CHECK] Device ID:", deviceId);
-
     const supabase = await createClient();
-    console.log("🔍 [DEVICE CHECK] Supabase client created");
 
     // 1. Verify User (from Cookie)
-    console.log("🔍 [DEVICE CHECK] Calling getUser()...");
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    console.log("🔍 [DEVICE CHECK] getUser result:");
-    console.log("  - User exists:", !!user);
-    console.log("  - User ID:", user?.id || "N/A");
-    console.log("  - Auth Error:", authError?.message || "None");
-
     if (!user) {
-        console.error("❌ [DEVICE CHECK] NO USER FOUND - Returning Unauthorized");
-        console.error("❌ [DEVICE CHECK] This means cookies were not passed to server action");
         return { success: false, error: "Unauthorized" };
     }
-
-    console.log("✅ [DEVICE CHECK] User verified:", user.id);
 
     // 2. Check if THIS device is already registered
     const { data: existing } = await supabase
@@ -54,7 +40,6 @@ export async function checkAndRegisterDevice(deviceId: string, userAgent: string
         .eq('user_id', user.id);
 
     if (error) {
-        console.error("Device count error:", error);
         return { success: false, error: "System Error" };
     }
 
@@ -76,7 +61,6 @@ export async function checkAndRegisterDevice(deviceId: string, userAgent: string
         });
 
     if (insertError) {
-        console.error("Device register error:", insertError);
         return { success: false, error: "Registration Failed" };
     }
 

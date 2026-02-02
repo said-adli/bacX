@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getLessonVideoId } from "@/data/mockLibrary";
 import EncodedVideoPlayer from "@/components/lesson/VideoPlayer";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Lock, PlayCircle, Clock } from "lucide-react";
@@ -46,7 +45,7 @@ export default function SubjectView({ subject, lessons, isSubscribed }: SubjectV
                     <div className="w-full aspect-video rounded-2xl overflow-hidden glass-panel relative border border-white/10 shadow-2xl">
                         {isSubscribed && activeLesson.video_url ? ( // Check video_url presence too
                             // AUTHORIZED
-                            <EncodedVideoPlayer encodedVideoId={getLessonVideoId(activeLesson.id)} />
+                            <EncodedVideoPlayer encodedVideoId={activeLesson.video_url} />
                         ) : (
                             // GATEKEPT
                             <PremiumLockScreen />

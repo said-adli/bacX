@@ -134,14 +134,12 @@ export async function getStatsData() {
     // Round to 1 decimal place
     const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
 
-    // 3. Rank (Mocking logic based on points/completed lessons vs global average for now)
-    // Real implementation would require a 'points' column or complex aggregation.
-    // For now, let's make it semi-dynamic:
+    // 3. Rank (Dynamic Tier System based on progress)
+    // Calculated based on verified completed lessons.
     const completedCount = progress?.length || 0;
-    let rank = "#--";
-    if (completedCount > 0) rank = "#842"; // Placeholder for 'Active Student'
-    if (completedCount > 10) rank = "#156";
-    if (completedCount > 50) rank = "#12";
+    let rank = "مبتدئ"; // Novice
+    if (completedCount > 10) rank = "مجتهد"; // Intermediate
+    if (completedCount > 50) rank = "نخبة"; // Elite
 
     return {
         courses: coursesCount || 0,

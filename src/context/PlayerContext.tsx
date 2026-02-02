@@ -101,12 +101,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
     // Registration Handlers (Stable Identity)
     const registerHeroTarget = useCallback((node: HTMLElement | null) => {
-        console.log("[PlayerContext] Hero Target Registered:", node ? "Yes" : "No");
         setHeroTarget(node);
     }, []);
 
     const registerMiniTarget = useCallback((node: HTMLElement | null) => {
-        console.log("[PlayerContext] Mini Target Registered:", node ? "Yes" : "No");
         setMiniTarget(node);
     }, []);
 
