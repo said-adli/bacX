@@ -1,5 +1,7 @@
+
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { CommandPalette } from "@/components/admin/layout/CommandPalette";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 
@@ -29,8 +31,8 @@ export default async function AdminLayout({
     }
 
     return (
-        <div className="flex h-screen w-full bg-[#050510] text-white overflow-hidden font-tajawal">
-            {/* Sidebar */}
+        <div className="flex h-screen bg-[#050505] overflow-hidden font-sans" dir="rtl">
+            <CommandPalette />
             <AdminSidebar />
 
             {/* Main Content Area */}

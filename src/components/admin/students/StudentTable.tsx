@@ -12,10 +12,12 @@ import {
     Filter,
     MessageSquare,
     Send,
-    Edit // [NEW]
+    Edit, // [NEW]
+    Trash2,
+    VenetianMask // For Impersonate
 } from "lucide-react";
 import { StatusToggle } from "@/components/admin/shared/StatusToggle";
-import { toggleBanStudent, manualsExpireSubscription } from "@/actions/admin-students";
+import { toggleBanStudent, manualsExpireSubscription, generateImpersonationLink, deleteStudent } from "@/actions/admin-students";
 import { bulkBroadcast } from "@/actions/admin-broadcast";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -136,6 +138,37 @@ export function StudentTable({ students, totalPages }: { students: Student[], to
             setIsLoading(false);
         }
     };
+
+    const handleImpersonate = async (id: string, name: string) => {
+        if (!confirm(`Are you sure you want to log in as ${name}? This action will be logged.`)) return;
+        setIsLoading(true);
+        try {
+            const magicLink = await generateImpersonationLink(id);
+            if (magicLink) {
+                toast.success("Redirecting to student view...");
+                window.open(magicLink, '_blank'); // Open in new tab to preserve admin session
+            }
+        } catch (e) {
+            toast.error("Impersonation failed");
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("DANGER: This will permanently delete the student and all their data. This cannot be undone.")) return;
+        setIsLoading(true);
+        try {
+            await deleteStudent(id);
+            toast.success("Student deleted permanently");
+            router.refresh();
+        } catch (e) {
+            toast.error("Delete failed");
+            console.error(e);
+        } finally {
+            setIsLoading(false);
+        }
+    }
 
     return (
         <div className="space-y-6">
@@ -268,6 +301,28 @@ export function StudentTable({ students, totalPages }: { students: Student[], to
                                             title="Manage Subscription"
                                         >
                                             <Edit size={16} />
+                                        </button>
+
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleImpersonate(student.id, student.full_name || "Student");
+                                            }}
+                                            className="p-2 rounded-lg bg-purple-500/10 text-purple-500 hover:bg-purple-500/20 transition-colors"
+                                            title="Impersonate User (God Mode)"
+                                        >
+                                            <VenetianMask size={16} />
+                                        </button>
+
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(student.id);
+                                            }}
+                                            className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                                            title="Delete Student"
+                                        >
+                                            <Trash2 size={16} />
                                         </button>
                                     </div>
                                 </td>

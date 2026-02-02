@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { logAdminAction } from "@/lib/admin-logger";
 
 export interface StudentProfile {
     id: string;
@@ -256,6 +257,7 @@ export async function generateImpersonationLink(userId: string) {
         throw new Error("Failed to generate link");
     }
 
+    await logAdminAction('IMPERSONATE_USER', userId, 'user', { email: profile.email });
     return data.properties?.action_link;
 }
 // ------------------------------------------------------------------
@@ -272,7 +274,7 @@ export async function bulkUpdateStudents(
     // 1. Verify Admin
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
-    
+
     // Security: Explicitly check for admin role
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
     if (profile?.role !== 'admin') throw new Error("Forbidden");
@@ -280,7 +282,7 @@ export async function bulkUpdateStudents(
     // 2. Perform Actions
     if (action === 'ban' || action === 'unban') {
         const isBanned = action === 'ban';
-        
+
         // RPC replaces the N+1 Loop + Profile Update
         const { error } = await supabaseAdmin.rpc('bulk_update_profiles', {
             student_ids: userIds,
@@ -353,5 +355,70 @@ export async function setStudentPlan(userId: string, planId: string | null, isSu
         .eq('id', userId);
 
     if (error) throw error;
+
+    await logAdminAction('UPDATE_SUBSCRIPTION', userId, 'user', { isSubscribed, planId });
+    revalidatePath('/admin/students');
+}
+
+// ------------------------------------------------------------------
+// FULL CRUD
+// ------------------------------------------------------------------
+
+export async function updateStudentProfile(userId: string, data: { fullName?: string, email?: string, wilaya?: string }) {
+    const supabase = await createClient();
+    const supabaseAdmin = createAdminClient();
+
+    // Verify Admin
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (profile?.role !== 'admin') throw new Error("Forbidden");
+
+    // Update Profile
+    const { error } = await supabaseAdmin
+        .from('profiles')
+        .update({
+            full_name: data.fullName,
+            email: data.email, // Note: Changing email in profile doesn't change it in Auth without extra steps usually
+            wilaya: data.wilaya
+        })
+        .eq('id', userId);
+
+    if (error) throw error;
+
+    // Attempt Admin Auth Email Update if email changed
+    if (data.email) {
+        const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, { email: data.email });
+        if (authError) console.error("Failed to update auth email:", authError);
+    }
+
+    await logAdminAction('UPDATE_STUDENT_PROFILE', userId, 'user', data);
+    revalidatePath('/admin/students');
+}
+
+export async function deleteStudent(userId: string) {
+    const supabase = await createClient();
+    const supabaseAdmin = createAdminClient();
+
+    // Verify Admin
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (profile?.role !== 'admin') throw new Error("Forbidden");
+
+    // Cascade Delete handled by DB Foreign Keys preferably, but we can engage manual cleanup if needed.
+    // Supabase Auth deletion cascades to profiles often if configured, or we delete user which deletes profile.
+
+    // 1. Delete from Auth (this usually triggers cascading delete in public schema if configured)
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+    if (error) {
+        // Fallback: Try deleting profile directly if Auth delete fails or isn't linked
+        console.error("Auth delete failed, trying profile:", error);
+        const { error: profileError } = await supabaseAdmin.from('profiles').delete().eq('id', userId);
+        if (profileError) throw profileError;
+    }
+
+    await logAdminAction('DELETE_STUDENT', userId, 'user', {});
     revalidatePath('/admin/students');
 }
