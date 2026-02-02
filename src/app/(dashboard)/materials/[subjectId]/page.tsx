@@ -24,19 +24,22 @@ export default async function SubjectDetailsPage({ params, searchParams }: Subje
     const { lessonId } = searchParams;
 
     // 1. Fetch Basic Subject Metadata (Fast) - Needed for Header
+    // 1. Fetch Basic Subject Metadata (Fast) & User Check - Parallelized
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
 
-    // We fetch subject header info separately or we can rely on cached parent? 
-    // Ideally we want to render the SHELL immediately. 
-    // Let's fetch basic Subject Info here (cheap fast query).
-    const { data: subject } = await supabase
-        .from('subjects')
-        .select('name, id')
-        .eq('id', subjectId)
-        .single();
+    const [
+        { data: { user } },
+        { data: subject }
+    ] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase
+            .from('subjects')
+            .select('name, id')
+            .eq('id', subjectId)
+            .single()
+    ]);
 
-    // Check subscription status cheaply
+    // Check subscription status cheaply (Only depends on User)
     const { data: profile } = user ? await supabase.from('profiles').select('is_subscribed, role').eq('id', user.id).single() : { data: null };
     const isSubscribed = profile?.is_subscribed || profile?.role === 'admin';
 
