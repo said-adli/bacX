@@ -79,45 +79,72 @@ import { SubjectDTO } from "@/types/subject";
  */
 export const getCachedSubjects = unstable_cache(
     async (): Promise<SubjectDTO[]> => {
-        const supabase = createAdminClient();
+        try {
+            // DEBUG: Verify env vars are present
+            const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+            console.log("[CACHE] Env check - URL:", url ? "SET" : "MISSING", "| Service Key:", hasServiceKey ? "SET" : "MISSING");
 
-        const { data, error } = await supabase
-            .from("subjects")
-            // Match ACTUAL DB schema: id, name, slug, is_active, icon, description
-            .select("id, name, slug, is_active, icon, description, lessons(id, title)")
-            .eq("is_active", true) // Only fetch active subjects
-            .order("created_at", { ascending: true });
+            const supabase = createAdminClient();
 
-        // DEBUG: Log fetched data
-        console.log("[CACHE] Fetched subjects data:", JSON.stringify(data, null, 2));
+            console.log("[CACHE] Starting subjects query...");
+            const startTime = Date.now();
 
-        if (error) {
-            console.error("[CACHE] Failed to fetch subjects:", error.message);
+            const { data, error } = await supabase
+                .from("subjects")
+                .select("id, name, slug, is_active, icon, description, lessons(id, title)")
+                .eq("is_active", true)
+                .order("created_at", { ascending: true });
+
+            const elapsed = Date.now() - startTime;
+            console.log(`[CACHE] Query completed in ${elapsed}ms`);
+
+            if (error) {
+                // Log FULL error object for 406/connection issues
+                console.error("[CACHE] Supabase Error:", JSON.stringify({
+                    message: error.message,
+                    code: error.code,
+                    details: error.details,
+                    hint: error.hint,
+                }, null, 2));
+                return [];
+            }
+
+            console.log("[CACHE] getCachedSubjects returned:", data?.length || 0, "subjects");
+            if (data && data.length > 0) {
+                console.log("[CACHE] First subject:", data[0].name);
+            }
+
+            if (!data) return [];
+
+            return data.map((s) => ({
+                id: s.id,
+                name: s.name,
+                icon: s.icon || null,
+                description: s.description,
+                color: null,
+                slug: s.slug || s.id,
+                lessonCount: s.lessons?.length || 0,
+                lessons: Array.isArray(s.lessons)
+                    ? s.lessons.map((l: any) => ({ id: l.id, title: l.title }))
+                    : [],
+                progress: 0
+            }));
+        } catch (err: any) {
+            // Catch network/timeout errors
+            console.error("[CACHE] CRITICAL ERROR in getCachedSubjects:", {
+                name: err?.name,
+                message: err?.message,
+                cause: err?.cause,
+                stack: err?.stack?.substring(0, 500)
+            });
             return [];
         }
-
-        console.log("[CACHE] getCachedSubjects returned:", data?.length || 0, "subjects");
-
-        if (!data) return [];
-
-        return data.map((s) => ({
-            id: s.id,
-            name: s.name,
-            icon: s.icon || null,
-            description: s.description,
-            color: null, // Not in DB schema
-            slug: s.slug || s.id,
-            lessonCount: s.lessons?.length || 0, // Derive from lessons array
-            lessons: Array.isArray(s.lessons)
-                ? s.lessons.map((l: any) => ({ id: l.id, title: l.title }))
-                : [],
-            progress: 0
-        }));
     },
     ["subjects-list"],
     {
         tags: [CACHE_TAGS.SUBJECTS],
-        revalidate: 3600, // 1 hour fallback
+        revalidate: 3600,
     }
 );
 
