@@ -15,13 +15,13 @@ export interface DashboardData {
     isSubscribed: boolean;
 }
 
-export async function getDashboardData(): Promise<DashboardData | { error: string }> {
+export async function getDashboardData(): Promise<DashboardData> {
     // Legacy support wrapper
     const api = await import("@/actions/dashboard"); // Self-import to use new functions
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) return { error: "Unauthorized" };
+    if (!user) throw new Error("Unauthorized");
 
     const [profile, subjects, stats] = await Promise.all([
         api.getProfileData(user.id),
