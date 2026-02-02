@@ -10,25 +10,52 @@ export interface PaymentProof {
     status: 'pending' | 'approved' | 'rejected';
     created_at: string;
     student_email: string;
-    plan_id: string; // The plan they are applying for (assuming logic ties proof to plan)
+    plan_id: string;
 }
 
-// Fetch Pending Payments
-export async function getPendingPayments() {
+/**
+ * 🔒 SECURITY HELPER: Enforce Admin Role
+ * Throws "Unauthorized" or "Forbidden" if checks fail.
+ */
+async function requireAdmin() {
     const supabase = await createClient();
 
-    // 1. Fetch Payment Receipts with Plan ID
+    // 1. Verify Authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+        throw new Error("Unauthorized: Please log in.");
+    }
+
+    // 2. Verify Admin Role (RBAC)
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    // STRICT: Explicit check for 'admin' role
+    if (!profile || profile.role !== 'admin') {
+        console.warn(`[SECURITY] Unauthorized access attempt by user ${user.id}`);
+        // USER REQUESTED EXACT STRING:
+        throw new Error("Unauthorized Access: Admins Only");
+    }
+
+    return { supabase, user };
+}
+
+// Fetch Pending Payments (Protected)
+export async function getPendingPayments() {
+    const { supabase } = await requireAdmin();
+
     const { data, error } = await supabase
-        .from('payment_receipts')
+        .from('payment_requests') // Targeting the secured table
         .select(`
             id, 
             user_id, 
             status, 
             receipt_url, 
             created_at,
-            plan_id,
-            profiles(email, full_name),
-            subscription_plans(name)
+            profiles(email, full_name)
         `)
         .eq('status', 'pending')
         .order('created_at', { ascending: true });
@@ -41,95 +68,83 @@ export async function getPendingPayments() {
     return data;
 }
 
-// Approve Payment (STRICT MODE)
-export async function approvePayment(receiptId: string, userId: string, planId: string) {
-    const supabase = await createClient();
+// Approve Payment (STRICT MODE & SECURED)
+export async function approvePayment(requestId: string, userId: string, planId: string) {
+    // 1. Enforce Admin
+    const { supabase } = await requireAdmin();
 
-    // 1. SAFETY CHECK: Validate Plan ID
+    // 2. Validate Inputs
     if (!planId || planId === 'default') {
-        throw new Error("CRITICAL: Payment request has no Plan ID. Cannot approve.");
+        throw new Error("Validation Failed: specific plan_id required.");
     }
 
-    // 2. Call RPC (Maintains Ledger/Status)
-    const { error: rpcError } = await supabase.rpc('approve_user_payment', {
-        p_receipt_id: receiptId,
-        p_user_id: userId,
-        p_plan_id: planId
-    });
+    // 3. Update Request Status (Admin Only via RLS + Code)
+    const { error: updateError } = await supabase
+        .from('payment_requests')
+        .update({ status: 'approved' })
+        .eq('id', requestId);
 
-    if (rpcError) {
-        console.error("RPC Approval Failed:", rpcError);
-        throw new Error(`Transaction Failed: ${rpcError.message}`);
-    }
+    if (updateError) throw new Error(`Failed to update request: ${updateError.message}`);
 
-    // 3. ENFORCE DATA INTEGRITY (The "Big Company" Standard)
-    // Directly update the profile to ensure is_subscribed AND plan_id are set.
-    // This is a redundant double-check against the RPC, ensuring the app state is correct.
-
-    // Fetch Plan Duration
+    // 4. Grant Access (Profile Update)
     const { data: planData } = await supabase
         .from('subscription_plans')
         .select('duration_days')
         .eq('id', planId)
         .single();
 
-    const durationDays = planData?.duration_days || 365;
+    const durationDays = planData?.duration_days || 30;
 
     const { error: profileError } = await supabase
         .from('profiles')
         .update({
             is_subscribed: true,
-            plan_id: planId, // <--- GUARANTEED ASSIGNMENT
+            plan_id: planId,
             subscription_end_date: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString()
         })
         .eq('id', userId);
 
     if (profileError) {
-        console.error("Critical: Profile Plan Sync Failed", profileError);
-        // We don't throw here to avoid rolling back the RPC success (unless we want strict atomicity).
-        // But for now, logging critical error is better than blocking the user if they were mostly approved.
-        // Actually, "Strict Mode" implies we SHOULD fail.
+        console.error("CRITICAL: Profile sync failed after approval", profileError);
         throw new Error("Profile Update Failed: " + profileError.message);
     }
 
     revalidatePath('/admin/payments');
 }
 
-// Reject Payment
-// Reject Payment
-export async function rejectPayment(receiptId: string) {
-    const supabase = await createClient();
+// Reject Payment (SECURED)
+export async function rejectPayment(requestId: string) {
+    // 1. Enforce Admin
+    const { supabase } = await requireAdmin();
 
-    // 1. Get Receipt to find User
-    const { data: receipt, error: fetchError } = await supabase
-        .from('payment_receipts')
+    // 2. Get Request to find User (Safety check)
+    const { data: request, error: fetchError } = await supabase
+        .from('payment_requests')
         .select('user_id')
-        .eq('id', receiptId)
+        .eq('id', requestId)
         .single();
 
-    if (fetchError || !receipt) throw new Error("Receipt not found");
+    if (fetchError || !request) throw new Error("Payment request not found");
 
-    // 2. Reject Receipt
+    // 3. Reject Request
     const { error } = await supabase
-        .from('payment_receipts')
+        .from('payment_requests')
         .update({ status: 'rejected' })
-        .eq('id', receiptId);
+        .eq('id', requestId);
 
     if (error) throw error;
 
-    // 3. Revoke Access (Lockout)
-    // Ensures that if they were briefly live or pending-active, they are now shut down.
+    // 4. Revoke Access (Lockout)
     const { error: profileError } = await supabase
         .from('profiles')
         .update({
             is_subscribed: false,
-            active_plan_id: null,
-            subscription_end_date: new Date().toISOString() // Expire immediately
+            subscription_end_date: new Date().toISOString()
         })
-        .eq('id', receipt.user_id);
+        .eq('id', request.user_id);
 
     if (profileError) {
-        console.error("Critical: Failed to revoke access on rejection", profileError);
+        console.error("Critical: Revocation failed", profileError);
         throw profileError;
     }
 

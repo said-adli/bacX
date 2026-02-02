@@ -1,19 +1,18 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-// import EncodedVideoPlayer from "@/components/lesson/VideoPlayer"; // Removed for Ghost Player
-import { usePlayer } from "@/context/PlayerContext";
+import { useEffect, useState } from "react";
+import SecureVideoPlayer from "@/components/SecureVideoPlayer";
 import { Sidebar } from "@/components/lesson/Sidebar";
-import { createClient } from "@/utils/supabase/client"; // Import Supabase
-import { FileText, Download, Lock, Loader2, Image as ImageIcon } from "lucide-react"; // Icons
+import { createClient } from "@/utils/supabase/client";
+import { FileText, Download, Lock, Loader2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { GlassCard } from "@/components/ui/GlassCard";
 
 interface LessonContentProps {
-    id: string;
+    id: string; // This is the Lesson ID
     title: string;
     description: string;
-    videoUrl: string;
+    videoUrl: string; // Legacy/Unused by SecurePlayer (it fetches internally)
 }
 
 interface LessonResource {
@@ -24,41 +23,7 @@ interface LessonResource {
     file_size: number;
 }
 
-const SALT = process.env.NEXT_PUBLIC_VIDEO_SALT || "SECRET_SALT_V1";
-
-export default function LessonContent({ id, title, description, videoUrl }: LessonContentProps) {
-    const videoId = videoUrl;
-    const cleanId = videoId.length > 20 ? "dQw4w9WgXcQ" : videoId;
-
-    // ENCODE WITH SALT
-    const saltedCoded = btoa(SALT + cleanId + SALT);
-
-    // [NEW] Ghost Player Integration
-    const { loadVideo, registerHeroTarget, videoId: globalVideoId } = usePlayer();
-    const heroTargetRef = useRef<HTMLDivElement>(null);
-
-    // Register Hero Target
-    useEffect(() => {
-        if (heroTargetRef.current) {
-            registerHeroTarget(heroTargetRef.current);
-        }
-        return () => registerHeroTarget(null); // Cleanup on unmount
-    }, [registerHeroTarget]);
-
-    // Load Video (if different)
-    useEffect(() => {
-        // Simple salt check or decode logic here if needed. 
-        // For now, we assume videoUrl is the ID or we decode it.
-        // If we need to keep the salt logic, we should decode it here before passing.
-        // BUT, EncodedVideoPlayer did client-side fetch to /api/video/decrypt.
-        // We should move that logic to the Context or do it here.
-        // For this step, let's assume we pass the raw videoUrl or handle decryption inside the Global Player's effect.
-        // Let's pass the videoUrl directly to loadVideo.
-        if (videoUrl && videoUrl !== globalVideoId) {
-            loadVideo(videoUrl, title);
-        }
-    }, [videoUrl, title, loadVideo, globalVideoId]);
-
+export default function LessonContent({ id, title, description }: LessonContentProps) {
     // [NEW] Resources State
     const [resources, setResources] = useState<LessonResource[]>([]);
     const [isLoadingResources, setIsLoadingResources] = useState(true);
@@ -77,7 +42,6 @@ export default function LessonContent({ id, title, description, videoUrl }: Less
 
                 if (error) {
                     console.error("Error fetching resources:", error);
-                    // Silent fail or toast? Silent is better if it's just restricted access without blocking the page
                 } else if (data) {
                     setResources(data as LessonResource[]);
                 }
@@ -96,9 +60,6 @@ export default function LessonContent({ id, title, description, videoUrl }: Less
     const handleDownload = async (resource: LessonResource) => {
         try {
             toast.info(`جاري تحضير الملف الآمن...`);
-            // Dynamically import the action to avoid server-module-in-client errors if not handled by Next.js automatically
-            // But since 'use server' is in the file, we can import it at the top. 
-            // However, let's keep it simple.
 
             // Extract the storage path from the full URL or just store the path in DB?
             // The DB stores `file_url`. If it's a full URL, we need to extract the path.
@@ -139,16 +100,12 @@ export default function LessonContent({ id, title, description, videoUrl }: Less
                     </p>
                 </div>
 
-                {/* HERO PLAYER TARGET (Portal) */}
+                {/* SECURE PLAYER INTEGRATION */}
                 {/* 
-                   Constraint: "Hero Mode: Must inherit natural document flow". 
-                   The GlobalVideoPlayer will portal INTO this div. 
-                   We set ref to this div and register it.
+                   Replaces the old "Ghost Player" portal. 
+                   Passes lessonId directly so the player can verify auth & fetch video ID securely.
                 */}
-                <div
-                    ref={heroTargetRef}
-                    className="w-full aspect-video rounded-2xl overflow-hidden bg-black/20 animate-pulse-fast"
-                />
+                <SecureVideoPlayer lessonId={id} title={title} />
 
                 {/* [NEW] Resources Section */}
                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">

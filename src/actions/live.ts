@@ -1,77 +1,109 @@
-'use server';
+"use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { createAdminClient } from "@/utils/supabase/admin";
+import { AccessToken } from 'livekit-server-sdk';
 
-// Helper to verify admin role
-async function requireAdmin() {
+interface SecureLiveSession {
+    authorized: boolean;
+    error?: string;
+    youtubeId?: string;
+    liveToken?: string;
+    isLive?: boolean;
+    title?: string;
+    user?: {
+        name: string;
+        id: string;
+    };
+}
+
+export async function getHybridLiveSession(): Promise<SecureLiveSession> {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
-    return createAdminClient();
-}
 
-export async function toggleLiveStream(data: { isLive: boolean; youtubeId: string; title: string; subject: string }) {
-    try {
-        const admin = await requireAdmin();
+    // 1. Authenticate
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+        return { authorized: false, error: "Authentication required" };
+    }
 
-        // 1. If starting live, ensure no other live session is active? Or just insert new one.
-        // We'll assume one active live session at a time for now.
-        if (data.isLive) {
-            // End any currently live sessions?
-            await admin.from('live_sessions').update({ status: 'ended', ended_at: new Date().toISOString() }).eq('status', 'live');
+    // 2. Authorization (DB Check)
+    // Fetch profile to check subscription status
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('*, subscription_plans(*)')
+        .eq('id', user.id)
+        .single();
 
-            const { error } = await admin.from('live_sessions').insert({
-                title: data.title,
-                youtube_id: data.youtubeId,
-                subject: data.subject,
-                status: 'live',
-                started_at: new Date().toISOString(),
-                viewer_count: 0
+    if (!profile) return { authorized: false, error: "Profile not found" };
+
+    const isAdmin = profile.role === 'admin' || profile.role === 'teacher';
+    const isSubscribed = profile.is_subscribed === true;
+
+    if (!isAdmin && !isSubscribed) {
+        return { authorized: false, error: "Active subscription required" };
+    }
+
+    // 3. Fetch Live Session Data (Securely)
+    // We only fetch if authorized. 
+    // RLS will double-check, but we do it here to return clean errors.
+    const { data: session, error: sessionError } = await supabase
+        .from('live_sessions')
+        .select('*')
+        .or('status.eq.live,status.eq.scheduled')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (sessionError) {
+        console.error("Live fetch error", sessionError);
+        // This might happen if RLS blocks us unpredictably, but we are authorized above.
+        return { authorized: false, error: "Could not fetch session data" };
+    }
+
+    if (!session) {
+        return { authorized: true, isLive: false }; // User is auth'd, but no session active
+    }
+
+    // 4. Generate LiveKit Token (Audio Only)
+    const roomName = "class_room_main"; // Or use session.id if dynamic
+    const participantName = profile.full_name || user.email || "User";
+
+    const apiKey = process.env.LIVEKIT_API_KEY;
+    const apiSecret = process.env.LIVEKIT_API_SECRET;
+
+    let liveToken = "";
+
+    if (apiKey && apiSecret) {
+        try {
+            const at = new AccessToken(apiKey, apiSecret, {
+                identity: user.id,
+                name: participantName,
             });
-            if (error) throw error;
-        } else {
-            // Stop live
-            await admin.from('live_sessions').update({ status: 'ended', ended_at: new Date().toISOString() }).eq('status', 'live');
+
+            at.addGrant({
+                roomJoin: true,
+                room: roomName,
+                canPublish: true, // Audio permission
+                canSubscribe: true,
+                canPublishData: true,
+            });
+
+            liveToken = await at.toJwt();
+        } catch (e) {
+            console.error("LiveKit Token Gen Error", e);
+            // Don't block video if audio fails
         }
-
-        return { success: true };
-    } catch (e) {
-        return { success: false, message: String(e) };
     }
-}
 
-export async function archiveStream(youtubeId: string, title: string, subject: string, type: 'lesson' | 'exercise') {
-    try {
-        const admin = await requireAdmin();
-
-        // 1. End the live session
-        await admin.from('live_sessions')
-            .update({ status: 'ended', ended_at: new Date().toISOString() })
-            .eq('youtube_id', youtubeId);
-
-        // 2. Add to Lessons Library
-        // We need the subject_id. Since we pass 'Physics', 'Math' strings from dashboard, we should lookup ID.
-        // For now, let's assume the passed subject matches the ID or handle mapping.
-        // In database seed, subject IDs are 'math', 'physics', etc (lowercase).
-        const subjectId = subject.toLowerCase();
-
-        const { error } = await admin.from('lessons').insert({
-            id: crypto.randomUUID(),
-            subject_id: subjectId,
-            title: title || "Live Session Archive",
-            duration: "Recorded Live", // Placeholder
-            video_url: youtubeId,
-            type: type
-        });
-
-        if (error) throw error;
-
-        return { success: true };
-    } catch (e) {
-        console.error(e);
-        return { success: false, message: String(e) };
-    }
+    // 5. Return Secure Payload
+    return {
+        authorized: true,
+        youtubeId: session.youtube_id,
+        isLive: session.status === 'live',
+        title: session.title,
+        liveToken,
+        user: {
+            id: user.id,
+            name: participantName
+        }
+    };
 }
