@@ -75,12 +75,13 @@ export async function approvePayment(paymentId: string, userId: string) {
         if (data?.error) throw new Error(data.error);
 
         // 3. Log (Edge Function does not log to admin-logger yet, so we keep this here for Admin Panel Audit)
-        await logAdminAction({
-            adminId: admin.id,
-            action: "APPROVE_PAYMENT",
-            targetId: paymentId,
-            details: { userId, via: "edge-function" }
-        });
+        // 3. Log (Edge Function does not log to admin-logger yet, so we keep this here for Admin Panel Audit)
+        await logAdminAction(
+            "APPROVE_PAYMENT",
+            paymentId,
+            "payment",
+            { userId, via: "edge-function" }
+        );
 
         revalidatePath('/admin/payments');
         return { success: true };
@@ -105,12 +106,13 @@ export async function rejectPayment(paymentId: string, reason: string) {
         if (error) throw error;
 
         // 2. Log
-        await logAdminAction({
-            adminId: admin.id,
-            action: "REJECT_PAYMENT",
-            targetId: paymentId,
-            details: { reason }
-        });
+        // 2. Log
+        await logAdminAction(
+            "REJECT_PAYMENT",
+            paymentId,
+            "payment",
+            { reason }
+        );
 
         revalidatePath('/admin/payments');
         return { success: true };
