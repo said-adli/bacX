@@ -92,6 +92,8 @@ export const getCachedSubjects = unstable_cache(
             return [];
         }
 
+        console.log("[CACHE] getCachedSubjects returned:", data?.length || 0, "subjects");
+
         if (!data) return [];
 
         return data.map((s) => ({
