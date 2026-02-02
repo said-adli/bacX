@@ -50,17 +50,39 @@ export async function getProfileData(userId: string) {
 
 import { unstable_cache } from "next/cache";
 
-export async function getSubjectsData() {
+// NEW: Import Strict DTO
+import { SubjectDTO } from "@/types/subject";
+
+export async function getSubjectsData(): Promise<SubjectDTO[]> {
     return await unstable_cache(
         async () => {
             const supabase = await createClient();
             const { data } = await supabase
                 .from('subjects')
-                .select('*, icon, lessons(id, title, required_plan_id, is_free)') // Fetch access info
+                .select('id, name, icon, description, color, slug, lesson_count, lessons(id, title, required_plan_id, is_free)') // Explicit select
                 .in('name', ['Mathematics', 'Physics', 'الرياضيات', 'الفيزياء']) // Strict Filtering
                 .order('order_index', { ascending: true });
 
-            return data || [];
+            if (!data) return [];
+
+            // Transform Raw DB Response to Strict DTO
+            return data.map((subject: any) => ({
+                id: subject.id,
+                name: subject.name,
+                icon: subject.icon,
+                description: subject.description,
+                color: subject.color,
+                slug: subject.slug || subject.id, // Fallback if slug missing
+                lessonCount: subject.lesson_count || 0,
+                // ... rest mapped below
+                lessons: Array.isArray(subject.lessons)
+                    ? subject.lessons.map((l: any) => ({
+                        id: l.id,
+                        title: l.title
+                    }))
+                    : [],
+                progress: 0 // Default, will be merged later if needed
+            }));
         },
         ['dashboard-subjects-structure'],
         {

@@ -3,16 +3,9 @@
 import Link from "next/link";
 import { Calculator, Zap, Microscope, BookOpen, Feather, Globe, LayoutGrid, ArrowLeft } from "lucide-react";
 
-interface Subject {
-    id: string; // Must be UUID
-    name: string;
-    description?: string;
-    color?: string;
-    unitCount?: number;
-    lessonCount?: number;
-    progress?: number; // NEW: 0-100 percentage
-    [key: string]: any;
-}
+import { SubjectDTO } from "@/types/subject";
+
+// ... (removed local Subject interface)
 
 const getSubjectConfig = (name: string) => {
     const normalized = name.toLowerCase();
@@ -37,7 +30,7 @@ const getSubjectConfig = (name: string) => {
     return { icon: LayoutGrid, color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'group-hover:border-slate-500/30', barColor: 'bg-slate-500' };
 };
 
-export const SubjectCard = ({ subject }: { subject: Subject }) => {
+export const SubjectCard = ({ subject }: { subject: SubjectDTO }) => {
     const config = getSubjectConfig(subject.name);
     const Icon = config.icon;
     const progressValue = subject.progress ?? 0;

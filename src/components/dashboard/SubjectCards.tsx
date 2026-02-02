@@ -1,125 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { SubjectDTO } from "@/types/subject";
 import { SubjectCard } from "./SubjectCard";
-import { Clock, RefreshCw, AlertTriangle } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { getSubjectProgress } from "@/lib/actions/progress";
-
-interface Subject {
-    id: string;
-    name: string;
-    icon: string;
-    description: string;
-    color: string;
-    lessons: { id: string; title: string }[];
-    progress?: number; // NEW: progress percentage
-    [key: string]: any;
-}
-
-// ... imports
+import { Clock } from "lucide-react";
 
 interface SubjectCardsProps {
     query?: string;
-    initialSubjects?: Subject[]; // [NEW] Server data
+    initialSubjects?: SubjectDTO[];
 }
 
 export function SubjectCards({ query, initialSubjects = [] }: SubjectCardsProps) {
-    const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
-    const [loading, setLoading] = useState(!initialSubjects.length);
-    const [error, setError] = useState<string | null>(null);
-
-    // Only fetch if NO initial data (fallback)
-    const fetchSubjects = async (retries = 3, delay = 1000) => {
-        if (initialSubjects.length > 0) return; // Skip if hydrated
-
-        setLoading(true);
-        setError(null);
-        try {
-            const supabase = createClient();
-
-            console.log(`📡 Fetching Subjects... (Attempts left: ${retries})`);
-
-            const { data, error } = await supabase
-                .from('subjects')
-                .select('id, name, icon, description, color, lessons(id, title)')
-                .order('created_at', { ascending: true });
-
-            if (error) throw error;
-
-            const validSubjects = (data || []).filter((s: any) => {
-                const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s.id);
-                if (!isValidUUID) console.warn("⚠️ Skipping Subject with Invalid ID:", s.id, s.name);
-                return isValidUUID;
-            });
-
-            // Fetch progress for each subject
-            const subjectsWithProgress = await Promise.all(
-                validSubjects.map(async (subject: any) => {
-                    try {
-                        const progressData = await getSubjectProgress(subject.id);
-                        return { ...subject, progress: progressData.percentage };
-                    } catch (e) {
-                        console.warn("Failed to fetch progress for", subject.id);
-                        return { ...subject, progress: 0 };
-                    }
-                })
-            );
-
-            setSubjects(subjectsWithProgress);
-            setLoading(false);
-        } catch (err: any) {
-            console.error("Fetch failed", err);
-            if (retries > 0) {
-                console.warn(`⚠️ Retrying in ${delay}ms...`);
-                setTimeout(() => fetchSubjects(retries - 1, delay * 2), delay);
-            } else {
-                setError(err.message || "Failed to load subjects");
-                setLoading(false);
-            }
-        }
-    };
-
-    useEffect(() => {
-        fetchSubjects();
-    }, []);
-
-    // Filter Logic (Client Side)
-    const filteredSubjects = subjects.filter((s) => {
+    // Filter Logic (Client Side) based on props
+    const filteredSubjects = initialSubjects.filter((s) => {
         if (!query) return true;
         const q = query.toLowerCase();
         const matchesSubject = s.name.toLowerCase().includes(q);
-        const matchesLesson = s.lessons?.some((l: any) => l.title.toLowerCase().includes(q));
+        const matchesLesson = s.lessons?.some((l) => l.title.toLowerCase().includes(q));
         return matchesSubject || matchesLesson;
     });
-
-    if (loading) {
-        return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
-                {[1, 2].map((i) => (
-                    <div key={i} className="h-52 rounded-2xl bg-white/5 border border-white/5" />
-                ))}
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <GlassCard className="p-8 text-center border-red-500/20 max-w-md mx-auto">
-                <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">تعذر تحميل المواد</h3>
-                <p className="text-white/60 mb-6">{error}</p>
-                <button
-                    onClick={() => fetchSubjects()}
-                    className="flex items-center gap-2 px-6 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg mx-auto transition-colors"
-                >
-                    <RefreshCw size={16} />
-                    إعادة المحاولة
-                </button>
-            </GlassCard>
-        );
-    }
 
     if (filteredSubjects.length === 0) {
         return (

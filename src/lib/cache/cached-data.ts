@@ -65,13 +65,26 @@ export interface CachedAnnouncement {
  * Get all subjects - CACHED for 1 hour, revalidated on admin mutation.
  * Uses admin client (stateless, no cookies).
  */
+// NEW: Import Strict DTO
+import { SubjectDTO } from "@/types/subject";
+
+// ... (imports)
+
+// remove local CachedSubject interface if generic, or keep for internal use but mapped to DTO
+// For simplicity, we will use SubjectDTO as the return type.
+
+/**
+ * Get all subjects - CACHED for 1 hour, revalidated on admin mutation.
+ * Uses admin client (stateless, no cookies).
+ */
 export const getCachedSubjects = unstable_cache(
-    async (): Promise<CachedSubject[]> => {
+    async (): Promise<SubjectDTO[]> => {
         const supabase = createAdminClient();
 
         const { data, error } = await supabase
             .from("subjects")
-            .select("id, name, icon, description, lesson_count")
+            // Fetch lessons for search functionality
+            .select("id, name, icon, description, lesson_count, slug, color, lessons(id, title)")
             .order("created_at", { ascending: true });
 
         if (error) {
@@ -83,11 +96,18 @@ export const getCachedSubjects = unstable_cache(
 
         return data.map((s) => ({
             id: s.id,
-            title: s.name,
-            slug: s.id,
-            image: s.icon || "",
-            lessonCount: s.lesson_count || 0,
+            name: s.name,
+            // Map icon -> icon (SubjectDTO expects icon, legacy cached had image)
+            icon: s.icon || null,
             description: s.description,
+            color: s.color || null,
+            slug: s.slug || s.id,
+            lessonCount: s.lesson_count || 0,
+            lessons: Array.isArray(s.lessons)
+                ? s.lessons.map((l: any) => ({ id: l.id, title: l.title }))
+                : [],
+            // Calculate progress later or return default
+            progress: 0
         }));
     },
     ["subjects-list"],
