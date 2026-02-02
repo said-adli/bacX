@@ -33,7 +33,7 @@ export async function bulkBroadcast(userIds: string[], message: string, title: s
 
     if (error) {
         // Fallback: If no notifications table, maybe we just log it to security_logs
-        console.warn("Notifications table missing or error, logging to security_logs", error);
+        // Notifications table missing or error
 
         await supabaseAdmin.from('security_logs').insert({
             user_id: user.id, // Admin

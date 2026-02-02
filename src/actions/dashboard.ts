@@ -49,6 +49,7 @@ export async function getProfileData(userId: string) {
 }
 
 import { unstable_cache } from "next/cache";
+import { RANK_SYSTEM } from "@/lib/constants";
 
 // NEW: Import Strict DTO
 import { SubjectDTO } from "@/types/subject";
@@ -137,9 +138,13 @@ export async function getStatsData() {
     // 3. Rank (Dynamic Tier System based on progress)
     // Calculated based on verified completed lessons.
     const completedCount = progress?.length || 0;
-    let rank = "مبتدئ"; // Novice
-    if (completedCount > 10) rank = "مجتهد"; // Intermediate
-    if (completedCount > 50) rank = "نخبة"; // Elite
+
+    let rank = RANK_SYSTEM.NOVICE.LABEL;
+    if (completedCount >= RANK_SYSTEM.ELITE.THRESHOLD) {
+        rank = RANK_SYSTEM.ELITE.LABEL;
+    } else if (completedCount >= RANK_SYSTEM.INTERMEDIATE.THRESHOLD) {
+        rank = RANK_SYSTEM.INTERMEDIATE.LABEL;
+    }
 
     return {
         courses: coursesCount || 0,

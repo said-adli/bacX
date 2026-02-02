@@ -182,6 +182,6 @@ export function createRateLimitResponse(result: RateLimitResult): Response {
  * Log when Upstash is not configured (for debugging)
  */
 if (!redis) {
-    console.warn('[RATE LIMIT] Upstash Redis not configured. Using in-memory fallback.');
-    console.warn('[RATE LIMIT] Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for distributed rate limiting.');
+    // Upstash Redis not configured. Using in-memory fallback.
+    // Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for distributed rate limiting.
 }

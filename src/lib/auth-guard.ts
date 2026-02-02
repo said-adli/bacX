@@ -19,7 +19,7 @@ export async function requireAdmin() {
         .single();
 
     if (profile?.role !== 'admin') {
-        console.warn(`[SECURITY] Unauthorized Admin Access Attempt by ${user.id}`);
+        // Unauthorized access attempt
         throw new Error("Forbidden: Admin Access Required");
     }
 

@@ -77,7 +77,7 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
                 if (mounted && data.videoId) setDecodedId(data.videoId);
                 else setDecodedId("invalid_token");
             } catch (e) {
-                console.warn("Decryption failed, using fallback");
+                // Decryption failed, using fallback
                 if (mounted) setDecodedId("M7lc1UVf-VE");
             }
         }

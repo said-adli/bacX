@@ -40,7 +40,7 @@ export async function validateFile(file: File): Promise<{ valid: boolean; error?
         }
 
         if (!validHeader) {
-            console.warn(`Magic Byte Mismatch. Header: ${headerHex}, Claimed: ${file.type}`);
+            // Fail silently or handle error
             return { valid: false, error: 'File integrity check failed. Invalid format.' };
         }
 

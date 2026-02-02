@@ -110,7 +110,7 @@ export function AuthProvider({
                 promises.push(
                     supabase.from('majors').select('label').eq('id', profile.major_id).single()
                         .then(({ data }: { data: any }) => { if (data) majorName = data.label; })
-                        .catch((err: any) => console.warn("⚠️ Failed to fetch major:", err))
+                        .catch((err: any) => { })
                 );
             }
 
@@ -118,7 +118,7 @@ export function AuthProvider({
                 promises.push(
                     supabase.from('wilayas').select('full_label').eq('id', profile.wilaya_id).single()
                         .then(({ data }: { data: any }) => { if (data) wilayaName = data.full_label; })
-                        .catch((err: any) => console.warn("⚠️ Failed to fetch wilaya:", err))
+                        .catch((err: any) => { })
                 );
             }
 
@@ -126,7 +126,7 @@ export function AuthProvider({
                 promises.push(
                     supabase.from('subscription_plans').select('name').eq('id', profile.plan_id).single()
                         .then(({ data }: { data: any }) => { if (data) planName = data.name; })
-                        .catch((err: any) => console.warn("⚠️ Failed to fetch plan:", err))
+                        .catch((err: any) => { })
                 );
             }
 

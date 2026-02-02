@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     );
 
     if (!rateLimitResult.success) {
-        console.warn(`[RATE LIMIT] Video decrypt blocked for IP: ${clientIp}`);
+        // Video decrypt blocked
         return createRateLimitResponse(rateLimitResult);
     }
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
         // P0 FIX: Verify Lesson Context
         if (!lessonId) {
-            console.warn(`[SECURITY] Blocked decrypt attempt without lessonId by ${user.email}`);
+            // Blocked decrypt attempt
             return NextResponse.json({ error: 'Invalid context' }, { status: 400 });
         }
 
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
         // Client sends: SALT + DATA + SALT (Base64)
         const decodedString = Buffer.from(encodedId, 'base64').toString('utf-8');
         if (!decodedString.startsWith(SERVER_SALT) || !decodedString.endsWith(SERVER_SALT)) {
-            console.warn(`[SECURITY] Salt mismatch ${user.email}`);
+            // Salt mismatch
             return NextResponse.json({ error: 'Integrity failed' }, { status: 403 });
         }
 
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
             .single();
 
         if (!lesson) {
-            console.warn(`[SECURITY] Lesson ${lessonId} not found.`);
+            // Lesson not found
             return NextResponse.json({ error: 'Content not found' }, { status: 404 });
         }
 
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
         }
 
         if (!hasAccess) {
-            console.warn(`[SECURITY] Denied access to lesson ${lessonId} for user ${user.email}`);
+            // Denied access
             return NextResponse.json({ error: 'Subscription required' }, { status: 403 });
         }
 

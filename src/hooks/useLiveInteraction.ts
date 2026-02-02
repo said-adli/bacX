@@ -94,7 +94,7 @@ export const useLiveInteraction = () => {
         // THROTTLE: 500ms
         const now = Date.now();
         if (now - lastMessageTimeRef.current < 500) {
-            console.warn("Chat throttled");
+            // Chat throttled
             return;
         }
         lastMessageTimeRef.current = now;
