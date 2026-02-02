@@ -83,9 +83,13 @@ export const getCachedSubjects = unstable_cache(
 
         const { data, error } = await supabase
             .from("subjects")
-            // Fetch lessons for search functionality
-            .select("id, name, icon, description, lesson_count, slug, color, lessons(id, title)")
+            // Match ACTUAL DB schema: id, name, slug, is_active, icon, description
+            .select("id, name, slug, is_active, icon, description, lessons(id, title)")
+            .eq("is_active", true) // Only fetch active subjects
             .order("created_at", { ascending: true });
+
+        // DEBUG: Log fetched data
+        console.log("[CACHE] Fetched subjects data:", JSON.stringify(data, null, 2));
 
         if (error) {
             console.error("[CACHE] Failed to fetch subjects:", error.message);
@@ -99,16 +103,14 @@ export const getCachedSubjects = unstable_cache(
         return data.map((s) => ({
             id: s.id,
             name: s.name,
-            // Map icon -> icon (SubjectDTO expects icon, legacy cached had image)
             icon: s.icon || null,
             description: s.description,
-            color: s.color || null,
+            color: null, // Not in DB schema
             slug: s.slug || s.id,
-            lessonCount: s.lesson_count || 0,
+            lessonCount: s.lessons?.length || 0, // Derive from lessons array
             lessons: Array.isArray(s.lessons)
                 ? s.lessons.map((l: any) => ({ id: l.id, title: l.title }))
                 : [],
-            // Calculate progress later or return default
             progress: 0
         }));
     },
