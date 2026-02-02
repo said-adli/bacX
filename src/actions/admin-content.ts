@@ -6,35 +6,16 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth-guard";
 import { revalidateSubjects, revalidateLessons, revalidateCurriculum } from "@/lib/cache/revalidate";
 
-// TYPES
-export interface Subject {
-    id: string;
-    name: string;
-    published: boolean; // [NEW]
-    units?: Unit[];
-}
+// TYPES - Centralized DTOs
+import { SubjectWithUnitsDTO, UnitDTO, LessonDTO } from "@/types/curriculum";
 
-export interface Unit {
-    id: string;
-    title: string;
-    subject_id: string;
-    lessons?: Lesson[];
-}
-
-export interface Lesson {
-    id: string;
-    title: string;
-    unit_id: string;
-    type: 'video' | 'live_stream' | 'pdf';
-    video_url?: string;
-    required_plan_id?: string | null; // Granular Access
-    is_public?: boolean;
-    attachments?: any[]; // JSONB
-    created_at: string;
-}
+// Re-export for consumers that import from this file
+export type Subject = SubjectWithUnitsDTO;
+export type Unit = UnitDTO;
+export type Lesson = LessonDTO;
 
 // FETCH TREE (Hierarchy)
-export async function getContentTree() {
+export async function getContentTree(): Promise<SubjectWithUnitsDTO[]> {
     await requireAdmin();
     const supabase = await createClient();
 
@@ -46,28 +27,55 @@ export async function getContentTree() {
             id, 
             name,
             published,
+            order_index,
             units (
                 id, 
                 title, 
                 subject_id,
+                order_index,
                 lessons (
                     id, 
                     title, 
                     type, 
                     required_plan_id,
+                    order_index,
                     created_at
                 )
             )
         `)
-        .order('created_at', { ascending: true })
-        .order('order_index', { ascending: true }) // Primary sort
-        .order('created_at', { ascending: true }); // Fallback
+        .order('order_index', { ascending: true })
+        .order('created_at', { ascending: true });
 
     if (error) {
         console.error("Tree fetch error:", error);
         return [];
     }
-    return data as any[]; // Type simplified for speed
+
+    // Transform to strict DTO
+    return (data || []).map((subject: any) => ({
+        id: subject.id,
+        name: subject.name,
+        published: subject.published ?? false,
+        order_index: subject.order_index,
+        units: (subject.units || [])
+            .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
+            .map((unit: any) => ({
+                id: unit.id,
+                title: unit.title,
+                subject_id: unit.subject_id,
+                order_index: unit.order_index,
+                lessons: (unit.lessons || [])
+                    .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
+                    .map((lesson: any) => ({
+                        id: lesson.id,
+                        title: lesson.title,
+                        type: lesson.type,
+                        required_plan_id: lesson.required_plan_id,
+                        order_index: lesson.order_index,
+                        created_at: lesson.created_at
+                    }))
+            }))
+    }));
 }
 
 // createSubject

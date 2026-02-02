@@ -3,12 +3,11 @@
 import { useState, useEffect } from "react";
 import { Folder, FileVideo, Plus, Trash2, ChevronRight, ChevronDown, Lock as LockIcon, GripVertical } from "lucide-react";
 import {
-    Subject,
-    Lesson,
     createUnit,
     deleteUnit,
     deleteLesson
 } from "@/actions/admin-content";
+import { SubjectWithUnitsDTO, UnitDTO, LessonDTO } from "@/types/curriculum";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import ContentEditor from "@/components/admin/content/ContentEditor";
@@ -19,16 +18,16 @@ import { reorderItems } from "@/actions/reorder";
 import { StatusToggle } from "@/components/admin/shared/StatusToggle";
 
 interface ContentTreeProps {
-    subjects: Subject[];
+    subjects: SubjectWithUnitsDTO[];
     activePlans: SubscriptionPlan[];
 }
 
 export default function ContentTree({ subjects: initialSubjects, activePlans }: ContentTreeProps) {
-    const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
+    const [subjects, setSubjects] = useState<SubjectWithUnitsDTO[]>(initialSubjects);
     const [expandedUnits, setExpandedUnits] = useState<Record<string, boolean>>({});
     const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
     const [isCreatingLesson, setIsCreatingLesson] = useState<{ unitId: string } | null>(null);
-    const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null); // For editor
+    const [selectedLesson, setSelectedLesson] = useState<LessonDTO | null>(null); // For editor
 
     // Sync props to state (for initial load and checks, though mostly local mutation matters for drag)
     useEffect(() => {
@@ -36,7 +35,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
     }, [initialSubjects]);
 
     // Reorder Handlers
-    const handleReorderSubjects = async (newSubjects: Subject[]) => {
+    const handleReorderSubjects = async (newSubjects: SubjectWithUnitsDTO[]) => {
         setSubjects(newSubjects); // Optimistic
         try {
             await reorderItems("subjects", newSubjects.map(s => s.id));
@@ -46,13 +45,13 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
         }
     };
 
-    const handleReorderLessons = async (subjectId: string, unitId: string, newLessons: Lesson[]) => {
+    const handleReorderLessons = async (subjectId: string, unitId: string, newLessons: LessonDTO[]) => {
         // Find subject and unit to update locally
         const newSubjects = subjects.map(sub => {
             if (sub.id !== subjectId) return sub;
             return {
                 ...sub,
-                units: sub.units?.map(unit => {
+                units: sub.units?.map((unit: UnitDTO) => {
                     if (unit.id !== unitId) return unit;
                     return { ...unit, lessons: newLessons };
                 })
@@ -108,7 +107,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
         }
     };
 
-    const openEditor = (unitId: string, lesson?: Lesson) => {
+    const openEditor = (unitId: string, lesson?: LessonDTO) => {
         setIsCreatingLesson({ unitId });
         setSelectedLesson(lesson || null);
     };
@@ -146,7 +145,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
                                                 table="subjects"
                                                 id={subject.id}
                                                 field="published"
-                                                initialValue={subject.published}
+                                                initialValue={subject.published ?? false}
                                                 labelActive="PUB"
                                                 labelInactive="DRAFT"
                                             />
@@ -161,7 +160,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
                                     </div>
 
                                     <div className="pl-4 space-y-2 border-l-2 border-white/5 ml-4">
-                                        {subject.units?.map(unit => (
+                                        {subject.units?.map((unit: UnitDTO) => (
                                             <div key={unit.id} className="space-y-1">
                                                 <div
                                                     className="flex items-center gap-2 text-zinc-300 hover:text-white p-2 rounded-lg hover:bg-white/5 cursor-pointer group"
