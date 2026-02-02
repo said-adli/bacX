@@ -139,7 +139,8 @@ export async function getStatsData() {
     // Calculated based on verified completed lessons.
     const completedCount = progress?.length || 0;
 
-    let rank = RANK_SYSTEM.NOVICE.LABEL;
+    type RankLabel = typeof RANK_SYSTEM[keyof typeof RANK_SYSTEM]['LABEL'];
+    let rank: RankLabel = RANK_SYSTEM.NOVICE.LABEL;
     if (completedCount >= RANK_SYSTEM.ELITE.THRESHOLD) {
         rank = RANK_SYSTEM.ELITE.LABEL;
     } else if (completedCount >= RANK_SYSTEM.INTERMEDIATE.THRESHOLD) {
