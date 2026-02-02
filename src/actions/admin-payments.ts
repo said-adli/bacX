@@ -71,42 +71,17 @@ export async function getPendingPayments() {
 // Approve Payment (STRICT MODE & SECURED)
 export async function approvePayment(requestId: string, userId: string, planId: string) {
     // 1. Enforce Admin
-    const { supabase } = await requireAdmin();
+    const { supabase, user } = await requireAdmin();
 
-    // 2. Validate Inputs
-    if (!planId || planId === 'default') {
-        throw new Error("Validation Failed: specific plan_id required.");
-    }
+    // 2. Atomic Transaction via RPC
+    const { error } = await supabase.rpc('approve_payment_transaction', {
+        p_request_id: requestId,
+        p_admin_id: user.id
+    });
 
-    // 3. Update Request Status (Admin Only via RLS + Code)
-    const { error: updateError } = await supabase
-        .from('payment_requests')
-        .update({ status: 'approved' })
-        .eq('id', requestId);
-
-    if (updateError) throw new Error(`Failed to update request: ${updateError.message}`);
-
-    // 4. Grant Access (Profile Update)
-    const { data: planData } = await supabase
-        .from('subscription_plans')
-        .select('duration_days')
-        .eq('id', planId)
-        .single();
-
-    const durationDays = planData?.duration_days || 30;
-
-    const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-            is_subscribed: true,
-            plan_id: planId,
-            subscription_end_date: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString()
-        })
-        .eq('id', userId);
-
-    if (profileError) {
-        console.error("CRITICAL: Profile sync failed after approval", profileError);
-        throw new Error("Profile Update Failed: " + profileError.message);
+    if (error) {
+        console.error("Payment approval transaction failed", error);
+        throw new Error('Transaction failed: ' + error.message);
     }
 
     revalidatePath('/admin/payments');
