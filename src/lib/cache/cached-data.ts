@@ -192,34 +192,51 @@ export async function getCachedLessonsForSubject(subjectId: string): Promise<Cac
  */
 export const getCachedAnnouncements = unstable_cache(
     async (limit: number = 5): Promise<CachedAnnouncement[]> => {
-        const supabase = createAdminClient();
+        try {
+            const supabase = createAdminClient();
 
-        const { data, error } = await supabase
-            .from("announcements")
-            .select("id, title, content, created_at, is_active")
-            .eq("is_active", true)
-            .order("created_at", { ascending: false })
-            .limit(limit);
+            console.log("[CACHE] Starting announcements query...");
 
-        if (error) {
-            console.error("[CACHE] Failed to fetch announcements:", error.message);
+            const { data, error } = await supabase
+                .from("announcements")
+                // FIXED: Removed 'title' - column doesn't exist in DB
+                .select("id, content, created_at, is_active")
+                .eq("is_active", true)
+                .order("created_at", { ascending: false })
+                .limit(limit);
+
+            if (error) {
+                console.error("[CACHE] Failed to fetch announcements:", JSON.stringify({
+                    message: error.message,
+                    code: error.code,
+                    details: error.details,
+                }, null, 2));
+                return [];
+            }
+
+            console.log("[CACHE] getCachedAnnouncements returned:", data?.length || 0, "announcements");
+
+            if (!data) return [];
+
+            return data.map((a) => ({
+                id: a.id,
+                title: null, // DB doesn't have title column
+                content: a.content,
+                createdAt: a.created_at,
+                isActive: a.is_active,
+            }));
+        } catch (err: any) {
+            console.error("[CACHE] CRITICAL ERROR in getCachedAnnouncements:", {
+                name: err?.name,
+                message: err?.message,
+            });
             return [];
         }
-
-        if (!data) return [];
-
-        return data.map((a) => ({
-            id: a.id,
-            title: a.title,
-            content: a.content,
-            createdAt: a.created_at,
-            isActive: a.is_active,
-        }));
     },
     ["announcements-active"],
     {
         tags: [CACHE_TAGS.ANNOUNCEMENTS],
-        revalidate: 1800, // 30 minutes fallback
+        revalidate: 1800,
     }
 );
 
