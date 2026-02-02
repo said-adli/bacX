@@ -48,15 +48,26 @@ export async function getProfileData(userId: string) {
     return data;
 }
 
-export async function getSubjectsData() {
-    const supabase = await createClient();
-    const { data } = await supabase
-        .from('subjects')
-        .select('*, icon, lessons(id, title, required_plan_id, is_free)') // Fetch access info
-        .in('name', ['Mathematics', 'Physics', 'الرياضيات', 'الفيزياء']) // Strict Filtering
-        .order('order_index', { ascending: true });
+import { unstable_cache } from "next/cache";
 
-    return data || [];
+export async function getSubjectsData() {
+    return await unstable_cache(
+        async () => {
+            const supabase = await createClient();
+            const { data } = await supabase
+                .from('subjects')
+                .select('*, icon, lessons(id, title, required_plan_id, is_free)') // Fetch access info
+                .in('name', ['Mathematics', 'Physics', 'الرياضيات', 'الفيزياء']) // Strict Filtering
+                .order('order_index', { ascending: true });
+
+            return data || [];
+        },
+        ['dashboard-subjects-structure'],
+        {
+            revalidate: 3600, // Cache for 1 hour (or until manually purged)
+            tags: ['dashboard-structure']
+        }
+    )();
 }
 
 // Helper to parse duration string "MM:SS" or "HH:MM:SS" to minutes

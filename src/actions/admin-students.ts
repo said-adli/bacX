@@ -272,29 +272,25 @@ export async function bulkUpdateStudents(
     // 1. Verify Admin
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
+    
+    // Security: Explicitly check for admin role
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (profile?.role !== 'admin') throw new Error("Forbidden");
 
     // 2. Perform Actions
     if (action === 'ban' || action === 'unban') {
-        const shouldBan = action === 'ban';
+        const isBanned = action === 'ban';
+        
+        // RPC replaces the N+1 Loop + Profile Update
+        const { error } = await supabaseAdmin.rpc('bulk_update_profiles', {
+            student_ids: userIds,
+            new_status: isBanned
+        });
 
-        // Update Profiles
-        const { error } = await supabaseAdmin
-            .from('profiles')
-            .update({ is_banned: shouldBan } as any)
-            .in('id', userIds);
-
-        if (error) throw error;
-
-        // Update Auth (Loop needed for admin API usually, or parallel promises)
-        // Optimization: We can't batch update auth users easily with one query.
-        await Promise.all(userIds.map(async (uid) => {
-            if (shouldBan) {
-                await supabaseAdmin.auth.admin.updateUserById(uid, { ban_duration: "876000h" });
-                await supabaseAdmin.auth.admin.signOut(uid);
-            } else {
-                await supabaseAdmin.auth.admin.updateUserById(uid, { ban_duration: "0" });
-            }
-        }));
+        if (error) {
+            console.error("Bulk action failed:", error);
+            throw new Error(`Failed to ${action} students`);
+        }
 
     } else if (action === 'expire') {
         const { error } = await supabaseAdmin
