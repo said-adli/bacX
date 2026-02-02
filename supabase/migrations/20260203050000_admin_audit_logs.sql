@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.admin_audit_logs (
 ALTER TABLE public.admin_audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Only Admins can INSERT
+DROP POLICY IF EXISTS "Admins can insert logs" ON public.admin_audit_logs;
 CREATE POLICY "Admins can insert logs"
     ON public.admin_audit_logs FOR INSERT
     WITH CHECK (
@@ -28,6 +29,7 @@ CREATE POLICY "Admins can insert logs"
     );
 
 -- Policy: Only Admins can SELECT (Read Logs)
+DROP POLICY IF EXISTS "Admins can view logs" ON public.admin_audit_logs;
 CREATE POLICY "Admins can view logs"
     ON public.admin_audit_logs FOR SELECT
     USING (

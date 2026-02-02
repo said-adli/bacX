@@ -1,7 +1,11 @@
 -- Create Coupons Table
-create type discount_type as enum ('percent', 'fixed');
+DO $$ BEGIN
+    CREATE TYPE discount_type AS ENUM ('percent', 'fixed');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
-create table public.coupons (
+create table if not exists public.coupons (
     id uuid default gen_random_uuid() primary key,
     code text not null unique,
     discount_type discount_type not null,
@@ -17,6 +21,7 @@ create table public.coupons (
 alter table public.coupons enable row level security;
 
 -- Admin: Full Access
+drop policy if exists "Admins can manage coupons" on public.coupons;
 create policy "Admins can manage coupons"
 on public.coupons
 for all
@@ -27,6 +32,8 @@ using (
 -- Public/User: Read Only (For validation)
 -- Note: Exposing full list is dangerous. Ideally we should restrict this, 
 -- but explicit request was "User read". We can limit to valid coupons?
+-- Public/User: Read Only (For validation)
+drop policy if exists "Users can read coupons" on public.coupons;
 create policy "Users can read coupons"
 on public.coupons
 for select
