@@ -12,6 +12,7 @@ import { RaiseHandButton } from "@/components/live/RaiseHandButton";
 import { LiveChat } from "@/components/live/LiveChat";
 import { useLiveStatus } from "@/hooks/useLiveStatus";
 import LiveSessionSkeleton from "@/components/ui/skeletons/LiveSessionSkeleton";
+import LiveKitAudioInteraction from "@/components/live/LiveKitAudioInteraction";
 
 export default function LiveSessionsPage() {
     const { profile } = useAuth();
@@ -142,6 +143,27 @@ export default function LiveSessionsPage() {
                     onClick={status === 'live' || status === 'waiting' ? endCall : raiseHand}
                     currentSpeakerName={currentSpeaker?.user_name}
                 />
+            )}
+
+            {/* LIVEKIT AUDIO HANDLE (For Student who is Speaking) */}
+            {status === 'live' && currentSpeaker?.user_id === profile?.id && (
+                <div className="fixed bottom-4 left-4 z-50 animate-in slide-in-from-bottom-10 fade-in">
+                    <div className="bg-green-500/10 border border-green-500/50 backdrop-blur-md p-4 rounded-2xl shadow-2xl flex items-center gap-4">
+                        <div className="relative">
+                            <span className="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-75"></span>
+                            <div className="relative w-3 h-3 bg-green-500 rounded-full"></div>
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-white text-sm">You are Live!</h4>
+                            <p className="text-xs text-green-400">Your microphone is on</p>
+                        </div>
+                        <LiveKitAudioInteraction
+                            roomName="class_room_main"
+                            userName={profile?.full_name || "Student"}
+                            onDisconnected={endCall}
+                        />
+                    </div>
+                </div>
             )}
         </div>
     );

@@ -11,7 +11,8 @@ import {
     Layers,
     Settings,
     LogOut,
-    ShieldAlert
+    ShieldAlert,
+    Radio
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { createClient } from "@/utils/supabase/client";
@@ -22,6 +23,7 @@ export function AdminSidebar() {
     const router = useRouter();
 
     const links = [
+        { name: "Live Room", href: "/admin/live", icon: Radio },
         { name: "Dashboard", href: "/admin", icon: BarChart3 },
         { name: "Students", href: "/admin/students", icon: Users },
         { name: "Payments", href: "/admin/payments", icon: Receipt },

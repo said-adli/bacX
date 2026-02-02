@@ -1,7 +1,6 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/context/AuthContext';
-import Peer from 'peerjs';
 
 export type InteractionStatus = 'waiting' | 'live' | 'ended' | 'idle';
 
@@ -11,7 +10,7 @@ export interface LiveInteraction {
     user_name: string;
     user_avatar?: string;
     status: InteractionStatus;
-    peer_id: string;
+    peer_id: string; // Kept for DB schema compatibility, but unused for audio
     created_at: string;
 }
 
@@ -32,85 +31,16 @@ export const useLiveInteraction = () => {
     // State
     const [status, setStatus] = useState<InteractionStatus>('idle');
     const [queue, setQueue] = useState<LiveInteraction[]>([]);
-    const [messages, setMessages] = useState<ChatMessage[]>([]); // Chat managed here now
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [currentSpeaker, setCurrentSpeaker] = useState<LiveInteraction | null>(null);
-    const [peerId, setPeerId] = useState<string | null>(null);
-    const [connectionError, setConnectionError] = useState<string | null>(null);
-    const [isMuted, setIsMuted] = useState(false);
 
     // Refs
-    const peerRef = useRef<Peer | null>(null);
-    const localStreamRef = useRef<MediaStream | null>(null);
-    const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
-    const activeCallRef = useRef<any>(null);
     const lastMessageTimeRef = useRef<number>(0);
-    const channelRef = useRef<any>(null); // Keep reference to channel
+    const channelRef = useRef<any>(null);
 
-    // Initialize Audio Element
-    useEffect(() => {
-        remoteAudioRef.current = new Audio();
-    }, []);
-
-    // 1. Initialize PeerJS
-    useEffect(() => {
-        if (!user || typeof window === 'undefined') return;
-
-        const peer = new Peer(user.id, {
-            debug: 2,
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:global.stun.twilio.com:3478' }
-                ]
-            }
-        });
-
-        peer.on('open', (id) => {
-            setPeerId(id);
-            setConnectionError(null);
-        });
-
-        peer.on('error', (err) => {
-            console.error('PeerJS Error:', err);
-            setConnectionError('Voice server connection failed.');
-        });
-
-        peer.on('call', async (call) => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                localStreamRef.current = stream;
-                call.answer(stream);
-                activeCallRef.current = call;
-                setStatus('live');
-
-                call.on('stream', (remoteStream) => {
-                    if (remoteAudioRef.current) {
-                        remoteAudioRef.current.srcObject = remoteStream;
-                        remoteAudioRef.current.play().catch(e => console.error("Error playing remote audio", e));
-                    }
-                });
-
-                call.on('close', () => { handleEndCallCleanup(); });
-            } catch (err) {
-                console.error('Failed to get local stream', err);
-                setConnectionError('Could not access microphone.');
-            }
-        });
-
-        peerRef.current = peer;
-
-        return () => {
-            peer.destroy();
-            if (localStreamRef.current) {
-                localStreamRef.current.getTracks().forEach(track => track.stop());
-            }
-        };
-    }, [user]);
-
-    // 2. Realtime Subscription (DB Hands + Broadcast Chat)
+    // 1. Realtime Subscription (DB Hands + Broadcast Chat)
     useEffect(() => {
         const client = createClient();
-        const isAdmin = profile?.role === 'admin';
 
         // Fetch Initial Queue (DB)
         const fetchQueue = async () => {
@@ -197,7 +127,7 @@ export const useLiveInteraction = () => {
             await supabase.from('live_interactions').insert({
                 user_id: user.id,
                 user_name: profile?.full_name || 'Anonymous',
-                peer_id: user.id,
+                peer_id: 'livekit', // Placeholder
                 status: 'waiting'
             });
         } catch (error) {
@@ -218,72 +148,37 @@ export const useLiveInteraction = () => {
     }
 
     const acceptStudent = async (studentInteraction: LiveInteraction) => {
-        if (!peerRef.current) return;
         try {
+            // Just update DB. The LiveKit component will react to the status change.
             await supabase.from('live_interactions').update({ status: 'live' }).eq('id', studentInteraction.id);
-            let stream;
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                localStreamRef.current = stream;
-            } catch (e) { console.warn("No mic", e); }
-
-            const call = peerRef.current.call(studentInteraction.peer_id, stream!);
-            activeCallRef.current = call;
             setCurrentSpeaker(studentInteraction);
-
-            call.on('stream', (studentStream) => {
-                if (remoteAudioRef.current) {
-                    remoteAudioRef.current.srcObject = studentStream;
-                    remoteAudioRef.current.play();
-                }
-            });
-            call.on('close', () => setCurrentSpeaker(null));
         } catch (e) { console.error("Error accepting", e); }
     };
 
     const endCall = async () => {
-        if (activeCallRef.current) {
-            activeCallRef.current.close();
-            activeCallRef.current = null;
-        }
-        handleEndCallCleanup();
-
+        // 1. Cleanup DB
         if (currentSpeaker) {
             await supabase.from('live_interactions').update({ status: 'ended' }).eq('id', currentSpeaker.id);
         } else if (status === 'waiting' && user) {
             await supabase.from('live_interactions').update({ status: 'ended' }).eq('user_id', user.id).eq('status', 'waiting');
+        } else if (status === 'live' && user) {
+            // If I am the student ending the call
+            await supabase.from('live_interactions').update({ status: 'ended' }).eq('user_id', user.id).eq('status', 'live');
         }
-    };
 
-    const handleEndCallCleanup = () => {
-        if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach(track => track.stop());
-            localStreamRef.current = null;
-        }
         setStatus('idle');
         setCurrentSpeaker(null);
-    };
-
-    const toggleMute = () => {
-        if (localStreamRef.current) {
-            localStreamRef.current.getAudioTracks().forEach(track => { track.enabled = !isMuted; });
-            setIsMuted(!isMuted);
-        }
     };
 
     return {
         status,
         queue,
-        messages, // Exported messages
-        sendMessage, // Exported action
+        messages,
+        sendMessage,
         currentSpeaker,
         raiseHand,
         acceptStudent,
-        lowerAllHands, // Exported Admin Action
+        lowerAllHands,
         endCall,
-        toggleMute,
-        isMuted,
-        peerId,
-        connectionError
     };
 };
