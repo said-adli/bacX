@@ -16,6 +16,7 @@ import { SubscriptionPlan } from "@/actions/admin-plans";
 import { SortableList } from "@/components/ui/SortableList";
 import { SortableItem, DragHandle } from "@/components/ui/SortableItem";
 import { reorderItems } from "@/actions/reorder";
+import { StatusToggle } from "@/components/admin/shared/StatusToggle";
 
 interface ContentTreeProps {
     subjects: Subject[];
