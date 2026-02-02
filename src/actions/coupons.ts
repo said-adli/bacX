@@ -140,3 +140,28 @@ export async function incrementCouponUsage(code: string) {
     const { error } = await adminClient.rpc('increment_coupon_usage', { coupon_code: code });
     if (error) console.error("Failed to increment coupon:", error);
 }
+
+/**
+ * Fetch all coupons (Admin only)
+ */
+export async function getCoupons() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (profile?.role !== 'admin') throw new Error("Forbidden");
+
+    const adminClient = createAdminClient();
+    const { data, error } = await adminClient
+        .from('coupons')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("Error fetching coupons:", error);
+        throw new Error("Failed to fetch coupons");
+    }
+
+    return data as Coupon[];
+}

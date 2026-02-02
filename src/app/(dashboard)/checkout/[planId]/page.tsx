@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { Copy, Check, UploadCloud, ChevronRight, CreditCard, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Copy, Check, UploadCloud, ChevronRight, CreditCard, ShieldCheck, AlertTriangle, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -22,6 +22,39 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
     const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
     const [loadingPlan, setLoadingPlan] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Coupon State
+    const [couponCode, setCouponCode] = useState("");
+    const [validatingCoupon, setValidatingCoupon] = useState(false);
+    const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number; finalPrice: number } | null>(null);
+
+    const handleApplyCoupon = async () => {
+        if (!couponCode || !plan) return;
+        setValidatingCoupon(true);
+        try {
+            // Dynamically import to avoid server-action issues if mixed
+            const { validateCoupon } = await import("@/actions/coupons");
+            const price = plan.discount_price || plan.price;
+            const result = await validateCoupon(couponCode, price);
+
+            if (result.valid) {
+                setAppliedCoupon({
+                    code: couponCode,
+                    discountAmount: result.discountAmount,
+                    finalPrice: result.finalPrice
+                });
+                toast.success(result.message);
+            } else {
+                toast.error(result.message || "الكود غير صالح");
+                setAppliedCoupon(null);
+            }
+        } catch (e) {
+            toast.error("حدث خطأ أثناء التحقق");
+        } finally {
+            setValidatingCoupon(false);
+        }
+    };
+
 
     // Fetch Plan on Mount
     useEffect(() => {
@@ -79,7 +112,7 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
                 plan_id: plan.id, // Using real plan ID
                 receipt_url: publicUrl,
                 status: 'pending',
-                amount: plan.discount_price || plan.price, // Real Price
+                amount: appliedCoupon ? appliedCoupon.finalPrice : (plan.discount_price || plan.price), // Use Discounted Price
                 method: 'ccp'
             });
 
@@ -250,7 +283,7 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
                         <div className="flex justify-between items-center mb-6">
                             <span className="font-bold text-lg text-white">المجموع</span>
                             <span className="font-bold text-2xl text-blue-400">
-                                {plan.discount_price || plan.price} دج
+                                {appliedCoupon ? appliedCoupon.finalPrice : (plan.discount_price || plan.price)} دج
                             </span>
                         </div>
 
@@ -264,6 +297,51 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
                                 </div>
                             ))}
                         </div>
+                    </GlassCard>
+
+                    {/* COUPON SECTION */}
+                    <GlassCard className="p-6 mt-4 border-white/10">
+                        <div className="flex items-center gap-2 mb-3 text-white/80">
+                            <Tag size={16} />
+                            <span className="font-bold text-sm">قسيمة التخفيض</span>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <input
+                                disabled={!!appliedCoupon}
+                                placeholder="أدخل الكود هنا"
+                                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 disabled:opacity-50"
+                                value={couponCode}
+                                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                            />
+                            {appliedCoupon ? (
+                                <button
+                                    onClick={() => {
+                                        setAppliedCoupon(null);
+                                        setCouponCode("");
+                                    }}
+                                    className="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-bold transition-colors"
+                                >
+                                    إلغاء
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleApplyCoupon}
+                                    disabled={validatingCoupon || !couponCode}
+                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-white/5 disabled:text-white/20 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-2"
+                                >
+                                    {validatingCoupon && <Loader2 className="w-3 h-3 animate-spin" />}
+                                    تطبيق
+                                </button>
+                            )}
+                        </div>
+
+                        {appliedCoupon && (
+                            <div className="mt-3 p-2 bg-green-500/10 border border-green-500/20 rounded-lg text-xs flex justify-between items-center text-green-400 animate-in fade-in slide-in-from-top-1">
+                                <span>تم تطبيق الخصم بنجاح!</span>
+                                <span className="font-bold font-mono">-{appliedCoupon.discountAmount} DA</span>
+                            </div>
+                        )}
                     </GlassCard>
                 </div>
 
