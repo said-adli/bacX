@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, Video, User, GraduationCap } from "lucide-react";
+import { Home, BookOpen, Video, User, Brain } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function MobileBottomNav() {
@@ -11,7 +11,7 @@ export default function MobileBottomNav() {
     const navItems = [
         { name: "الرئيسية", href: "/dashboard", icon: Home },
         { name: "المواد", href: "/materials", icon: BookOpen },
-        { name: "تعلمي", href: "/learning", icon: GraduationCap, isHero: true },
+        { name: "Brainy", href: "/", icon: Brain, isHero: true }, // Updated
         { name: "مباشر", href: "/live", icon: Video },
         { name: "حسابي", href: "/profile", icon: User },
     ];
@@ -40,9 +40,7 @@ export default function MobileBottomNav() {
                                             <item.icon className="w-6 h-6" />
                                         </motion.div>
                                     </Link>
-                                    <span className="text-[10px] font-medium text-white/80 absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                                        {item.name}
-                                    </span>
+                                    {/* Text Label Removed as requested */}
                                 </div>
                             );
                         }
