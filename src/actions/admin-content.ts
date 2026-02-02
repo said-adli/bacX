@@ -10,6 +10,7 @@ import { revalidateSubjects, revalidateLessons, revalidateCurriculum } from "@/l
 export interface Subject {
     id: string;
     name: string;
+    published: boolean; // [NEW]
     units?: Unit[];
 }
 
@@ -44,6 +45,7 @@ export async function getContentTree() {
         .select(`
             id, 
             name,
+            published,
             units (
                 id, 
                 title, 

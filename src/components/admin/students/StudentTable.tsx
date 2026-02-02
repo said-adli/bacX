@@ -14,6 +14,7 @@ import {
     Send,
     Edit // [NEW]
 } from "lucide-react";
+import { StatusToggle } from "@/components/admin/shared/StatusToggle";
 import { toggleBanStudent, manualsExpireSubscription } from "@/actions/admin-students";
 import { bulkBroadcast } from "@/actions/admin-broadcast";
 import { toast } from "sonner";
@@ -58,32 +59,6 @@ export function StudentTable({ students, totalPages }: { students: Student[], to
 
     // Filter Logic can be added here pushing to URL
     // e.g. ?filter=expired
-
-    // [NEW] Optimistic UI
-    const [optimisticStudents, setOptimisticStatus] = useOptimistic<Student[], { id: string; is_banned: boolean }>(
-        students,
-        (state, { id, is_banned }) =>
-            state.map((s) => (s.id === id ? { ...s, is_banned } : s))
-    );
-
-    const handleBan = async (id: string, currentStatus: boolean) => {
-        // Optimistic Update (Instant Red/Green Toggle)
-        // Optimistic Update (Instant Red/Green Toggle)
-        const newStatus = !currentStatus;
-        startTransition(() => {
-            setOptimisticStatus({ id, is_banned: newStatus });
-        });
-
-        try {
-            await toggleBanStudent(id, newStatus);
-            toast.success(newStatus ? "User Banned" : "User Unbanned");
-            router.refresh();
-        } catch (e) {
-            toast.error("Action failed");
-            // Revert is automatic on refresh, but ideally we'd revert optimistic state here if needed.
-            // Since router.refresh() re-fetches, it corrects itself.
-        }
-    };
 
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
@@ -217,13 +192,13 @@ export function StudentTable({ students, totalPages }: { students: Student[], to
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5 text-right">
-                        {optimisticStudents.map((student) => (
+                        {students.map((student) => (
                             <tr
                                 key={student.id}
                                 className={`group transition-colors cursor-pointer ${selectedIds.has(student.id) ? 'bg-blue-900/10' : 'hover:bg-white/5'}`}
                                 onClick={(e) => {
                                     // Prevent navigation if clicking checkbox or action buttons
-                                    if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).closest('button')) return;
+                                    if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('div[role="switch"]')) return;
                                     router.push(`/admin/students/${student.id}`);
                                 }}
                             >
@@ -249,33 +224,28 @@ export function StudentTable({ students, totalPages }: { students: Student[], to
                                 <td className="p-4 text-zinc-400">{student.wilaya || "-"}</td>
                                 <td className="p-4 text-zinc-400">{student.study_system || "-"}</td>
                                 <td className="p-4">
-                                    {student.is_banned ? (
-                                        <span className="px-3 py-1 rounded-full bg-red-500/10 text-red-500 text-xs font-bold border border-red-500/20 flex w-fit items-center gap-1 animate-in fade-in zoom-in duration-300">
-                                            <ShieldAlert size={12} /> BANNED
-                                        </span>
-                                    ) : student.is_subscribed ? (
-                                        <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 flex w-fit items-center gap-1 animate-in fade-in zoom-in duration-300">
-                                            <CheckCircle size={12} /> ACTIVE
-                                        </span>
-                                    ) : (
-                                        <span className="px-3 py-1 rounded-full bg-zinc-500/10 text-zinc-500 text-xs font-bold border border-zinc-500/20 flex w-fit items-center gap-1">
-                                            <Clock size={12} /> EXPIRED
-                                        </span>
-                                    )}
+                                    <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                        <StatusToggle
+                                            table="profiles"
+                                            id={student.id}
+                                            field="is_banned"
+                                            initialValue={student.is_banned}
+                                            labelActive="BANNED"
+                                            labelInactive="OK"
+                                        />
+                                        {student.is_subscribed ? (
+                                            <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 flex w-fit items-center gap-1 animate-in fade-in zoom-in duration-300">
+                                                <CheckCircle size={12} /> ACTIVE
+                                            </span>
+                                        ) : (
+                                            <span className="px-3 py-1 rounded-full bg-zinc-500/10 text-zinc-500 text-xs font-bold border border-zinc-500/20 flex w-fit items-center gap-1">
+                                                <Clock size={12} /> EXPIRED
+                                            </span>
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="p-4">
                                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleBan(student.id, student.is_banned);
-                                            }}
-                                            className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
-                                            title={student.is_banned ? "Unban" : "Ban User"}
-                                        >
-                                            <ShieldAlert size={16} />
-                                        </button>
-
                                         {student.is_subscribed && (
                                             <button
                                                 onClick={(e) => {

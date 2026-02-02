@@ -1,20 +1,33 @@
 "use client";
 
 import { useOptimistic, startTransition } from "react";
-import { toggleStatus } from "@/actions/admin-generic";
-import { Switch } from "@/components/ui/Switch"; // Assuming Shadcn/Radix switch exists, or we build a simple one
+import { toggleStatusAction } from "@/actions/toggle";
+import { Switch } from "@/components/ui/Switch";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+import { useRouter } from "next/navigation";
+
 interface StatusToggleProps {
-    table: string;
+    table: "subjects" | "coupons" | "profiles";
     id: string;
     field: string;
     initialValue: boolean;
     className?: string;
+    labelActive?: string;
+    labelInactive?: string;
 }
 
-export function StatusToggle({ table, id, field, initialValue, className }: StatusToggleProps) {
+export function StatusToggle({
+    table,
+    id,
+    field,
+    initialValue,
+    className,
+    labelActive = "ACTIVE",
+    labelInactive = "HIDDEN"
+}: StatusToggleProps) {
+    const router = useRouter();
     const [optimisticValue, setOptimisticValue] = useOptimistic(
         initialValue,
         (state, newValue: boolean) => newValue
@@ -27,16 +40,11 @@ export function StatusToggle({ table, id, field, initialValue, className }: Stat
         });
 
         // 2. Server Action (Background)
-        toggleStatus(table, id, field, checked)
+        toggleStatusAction(table, id, field, checked)
             .then(() => {
-                // Success - UI matches Server (via Revalidate or just stays optimistic)
+                router.refresh();
             })
             .catch((err) => {
-                // Failure - Revert Optimistic? 
-                // useOptimistic automatically resets if we trigger a re-render with old props, 
-                // but usually we just toast and maybe manually revert if we had local state.
-                // With useOptimistic, the state is derived from prop + pending action.
-                // If action executes and fails, we might need to manually force a refresh or tell user.
                 toast.error("Failed to update status");
                 startTransition(() => {
                     setOptimisticValue(!checked); // Visual Revert
@@ -54,8 +62,8 @@ export function StatusToggle({ table, id, field, initialValue, className }: Stat
                     "data-[state=unchecked]:bg-zinc-700"
                 )}
             />
-            <span className={cn("text-xs font-mono font-bold", optimisticValue ? "text-emerald-500" : "text-zinc-500")}>
-                {optimisticValue ? "ACTIVE" : "HIDDEN"}
+            <span className={cn("text-xs font-mono font-bold w-12", optimisticValue ? "text-emerald-500" : "text-zinc-500")}>
+                {optimisticValue ? labelActive : labelInactive}
             </span>
         </div>
     );

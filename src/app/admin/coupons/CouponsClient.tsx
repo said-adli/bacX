@@ -7,6 +7,7 @@ import { Plus, Trash2, Tag, Calendar, Users, Percent, DollarSign, Loader2 } from
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/Dialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { StatusToggle } from "@/components/admin/shared/StatusToggle";
 
 interface CouponsClientProps {
     initialCoupons: Coupon[];
@@ -154,7 +155,7 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {initialCoupons.map((coupon) => (
                     <GlassCard key={coupon.id} className="p-5 flex flex-col justify-between group relative overflow-hidden">
-                        {/* Status Stripe */}
+                        {/* Status Stripe - Kept for quick visual, though toggle also shows status */}
                         <div className={`absolute top-0 left-0 w-1 h-full ${coupon.is_active ? 'bg-emerald-500' : 'bg-red-500/50'}`} />
 
                         <div>
@@ -168,13 +169,15 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
                                         {coupon.discount_type === 'percent' ? `${coupon.value}% خصم` : `${coupon.value} دج خصم`}
                                     </p>
                                 </div>
-                                <button
-                                    onClick={() => handleDelete(coupon.id)}
-                                    disabled={!!isDeleting}
-                                    className="p-2 hover:bg-red-500/10 text-zinc-500 hover:text-red-400 rounded-lg transition-colors"
-                                >
-                                    {isDeleting === coupon.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 size={16} />}
-                                </button>
+                                <div className="flex flex-col gap-2 items-end">
+                                    <button
+                                        onClick={() => handleDelete(coupon.id)}
+                                        disabled={!!isDeleting}
+                                        className="p-2 hover:bg-red-500/10 text-zinc-500 hover:text-red-400 rounded-lg transition-colors"
+                                    >
+                                        {isDeleting === coupon.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 size={16} />}
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-2 text-xs text-zinc-500 mt-2 border-t border-white/5 pt-3">
@@ -188,6 +191,18 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
                                         <span>{new Date(coupon.expires_at).toLocaleDateString('en-GB')}</span>
                                     </div>
                                 )}
+                            </div>
+
+                            <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
+                                <span className="text-xs text-zinc-500 font-bold">الحالة:</span>
+                                <StatusToggle
+                                    table="coupons"
+                                    id={coupon.id}
+                                    field="is_active"
+                                    initialValue={coupon.is_active}
+                                    labelActive="نشط"
+                                    labelInactive="غير نشط"
+                                />
                             </div>
                         </div>
                     </GlassCard>
