@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, BookOpen, Video, User, Brain } from "lucide-react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 export default function MobileBottomNav() {
@@ -37,7 +38,13 @@ export default function MobileBottomNav() {
                         text-white
                       `}
                                         >
-                                            <item.icon className="w-6 h-6" />
+                                            <Image 
+                                                src="/images/logo.png" 
+                                                alt="Brainy" 
+                                                width={32} 
+                                                height={32} 
+                                                className="object-contain"
+                                            />
                                         </motion.div>
                                     </Link>
                                     {/* Text Label Removed as requested */}
