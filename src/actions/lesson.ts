@@ -31,7 +31,7 @@ export async function getLessonData(lessonId: string) {
             .select('is_completed, last_accessed_at')
             .eq('user_id', user.id)
             .eq('lesson_id', lessonId)
-            .single();
+            .maybeSingle();
 
         // 3. Mark as "Last Accessed" (Side Effect - Fire and Forget mostly, but we define it here)
         // Ideally handled by separate action or background job to not block read

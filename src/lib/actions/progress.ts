@@ -123,7 +123,7 @@ export async function getLastAccessedLesson() {
             .eq("user_id", user.id)
             .order("last_watched_at", { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
         if (error) return null; // No history found
 
