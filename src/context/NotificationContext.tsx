@@ -116,22 +116,36 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     const markAsRead = async (id: string) => {
         if (!user) return;
 
+        // Find notification to calculate new state
+        const targetNotification = notifications.find(n => n.id === id);
+        if (!targetNotification) return;
+
+        const currentReads = targetNotification.read_by || [];
+        if (currentReads.includes(user.id)) return;
+
+        const newReads = [...currentReads, user.id];
+
         // Optimistic update
         setNotifications(prev => prev.map(n => {
             if (n.id === id) {
-                const reads = n.read_by || [];
-                if (!reads.includes(user.id)) {
-                    return { ...n, read_by: [...reads, user.id] };
-                }
+                return { ...n, read_by: newReads };
             }
             return n;
         }));
 
-        // DB Update (Using appended array is tricky in simple SQL without an RPC, 
-        // but provided user permissions, we can just update. 
-        // A better way for production is a separate 'notification_reads' table.
-        // For this prototype, we'll skip the DB persist of 'read' state to keep it simple & fast unless requested.
-        // The "Red Dot" cleans up locally for session.)
+        // DB Update
+        try {
+            const { error } = await supabase
+                .from('notifications')
+                .update({ read_by: newReads })
+                .eq('id', id);
+
+            if (error) throw error;
+        } catch (err) {
+            console.error("Error persisting read status:", err);
+            toast.error("Failed to update status");
+            // Revert optimistic update if needed, but for now we keep UI responsive
+        }
     };
 
     const clearAll = () => {
