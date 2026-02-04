@@ -26,7 +26,7 @@ const RightGlassSidebarComponent = function RightGlassSidebar() {
 
   return (
     <aside
-      className={`fixed right-0 top-0 h-full bg-[#020617]/60 backdrop-blur-2xl border-l border-white/10 flex flex-col z-[90] shadow-[-20px_0_60px_rgba(0,0,0,0.5)] overflow-visible gpu-accelerated
+      className={`fixed right-0 top-0 h-full bg-[#020617]/60 backdrop-blur-2xl border-l border-white/10 flex flex-col z-[90] shadow-[-20px_0_60px_rgba(0,0,0,0.5)] overflow-visible gpu-accelerated transform-gpu
         transition-[width] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]
         ${isCollapsed ? "w-[90px]" : "w-[288px]"}
       `}

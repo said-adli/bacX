@@ -7,7 +7,7 @@ import Image from "next/image";
 
 export default function CinematicHero({ hasNotification = false }: { hasNotification?: boolean }) {
     return (
-        <div className="relative w-full h-[75vh] min-h-[700px] flex items-center justify-center overflow-hidden rounded-[2.5rem] mb-12 group border border-white/10 border-t-white/30 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.8)]">
+        <div className="relative w-full h-[75vh] min-h-[700px] flex items-center justify-center overflow-hidden rounded-[2.5rem] mb-12 group border border-white/10 border-t-white/30 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.8)] transform-gpu">
 
             {/* 1. Background Image */}
             <div className="absolute inset-0 z-0">
@@ -15,7 +15,7 @@ export default function CinematicHero({ hasNotification = false }: { hasNotifica
                     src="/assets/earth-cinematic.png"
                     alt="Earth from space"
                     fill
-                    className="object-cover transition-transform duration-[30s] ease-linear scale-100 group-hover:scale-105"
+                    className="object-cover transition-transform duration-[30s] ease-linear scale-100 group-hover:scale-105 will-change-transform"
                     priority
                 />
             </div>
@@ -55,7 +55,7 @@ export default function CinematicHero({ hasNotification = false }: { hasNotifica
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 1, delay: 0.4 }}
-                    className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-white/90 leading-tight drop-shadow-[0_0_30px_rgba(0,0,0,0.5)] tracking-normal"
+                    className="text-4xl md:text-6xl lg:text-7xl font-amiri font-bold text-white/90 leading-tight drop-shadow-[0_0_30px_rgba(0,0,0,0.5)] tracking-normal"
                 >
                     &ldquo;إن الله يقذف العلم<br />
                     <span className="text-white/70">في قلب من يحب&rdquo;</span>

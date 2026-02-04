@@ -23,7 +23,7 @@ export default async function StatsOverview({ user }: { user: User }) {
                 const strokeDashoffset = circumference - (stat.progress / 100) * circumference;
 
                 return (
-                    <div key={i} className="group relative overflow-hidden rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-6 transition-all duration-300 hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] hover:shadow-2xl">
+                    <div key={i} className="group relative overflow-hidden rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-6 transition-all duration-300 hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] hover:shadow-2xl transform-gpu will-change-transform">
 
                         {/* Glow Effect */}
                         <div className={`absolute top-0 right-0 -mr-8 -mt-8 w-24 h-24 rounded-full blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity ${stat.color.replace('text-', 'bg-')}`} />
