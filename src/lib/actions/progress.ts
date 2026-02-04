@@ -17,7 +17,7 @@ export async function toggleLessonCompletion(lessonId: string, isCompleted: bool
 
     try {
         const { error } = await supabase
-            .from("student_progress")
+            .from("user_progress")
             .upsert({
                 user_id: user.id,
                 lesson_id: lessonId,
@@ -65,7 +65,7 @@ export async function getSubjectProgress(subjectId: string) {
 
         // 2. Count completed lessons from these IDs
         const { count, error: progressError } = await supabase
-            .from("student_progress")
+            .from("user_progress")
             .select("*", { count: "exact", head: true })
             .eq("user_id", user.id)
             .eq("is_completed", true)
@@ -99,7 +99,7 @@ export async function getLastAccessedLesson() {
 
     try {
         const { data, error } = await supabase
-            .from("student_progress")
+            .from("user_progress")
             .select(`
                 last_watched_at,
                 lesson_id,

@@ -25,7 +25,7 @@ export default function MarkCompleteButton({ lessonId, className }: MarkComplete
                 if (!user) return;
 
                 const { data } = await supabase
-                    .from("student_progress")
+                    .from("user_progress")
                     .select("is_completed")
                     .eq("user_id", user.id)
                     .eq("lesson_id", lessonId)
