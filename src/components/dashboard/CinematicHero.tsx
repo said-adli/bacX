@@ -20,8 +20,8 @@ export default function CinematicHero({ hasNotification = false }: { hasNotifica
                 />
             </div>
 
-            {/* 2. Cinematic Overlay/Gradient */}
-            <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/20 via-black/10 to-[#0A0A0F]/90" />
+            {/* 2. Cinematic Overlay/Gradient (Radial for Focus) */}
+            <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,_transparent_0%,_#020617_90%),_linear-gradient(to_bottom,_transparent_0%,_#020617_100%)] opacity-90" />
 
             {/* Glass Reflection Top */}
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent z-20 opacity-50" />
