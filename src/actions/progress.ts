@@ -89,11 +89,8 @@ export async function getSubjectProgress(subjectId: string) {
 /**
  * Gets the most recently watched lesson for the "Continue Watching" feature.
  */
-export async function getLastAccessedLesson() {
+export async function getLastAccessedLesson(userId: string) {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) return null;
 
     try {
         const { data, error } = await supabase
@@ -118,7 +115,7 @@ export async function getLastAccessedLesson() {
                     )
                 )
             `)
-            .eq("user_id", user.id)
+            .eq("user_id", userId)
             .order("last_watched_at", { ascending: false })
             .limit(1)
             .maybeSingle();

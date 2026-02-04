@@ -55,7 +55,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     const [profile, subjects, stats] = await Promise.all([
         getProfileData(user.id),
         getSubjectsData(),
-        getStatsData()
+        getStatsData(user.id)
     ]);
 
     return {
@@ -135,13 +135,11 @@ function parseDurationToMinutes(duration: string): number {
     return 0;
 }
 
-export async function getStatsData(): Promise<DashboardStats> {
+export async function getStatsData(userId: string): Promise<DashboardStats> {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) return { courses: 0, hours: 0, rank: "#--" };
 
     // 1. Available Courses Count
+
     const { count: coursesCount } = await supabase.from('subjects').select('*', { count: 'exact', head: true });
 
     // 2. Learning Hours (Join user_progress -> lessons)
@@ -153,7 +151,7 @@ export async function getStatsData(): Promise<DashboardStats> {
                 duration
             )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('is_completed', true);
 
     let totalMinutes = 0;

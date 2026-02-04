@@ -1,9 +1,11 @@
 import { getStatsData } from "@/actions/dashboard";
 import { Clock, TrendingUp, Zap } from "lucide-react";
 
-export default async function StatsOverview() {
+import { User } from "@supabase/supabase-js";
+
+export default async function StatsOverview({ user }: { user: User }) {
     // 1. Fetch Data
-    const stats = await getStatsData();
+    const stats = await getStatsData(user.id);
 
     // 2. Render
     return (

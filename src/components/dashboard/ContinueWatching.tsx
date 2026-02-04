@@ -31,9 +31,10 @@ interface LastLesson {
 
 interface ContinueWatchingProps {
     initialData?: LastLesson | null;
+    userId: string;
 }
 
-export default function ContinueWatching({ initialData }: ContinueWatchingProps) {
+export default function ContinueWatching({ initialData, userId }: ContinueWatchingProps) {
     const [data, setData] = useState<LastLesson | null>(initialData || null);
     const [isLoading, setIsLoading] = useState(!initialData);
 
@@ -44,8 +45,9 @@ export default function ContinueWatching({ initialData }: ContinueWatchingProps)
         }
 
         const fetchLastLesson = async () => {
+            if (!userId) return;
             try {
-                const result = await getLastAccessedLesson();
+                const result = await getLastAccessedLesson(userId);
                 if (result) {
                     setData(result as any);
                 }
@@ -56,7 +58,7 @@ export default function ContinueWatching({ initialData }: ContinueWatchingProps)
             }
         };
         fetchLastLesson();
-    }, [initialData]);
+    }, [initialData, userId]);
 
     // Hide completely if loading or no data
     if (isLoading) {

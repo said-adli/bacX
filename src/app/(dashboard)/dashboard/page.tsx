@@ -56,12 +56,12 @@ export default async function DashboardPage({
 
             {/* 2. STATS (Streams in parallel) */}
             <Suspense fallback={<StatsSkeleton />}>
-                <StatsOverview />
+                <StatsOverview user={user} />
             </Suspense>
 
             {/* 3. CONTINUE WATCHING (Streams in parallel) */}
             <Suspense fallback={<ContinueWatchingSkeleton />}>
-                <ContinueWatchingSection />
+                <ContinueWatchingSection user={user} />
             </Suspense>
 
             {/* 4. CRYSTAL GRID (Subjects) */}
@@ -87,7 +87,7 @@ export default async function DashboardPage({
                     <div className="h-64 bg-white/5 rounded-2xl" />
                 </div>
             }>
-                <SmartSubscriptionCards />
+                <SmartSubscriptionCards user={user} />
             </Suspense>
         </div>
     );

@@ -77,11 +77,25 @@ export async function getLessonResource(lessonId: string, resourcePath: string) 
         throw new Error("Subscription Plan Required for this content.");
     }
 
-    // 4. Generate Cached Signed URL (Valid for 1 hour, cached for 30 min)
+    // 4. SECURITY CHECK: Verify Resource Ownership (IDOR Patch)
+    // Ensure the requested file actually belongs to this lesson
+    const { data: resourceData } = await supabase
+        .from('lesson_resources')
+        .select('id')
+        .eq('lesson_id', lessonId)
+        .eq('file_url', resourcePath)
+        .single();
+
+    if (!resourceData) {
+        throw new Error("Invalid Resource Path");
+    }
+
+    // 5. Generate Cached Signed URL (Valid for 1 hour, cached for 30 min)
     // EGRESS OPTIMIZATION: Same resource = cached URL, no new API call
+    // Cache Key now includes confirmation that the path is valid for this lesson
     const getCachedUrl = unstable_cache(
         () => generateCachedSignedUrl(resourcePath),
-        [`signed-url-${resourcePath}`],
+        [`signed-url-${lessonId}-${resourcePath}`], // Hardened Cache Key
         {
             revalidate: 3600, // Cache for 60 minutes
             tags: ['signed-urls']

@@ -13,7 +13,7 @@ export interface EnrichedProfile {
     id: string;
     email: string;
     full_name: string;
-    wilaya_id?: string;
+    wilaya_id?: number;
     major_id?: string;
     role: "admin" | "student";
     is_profile_complete: boolean;
@@ -24,13 +24,13 @@ export interface EnrichedProfile {
 
     // Relational Fields (Hydrated)
     majors?: { label: string };
-    wilayas?: { full_label: string };
+    wilayas?: { name_ar: string; name_en: string };
     subscription_plans?: { name: string };
 
     // Flattened / Derived Fields (Frontend Compatibility)
     name?: string;       // Alias for full_name
     major?: string;      // Alias for majors.label
-    wilaya?: string;     // Alias for wilayas.full_label
+    wilaya?: string;     // Alias for wilayas.name_ar || wilayas.name_en
     plan_name?: string;  // Alias for subscription_plans.name
 
     // Legacy / Optional
@@ -89,7 +89,7 @@ export function AuthProvider({
                 .select(`
                     *,
                     majors ( label ),
-                    wilayas ( full_label ),
+                    wilayas ( name_ar, name_en ),
                     subscription_plans ( name )
                 `)
                 .eq('id', userId)
@@ -127,7 +127,7 @@ export function AuthProvider({
                 // Mapped Aliases
                 name: rawProfile.full_name,
                 major: rawProfile.majors?.label,
-                wilaya: rawProfile.wilayas?.full_label,
+                wilaya: rawProfile.wilayas?.name_ar || rawProfile.wilayas?.name_en,
                 plan_name: rawProfile.subscription_plans?.name,
 
                 avatar_url: rawProfile.avatar_url
@@ -339,7 +339,7 @@ export function AuthProvider({
             .from('profiles')
             .update({
                 full_name: data.fullName,
-                wilaya_id: data.wilaya,
+                wilaya_id: parseInt(data.wilaya),
                 major_id: data.major,
                 is_profile_complete: true,
                 updated_at: new Date().toISOString(),

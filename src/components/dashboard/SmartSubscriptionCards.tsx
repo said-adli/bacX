@@ -1,11 +1,13 @@
 import { createClient } from "@/utils/supabase/server";
 import { SubscriptionCards } from "./SubscriptionCards";
 
-export default async function SmartSubscriptionCards() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+import { User } from "@supabase/supabase-js";
 
-    if (!user) return null;
+export default async function SmartSubscriptionCards({ user }: { user: User }) {
+    const supabase = await createClient();
+    // const { data: { user } } = await supabase.auth.getUser(); // ELIMINATED
+
+    // if (!user) return null; // Handled by parent
 
     // Fetch profile to check subscription
     const { data: profile } = await supabase
