@@ -1,33 +1,45 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+
+export interface SecurityProfile {
+    full_name: string | null;
+    email: string | null;
+    role: string;
+}
 
 export interface LogEntry {
     id: string;
-    user_id: string;
+    user_id: string | null; // Nullable if ON DELETE SET NULL
     event: string;
-    details: any;
+    details: Record<string, any> | null; // Structured JSON or null
     ip_address: string;
     created_at: string;
-    profiles?: {
-        full_name: string | null;
-        email: string | null;
-        role: string;
-    };
+    profiles?: SecurityProfile;
+}
+
+export interface LogsResponse {
+    logs: LogEntry[];
+    total: number;
+    totalPages: number;
 }
 
 export async function getSecurityLogs(
     page = 1,
     filter: 'all' | 'admin_only' | 'system' = 'all'
-) {
+): Promise<LogsResponse> {
     const supabaseAdmin = createAdminClient();
     const PAGE_SIZE = 20;
 
     let query = supabaseAdmin
         .from('security_logs')
         .select(`
-            *,
+            id,
+            user_id,
+            event,
+            details,
+            ip_address,
+            created_at,
             profiles:user_id (
                 full_name,
                 email,
@@ -37,9 +49,8 @@ export async function getSecurityLogs(
         .order('created_at', { ascending: false })
         .range((page - 1) * PAGE_SIZE, ((page - 1) * PAGE_SIZE) + (PAGE_SIZE - 1));
 
-    // Filter Logic (Simple for now)
+    // Filter Logic
     if (filter === 'admin_only') {
-        // This is imperfect without joining on role, but filtering by event names is faster
         query = query.ilike('event', '%ADMIN%');
     }
 
@@ -50,8 +61,23 @@ export async function getSecurityLogs(
         return { logs: [], total: 0, totalPages: 0 };
     }
 
+    // Strict Type Mapping
+    const logs: LogEntry[] = (data || []).map((log: any) => ({
+        id: log.id,
+        user_id: log.user_id,
+        event: log.event,
+        details: log.details,
+        ip_address: log.ip_address,
+        created_at: log.created_at,
+        profiles: log.profiles ? {
+            full_name: log.profiles.full_name,
+            email: log.profiles.email,
+            role: log.profiles.role
+        } : undefined
+    }));
+
     return {
-        logs: data as LogEntry[],
+        logs,
         total: count || 0,
         totalPages: Math.ceil((count || 0) / PAGE_SIZE)
     };

@@ -7,32 +7,41 @@ import { useRouter } from "next/navigation";
 
 // --- TYPES ---
 
-export interface UserProfile {
+// Enriched Profile Interface (Strict Schema Sync)
+export interface EnrichedProfile {
+    // Core Profile Fields
     id: string;
     email: string;
-    full_name?: string;
+    full_name: string;
     wilaya_id?: string;
-    wilaya?: string;
     major_id?: string;
-    major?: string;
-    study_system?: string;
     role: "admin" | "student";
     is_profile_complete: boolean;
-    is_subscribed?: boolean;
+    is_subscribed: boolean;
     subscription_end_date?: string;
-    plan_id?: string; // LINK TO PLAN
-    avatar_url?: string;
+    plan_id?: string;
     created_at: string;
-    last_session_id?: string;
-    // Extended properties
-    major_name?: string;
-    wilaya_name?: string;
-    plan_name?: string; // Extended
+
+    // Relational Fields (Hydrated)
+    majors?: { label: string };
+    wilayas?: { full_label: string };
+    subscription_plans?: { name: string };
+
+    // Flattened / Derived Fields (Frontend Compatibility)
+    name?: string;       // Alias for full_name
+    major?: string;      // Alias for majors.label
+    wilaya?: string;     // Alias for wilayas.full_label
+    plan_name?: string;  // Alias for subscription_plans.name
+
+    // Legacy / Optional
+    avatar_url?: string;
 }
+
+export type UserProfile = EnrichedProfile;
 
 export interface AuthState {
     user: User | null;
-    profile: UserProfile | null;
+    profile: EnrichedProfile | null;
     session: Session | null;
     loading: boolean;
     error: string | null;
@@ -45,7 +54,7 @@ export interface AuthContextType extends AuthState {
     completeOnboarding: (data: { fullName: string; wilaya: string; major: string }) => Promise<void>;
     logout: () => Promise<void>;
     refreshProfile: () => Promise<void>;
-    hydrateProfile: (profile: UserProfile) => void;
+    hydrateProfile: (profile: EnrichedProfile) => void;
     role: "admin" | "student" | null;
 }
 
@@ -60,7 +69,6 @@ export function AuthProvider({
     const supabase = createClient();
     const router = useRouter();
 
-    // FAIL-SAFE INITIAL STATE: Loading is TRUE by default
     const [state, setState] = useState<AuthState>({
         user: null,
         profile: null,
@@ -72,16 +80,14 @@ export function AuthProvider({
 
     const isMounted = useRef(false);
 
-    // --- FETCH STRATEGY: TIMEOUT-GUARDED SPLIT FETCH ---
-    const fetchProfile = useCallback(async (userId: string) => {
+    // --- FETCH STRATEGY: SINGLE RELATIONAL JOIN ---
+    const fetchProfile = useCallback(async (userId: string): Promise<EnrichedProfile | null> => {
         try {
-            // STEP 1: Define the Real Request (Optimized Columns with Joins)
-            // Relational Query: One DB Roundtrip
-            const dbQuery = supabase
+            // RELATIONAL HYDRATION: Single Query
+            const { data: rawProfile, error } = await supabase
                 .from('profiles')
                 .select(`
-                    id, full_name, role, email, major_id, wilaya_id, 
-                    is_profile_complete, is_subscribed, subscription_end_date, plan_id,
+                    *,
                     majors ( label ),
                     wilayas ( full_label ),
                     subscription_plans ( name )
@@ -89,29 +95,20 @@ export function AuthProvider({
                 .eq('id', userId)
                 .single();
 
-            // STEP 2: Define the Timeout
-            const timeout = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error("REQUEST_TIMEOUT")), 15000)
-            );
-
-            // STEP 3: Race them
-            const { data: rawProfile, error } = await Promise.race([dbQuery, timeout]) as any;
-
             if (error) {
-                console.error("❌ Profile Error or Timeout:", error.message || error);
+                console.error("❌ Profile Sync Error:", error.message);
                 throw error;
             }
 
             if (!rawProfile) {
-                console.error("❌ Profile Missing for ID:", userId);
                 throw new Error("Profile Not Found");
             }
 
-            // STEP 4: Flatten/Map to UserProfile Interface
-            const finalProfile: UserProfile = {
+            // Map to EnrichedProfile (Strict Type Mapping)
+            // Ensure no 'any' is used. We verify properties existence.
+            const profile: EnrichedProfile = {
                 id: rawProfile.id,
                 email: rawProfile.email,
-                // Core fields
                 full_name: rawProfile.full_name,
                 wilaya_id: rawProfile.wilaya_id,
                 major_id: rawProfile.major_id,
@@ -120,27 +117,26 @@ export function AuthProvider({
                 is_subscribed: rawProfile.is_subscribed,
                 subscription_end_date: rawProfile.subscription_end_date,
                 plan_id: rawProfile.plan_id,
-                created_at: new Date().toISOString(),
-                avatar_url: undefined, // Interface expects string | undefined
+                created_at: rawProfile.created_at,
 
-                // Mapped Extensions (for UI compatibility)
-                wilaya: rawProfile.wilayas?.full_label,
+                // Relations
+                majors: rawProfile.majors,
+                wilayas: rawProfile.wilayas,
+                subscription_plans: rawProfile.subscription_plans,
+
+                // Mapped Aliases
+                name: rawProfile.full_name,
                 major: rawProfile.majors?.label,
-
-                // Extended properties
-                major_name: rawProfile.majors?.label,
-                wilaya_name: rawProfile.wilayas?.full_label,
+                wilaya: rawProfile.wilayas?.full_label,
                 plan_name: rawProfile.subscription_plans?.name,
 
-                // Legacy compatibility (if needed by other components, but strictly not in interface? 
-                // The interface shows 'major' and 'wilaya', but not 'name' or 'avatar'. 
-                // However, I will stick to the interface definition in lines 10-31)
+                avatar_url: rawProfile.avatar_url
             };
 
-            return finalProfile;
+            return profile;
 
         } catch (err: any) {
-            console.error("💥 DB Connection Failed/Timed out:", err);
+            console.error("💥 Auth Connection Failed:", err);
             return null;
         }
     }, [supabase]);
@@ -162,7 +158,6 @@ export function AuthProvider({
 
                         if (isMounted.current) {
                             if (profile) {
-                                // SUCCESS: Profile Loaded
                                 setState(prev => ({
                                     ...prev,
                                     session,
@@ -173,28 +168,27 @@ export function AuthProvider({
                                     connectionError: false
                                 }));
                             } else {
-                                // FAILURE: Profile Failed (Returned Null)
-                                // We treat this as a semi-authenticated state or connection error.
-                                console.error("⚠️ AuthContext: Profile is null despite valid session.");
+                                // Profile NULL = Error State
+                                console.error("⚠️ Profile Null (Init)");
                                 setState(prev => ({
                                     ...prev,
                                     session,
                                     user: session.user,
                                     profile: null,
-                                    loading: false, // STOP SPINNER
+                                    loading: false,
                                     connectionError: true
                                 }));
                             }
                         }
                     } catch (fetchErr) {
-                        console.error("⚠️ AuthContext: Failed to load profile for valid session.", fetchErr);
+                        console.error("⚠️ Init Profile Error:", fetchErr);
                         if (isMounted.current) {
                             setState(prev => ({
                                 ...prev,
                                 session,
                                 user: session.user,
                                 profile: null,
-                                loading: false, // STOP SPINNER
+                                loading: false,
                                 connectionError: true
                             }));
                         }
@@ -205,12 +199,12 @@ export function AuthProvider({
                     }
                 }
             } catch (err: any) {
-                console.error("💥 AuthContext: initAuth crashed:", err);
+                console.error("💥 Init Crash:", err);
                 if (isMounted.current) {
                     setState(prev => ({
                         ...prev,
-                        loading: false, // GUARANTEED TERMINATION
-                        error: err.message || "Initialization Failed"
+                        loading: false,
+                        error: err.message
                     }));
                 }
             }
@@ -225,11 +219,9 @@ export function AuthProvider({
 
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
                 if (session?.user) {
-                    // Optimistic update of session
+                    // Optimistic
                     setState(prev => ({ ...prev, session, user: session.user }));
 
-                    // Fetch profile if we don't have it or if user ID changed
-                    // (Or if we just want to ensure freshness on sign-in)
                     if (event === 'SIGNED_IN' || !state.profile || state.profile.id !== session.user.id) {
                         try {
                             const profile = await fetchProfile(session.user.id);
@@ -242,9 +234,6 @@ export function AuthProvider({
                                         error: null
                                     }));
                                 } else {
-                                    console.error("⚠️ AuthContext: Profile fetch returned null on ID mismatch/update.");
-                                    // Don't set connectionError immediately if just switching users? 
-                                    // Actually, if we have a user but no profile, it is an error state.
                                     setState(prev => ({
                                         ...prev,
                                         profile: null,
@@ -254,7 +243,6 @@ export function AuthProvider({
                                 }
                             }
                         } catch (err) {
-                            console.error("⚠️ AuthContext: Profile fetch failed on AuthChange.", err);
                             if (isMounted.current) {
                                 setState(prev => ({ ...prev, loading: false, connectionError: true }));
                             }
@@ -267,7 +255,7 @@ export function AuthProvider({
                         user: null,
                         profile: null,
                         session: null,
-                        loading: false, // GUARANTEED TERMINATION
+                        loading: false,
                         error: null,
                         connectionError: false
                     });
@@ -281,18 +269,15 @@ export function AuthProvider({
             isMounted.current = false;
             subscription.unsubscribe();
         };
-    }, [supabase, fetchProfile, router]);
-
+    }, [supabase, fetchProfile, router]); // Removed 'state.profile' from deps to avoid infinite loop if ref diffs
 
     // --- ACTIONS ---
 
     const loginWithEmail = async (email: string, password: string) => {
         if (isMounted.current) setState(prev => ({ ...prev, loading: true, error: null }));
-
         try {
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) throw error;
-            // Native auth change listener will handle the rest
         } catch (error: any) {
             console.error("Login Error:", error);
             if (isMounted.current) {
@@ -319,7 +304,6 @@ export function AuthProvider({
             });
             if (error) throw error;
         } catch (error: any) {
-            console.error("Signup Error:", error);
             if (isMounted.current) {
                 setState(prev => ({ ...prev, error: error.message }));
             }
@@ -332,8 +316,6 @@ export function AuthProvider({
     const logout = async () => {
         try {
             await supabase.auth.signOut();
-        } catch (error) {
-            console.error("Logout error:", error);
         } finally {
             if (isMounted.current) {
                 setState({ user: null, profile: null, session: null, loading: false, error: null, connectionError: false });
@@ -344,20 +326,15 @@ export function AuthProvider({
 
     const refreshProfile = async () => {
         if (!state.user) return;
-        try {
-            const profile = await fetchProfile(state.user.id);
-            if (isMounted.current && profile) {
-                setState(prev => ({ ...prev, profile: { ...profile, email: state.user!.email! } }));
-            }
-        } catch (err) {
-            console.error("Refresh profile failed", err);
+        const profile = await fetchProfile(state.user.id);
+        if (isMounted.current && profile) {
+            setState(prev => ({ ...prev, profile: { ...profile, email: state.user!.email! } }));
         }
     };
 
     const completeOnboarding = async (data: { fullName: string; wilaya: string; major: string }) => {
         if (!state.user) throw new Error("No user logged in");
 
-        // Direct update
         const { error: profileError } = await supabase
             .from('profiles')
             .update({
@@ -371,7 +348,6 @@ export function AuthProvider({
 
         if (profileError) throw profileError;
 
-        // Update Auth Metadata as well
         await supabase.auth.updateUser({
             data: {
                 full_name: data.fullName,
@@ -385,7 +361,7 @@ export function AuthProvider({
         router.replace('/dashboard');
     };
 
-    const hydrateProfile = useCallback((profile: UserProfile) => {
+    const hydrateProfile = useCallback((profile: EnrichedProfile) => {
         if (isMounted.current) {
             setState(prev => ({
                 ...prev,
@@ -395,7 +371,6 @@ export function AuthProvider({
         }
     }, []);
 
-    // --- RENDER ---
     return (
         <AuthContext.Provider value={{
             ...state,
@@ -407,13 +382,11 @@ export function AuthProvider({
             completeOnboarding,
             role: state.profile?.role || null
         }}>
-            {/* GLOBAL CONNECTION ERROR BANNER */}
             {state.connectionError && (
                 <div className="bg-red-500/10 border-b border-red-500/20 text-red-500 px-4 py-2 text-center text-sm font-bold animate-pulse">
                     Connection Interrupted. Some data may be unavailable.
                 </div>
             )}
-
             {children}
         </AuthContext.Provider>
     );

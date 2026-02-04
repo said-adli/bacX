@@ -1,17 +1,19 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
+import { User } from "@supabase/supabase-js";
+import { unstable_cache } from "next/cache";
+import { RANK_SYSTEM } from "@/lib/constants";
 
 // --- STRICT TYPES ---
 
-export interface LegacyUserProfile {
+export interface DashboardProfile {
     id: string;
     full_name?: string;
     email?: string;
-    wilaya?: string;
-    major?: string;
-    role: string;
+    wilaya_id?: string;
+    major_id?: string;
+    role: "admin" | "student";
     is_subscribed: boolean;
     // Add other fields as necessary from UserProfile
 }
@@ -35,8 +37,8 @@ export interface DashboardStats {
 }
 
 export interface DashboardData {
-    user: any; // Supabase User object is complex, keeping as any or User for now if import available, but user asked to eradicate 'any'. Ideally 'User'.
-    profile: LegacyUserProfile | null;
+    user: User;
+    profile: DashboardProfile | null;
     subjects: DashboardSubject[];
     stats: DashboardStats;
     isSubscribed: boolean;
@@ -45,22 +47,20 @@ export interface DashboardData {
 // --- ACTIONS ---
 
 export async function getDashboardData(): Promise<DashboardData> {
-    // Legacy support wrapper
-    const api = await import("@/actions/dashboard"); // Self-import to use new functions
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) throw new Error("Unauthorized");
 
     const [profile, subjects, stats] = await Promise.all([
-        api.getProfileData(user.id),
-        api.getSubjectsData(),
-        api.getStatsData()
+        getProfileData(user.id),
+        getSubjectsData(),
+        getStatsData()
     ]);
 
     return {
         user,
-        profile: profile as LegacyUserProfile,
+        profile,
         subjects,
         stats,
         isSubscribed: profile?.is_subscribed || false
@@ -71,17 +71,22 @@ export async function getDashboardData(): Promise<DashboardData> {
 // GRANULAR ACTIONS (For Streaming)
 // ----------------------------------------------------------------------
 
-export async function getProfileData(userId: string) {
+export async function getProfileData(userId: string): Promise<DashboardProfile | null> {
     const supabase = await createClient();
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
-    return data;
+
+    if (!data) return null;
+
+    return {
+        id: data.id,
+        full_name: data.full_name,
+        email: data.email,
+        wilaya_id: data.wilaya_id,
+        major_id: data.major_id,
+        role: data.role,
+        is_subscribed: data.is_subscribed
+    };
 }
-
-import { unstable_cache } from "next/cache";
-import { RANK_SYSTEM } from "@/lib/constants";
-
-// NEW: Import Strict DTO
-import { SubjectDTO } from "@/types/subject";
 
 export async function getSubjectsData(): Promise<DashboardSubject[]> {
     return await unstable_cache(
