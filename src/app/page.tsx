@@ -13,14 +13,8 @@ const HeroSection = dynamic(
   { ssr: true }
 );
 
-// 2. MasterclassSection: SSR: false (Heavy, below fold, purely visual)
-const MasterclassSection = dynamic(
-  () => import("@/components/home/MasterclassSection").then((mod) => mod.MasterclassSection),
-  {
-    ssr: false,
-    loading: () => <SectionSkeleton />
-  }
-);
+// 2. MasterclassSection: Client Component Wrapper (Handles ssr: false)
+import { MasterclassLoader as MasterclassSection } from "@/components/home/MasterclassLoader";
 
 export const metadata: Metadata = {
   title: "BRAINY - منصة التفوق الأكاديمي",
