@@ -26,8 +26,9 @@ export async function getLessonData(lessonId: string) {
         if (lessonError) throw lessonError;
 
         // 2. Fetch Completion Status
+        // SCHEMA FIX: Using 'user_progress' (not 'student_progress') per official schema
         const { data: progress } = await supabase
-            .from('student_progress')
+            .from('user_progress')
             .select('is_completed, last_accessed_at')
             .eq('user_id', user.id)
             .eq('lesson_id', lessonId)
@@ -91,8 +92,9 @@ export async function toggleLessonCompletion(lessonId: string, currentState: boo
     const newState = !currentState;
 
     try {
+        // SCHEMA FIX: Using 'user_progress' (not 'student_progress') per official schema
         const { error } = await supabase
-            .from('student_progress')
+            .from('user_progress')
             .upsert({
                 user_id: user.id,
                 lesson_id: lessonId,
