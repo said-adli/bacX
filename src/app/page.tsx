@@ -1,11 +1,26 @@
 import { Metadata } from "next";
-import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { LandingNavbar } from "@/components/layout/LandingNavbar";
-import { HeroSection } from "@/components/sections/HeroSection";
-import { MasterclassSection } from "@/components/home/MasterclassSection";
 import { PricingSection } from "@/components/home/PricingSection";
-import { getActivePlans } from "@/actions/admin-plans";
 import { AuthButton } from "@/components/marketing/AuthButton";
+import { SectionSkeleton } from "@/components/ui/SectionSkeleton";
+
+// --- DYNAMIC IMPORTS (CODE SPLITTING) ---
+
+// 1. HeroSection: SSR: true (Crucial for LCP/SEO, but deferred execution)
+const HeroSection = dynamic(
+  () => import("@/components/sections/HeroSection").then((mod) => mod.HeroSection),
+  { ssr: true }
+);
+
+// 2. MasterclassSection: SSR: false (Heavy, below fold, purely visual)
+const MasterclassSection = dynamic(
+  () => import("@/components/home/MasterclassSection").then((mod) => mod.MasterclassSection),
+  {
+    ssr: false,
+    loading: () => <SectionSkeleton />
+  }
+);
 
 export const metadata: Metadata = {
   title: "BRAINY - منصة التفوق الأكاديمي",
@@ -14,8 +29,6 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   // STATIC: No constraints. Plans passed as static data or handled by PricingSection internally if needed.
-  // For "Force Static", we assume PricingSection can handle empty plans or fetch client-side if dynamic is absolutely needed,
-  // but usually pricing is static.
   const plans: any[] = []; // Passing empty for now to match prop type, enabling full static build.
 
   return (
