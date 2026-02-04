@@ -20,7 +20,7 @@ export default function MobileBottomNav() {
     return (
         <div className="fixed bottom-4 left-4 right-4 z-[90] md:hidden">
             {/* Glass Container */}
-            <div className="bg-[#0B0E14]/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-purple-500/20 px-2 py-3">
+            <div className="bg-[#020617]/60 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl shadow-black/50 px-2 py-3 transform-gpu">
                 <nav className="flex items-center justify-between">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href;
@@ -38,11 +38,11 @@ export default function MobileBottomNav() {
                         text-white
                       `}
                                         >
-                                            <Image 
-                                                src="/images/logo.png" 
-                                                alt="Brainy" 
-                                                width={32} 
-                                                height={32} 
+                                            <Image
+                                                src="/images/logo.png"
+                                                alt="Brainy"
+                                                width={32}
+                                                height={32}
                                                 className="object-contain"
                                             />
                                         </motion.div>

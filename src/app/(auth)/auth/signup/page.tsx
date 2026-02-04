@@ -12,7 +12,7 @@ export default async function SignupPage() {
     // Fetch Wilayas (Sorted by ID)
     const { data: wilayas, error: wilayaError } = await supabase
         .from("wilayas")
-        .select("id, full_label")
+        .select("id, name_ar, name_en")
         .order("id", { ascending: true });
 
     // Fetch Majors (Sorted Alphabetically by Label)

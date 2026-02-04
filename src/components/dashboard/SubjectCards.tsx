@@ -21,7 +21,7 @@ export function SubjectCards({ query, initialSubjects = [] }: SubjectCardsProps)
 
     if (filteredSubjects.length === 0) {
         return (
-            <div className="col-span-1 md:col-span-2 py-12 flex flex-col items-center justify-center text-center opacity-50 space-y-4 rounded-2xl border border-white/5 bg-white/5">
+            <div className="col-span-1 md:col-span-2 py-12 flex flex-col items-center justify-center text-center space-y-4 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-lg transform-gpu">
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
                     <Clock className="w-8 h-8 text-white/40" />
                 </div>

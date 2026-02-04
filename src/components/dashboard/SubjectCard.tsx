@@ -40,7 +40,7 @@ export const SubjectCard = ({ subject }: { subject: SubjectDTO }) => {
             href={`/materials/${subject.id}`}
 
         >
-            <div className={`glass-card relative h-52 overflow-hidden group hover:scale-[1.02] cursor-pointer transition-all duration-300 border border-white/5 ${config.border}`}>
+            <div className={`relative h-52 overflow-hidden rounded-3xl group hover:scale-[1.02] cursor-pointer transition-all duration-300 bg-white/5 border border-white/10 backdrop-blur-xl shadow-lg transform-gpu will-change-transform ${config.border}`}>
 
                 {/* Content Container */}
                 <div className="absolute inset-0 p-6 flex flex-col justify-between z-10">

@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 
 interface SignupFormProps {
-    wilayas: { id: number; full_label: string }[];
+    wilayas: { id: number; name_ar: string; name_en: string }[];
     majors: { id: string; label: string }[];
 }
 
@@ -134,7 +134,7 @@ export default function SignupForm({ wilayas, majors }: SignupFormProps) {
                     >
                         <option value="" disabled className="bg-zinc-900 text-zinc-500">اختر الولاية</option>
                         {wilayas.map(w => (
-                            <option key={w.id} value={w.id} className="bg-zinc-900 text-white">{w.id} - {w.full_label}</option>
+                            <option key={w.id} value={w.id} className="bg-zinc-900 text-white">{w.id} - {w.name_ar}</option>
                         ))}
                     </select>
                     <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
