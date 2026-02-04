@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 interface LastLesson {
     lesson_id: string;
-    last_watched_at: string;
+    updated_at: string;
     lessons: {
         id: string;
         title: string;
@@ -78,7 +78,7 @@ export default function ContinueWatching({ initialData, userId }: ContinueWatchi
     const subjectColor = subject?.color || "#3b82f6"; // Fallback to blue
 
     // Format "last watched" time
-    const lastWatched = new Date(data.last_watched_at);
+    const lastWatched = new Date(data.updated_at);
     const timeAgo = getTimeAgo(lastWatched);
 
     return (

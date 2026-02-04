@@ -22,7 +22,6 @@ export async function toggleLessonCompletion(lessonId: string, isCompleted: bool
                 user_id: user.id,
                 lesson_id: lessonId,
                 is_completed: isCompleted,
-                last_watched_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             }, {
                 onConflict: "user_id, lesson_id"
@@ -96,7 +95,7 @@ export async function getLastAccessedLesson(userId: string) {
         const { data, error } = await supabase
             .from("user_progress")
             .select(`
-                last_watched_at,
+                updated_at,
                 lesson_id,
                 lessons (
                     id,
@@ -116,7 +115,7 @@ export async function getLastAccessedLesson(userId: string) {
                 )
             `)
             .eq("user_id", userId)
-            .order("last_watched_at", { ascending: false })
+            .order("updated_at", { ascending: false })
             .limit(1)
             .maybeSingle();
 
