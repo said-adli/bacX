@@ -1,4 +1,4 @@
-import { getLastAccessedLesson } from "@/lib/actions/progress";
+import { getLastAccessedLesson } from "@/actions/progress";
 import ContinueWatching from "./ContinueWatching";
 
 export default async function ContinueWatchingSection() {

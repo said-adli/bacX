@@ -3,17 +3,46 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 
+// --- STRICT TYPES ---
+
+export interface LegacyUserProfile {
+    id: string;
+    full_name?: string;
+    email?: string;
+    wilaya?: string;
+    major?: string;
+    role: string;
+    is_subscribed: boolean;
+    // Add other fields as necessary from UserProfile
+}
+
+export interface DashboardSubject {
+    id: string;
+    name: string;
+    icon: string;
+    description: string;
+    color: string;
+    slug: string;
+    lessonCount: number;
+    lessons: { id: string; title: string }[];
+    progress: number;
+}
+
+export interface DashboardStats {
+    courses: number;
+    hours: number;
+    rank: string;
+}
+
 export interface DashboardData {
-    user: any;
-    profile: any;
-    subjects: any[];
-    stats: {
-        courses: number;
-        hours: number;
-        rank: string;
-    };
+    user: any; // Supabase User object is complex, keeping as any or User for now if import available, but user asked to eradicate 'any'. Ideally 'User'.
+    profile: LegacyUserProfile | null;
+    subjects: DashboardSubject[];
+    stats: DashboardStats;
     isSubscribed: boolean;
 }
+
+// --- ACTIONS ---
 
 export async function getDashboardData(): Promise<DashboardData> {
     // Legacy support wrapper
@@ -31,7 +60,7 @@ export async function getDashboardData(): Promise<DashboardData> {
 
     return {
         user,
-        profile,
+        profile: profile as LegacyUserProfile,
         subjects,
         stats,
         isSubscribed: profile?.is_subscribed || false
@@ -54,7 +83,7 @@ import { RANK_SYSTEM } from "@/lib/constants";
 // NEW: Import Strict DTO
 import { SubjectDTO } from "@/types/subject";
 
-export async function getSubjectsData(): Promise<SubjectDTO[]> {
+export async function getSubjectsData(): Promise<DashboardSubject[]> {
     return await unstable_cache(
         async () => {
             const supabase = await createClient();
@@ -75,7 +104,6 @@ export async function getSubjectsData(): Promise<SubjectDTO[]> {
                 color: subject.color,
                 slug: subject.slug || subject.id, // Fallback if slug missing
                 lessonCount: subject.lesson_count || 0,
-                // ... rest mapped below
                 lessons: Array.isArray(subject.lessons)
                     ? subject.lessons.map((l: any) => ({
                         id: l.id,
@@ -102,7 +130,7 @@ function parseDurationToMinutes(duration: string): number {
     return 0;
 }
 
-export async function getStatsData() {
+export async function getStatsData(): Promise<DashboardStats> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 

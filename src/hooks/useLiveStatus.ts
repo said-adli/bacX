@@ -42,7 +42,8 @@ export function useLiveStatus() {
                     }
                 }
             } catch (err) {
-                console.error("Error fetching live session:", err);
+                // Sentry.captureException(err); // TODO: Uncomment when Sentry is configured
+                console.error("Error fetching live session [Handled]:", err);
             } finally {
                 if (isMounted) setLoading(false);
             }

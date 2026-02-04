@@ -75,10 +75,17 @@ export function AuthProvider({
     // --- FETCH STRATEGY: TIMEOUT-GUARDED SPLIT FETCH ---
     const fetchProfile = useCallback(async (userId: string) => {
         try {
-            // STEP 1: Define the Real Request (Optimized Columns)
+            // STEP 1: Define the Real Request (Optimized Columns with Joins)
+            // Relational Query: One DB Roundtrip
             const dbQuery = supabase
                 .from('profiles')
-                .select('id, full_name, role, email, major_id, wilaya_id, is_profile_complete, is_subscribed, subscription_end_date, plan_id')
+                .select(`
+                    id, full_name, role, email, major_id, wilaya_id, 
+                    is_profile_complete, is_subscribed, subscription_end_date, plan_id,
+                    majors ( label ),
+                    wilayas ( full_label ),
+                    subscription_plans ( name )
+                `)
                 .eq('id', userId)
                 .single();
 
@@ -88,60 +95,47 @@ export function AuthProvider({
             );
 
             // STEP 3: Race them
-            const { data: profile, error } = await Promise.race([dbQuery, timeout]) as any;
+            const { data: rawProfile, error } = await Promise.race([dbQuery, timeout]) as any;
 
             if (error) {
                 console.error("❌ Profile Error or Timeout:", error.message || error);
                 throw error;
             }
 
-            if (!profile) {
+            if (!rawProfile) {
                 console.error("❌ Profile Missing for ID:", userId);
                 throw new Error("Profile Not Found");
             }
 
-            // STEP 4: Fetch Details in Parallel (Majors/Wilayas/Plans)
-            let majorName = null;
-            let wilayaName = null;
-            let planName = null;
-            const promises = [];
+            // STEP 4: Flatten/Map to UserProfile Interface
+            const finalProfile: UserProfile = {
+                id: rawProfile.id,
+                email: rawProfile.email,
+                // Core fields
+                full_name: rawProfile.full_name,
+                wilaya_id: rawProfile.wilaya_id,
+                major_id: rawProfile.major_id,
+                role: rawProfile.role,
+                is_profile_complete: rawProfile.is_profile_complete,
+                is_subscribed: rawProfile.is_subscribed,
+                subscription_end_date: rawProfile.subscription_end_date,
+                plan_id: rawProfile.plan_id,
+                created_at: new Date().toISOString(),
+                avatar_url: undefined, // Interface expects string | undefined
 
-            if (profile.major_id) {
-                promises.push(
-                    supabase.from('majors').select('label').eq('id', profile.major_id).single()
-                        .then(({ data }: { data: any }) => { if (data) majorName = data.label; })
-                        .catch((err: any) => { })
-                );
-            }
+                // Mapped Extensions (for UI compatibility)
+                wilaya: rawProfile.wilayas?.full_label,
+                major: rawProfile.majors?.label,
 
-            if (profile.wilaya_id) {
-                promises.push(
-                    supabase.from('wilayas').select('full_label').eq('id', profile.wilaya_id).single()
-                        .then(({ data }: { data: any }) => { if (data) wilayaName = data.full_label; })
-                        .catch((err: any) => { })
-                );
-            }
+                // Extended properties
+                major_name: rawProfile.majors?.label,
+                wilaya_name: rawProfile.wilayas?.full_label,
+                plan_name: rawProfile.subscription_plans?.name,
 
-            if (profile.plan_id) {
-                promises.push(
-                    supabase.from('subscription_plans').select('name').eq('id', profile.plan_id).single()
-                        .then(({ data }: { data: any }) => { if (data) planName = data.name; })
-                        .catch((err: any) => { })
-                );
-            }
-
-            await Promise.all(promises);
-
-            // STEP 5: Merge and Return
-            // 🔄 MAPPING: full_name -> name, avatar -> null
-            const finalProfile = {
-                ...profile,
-                name: profile.full_name, // Map for compatibility
-                avatar: null,            // Hardcode null (no column)
-                major_name: majorName,
-                wilaya_name: wilayaName,
-                plan_name: planName
-            } as any;
+                // Legacy compatibility (if needed by other components, but strictly not in interface? 
+                // The interface shows 'major' and 'wilaya', but not 'name' or 'avatar'. 
+                // However, I will stick to the interface definition in lines 10-31)
+            };
 
             return finalProfile;
 
@@ -167,21 +161,34 @@ export function AuthProvider({
                         const profile = await fetchProfile(session.user.id);
 
                         if (isMounted.current) {
-                            setState(prev => ({
-                                ...prev,
-                                session,
-                                user: session.user,
-                                profile: { ...profile, email: session.user.email || profile.email },
-                                loading: false,
-                                error: null,
-                                connectionError: false
-                            }));
+                            if (profile) {
+                                // SUCCESS: Profile Loaded
+                                setState(prev => ({
+                                    ...prev,
+                                    session,
+                                    user: session.user,
+                                    profile: { ...profile, email: session.user.email || profile.email },
+                                    loading: false,
+                                    error: null,
+                                    connectionError: false
+                                }));
+                            } else {
+                                // FAILURE: Profile Failed (Returned Null)
+                                // We treat this as a semi-authenticated state or connection error.
+                                console.error("⚠️ AuthContext: Profile is null despite valid session.");
+                                setState(prev => ({
+                                    ...prev,
+                                    session,
+                                    user: session.user,
+                                    profile: null,
+                                    loading: false, // STOP SPINNER
+                                    connectionError: true
+                                }));
+                            }
                         }
                     } catch (fetchErr) {
                         console.error("⚠️ AuthContext: Failed to load profile for valid session.", fetchErr);
                         if (isMounted.current) {
-                            // User is valid, but profile failed. 
-                            // We treat this as a semi-authenticated state or connection error.
                             setState(prev => ({
                                 ...prev,
                                 session,
@@ -227,12 +234,24 @@ export function AuthProvider({
                         try {
                             const profile = await fetchProfile(session.user.id);
                             if (isMounted.current) {
-                                setState(prev => ({
-                                    ...prev,
-                                    profile: { ...profile, email: session.user.email || profile.email },
-                                    loading: false,
-                                    error: null
-                                }));
+                                if (profile) {
+                                    setState(prev => ({
+                                        ...prev,
+                                        profile: { ...profile, email: session.user.email || profile.email },
+                                        loading: false,
+                                        error: null
+                                    }));
+                                } else {
+                                    console.error("⚠️ AuthContext: Profile fetch returned null on ID mismatch/update.");
+                                    // Don't set connectionError immediately if just switching users? 
+                                    // Actually, if we have a user but no profile, it is an error state.
+                                    setState(prev => ({
+                                        ...prev,
+                                        profile: null,
+                                        loading: false,
+                                        connectionError: true
+                                    }));
+                                }
                             }
                         } catch (err) {
                             console.error("⚠️ AuthContext: Profile fetch failed on AuthChange.", err);

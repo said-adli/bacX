@@ -4,7 +4,11 @@ import React from 'react';
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowLeft, Play } from "lucide-react";
 import Link from "next/link";
-import { NeuralBackground } from "@/components/ui/NeuralBackground";
+import dynamic from "next/dynamic";
+
+const NeuralBackground = dynamic(() => import("@/components/ui/NeuralBackground").then((mod) => mod.NeuralBackground), {
+    ssr: false,
+});
 import { Logo } from "@/components/ui/Logo";
 import { usePageVisibility } from "@/hooks/usePageVisibility";
 

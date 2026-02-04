@@ -83,7 +83,7 @@ export async function getLessonResource(lessonId: string, resourcePath: string) 
         () => generateCachedSignedUrl(resourcePath),
         [`signed-url-${resourcePath}`],
         {
-            revalidate: 1800, // Cache for 30 minutes
+            revalidate: 3600, // Cache for 60 minutes
             tags: ['signed-urls']
         }
     );

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { CheckCircle, Circle, Loader2 } from "lucide-react";
-import { toggleLessonCompletion } from "@/lib/actions/progress";
+import { toggleLessonCompletion } from "@/actions/progress";
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PlayCircle, Clock, Loader2 } from "lucide-react";
-import { getLastAccessedLesson } from "@/lib/actions/progress";
+import { getLastAccessedLesson } from "@/actions/progress";
 import { cn } from "@/lib/utils";
 
 interface LastLesson {
