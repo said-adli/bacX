@@ -69,16 +69,6 @@ export default function ContinueWatching({ initialData, userId }: ContinueWatchi
         );
     }
 
-    // Format "last watched" time
-    const [timeAgo, setTimeAgo] = useState<string>("");
-
-    useEffect(() => {
-        if (data?.updated_at) {
-            const lastWatched = new Date(data.updated_at);
-            setTimeAgo(getTimeAgo(lastWatched));
-        }
-    }, [data?.updated_at]);
-
     if (!data || !data.lessons) {
         return null; // Gracefully hide for new students
     }
@@ -86,6 +76,10 @@ export default function ContinueWatching({ initialData, userId }: ContinueWatchi
     const lesson = data.lessons;
     const subject = lesson.units?.subjects;
     const subjectColor = subject?.color || "#3b82f6"; // Fallback to blue
+
+    // Format "last watched" time
+    const lastWatched = new Date(data.updated_at);
+    const timeAgo = getTimeAgo(lastWatched);
 
     return (
         <div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -131,7 +125,7 @@ export default function ContinueWatching({ initialData, userId }: ContinueWatchi
                             <div className="flex items-center gap-3 text-sm text-white/50">
                                 <span className="flex items-center gap-1">
                                     <Clock size={14} />
-                                    {timeAgo || "..."}
+                                    <span suppressHydrationWarning>{timeAgo}</span>
                                 </span>
                                 {lesson.units && (
                                     <span className="text-white/30">
