@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import useSWR from "swr";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -9,73 +9,33 @@ import { AlertTriangle, Radio } from "lucide-react";
 export function RealtimeSystemStatus() {
     const router = useRouter();
     const supabase = createClient();
-    const [maintenance, setMaintenance] = useState(false);
-    const [live, setLive] = useState(false);
 
-    useEffect(() => {
-        // Initial fetch
-        const fetchStatus = async () => {
-            const { data } = await supabase.from("system_settings").select("*");
-            if (data) {
-                const m = data.find((d: { key: string; value: any }) => d.key === "maintenance_mode");
-                const l = data.find((d: { key: string; value: any }) => d.key === "live_mode");
-                if (m) setMaintenance(!!m.value);
-                if (l) setLive(!!l.value);
-            }
-        };
-        fetchStatus();
+    // FETCH (SWR)
+    const fetchData = async () => {
+        const { data } = await supabase.from("system_settings").select("*");
+        return data || [];
+    };
 
-        // Subscribe
-        const channel = supabase
-            .channel("system-settings-changes")
-            .on(
-                "postgres_changes",
-                {
-                    event: "UPDATE",
-                    schema: "public",
-                    table: "system_settings",
-                },
-                (payload: any) => {
-                    const { key, value } = payload.new;
-                    if (key === "maintenance_mode") {
-                        const isActive = !!value;
-                        setMaintenance(isActive);
-                        if (isActive) {
-                            // Redirect or Show Overlay
-                            toast.error("Entering Maintenance Mode...");
-                            // In a real app, maybe redirect to /maintenance
-                        } else {
-                            toast.success("Maintenance Mode Ended");
-                        }
-                    }
-                    if (key === "live_mode") {
-                        const isLiveNow = !!value;
-                        setLive(isLiveNow);
-                        if (isLiveNow) toast.success("🔴 LIVE BROADCAST STARTED!");
-                    }
-                    router.refresh();
-                }
-            )
-            .subscribe();
+    const { data: settings } = useSWR('system_settings', fetchData, {
+        refreshInterval: 60000, // 1 Minute Polling
+        revalidateOnFocus: true,
+        dedupingInterval: 10000,
+    });
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, []);
+    // Derived Logic
+    const maintenance = settings?.find((d: { key: string; value: any }) => d.key === "maintenance_mode")?.value;
+    // Note: Live mode logic is handled in LiveBanner, but keeping it here if needed for redundancy or removal is fine.
+    // The previous code had specific toast logic on state CHANGE which is hard to replicate 1:1 with simple polling 
+    // without `useEffect` tracking previous value, but for "Status" display, polling is sufficient.
+    // If we need the TOAST on change, we need a refined useEffect on the SWR data.
 
-    // Maintenance Overlay
-    if (maintenance) {
-        return (
-            <div className="fixed inset-0 z-[100] bg-[#050510] flex flex-col items-center justify-center text-center p-8">
-                <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mb-6 border border-red-500/20">
-                    <AlertTriangle size={40} className="text-red-500" />
-                </div>
-                <h1 className="text-3xl font-bold text-white mb-2">We are under Maintenance</h1>
-                <p className="text-zinc-500 max-w-md">The platform is currently being updated to serve you better. Please check back shortly.</p>
+    return maintenance ? (
+        <div className="fixed inset-0 z-[100] bg-[#050510] flex flex-col items-center justify-center text-center p-8">
+            <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mb-6 border border-red-500/20">
+                <AlertTriangle size={40} className="text-red-500" />
             </div>
-        );
-    }
-
-    // Live logic moved to <LiveBanner /> attached in DashboardShell
-    return null;
+            <h1 className="text-3xl font-bold text-white mb-2">We are under Maintenance</h1>
+            <p className="text-zinc-500 max-w-md">The platform is currently being updated to serve you better. Please check back shortly.</p>
+        </div>
+    ) : null;
 }

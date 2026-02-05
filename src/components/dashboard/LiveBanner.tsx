@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import useSWR from "swr";
 import { Radio } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -10,44 +10,18 @@ import Link from "next/link";
 export default function LiveBanner() {
     const router = useRouter();
     const supabase = createClient();
-    const [isLive, setIsLive] = useState(false);
 
-    useEffect(() => {
-        // Initial Fetch
-        const fetchStatus = async () => {
-            const { data } = await supabase.from("system_settings").select("*").eq("key", "live_mode").single();
-            if (data) {
-                setIsLive(!!data.value);
-            }
-        };
-        fetchStatus();
 
-        // Realtime Subscription
-        const channel = supabase
-            .channel("live-banner-updates")
-            .on(
-                "postgres_changes",
-                {
-                    event: "UPDATE",
-                    schema: "public",
-                    table: "system_settings",
-                    filter: "key=eq.live_mode",
-                },
-                (payload: any) => {
-                    const isLiveNow = !!payload.new.value;
-                    setIsLive(isLiveNow);
-                    if (isLiveNow) {
-                        toast.success("🔴 WE ARE LIVE!");
-                        router.refresh();
-                    }
-                }
-            )
-            .subscribe();
+    // FETCH (SWR)
+    const fetchLiveStatus = async () => {
+        const { data } = await supabase.from("system_settings").select("value").eq("key", "live_mode").single();
+        return !!data?.value;
+    };
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [router]);
+    const { data: isLive } = useSWR('live_mode_status', fetchLiveStatus, {
+        refreshInterval: 60000, // 1 Minute Polling
+        fallbackData: false
+    });
 
     if (!isLive) return null;
 
