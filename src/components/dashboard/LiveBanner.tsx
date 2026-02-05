@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/utils/supabase/client";
+import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { Radio } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -22,6 +23,14 @@ export default function LiveBanner() {
         refreshInterval: 60000, // 1 Minute Polling
         fallbackData: false
     });
+
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) return null;
 
     if (!isLive) return null;
 

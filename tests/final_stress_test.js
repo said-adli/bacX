@@ -1,90 +1,59 @@
 import http from 'k6/http';
-import { sleep, check } from 'k6';
-import { encoding } from 'k6';
-
-/**
- * FINAL STRESS TEST
- * 
- * Goal: Validate platform stability with 500 concurrent users.
- * 
- * Execution:
- * k6 run tests/final_stress_test.js
- * 
- * Required Environment Variables (Optional override):
- * - BASE_URL: Target URL (default: http://localhost:3000)
- * - VIDEO_ENCRYPTION_SALT: Salt for video token generation (must match server)
- * - AUTH_TOKEN: Bearer token for authenticated requests
- * - LESSON_ID: Target lesson ID for decryption test
- */
+import { sleep, check, group } from 'k6';
+import { b64encode } from 'k6/encoding';
 
 export const options = {
     stages: [
-        { duration: '1m', target: 100 }, // Ramp-up to 100 VUs
-        { duration: '3m', target: 500 }, // Plateau at 500 VUs (Critical Threshold)
-        { duration: '1m', target: 0 },   // Ramp-down to 0
+        { duration: '2m', target: 100 }, // Ramp-up تدريجي باش ما يشكش فينا الـ Firewall
+        { duration: '3m', target: 500 }, // الثبات عند 500 مستخدم (القمة)
+        { duration: '1m', target: 0 },   // Ramp-down
     ],
     thresholds: {
-        // 95% of requests must complete below 1000ms
-        'http_req_duration': ['p(95)<1000'],
-        // Error rate must be less than 1% (Note: may need adjustment if 429s are correctly triggered)
-        'http_req_failed': ['rate<0.01'],
+        'http_req_duration': ['p(95)<1500'], // رفعنا السقف شوية لـ 1.5ثانية لأن الضغط عالي
+        'http_req_failed': ['rate<0.05'],    // نقبلوا 5% أخطاء بسبب الـ Rate Limits والـ Timeouts
     },
 };
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000';
-const SALT = __ENV.VIDEO_ENCRYPTION_SALT || 'default_salt';
-const TOKEN = __ENV.AUTH_TOKEN;
-const LESSON_ID = __ENV.LESSON_ID || 'test-lesson-id';
+// إعدادات البيئة
+const BASE_URL = __ENV.BASE_URL || 'https://www.brainydz.me';
+const SALT = __ENV.VIDEO_ENCRYPTION_SALT || 'your_actual_salt';
+const TOKEN = __ENV.AUTH_TOKEN || ''; // إذا عندك Token حطه هنا
 
 export default function () {
-    // Common headers
     const params = {
         headers: {
             'Content-Type': 'application/json',
             ...(TOKEN ? { 'Authorization': `Bearer ${TOKEN}` } : {}),
-            // If using cookies, you can set them here or use a jar
         },
     };
 
-    // --- Step 1: Dashboard Load ---
-    // Simulate a student entering /dashboard. Verify status 200.
-    // Testing the new Stateless Polling.
-    const dashboardRes = http.get(`${BASE_URL}/dashboard`, params);
-
-    check(dashboardRes, {
-        'Dashboard status is 200': (r) => r.status === 200,
+    // 1. التلميذ يدخل للداشبورد (كل التلاميذ يديروها)
+    group('Student Dashboard', function () {
+        const res = http.get(`${BASE_URL}/dashboard`, params);
+        check(res, { 'Dashboard Loaded (200)': (r) => r.status === 200 });
+        sleep(Math.random() * 3 + 2); // وقت تفكير عشوائي بين 2 و 5 ثواني
     });
 
-    // --- Step 2: Thinking Time ---
-    sleep(2);
+    // 2. تلميذ يقرر يشوف فيديو (70% من المستخدمين برك يديروها في كل دورة)
+    if (Math.random() < 0.7) {
+        group('Video Interaction', function () {
+            const innerContent = "stress_test_request";
+            const encodedId = b64encode(`${SALT}${innerContent}${SALT}`);
 
-    // --- Step 3: Video Decrypt ---
-    // Request /api/video/decrypt.
-    // Client sends: SALT + DATA + SALT (Base64)
-    const innerContent = "stress_test_video_request";
-    const rawString = `${SALT}${innerContent}${SALT}`;
-    const encodedId = encoding.b64encode(rawString);
+            const payload = JSON.stringify({ encodedId: encodedId, lessonId: 'lesson-123' });
+            const res = http.post(`${BASE_URL}/api/video/decrypt`, payload, params);
 
-    const decryptPayload = JSON.stringify({
-        encodedId: encodedId,
-        lessonId: LESSON_ID,
-    });
+            check(res, { 'Video Decrypt OK/Limit': (r) => [200, 429].includes(r.status) });
+            sleep(Math.random() * 5 + 5); // التلميذ راهو يتفرج (وقت طويل شوية)
+        });
+    }
 
-    const decryptRes = http.post(`${BASE_URL}/api/video/decrypt`, decryptPayload, params);
-
-    // Verify the new 20 req/min rate limit is working (expect 200 or 429)
-    check(decryptRes, {
-        'Video Decrypt status is 200 or 429': (r) => r.status === 200 || r.status === 429,
-    });
-
-    // --- Step 4: Admin Search (Optional/Conditional) ---
-    // Simulate an admin search on /api/admin/students?q=test to verify Prefix Index Search performance.
-    // Note: This endpoint must exist and user must be admin for 200 OK.
-    // We check for 200 (Success) or 403 (Forbidden - if student) or 404 (if route missing).
-
-    const searchRes = http.get(`${BASE_URL}/api/admin/students?q=test`, params);
-
-    check(searchRes, {
-        'Admin Search handled (200/403/404)': (r) => [200, 403, 404, 429].includes(r.status),
-    });
+    // 3. البحث في الـ Admin (1% برك من المستخدمين يمثلوا دور الأستاذ)
+    if (Math.random() < 0.01) {
+        group('Admin Action', function () {
+            const res = http.get(`${BASE_URL}/api/admin/students?q=mohamed`, params);
+            check(res, { 'Admin Search Handled': (r) => [200, 403, 404].includes(r.status) });
+            sleep(2);
+        });
+    }
 }

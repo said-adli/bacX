@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -22,12 +23,16 @@ export function RealtimeSystemStatus() {
         dedupingInterval: 10000,
     });
 
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     // Derived Logic
     const maintenance = settings?.find((d: { key: string; value: any }) => d.key === "maintenance_mode")?.value;
-    // Note: Live mode logic is handled in LiveBanner, but keeping it here if needed for redundancy or removal is fine.
-    // The previous code had specific toast logic on state CHANGE which is hard to replicate 1:1 with simple polling 
-    // without `useEffect` tracking previous value, but for "Status" display, polling is sufficient.
-    // If we need the TOAST on change, we need a refined useEffect on the SWR data.
+
+    if (!mounted) return null;
 
     return maintenance ? (
         <div className="fixed inset-0 z-[100] bg-[#050510] flex flex-col items-center justify-center text-center p-8">
