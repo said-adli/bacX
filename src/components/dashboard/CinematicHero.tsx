@@ -17,6 +17,7 @@ export default function CinematicHero({ hasNotification = false }: { hasNotifica
                     fill
                     className="object-cover transition-transform duration-[30s] ease-linear scale-100 group-hover:scale-105 will-change-transform"
                     priority
+                    sizes="(max-width: 768px) 100vw, 50vw"
                 />
             </div>
 

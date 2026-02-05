@@ -1,6 +1,4 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { Bell, Search, Radio, LogOut, User, ChevronDown } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -9,7 +7,7 @@ import { toast } from "sonner";
 
 interface AdminUser { email?: string | null }
 
-export function AdminHeader({ user }: { user: AdminUser | null }) {
+function AdminHeaderComponent({ user }: { user: AdminUser | null }) {
     const router = useRouter();
     const supabase = createClient();
 
@@ -143,3 +141,7 @@ export function AdminHeader({ user }: { user: AdminUser | null }) {
         </header>
     );
 }
+
+export const AdminHeader = memo(AdminHeaderComponent, (prev, next) => {
+    return prev.user?.email === next.user?.email;
+});

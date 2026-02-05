@@ -1,8 +1,6 @@
 "use client";
 
 import { useSidebar } from "@/context/SidebarContext";
-import RightGlassSidebar from "./RightGlassSidebar";
-import StickyGlassMenu from "./StickyGlassMenu";
 import MobileBottomNav from "./MobileBottomNav"; // [NEW]
 import LiveBanner from "./LiveBanner"; // [NEW]
 
@@ -12,6 +10,11 @@ import { useMediaQuery } from "@/hooks/use-media-query"; // [NEW]
 
 import { usePlayer } from "@/context/PlayerContext";
 import { GlobalVideoPlayer } from "@/components/player/GlobalVideoPlayer";
+import dynamic from "next/dynamic";
+
+// [OPTIMIZATION] Dynamic Imports for Heavy UI Components
+const RightGlassSidebar = dynamic(() => import("./RightGlassSidebar"), { ssr: false });
+const StickyGlassMenu = dynamic(() => import("./StickyGlassMenu"), { ssr: false });
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
     const { isCollapsed } = useSidebar();
@@ -27,7 +30,14 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     }, [registerMiniTarget]); // Stable callback
 
     return (
-        <div className="relative min-h-screen text-white font-sans selection:bg-blue-500/30 bg-[#0B0E14] overflow-hidden" dir="rtl">
+        <div
+            className="relative min-h-screen text-white font-sans selection:bg-blue-500/30 bg-[#0B0E14] overflow-hidden"
+            dir="rtl"
+            style={{
+                transform: "translateZ(0)",
+                backfaceVisibility: "hidden"
+            }}
+        >
             <GlobalVideoPlayer />
 
             {/* Sidebar (Fixed Right) - Hidden on Mobile */}

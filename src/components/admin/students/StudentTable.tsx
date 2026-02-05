@@ -1,28 +1,27 @@
 "use client";
 
-import { useState, useEffect, useOptimistic, startTransition } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
     Search,
-    MoreVertical,
-    ShieldAlert,
-    CheckCircle,
-    XCircle,
-    Clock,
     Filter,
     MessageSquare,
     Send,
-    Edit, // [NEW]
+    Edit,
     Trash2,
-    VenetianMask // For Impersonate
+    VenetianMask,
+    ShieldAlert,
+    CheckCircle,
+    XCircle,
+    Clock
 } from "lucide-react";
 import { StatusToggle } from "@/components/admin/shared/StatusToggle";
-import { toggleBanStudent, manualsExpireSubscription, generateImpersonationLink, deleteStudent } from "@/actions/admin-students";
+import { manualsExpireSubscription, generateImpersonationLink, deleteStudent } from "@/actions/admin-students";
 import { bulkBroadcast } from "@/actions/admin-broadcast";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/useDebounce";
-import { ManageSubscriptionModal } from "./ManageSubscriptionModal"; // [NEW]
+import { ManageSubscriptionModal } from "./ManageSubscriptionModal";
 
 interface Student {
     id: string;
@@ -42,13 +41,12 @@ export function StudentTable({ students, totalPages }: { students: Student[], to
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
-    // [NEW] Debounced Search Logic
+    // Debounced Search Logic
     const [searchTerm, setSearchTerm] = useState(
         typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get("query") || "" : ""
     );
-    const debouncedSearchTerm = useDebounce(searchTerm, 500); // 500ms Delay
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-    // Effect: Trigger Router ONLY when debounced value changes
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         if (debouncedSearchTerm) {
@@ -60,15 +58,20 @@ export function StudentTable({ students, totalPages }: { students: Student[], to
         router.replace(`?${params.toString()}`);
     }, [debouncedSearchTerm, router]);
 
-    // Filter Logic can be added here pushing to URL
-    // e.g. ?filter=expired
-
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
     const [broadcastMessage, setBroadcastMessage] = useState("");
-    const [managingStudent, setManagingStudent] = useState<Student | null>(null); // [NEW] State for Modal
+    const [managingStudent, setManagingStudent] = useState<Student | null>(null);
 
-    // BULK ACTIONS
+    // Virtualization Setup
+    const parentRef = useRef<HTMLDivElement>(null);
+    const rowVirtualizer = useVirtualizer({
+        count: students.length,
+        getScrollElement: () => parentRef.current,
+        estimateSize: () => 64,
+        overscan: 5,
+    });
+
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
             setSelectedIds(new Set(students.map(s => s.id)));
@@ -79,25 +82,20 @@ export function StudentTable({ students, totalPages }: { students: Student[], to
 
     const handleSelectRow = (id: string, checked: boolean) => {
         const newSet = new Set(selectedIds);
-        if (checked) {
-            newSet.add(id);
-        } else {
-            newSet.delete(id);
-        }
+        if (checked) newSet.add(id);
+        else newSet.delete(id);
         setSelectedIds(newSet);
     };
 
     const handleBulkAction = async (action: 'ban' | 'unban' | 'expire') => {
         if (!confirm(`Are you sure you want to ${action.toUpperCase()} ${selectedIds.size} users?`)) return;
-
         setIsLoading(true);
-        // Dynamic import to avoid circular dependency issues if any, or just standard import
+        // Dynamic import to avoid circular dependency issues if any
         const { bulkUpdateStudents } = await import("@/actions/admin-students");
-
         try {
             await bulkUpdateStudents(Array.from(selectedIds), action);
             toast.success(`Bulk ${action} successful`);
-            setSelectedIds(new Set()); // Reset selection
+            setSelectedIds(new Set());
             router.refresh();
         } catch (e) {
             toast.error("Bulk action failed");
@@ -117,7 +115,7 @@ export function StudentTable({ students, totalPages }: { students: Student[], to
             toast.success("Messages sent successfully!");
             setIsBroadcastOpen(false);
             setBroadcastMessage("");
-            setSelectedIds(new Set()); // Reset selection
+            setSelectedIds(new Set());
             router.refresh();
         } catch (e) {
             toast.error("Failed to send messages.");
@@ -147,7 +145,7 @@ export function StudentTable({ students, totalPages }: { students: Student[], to
             const magicLink = await generateImpersonationLink(id);
             if (magicLink) {
                 toast.success("Redirecting to student view...");
-                window.open(magicLink, '_blank'); // Open in new tab to preserve admin session
+                window.open(magicLink, '_blank');
             }
         } catch (e) {
             toast.error("Impersonation failed");
@@ -179,8 +177,8 @@ export function StudentTable({ students, totalPages }: { students: Student[], to
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
                     <input
                         placeholder="Search name, email, or phone..."
-                        value={searchTerm} // Controlled Input
-                        onChange={(e) => setSearchTerm(e.target.value)} // Instant local update
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-12 pr-4 py-3 bg-black/20 border border-white/5 rounded-xl text-white focus:outline-none focus:border-blue-500/50"
                     />
                 </div>
@@ -207,147 +205,164 @@ export function StudentTable({ students, totalPages }: { students: Student[], to
 
             {/* Table */}
             <div className="border border-white/5 rounded-2xl overflow-hidden bg-black/20 backdrop-blur-sm">
-                <table className="w-full text-left">
-                    <thead className="bg-white/5 text-zinc-400 font-medium text-sm text-right">
-                        <tr>
-                            <th className="p-4 w-10">
-                                <input
-                                    type="checkbox"
-                                    className="rounded border-white/20 bg-black/20 text-blue-600 focus:ring-blue-500"
-                                    onChange={(e) => handleSelectAll(e.target.checked)}
-                                    checked={selectedIds.size === students.length && students.length > 0}
-                                />
-                            </th>
-                            <th className="p-4">Student</th>
-                            <th className="p-4">Wilaya</th>
-                            <th className="p-4">System</th>
-                            <th className="p-4">Status</th>
-                            <th className="p-4">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5 text-right">
-                        {students.map((student) => (
-                            <tr
-                                key={student.id}
-                                className={`group transition-colors cursor-pointer ${selectedIds.has(student.id) ? 'bg-blue-900/10' : 'hover:bg-white/5'}`}
-                                onClick={(e) => {
-                                    // Prevent navigation if clicking checkbox or action buttons
-                                    if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('div[role="switch"]')) return;
-                                    router.push(`/admin/students/${student.id}`);
-                                }}
-                            >
-                                <td className="p-4">
+                <div
+                    ref={parentRef}
+                    className="h-[600px] overflow-auto w-full relative scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+                >
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-white/5 text-zinc-400 font-medium text-sm text-right sticky top-0 z-10 backdrop-blur-md">
+                            <tr className="flex w-full border-b border-white/5">
+                                <th className="p-4 w-[5%] flex items-center justify-center">
                                     <input
                                         type="checkbox"
                                         className="rounded border-white/20 bg-black/20 text-blue-600 focus:ring-blue-500"
-                                        checked={selectedIds.has(student.id)}
-                                        onChange={(e) => handleSelectRow(student.id, e.target.checked)}
+                                        onChange={(e) => handleSelectAll(e.target.checked)}
+                                        checked={selectedIds.size === students.length && students.length > 0}
                                     />
-                                </td>
-                                <td className="p-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold border border-blue-500/30">
-                                            {student.full_name?.[0] || "?"}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-white max-w-[150px] truncate">{student.full_name || "Unknown"}</p>
-                                            <p className="text-xs text-zinc-500 max-w-[150px] truncate">{student.email}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="p-4 text-zinc-400">{student.wilaya || "-"}</td>
-                                <td className="p-4 text-zinc-400">{student.study_system || "-"}</td>
-                                <td className="p-4">
-                                    <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                                        <StatusToggle
-                                            table="profiles"
-                                            id={student.id}
-                                            field="is_banned"
-                                            initialValue={student.is_banned}
-                                            labelActive="BANNED"
-                                            labelInactive="OK"
-                                        />
-                                        {student.is_subscribed ? (
-                                            <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 flex w-fit items-center gap-1 animate-in fade-in zoom-in duration-300">
-                                                <CheckCircle size={12} /> ACTIVE
-                                            </span>
-                                        ) : (
-                                            <span className="px-3 py-1 rounded-full bg-zinc-500/10 text-zinc-500 text-xs font-bold border border-zinc-500/20 flex w-fit items-center gap-1">
-                                                <Clock size={12} /> EXPIRED
-                                            </span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="p-4">
-                                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        {student.is_subscribed && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleTerminate(student.id)
-                                                }}
-                                                className="p-2 rounded-lg bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-colors"
-                                                title="Terminate Subscription"
-                                            >
-                                                <XCircle size={16} />
-                                            </button>
-                                        )}
-
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setManagingStudent(student);
-                                            }}
-                                            className="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-colors"
-                                            title="Manage Subscription"
-                                        >
-                                            <Edit size={16} />
-                                        </button>
-
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleImpersonate(student.id, student.full_name || "Student");
-                                            }}
-                                            className="p-2 rounded-lg bg-purple-500/10 text-purple-500 hover:bg-purple-500/20 transition-colors"
-                                            title="Impersonate User (God Mode)"
-                                        >
-                                            <VenetianMask size={16} />
-                                        </button>
-
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDelete(student.id);
-                                            }}
-                                            className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
-                                            title="Delete Student"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                </td>
+                                </th>
+                                <th className="p-4 w-[25%]">Student</th>
+                                <th className="p-4 w-[15%]">Wilaya</th>
+                                <th className="p-4 w-[15%]">System</th>
+                                <th className="p-4 w-[20%]">Status</th>
+                                <th className="p-4 w-[20%]">Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody
+                            className="relative block" // Ensure block for height
+                            style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+                        >
+                            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                                const student = students[virtualRow.index];
+                                return (
+                                    <tr
+                                        key={student.id}
+                                        data-index={virtualRow.index}
+                                        ref={rowVirtualizer.measureElement}
+                                        className={`transition-colors cursor-pointer absolute top-0 left-0 w-full flex items-center border-b border-white/5 ${selectedIds.has(student.id) ? 'bg-blue-900/10' : 'hover:bg-white/5'}`}
+                                        style={{
+                                            height: `${virtualRow.size}px`,
+                                            transform: `translateY(${virtualRow.start}px)`,
+                                            willChange: 'transform' // GPU Acceleration
+                                        }}
+                                        onClick={(e) => {
+                                            if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('div[role="switch"]')) return;
+                                            router.push(`/admin/students/${student.id}`);
+                                        }}
+                                    >
+                                        <td className="p-4 w-[5%] flex items-center justify-center">
+                                            <input
+                                                type="checkbox"
+                                                className="rounded border-white/20 bg-black/20 text-blue-600 focus:ring-blue-500"
+                                                checked={selectedIds.has(student.id)}
+                                                onChange={(e) => handleSelectRow(student.id, e.target.checked)}
+                                            />
+                                        </td>
+                                        <td className="p-4 w-[25%] overflow-hidden">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold border border-blue-500/30 flex-shrink-0">
+                                                    {student.full_name?.[0] || "?"}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="font-bold text-white truncate">{student.full_name || "Unknown"}</p>
+                                                    <p className="text-xs text-zinc-500 truncate">{student.email}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="p-4 w-[15%] text-zinc-400 text-right truncate">{student.wilaya || "-"}</td>
+                                        <td className="p-4 w-[15%] text-zinc-400 text-right truncate">{student.study_system || "-"}</td>
+                                        <td className="p-4 w-[20%] flex justify-end">
+                                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                                <StatusToggle
+                                                    table="profiles"
+                                                    id={student.id}
+                                                    field="is_banned"
+                                                    initialValue={student.is_banned}
+                                                    labelActive="BANNED"
+                                                    labelInactive="OK"
+                                                />
+                                                {student.is_subscribed ? (
+                                                    <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 flex w-fit items-center gap-1">
+                                                        <CheckCircle size={12} /> ACTIVE
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-3 py-1 rounded-full bg-zinc-500/10 text-zinc-500 text-xs font-bold border border-zinc-500/20 flex w-fit items-center gap-1">
+                                                        <Clock size={12} /> EXPIRED
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="p-4 w-[20%] flex justify-end">
+                                            <div className="flex items-center justify-end gap-2">
+                                                {student.is_subscribed && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleTerminate(student.id)
+                                                        }}
+                                                        className="p-2 rounded-lg bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-colors"
+                                                        title="Terminate Subscription"
+                                                    >
+                                                        <XCircle size={16} />
+                                                    </button>
+                                                )}
 
-                {students.length === 0 && (
-                    <div className="p-8 text-center text-zinc-500">
-                        No students found matching your criteria.
-                    </div>
-                )}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setManagingStudent(student);
+                                                    }}
+                                                    className="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-colors"
+                                                    title="Manage Subscription"
+                                                >
+                                                    <Edit size={16} />
+                                                </button>
+
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleImpersonate(student.id, student.full_name || "Student");
+                                                    }}
+                                                    className="p-2 rounded-lg bg-purple-500/10 text-purple-500 hover:bg-purple-500/20 transition-colors"
+                                                    title="Impersonate User (God Mode)"
+                                                >
+                                                    <VenetianMask size={16} />
+                                                </button>
+
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete(student.id);
+                                                    }}
+                                                    className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                                                    title="Delete Student"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+
+                    {students.length === 0 && (
+                        <div className="p-8 text-center text-zinc-500">
+                            No students found matching your criteria.
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Pagination Placeholder */}
             {totalPages > 1 && (
                 <div className="flex justify-center gap-2">
-                    {/* Add pagination logic later */}
                     <button className="px-3 py-1 rounded bg-white/5 text-zinc-400">Prev</button>
                     <span className="px-3 py-1 text-white">Page 1</span>
                     <button className="px-3 py-1 rounded bg-white/5 text-zinc-400">Next</button>
                 </div>
             )}
+
             {/* BULK ACTION BAR */}
             {selectedIds.size > 0 && (
                 <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#0A0A15] border border-blue-500/30 shadow-[0_0_50px_rgba(0,0,0,0.8)] rounded-2xl p-4 flex items-center gap-6 z-50 animate-in slide-in-from-bottom-10 fade-in duration-300">
@@ -439,6 +454,7 @@ export function StudentTable({ students, totalPages }: { students: Student[], to
                     </div>
                 </div>
             )}
+
             {/* MANAGE SUBSCRIPTION MODAL */}
             {managingStudent && (
                 <ManageSubscriptionModal
