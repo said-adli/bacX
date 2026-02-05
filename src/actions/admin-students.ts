@@ -52,7 +52,8 @@ export async function getStudents(
         // Let's assume profiles has these fields as per "StudentProfile" interface above?
         // Wait, interface only has: full_name, email, wilaya...
         // Let's check if 'phone' is in schema. If not, we search what we can.
-        dbQuery = dbQuery.or(`full_name.ilike.%${query}%,email.ilike.%${query}%`);
+        // SEARCH OPTIMIZATION: Prefix Search Only (Uses Index)
+        dbQuery = dbQuery.or(`full_name.ilike.${query}%,email.ilike.${query}%`);
     }
 
     if (filter === 'active') {

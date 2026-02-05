@@ -10,28 +10,32 @@ import { createClient } from "@/utils/supabase/server";
 const SERVER_SALT = process.env.VIDEO_ENCRYPTION_SALT;
 
 export async function POST(request: Request) {
-    // 1. STRICT RATE LIMITING (P0 Fix: 5 req/min)
+    // 1. AUTHENTICATION (Supabase) - Moved Up for Identity-Based Rate Limiting
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    // 2. IDENTITY-BASED RATE LIMITING
     const clientIp = getClientIp(request);
+    const limitKey = user?.id || `ip:${clientIp}`; // Prefer User ID to support shared networks (schools/libraries)
+
     const rateLimitResult = await checkRateLimitDistributed(
-        `video:${clientIp}`,
+        `video:${limitKey}`,
         videoRateLimiter,
-        { maxRequests: 5, windowMs: 60000 } // STRICT: 5 decrypts per minute
+        { maxRequests: 20, windowMs: 60000 } // RELAXED: 20 decrypts per minute
     );
 
     if (!rateLimitResult.success) {
-        // Video decrypt blocked
-        return createRateLimitResponse(rateLimitResult);
+        return NextResponse.json(
+            { error: "Too many video requests. Please wait a minute." },
+            { status: 429 }
+        );
     }
 
-    // 2. CONFIG CHECK
+    // 3. CONFIG CHECK
     if (!SERVER_SALT) {
         console.error('[CRITICAL] VIDEO_ENCRYPTION_SALT not configured!');
         return NextResponse.json({ error: 'System Error' }, { status: 500 });
     }
-
-    // 3. AUTHENTICATION (Supabase)
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

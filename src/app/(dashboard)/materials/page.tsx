@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { getDashboardView } from "@/services/dashboard.service";
+import { getDashboardSubjects } from "@/services/dashboard.service";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { SubjectCards } from "@/components/dashboard/SubjectCards";
@@ -20,7 +20,7 @@ export default async function MaterialsPage() {
     }
 
     // 2. Fetch Data via Service Layer (Same as Dashboard)
-    const { subjects } = await getDashboardView(user.id);
+    const subjects = await getDashboardSubjects(user.id);
 
     return (
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">

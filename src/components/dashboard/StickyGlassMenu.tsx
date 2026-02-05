@@ -111,7 +111,7 @@ const StickyGlassMenuComponent = function StickyGlassMenu() {
                                                 <div
                                                     key={notif.id}
                                                     onClick={() => markAsRead(notif.id)}
-                                                    className={`p-3 rounded-xl border border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${notif.read_by?.includes(user?.id || '') ? 'opacity-50' : 'bg-white/[0.02]'}`}
+                                                    className={`p-3 rounded-xl border border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${(notif.user_notifications?.length ?? 0) > 0 ? 'opacity-50' : 'bg-white/[0.02]'}`}
                                                 >
                                                     <div className="flex items-start gap-3">
                                                         <div className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${notif.type === 'live' ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`} />
