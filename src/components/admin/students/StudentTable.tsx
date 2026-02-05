@@ -35,6 +35,7 @@ interface Student {
     created_at: string;
     avatar_url?: string;
     subscription_end_date?: string | null;
+    plan_id: string | null;
 }
 
 export function StudentTable({ students, totalPages }: { students: Student[], totalPages: number }) {
