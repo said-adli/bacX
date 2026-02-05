@@ -103,14 +103,15 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
 
             if (uploadError) throw uploadError;
 
-            // 2. Get Public URL
-            const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(fileName);
+            // 2. Get Public URL (REMOVED - Privacy Update)
+            // const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(fileName);
 
             // 3. Create Payment Request
+            // Store PATH only, for Signed URL generation by Admin Actions
             const { error: dbError } = await supabase.from('payment_requests').insert({
                 user_id: user.id,
                 plan_id: plan.id, // Using real plan ID
-                receipt_url: publicUrl,
+                receipt_url: fileName, // PRIVATE STORAGE: Store Path
                 status: 'pending',
                 amount: appliedCoupon ? appliedCoupon.finalPrice : (plan.discount_price || plan.price), // Use Discounted Price
                 method: 'ccp'

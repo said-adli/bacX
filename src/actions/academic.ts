@@ -2,15 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
-
-async function requireAdmin() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
-    return createAdminClient();
-}
+import { requireAdmin } from "@/lib/auth-guard";
 
 // Types
 interface SubjectData { name: string; icon: string; order: number; }
@@ -20,7 +12,8 @@ interface LessonData { title: string; videoUrl: string; duration: string; isFree
 // SUBJECTS
 export async function createSubject(data: SubjectData) {
     try {
-        const admin = await requireAdmin();
+        await requireAdmin();
+        const admin = createAdminClient();
         const { error } = await admin.from('subjects').insert({
             name: data.name,
             icon: data.icon,
@@ -33,7 +26,8 @@ export async function createSubject(data: SubjectData) {
 
 export async function deleteSubject(id: string) {
     try {
-        const admin = await requireAdmin();
+        await requireAdmin();
+        const admin = createAdminClient();
         // Cascade delete should handle units/lessons if set up in DB. 
         // If not, we might need manual cleanup. Assuming DB cascade.
         const { error } = await admin.from('subjects').delete().eq('id', id);
@@ -45,7 +39,8 @@ export async function deleteSubject(id: string) {
 // UNITS
 export async function createUnit(subjectId: string, data: UnitData) {
     try {
-        const admin = await requireAdmin();
+        await requireAdmin();
+        const admin = createAdminClient();
         const { error } = await admin.from('units').insert({
             subject_id: subjectId,
             name: data.name,
@@ -58,7 +53,8 @@ export async function createUnit(subjectId: string, data: UnitData) {
 
 export async function deleteUnit(id: string) {
     try {
-        const admin = await requireAdmin();
+        await requireAdmin();
+        const admin = createAdminClient();
         const { error } = await admin.from('units').delete().eq('id', id);
         if (error) throw error;
         return { success: true };
@@ -68,7 +64,8 @@ export async function deleteUnit(id: string) {
 // LESSONS
 export async function createLesson(unitId: string, data: LessonData) {
     try {
-        const admin = await requireAdmin();
+        await requireAdmin();
+        const admin = createAdminClient();
         const { error } = await admin.from('lessons').insert({
             unit_id: unitId,
             title: data.title,
@@ -85,7 +82,8 @@ export async function createLesson(unitId: string, data: LessonData) {
 
 export async function deleteLesson(id: string) {
     try {
-        const admin = await requireAdmin();
+        await requireAdmin();
+        const admin = createAdminClient();
         const { error } = await admin.from('lessons').delete().eq('id', id);
         if (error) throw error;
         return { success: true };

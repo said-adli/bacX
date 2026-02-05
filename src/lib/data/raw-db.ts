@@ -86,7 +86,15 @@ export async function getUserProgressMapRaw(userId: string): Promise<Map<string,
     // 3. Aggregate completed count per subject
     const completedCounts: Record<string, number> = {};
 
-    progressData?.forEach((item: any) => {
+    interface ProgressItem {
+        lesson_id: string;
+        is_completed: boolean;
+        lessons: { // joined
+            subject_id: string;
+        } | null;
+    }
+
+    (progressData as unknown as ProgressItem[])?.forEach((item) => {
         const subjectId = item.lessons?.subject_id;
         if (subjectId) {
             completedCounts[subjectId] = (completedCounts[subjectId] || 0) + 1;

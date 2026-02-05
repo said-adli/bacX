@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/utils/supabase/admin";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export interface SecurityProfile {
     full_name: string | null;
@@ -28,6 +29,7 @@ export async function getSecurityLogs(
     page = 1,
     filter: 'all' | 'admin_only' | 'system' = 'all'
 ): Promise<LogsResponse> {
+    await requireAdmin();
     const supabaseAdmin = createAdminClient();
     const PAGE_SIZE = 20;
 

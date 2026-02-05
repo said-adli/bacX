@@ -2,50 +2,26 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/auth-guard";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export interface PaymentProof {
     id: string;
     student_id: string;
-    image_url: string;
+    image_url: string; // This will now be a signed URL
     status: 'pending' | 'approved' | 'rejected';
     created_at: string;
     student_email: string;
     plan_id: string;
 }
 
-/**
- * 🔒 SECURITY HELPER: Enforce Admin Role
- * Throws "Unauthorized" or "Forbidden" if checks fail.
- */
-async function requireAdmin() {
-    const supabase = await createClient();
-
-    // 1. Verify Authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-        throw new Error("Unauthorized: Please log in.");
-    }
-
-    // 2. Verify Admin Role (RBAC)
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-    // STRICT: Explicit check for 'admin' role
-    if (!profile || profile.role !== 'admin') {
-        console.warn(`[SECURITY] Unauthorized access attempt by user ${user.id}`);
-        // USER REQUESTED EXACT STRING:
-        throw new Error("Unauthorized Access: Admins Only");
-    }
-
-    return { supabase, user };
-}
-
-// Fetch Pending Payments (Protected)
+// Fetch Pending Payments (Protected + Signed URLs)
 export async function getPendingPayments() {
-    const { supabase } = await requireAdmin();
+    const user = await requireAdmin(); // Centralized Guard
+    const supabase = await createClient();
+    // Use Admin Client for storage operations to ensure we can sign URLs for private buckets if needed
+    // (though usually standard client with admin user works, admin client is safer for system ops)
+    const adminSupabase = createAdminClient();
 
     const { data, error } = await supabase
         .from('payment_requests') // Targeting the secured table
@@ -65,13 +41,39 @@ export async function getPendingPayments() {
         return [];
     }
 
-    return data;
+    // Transform receipts to Signed URLs
+    const paymentsWithSignedUrls = await Promise.all(
+        data.map(async (payment) => {
+            let signedUrl = payment.receipt_url;
+
+            // Check if it looks like a path (not a full http URL)
+            // If it starts with 'http', it's legacy public URL. If not, it's a path.
+            if (payment.receipt_url && !payment.receipt_url.startsWith('http')) {
+                const { data: signedData } = await adminSupabase
+                    .storage
+                    .from('receipts')
+                    .createSignedUrl(payment.receipt_url, 3600); // 1 Hour Validity
+
+                if (signedData?.signedUrl) {
+                    signedUrl = signedData.signedUrl;
+                }
+            }
+
+            return {
+                ...payment,
+                receipt_url: signedUrl
+            };
+        })
+    );
+
+    return paymentsWithSignedUrls;
 }
 
 // Approve Payment (STRICT MODE & SECURED)
 export async function approvePayment(requestId: string, userId: string, planId: string) {
     // 1. Enforce Admin
-    const { supabase, user } = await requireAdmin();
+    const user = await requireAdmin();
+    const supabase = await createClient();
 
     // 2. Atomic Transaction via RPC
     const { error } = await supabase.rpc('approve_payment_transaction', {
@@ -90,7 +92,8 @@ export async function approvePayment(requestId: string, userId: string, planId: 
 // Reject Payment (SECURED)
 export async function rejectPayment(requestId: string) {
     // 1. Enforce Admin
-    const { supabase } = await requireAdmin();
+    await requireAdmin();
+    const supabase = await createClient();
 
     // 2. Get Request to find User (Safety check)
     const { data: request, error: fetchError } = await supabase

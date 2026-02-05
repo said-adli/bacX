@@ -16,22 +16,33 @@ export function AdminHeader({ user }: { user: any }) {
     const [isLive, setIsLive] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    // Live Status Sync
+    // Polling Status Sync (60s interval)
     useEffect(() => {
+        let isMounted = true;
         const fetchStatus = async () => {
-            const { data } = await supabase.from("system_settings").select("*").eq("key", "live_mode").single();
-            if (data) setIsLive(!!data.value);
+            if (document.hidden) return; // Don't poll if hidden
+            try {
+                const { data } = await supabase.from("system_settings").select("*").eq("key", "live_mode").single();
+                if (isMounted && data) setIsLive(!!data.value);
+            } catch (e) {
+                console.error("Polling error", e);
+            }
         };
-        fetchStatus();
 
-        const channel = supabase
-            .channel("admin-header-live")
-            .on("postgres_changes", { event: "UPDATE", schema: "public", table: "system_settings", filter: "key=eq.live_mode" }, (payload: any) => {
-                setIsLive(!!payload.new.value);
-            })
-            .subscribe();
+        fetchStatus(); // Initial
+        const interval = setInterval(fetchStatus, 60000); // 60s Polling
 
-        return () => { supabase.removeChannel(channel); };
+        const handleVisibilityChange = () => {
+            if (!document.hidden) fetchStatus();
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
     }, []);
 
     // Handlers

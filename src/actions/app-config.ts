@@ -2,19 +2,12 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
-
-async function requireAdmin() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
-    return createAdminClient();
-}
+import { requireAdmin } from "@/lib/auth-guard";
 
 export async function updateLiveConfig(data: { url: string; isActive: boolean }) {
     try {
-        const admin = await requireAdmin();
+        await requireAdmin();
+        const admin = createAdminClient();
         // Upsert global config
         const { error } = await admin.from('app_settings')
             .upsert({

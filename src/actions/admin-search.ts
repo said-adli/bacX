@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export type SearchResult = {
     id: string;
@@ -18,28 +19,30 @@ export type GroupedResults = {
     subjects: SearchResult[];
 }
 
+function sanitizeSearchQuery(query: string): string {
+    // Basic sanitization: allow letters, numbers, spaces, dots, dashes, at-signs.
+    // Remove potential SQL injection chars like quotes, semicolons, percentages (except implied).
+    return query.replace(/[^\w\s@.-]/gi, '').trim();
+}
+
 export async function globalSearch(query: string): Promise<GroupedResults> {
     if (!query || query.length < 2) {
         return { students: [], coupons: [], subjects: [] };
     }
 
-    const supabase = await createClient();
-
     // 1. Verify Admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { students: [], coupons: [], subjects: [] };
-
-    // We can skip explicit role check for search read-only if we rely on RLS, 
-    // but strict is better.
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') return { students: [], coupons: [], subjects: [] };
+    await requireAdmin();
 
     // 2. Parallel Search (Using Admin Client to guarantee visibility)
     const adminClient = createAdminClient();
-    const sanitizedQuery = query.toLowerCase();
+    const sanitizedQuery = sanitizeSearchQuery(query);
+
+    if (!sanitizedQuery) return { students: [], coupons: [], subjects: [] };
 
     const [studentsResult, couponsResult, subjectsResult] = await Promise.all([
         // Search Students
+        // Using AdminClient with filtered text to avoid full raw string injection risk in 'or'
+        // Ideally this should use an RPC 'admin_search_students' if available.
         adminClient
             .from('profiles')
             .select('id, full_name, email')

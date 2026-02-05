@@ -2,30 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
-
-// Helper to verify admin role
-async function requireAdmin() {
-    const supabase = await createClient(); // Authenticated user client
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        throw new Error("Unauthorized: You must be logged in.");
-    }
-
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-    if (!profile || profile.role !== 'admin') {
-        throw new Error("Forbidden: Admin access required.");
-    }
-
-    // Return admin client for privileged ops
-    const adminClient = createAdminClient();
-    return { adminClient, user };
-}
+import { requireAdmin } from "@/lib/auth-guard";
 
 export async function approvePayment(paymentId: string, userId: string, durationDays: number = 365) {
     if (!paymentId || !userId) {
@@ -33,7 +10,8 @@ export async function approvePayment(paymentId: string, userId: string, duration
     }
 
     try {
-        const { adminClient } = await requireAdmin();
+        await requireAdmin();
+        const adminClient = createAdminClient();
 
         // 1. Verify Payment Exists
         const { data: payment, error: pError } = await adminClient
@@ -85,7 +63,8 @@ export async function approvePayment(paymentId: string, userId: string, duration
 
 export async function rejectPayment(paymentId: string, userId: string, reason: string = "No reason provided") {
     try {
-        const { adminClient } = await requireAdmin();
+        const user = await requireAdmin();
+        const adminClient = createAdminClient();
 
         const { error } = await adminClient
             .from('payment_requests')
@@ -108,7 +87,8 @@ export async function rejectPayment(paymentId: string, userId: string, reason: s
 // User Management Actions
 export async function toggleBan(userId: string, currentStatus: boolean) {
     try {
-        const { adminClient } = await requireAdmin();
+        const user = await requireAdmin();
+        const adminClient = createAdminClient();
         const { error } = await adminClient
             .from('profiles')
             .update({ banned: !currentStatus })
@@ -124,7 +104,8 @@ export async function toggleBan(userId: string, currentStatus: boolean) {
 
 export async function manualSubscribe(userId: string) {
     try {
-        const { adminClient } = await requireAdmin();
+        const user = await requireAdmin();
+        const adminClient = createAdminClient();
         const expiryDate = new Date();
         expiryDate.setFullYear(expiryDate.getFullYear() + 1);
 
@@ -148,7 +129,8 @@ export async function manualSubscribe(userId: string) {
 
 export async function resetDevices(userId: string) {
     try {
-        const { adminClient } = await requireAdmin();
+        const user = await requireAdmin();
+        const adminClient = createAdminClient();
         const { error } = await adminClient
             .from('profiles')
             .update({ active_devices: [] })

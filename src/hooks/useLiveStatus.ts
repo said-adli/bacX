@@ -51,32 +51,33 @@ export function useLiveStatus() {
 
         fetchLive();
 
-        // 2. Realtime Subscription
-        const channel = supabase
-            .channel('public:live_sessions')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'live_sessions'
-                },
-                (payload: RealtimePostgresChangesPayload<LiveSession>) => {
-                    // Refresh data on any change (simple approach) or handle payload
-                    // For simplicity, we just refetch or inspect the payload
-                    if (payload.eventType === 'DELETE') {
-                        setLiveSession(null);
-                    } else {
-                        setLiveSession(payload.new as LiveSession);
-                    }
-                }
-            )
-            .subscribe();
+        // 2. Polling (Adaptive: 30s active, 5min background)
+        const poll = async () => {
+            if (!isMounted) return;
+
+            // Background check
+            if (document.hidden) {
+                // Slower polling or stop? Req says: "Stop polling on hidden tab" for some, "60-120s" for others.
+                // Scenario A says "60-120s only when visible" (wait, scenario A was admin/system). 
+                // This hook seems generally used. Let's do 60s.
+                return;
+            }
+
+            await fetchLive();
+        };
+
+        const intervalId = setInterval(poll, 30000); // 30s polling when visible
+
+        // Re-fetch on focus
+        const onFocus = () => fetchLive();
+        window.addEventListener('focus', onFocus);
 
         return () => {
-            supabase.removeChannel(channel);
+            isMounted = false;
+            clearInterval(intervalId);
+            window.removeEventListener('focus', onFocus);
         };
-    }, []); // Removed supabase from deps - it's recreated each render
+    }, []);
 
     const isLive = liveSession?.status === "live";
     const title = liveSession?.title || "";

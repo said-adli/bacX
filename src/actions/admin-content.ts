@@ -52,24 +52,35 @@ export async function getContentTree(): Promise<SubjectWithUnitsDTO[]> {
     }
 
     // Transform to strict DTO
-    return (data || []).map((subject: any) => ({
+    interface RawLesson {
+        id: string; title: string; type: string; required_plan_id: string | null; order_index: number; created_at: string;
+    }
+    interface RawUnit {
+        id: string; title: string; subject_id: string; order_index: number; lessons: RawLesson[];
+    }
+    interface RawSubject {
+        id: string; name: string; published: boolean; order_index: number; units: RawUnit[];
+    }
+
+    return (data as unknown as RawSubject[] || []).map((subject) => ({
         id: subject.id,
         name: subject.name,
         published: subject.published ?? false,
         order_index: subject.order_index,
         units: (subject.units || [])
-            .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
-            .map((unit: any) => ({
+            .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+            .map((unit) => ({
                 id: unit.id,
                 title: unit.title,
                 subject_id: unit.subject_id,
                 order_index: unit.order_index,
                 lessons: (unit.lessons || [])
-                    .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
-                    .map((lesson: any) => ({
+                    .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+                    .map((lesson) => ({
                         id: lesson.id,
+                        unit_id: unit.id,
                         title: lesson.title,
-                        type: lesson.type,
+                        type: lesson.type as "video" | "live_stream" | "pdf" | "quiz", // Cast to specific union if known
                         required_plan_id: lesson.required_plan_id,
                         order_index: lesson.order_index,
                         created_at: lesson.created_at

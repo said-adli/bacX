@@ -7,7 +7,7 @@ export interface LessonDTO {
     id: string;
     title: string;
     unit_id: string;
-    type: 'video' | 'live_stream' | 'pdf';
+    type: 'video' | 'live_stream' | 'pdf' | 'quiz';
     video_url?: string | null;
     required_plan_id?: string | null;
     is_public?: boolean;

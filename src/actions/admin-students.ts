@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { logAdminAction } from "@/lib/admin-logger";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export interface StudentProfile {
     id: string;
@@ -32,8 +33,7 @@ export async function getStudents(
     const adminClient = createAdminClient(); // Fallback for some filters if needed without RLS.
 
     // Verify Admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
+    await requireAdmin();
 
     // Use Admin Client for Querying to ensure we see EVERYTHING regardless of quirky RLS
     // (God Mode for Read as well)
@@ -84,15 +84,13 @@ export async function toggleBanStudent(userId: string, shouldBan: boolean) {
     const supabaseAdmin = createAdminClient();
 
     // Verify Admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
+    // Verify Admin
+    await requireAdmin();
 
     // 1. Update Profile (Visual) - Use Admin Client to bypass profile RLS
     const { error: profileError } = await supabaseAdmin
         .from('profiles')
-        .update({ is_banned: shouldBan } as any)
+        .update({ is_banned: shouldBan })
         .eq('id', userId);
 
     if (profileError) throw profileError;
@@ -115,10 +113,8 @@ export async function manualsExpireSubscription(userId: string) {
     const supabaseAdmin = createAdminClient();
 
     // Verify Admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
+    // Verify Admin
+    await requireAdmin();
 
     const { error } = await supabaseAdmin
         .from('profiles')
@@ -138,10 +134,8 @@ export async function extendSubscription(userId: string, daysToAdd: number) {
     const supabaseAdmin = createAdminClient();
 
     // Verify Admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
+    // Verify Admin
+    await requireAdmin();
 
     // Get current profile
     const { data: profileData } = await supabaseAdmin.from('profiles').select('subscription_end_date, is_subscribed').eq('id', userId).single();
@@ -231,8 +225,8 @@ export async function generateImpersonationLink(userId: string) {
     const supabaseAdmin = createAdminClient();
 
     // 1. Verify Admin (Redundant check but safe)
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
+    // 1. Verify Admin (Redundant check but safe)
+    await requireAdmin();
 
     // 2. Get Student Email
     const { data: profile } = await supabaseAdmin
@@ -273,12 +267,8 @@ export async function bulkUpdateStudents(
     const supabaseAdmin = createAdminClient();
 
     // 1. Verify Admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-
-    // Security: Explicitly check for admin role
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
+    // 1. Verify Admin
+    await requireAdmin();
 
     // 2. Perform Actions
     if (action === 'ban' || action === 'unban') {
@@ -319,13 +309,17 @@ export async function setStudentPlan(userId: string, planId: string | null, isSu
     const supabaseAdmin = createAdminClient();
 
     // Verify Admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
+    // Verify Admin
+    await requireAdmin();
 
     // Construct Update Object
-    const updateData: any = {
+    interface ProfileUpdate {
+        is_subscribed: boolean;
+        plan_id?: string;
+        subscription_end_date?: string;
+    }
+
+    const updateData: ProfileUpdate = {
         is_subscribed: isSubscribed,
     };
 
@@ -370,10 +364,8 @@ export async function updateStudentProfile(userId: string, data: { fullName?: st
     const supabaseAdmin = createAdminClient();
 
     // Verify Admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
+    // Verify Admin
+    await requireAdmin();
 
     // Update Profile
     const { error } = await supabaseAdmin
@@ -402,10 +394,8 @@ export async function deleteStudent(userId: string) {
     const supabaseAdmin = createAdminClient();
 
     // Verify Admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
+    // Verify Admin
+    await requireAdmin();
 
     // Cascade Delete handled by DB Foreign Keys preferably, but we can engage manual cleanup if needed.
     // Supabase Auth deletion cascades to profiles often if configured, or we delete user which deletes profile.
