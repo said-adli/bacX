@@ -1,7 +1,8 @@
 "use client";
 
 import { SidebarProvider } from "@/context/SidebarContext";
-import DashboardShell from "@/components/dashboard/DashboardShell";
+import dynamic from "next/dynamic";
+const DashboardShell = dynamic(() => import("@/components/dashboard/DashboardShell"), { ssr: false });
 import { usePageVisibility } from "@/hooks/usePageVisibility";
 
 // ============================================================================
