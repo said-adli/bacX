@@ -65,7 +65,7 @@ export function StudentTable({ students, totalPages }: { students: Student[], to
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
     const [broadcastMessage, setBroadcastMessage] = useState("");
-    const [managingStudent, setManagingStudent] = useState<any | null>(null); // [NEW] State for Modal
+    const [managingStudent, setManagingStudent] = useState<Student | null>(null); // [NEW] State for Modal
 
     // BULK ACTIONS
     const handleSelectAll = (checked: boolean) => {

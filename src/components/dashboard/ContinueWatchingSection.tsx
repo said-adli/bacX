@@ -8,5 +8,5 @@ export default async function ContinueWatchingSection({ user }: { user: User }) 
     const lastLesson = await getLastAccessedLesson(user.id);
 
     // Pass to Client Component
-    return <ContinueWatching initialData={lastLesson as any} userId={user.id} />;
+    return <ContinueWatching initialData={lastLesson} userId={user.id} />;
 }

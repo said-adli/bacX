@@ -24,7 +24,7 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
     const isEditing = !!initialData;
     const [formData, setFormData] = useState({
         title: initialData?.title || "",
-        type: initialData?.type || "video",
+        type: (initialData?.type || "video") as "video" | "live_stream" | "pdf",
         video_url: initialData?.video_url || "",
         required_plan_id: initialData?.required_plan_id || "",
         is_public: initialData?.is_public || false
@@ -82,7 +82,7 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
         try {
             const payload = {
                 title: formData.title,
-                type: formData.type as any,
+                type: formData.type,
                 video_url: formData.video_url,
                 required_plan_id: formData.required_plan_id || null, // Granular Access Logic
                 unit_id: unitId,
@@ -165,7 +165,7 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
                     {['video', 'live_stream', 'pdf'].map((t) => (
                         <div
                             key={t}
-                            onClick={() => setFormData({ ...formData, type: t as any })}
+                            onClick={() => setFormData({ ...formData, type: t as "video" | "live_stream" | "pdf" })}
                             className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col items-center gap-2 ${formData.type === t ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'bg-black/20 border-white/5 text-zinc-500 hover:bg-white/5'}`}
                         >
                             {t === 'video' && <Video size={24} />}

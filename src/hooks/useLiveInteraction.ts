@@ -34,11 +34,34 @@ export const useLiveInteraction = () => {
     const [status, setStatus] = useState<InteractionStatus>('idle');
     const [queue, setQueue] = useState<LiveInteraction[]>([]);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [displayBuffer, setDisplayBuffer] = useState<ChatMessage[]>([]); // [NEW] Buffer
     const [currentSpeaker, setCurrentSpeaker] = useState<LiveInteraction | null>(null);
 
     // Refs
     const lastMessageTimeRef = useRef<number>(0);
-    const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
+    const displayedIdsRef = useRef<Set<string>>(new Set());
+
+    // [NEW] Waterfall Effect
+    useEffect(() => {
+        if (displayBuffer.length === 0) return;
+
+        const timer = setInterval(() => {
+            setDisplayBuffer(prev => {
+                const [next, ...rest] = prev;
+                if (!next) return prev;
+
+                setMessages(curr => {
+                    if (displayedIdsRef.current.has(next.id)) return curr;
+                    displayedIdsRef.current.add(next.id);
+                    return [...curr, next];
+                });
+                return rest;
+            });
+        }, 400); // 400ms delay per message
+
+        return () => clearInterval(timer);
+    }, [displayBuffer]);
+
 
     // 1. Polling (Adaptive)
     useEffect(() => {
@@ -67,29 +90,37 @@ export const useLiveInteraction = () => {
             }
 
             // B. Fetch Messages (Chat)
-            // Limit to last 50 for performance
             const { data: msgData } = await client.from('live_comments')
                 .select('*')
-                .order('created_at', { ascending: true }) // Oldest first for chat flow? Or newest? Chat usually appends.
-                // Actually usually we fetch last N. 
-                // .order('created_at', { ascending: false }).limit(50) -> then reverse?
-                // Let's do simple ascending for now, assuming we want historically consistent chat.
-                // Optimization: Filter by `created_at` > `lastLoadedTime` to only append?
-                // For simplicity in this refactor, we replace the list (or we could merge).
-                // Replacing helps with deletions/moderation.
                 .order('created_at', { ascending: false })
                 .limit(50);
 
             if (msgData) {
-                // DB is snake_case. Interface is camelCase (is_question vs is_question? No, interface says is_question: boolean in Step 76, 
-                // wait. Step 76 interface: is_question: boolean. DB: is_question. 
-                // Check Step 101: `const { data: msgData}`
-                // I need to confirm interface keys match DB keys or map them.
-                // Step 76:
-                // export interface ChatMessage { ... is_question: boolean; ... }
-                // Migration: is_question BOOLEAN
-                // So keys match. I can just cast.
-                setMessages((msgData as ChatMessage[]).reverse());
+                const incoming = (msgData as ChatMessage[]).reverse();
+
+                // Initial Load: Dump everything immediately if empty
+                // But we need to use functional update to check 'messages' length if we want "Initial Load" logic?
+                // Actually, checking displayedIdsRef is safer.
+
+                // Note: 'incoming' is the last 50.
+
+                if (displayedIdsRef.current.size === 0) {
+                    // FIRST LOAD: Show immediately (UX)
+                    const uniqueIncoming = incoming.filter(m => !displayedIdsRef.current.has(m.id));
+                    uniqueIncoming.forEach(m => displayedIdsRef.current.add(m.id));
+                    setMessages(uniqueIncoming);
+                } else {
+                    // UPDATE: Push to Buffer
+                    setDisplayBuffer(prevBuffer => {
+                        // Filter out what is already Displayed OR already in Buffer
+                        const bufferIds = new Set(prevBuffer.map(b => b.id));
+                        const newItems = incoming.filter(m =>
+                            !displayedIdsRef.current.has(m.id) &&
+                            !bufferIds.has(m.id)
+                        );
+                        return [...prevBuffer, ...newItems];
+                    });
+                }
             }
         };
 

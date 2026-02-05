@@ -158,7 +158,7 @@ export function PlanForm({ plan, onClose, onSuccess }: PlanFormProps) {
                         <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Type</label>
                         <select
                             value={formData.type}
-                            onChange={e => setFormData({ ...formData, type: e.target.value as any })}
+                            onChange={e => setFormData({ ...formData, type: e.target.value as 'subscription' | 'course' })}
                             className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-white text-sm"
                         >
                             <option value="subscription">Subscription</option>

@@ -5,11 +5,22 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
 
 // Types
+export type UpdateProfilePayload = {
+    full_name?: string;
+    wilaya?: string;
+    major?: string;
+    study_system?: string;
+    bio?: string;
+    avatar_url?: string;
+};
+
+export type StudentRequestPayload = UpdateProfilePayload | null;
+
 export interface StudentRequest {
     id: string;
     user_id: string;
     request_type: "UPDATE_PROFILE" | "DELETE_ACCOUNT";
-    payload: Record<string, any> | null;
+    payload: StudentRequestPayload;
     status: "pending" | "approved" | "rejected";
     admin_note: string | null;
     created_at: string;
@@ -211,7 +222,7 @@ export async function handleRequest(
  */
 export async function submitStudentRequest(
     requestType: "UPDATE_PROFILE" | "DELETE_ACCOUNT",
-    payload?: Record<string, any>
+    payload?: StudentRequestPayload
 ): Promise<{ success?: string; error?: string }> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

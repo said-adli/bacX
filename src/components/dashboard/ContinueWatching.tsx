@@ -3,29 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PlayCircle, Clock, Loader2 } from "lucide-react";
-import { getLastAccessedLesson } from "@/actions/progress";
+import { getLastAccessedLesson, LastLesson } from "@/actions/progress";
 import { cn } from "@/lib/utils";
 
-interface LastLesson {
-    lesson_id: string;
-    updated_at: string;
-    lessons: {
-        id: string;
-        title: string;
-        is_free: boolean;
-        video_url: string | null;
-        units: {
-            id: string;
-            title: string;
-            subject_id: string;
-            subjects: {
-                id: string;
-                name: string;
-                color: string | null;
-            };
-        };
-    };
-}
+
 
 // ... imports
 
@@ -49,7 +30,7 @@ export default function ContinueWatching({ initialData, userId }: ContinueWatchi
             try {
                 const result = await getLastAccessedLesson(userId);
                 if (result) {
-                    setData(result as any);
+                    setData(result);
                 }
             } catch (e) {
                 console.error("Failed to fetch last accessed lesson", e);

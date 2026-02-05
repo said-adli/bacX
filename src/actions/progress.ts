@@ -89,7 +89,28 @@ export async function getSubjectProgress(subjectId: string) {
 /**
  * Gets the most recently watched lesson for the "Continue Watching" feature.
  */
-export async function getLastAccessedLesson(userId: string) {
+export interface LastLesson {
+    updated_at: string;
+    lesson_id: string;
+    lessons: {
+        id: string;
+        title: string;
+        is_free: boolean;
+        video_url: string | null;
+        units: {
+            id: string;
+            title: string;
+            subject_id: string;
+            subjects: {
+                id: string;
+                name: string;
+                color: string | null;
+            } | null;
+        } | null;
+    } | null;
+}
+
+export async function getLastAccessedLesson(userId: string): Promise<LastLesson | null> {
     const supabase = await createClient();
 
     try {
@@ -122,7 +143,7 @@ export async function getLastAccessedLesson(userId: string) {
 
         if (error) return null;
 
-        return data;
+        return data as unknown as LastLesson; // Cast from Supabase inferred type to strict DTO matching query
 
     } catch (error) {
         console.error("Error fetching last accessed lesson:", error);

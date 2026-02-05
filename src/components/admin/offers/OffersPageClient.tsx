@@ -15,7 +15,7 @@ export default function PlansPage({ plans }: { plans: SubscriptionPlan[] }) {
     const [formData, setFormData] = useState({
         name: "",
         price: 0,
-        type: 'subscription',
+        type: 'subscription' as 'subscription' | 'course',
         duration_days: 30,
         features: [] as string[],
         featureInput: ""
@@ -44,7 +44,7 @@ export default function PlansPage({ plans }: { plans: SubscriptionPlan[] }) {
                 price: Number(formData.price),
                 features: formData.features,
                 duration_days: Number(formData.duration_days),
-                type: formData.type as any
+                type: formData.type
             });
             toast.success("Plan created successfully");
             setIsCreating(false);
@@ -126,7 +126,7 @@ export default function PlansPage({ plans }: { plans: SubscriptionPlan[] }) {
                                 <select
                                     className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
                                     value={formData.type}
-                                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'subscription' | 'course' })}
                                 >
                                     <option value="subscription">Standard Subscription</option>
                                     <option value="course">Course (Manual Expiry)</option>
@@ -165,7 +165,7 @@ export default function PlansPage({ plans }: { plans: SubscriptionPlan[] }) {
                                     name={formData.name || "Plan Name"}
                                     price={formData.price || 0}
                                     features={formData.features.length ? formData.features : ["Feature 1", "Feature 2"]}
-                                    type={formData.type as any}
+                                    type={formData.type}
                                     duration_days={formData.duration_days}
                                     highlight={true}
                                 />

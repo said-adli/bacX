@@ -109,7 +109,7 @@ export default function ProfileForm({ initialProfile, branches, wilayas, pending
     // Actually, submitProfileChangeRequest creates a REQUEST, it doesn't update profile immediately.
     // So visual data remains same, but pending banner appears.
 
-    const displayProfile = initialProfile || {};
+    const displayProfile: Partial<ProfileData> = initialProfile || {};
     // Use the fetched arrays to find names for ID values
     const selectedWilaya = wilayas.find(w => w.id == displayProfile.wilaya_id);
     const selectedBranch = branches.find(b => b.id == displayProfile.major_id);
@@ -140,7 +140,7 @@ export default function ProfileForm({ initialProfile, branches, wilayas, pending
                     <div className="w-24 h-24">
                         <UserAvatar
                             src={displayProfile.avatar_url}
-                            fallback={displayProfile.full_name}
+                            fallback={displayProfile.full_name || undefined}
                             size="xl"
                             className="w-24 h-24 text-3xl"
                         />
@@ -284,7 +284,7 @@ export default function ProfileForm({ initialProfile, branches, wilayas, pending
                                 <option value="private" className="bg-zinc-900">طالب حر (Libre)</option>
                             </select>
                         ) : (
-                            <p className="text-lg font-medium text-white">{getStudySystemLabel(displayProfile.study_system)}</p>
+                            <p className="text-lg font-medium text-white">{getStudySystemLabel(displayProfile.study_system || "")}</p>
                         )}
                     </div>
 
