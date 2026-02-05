@@ -12,6 +12,7 @@ export type UpdateProfilePayload = {
     study_system?: string;
     bio?: string;
     avatar_url?: string;
+    branch_id?: string;
 };
 
 export type StudentRequestPayload = UpdateProfilePayload | null;
