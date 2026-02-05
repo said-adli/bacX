@@ -7,9 +7,26 @@ import { Lock, PlayCircle, Clock } from "lucide-react";
 import Link from "next/link";
 import { PremiumLockScreen } from "@/components/dashboard/PremiumLockScreen";
 
+// Subject shape from database
+interface Subject {
+    id: string;
+    name: string;
+    icon?: string;
+}
+
+// Lesson shape from database
+interface Lesson {
+    id: string;
+    title: string;
+    video_url: string | null;
+    duration: string;
+    is_free?: boolean;
+    order?: number;
+}
+
 interface SubjectViewProps {
-    subject: any;
-    lessons: any[];
+    subject: Subject;
+    lessons: Lesson[];
     isSubscribed: boolean;
 }
 
@@ -23,7 +40,7 @@ export default function SubjectView({ subject, lessons, isSubscribed }: SubjectV
         }
     }, [lessons, activeLessonId]);
 
-    const activeLesson = lessons.find((l: any) => l.id === activeLessonId) || lessons[0];
+    const activeLesson = lessons.find((l) => l.id === activeLessonId) || lessons[0];
 
     // Safety: If no lesson found (empty list?), handle it
     if (!activeLesson) {

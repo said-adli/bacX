@@ -82,9 +82,10 @@ export default function LessonContent({ id, title, description }: LessonContentP
             const signedUrl = await getLessonResource(id, storagePath);
 
             window.open(signedUrl, '_blank');
-        } catch (e: any) {
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : 'Download failed';
             console.error("Download error:", e);
-            toast.error(e.message || "فشل تحميل الملف - اشتراكك لا يسمح بذلك");
+            toast.error(errorMessage || "فشل تحميل الملف - اشتراكك لا يسمح بذلك");
         }
     };
 

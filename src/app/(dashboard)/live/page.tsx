@@ -8,7 +8,7 @@ import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { useLiveInteraction } from "@/hooks/useLiveInteraction";
 import { RaiseHandButton } from "@/components/live/RaiseHandButton";
-import { LiveChat } from "@/components/live/LiveChat";
+import LiveChat from "@/components/live/LiveChat";
 import LiveSessionSkeleton from "@/components/ui/skeletons/LiveSessionSkeleton";
 import LiveKitAudioInteraction from "@/components/live/LiveKitAudioInteraction";
 import { getHybridLiveSession } from "@/actions/live";

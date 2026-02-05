@@ -12,12 +12,31 @@ import { toast } from "sonner";
 import { submitProfileChangeRequest } from "@/actions/profile";
 import { useRouter } from "next/navigation";
 
+// Profile data from Supabase (use flexible type for compatibility with generated types)
+type ProfileData = Record<string, unknown> & {
+    id: string;
+    full_name?: string | null;
+    wilaya_id?: string | null;
+    major_id?: string | null;
+    study_system?: string | null;
+    bio?: string | null;
+    avatar_url?: string | null;
+    role?: string;
+};
+
+// Pending request from Supabase
+type PendingRequest = Record<string, unknown> & {
+    id: string;
+    created_at: string;
+    status: string;
+};
+
 // Define the shape of data passed from Server Component
 interface ProfileFormProps {
-    initialProfile: any;
+    initialProfile: ProfileData | null;
     branches: { id: string; name: string }[];
-    wilayas: { id: number; name_ar: string; name_en: string }[];
-    pendingRequest: any;
+    wilayas: { id: number | string; name_ar: string; name_en: string }[];
+    pendingRequest: PendingRequest | null;
 }
 
 export default function ProfileForm({ initialProfile, branches, wilayas, pendingRequest }: ProfileFormProps) {

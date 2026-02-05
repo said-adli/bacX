@@ -29,9 +29,10 @@ export async function saveNote(lessonId: string, content: string) {
         if (error) throw error;
 
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error("Error saving note:", error);
-        return { error: error.message };
+        return { error: errorMessage };
     }
 }
 

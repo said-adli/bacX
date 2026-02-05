@@ -2,7 +2,7 @@
 
 import { useLiveInteraction } from "@/hooks/useLiveInteraction";
 import { ParticipationQueue } from "@/components/live/ParticipationQueue";
-import { LiveChat } from "@/components/live/LiveChat";
+import LiveChat from "@/components/live/LiveChat";
 import LiveKitAudioInteraction from "@/components/live/LiveKitAudioInteraction";
 import { Info, AlertCircle } from "lucide-react";
 

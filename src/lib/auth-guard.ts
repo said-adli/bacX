@@ -23,5 +23,5 @@ export async function requireAdmin() {
         throw new Error("Forbidden: Admin Access Required");
     }
 
-    return user;
+    return { user, supabase };
 }

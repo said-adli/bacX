@@ -4,8 +4,17 @@ import { Trash2, Plus, Bell } from "lucide-react";
 import { format } from "date-fns";
 import { arMA } from "date-fns/locale";
 
+// Announcement shape from database
+interface Announcement {
+    id: string;
+    title: string | null;
+    content: string;
+    created_at: string;
+    is_active: boolean;
+}
+
 export default async function AdminAnnouncementsPage() {
-    const announcements = await getAdminAnnouncements();
+    const announcements: Announcement[] = await getAdminAnnouncements();
 
     return (
         <div className="space-y-8" dir="rtl">
@@ -63,7 +72,7 @@ export default async function AdminAnnouncementsPage() {
                     </div>
                 ) : (
                     <div className="grid gap-4">
-                        {announcements.map((item: any) => (
+                        {announcements.map((item) => (
                             <GlassCard key={item.id} className="p-4 flex items-start justify-between border-white/5 group bg-white/[0.02]">
                                 <div className="flex gap-4">
                                     <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">

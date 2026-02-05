@@ -37,7 +37,7 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
     const progressInterval = useRef<NodeJS.Timeout | null>(null);
 
     // 2. Command Helper
-    const sendCommand = useCallback((func: string, args: any[] = []) => {
+    const sendCommand = useCallback((func: string, args: unknown[] = []) => {
         if (!iframeRef.current?.contentWindow) return;
         iframeRef.current.contentWindow.postMessage(
             JSON.stringify({ event: 'command', func, args }),

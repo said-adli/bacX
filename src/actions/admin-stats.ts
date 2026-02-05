@@ -89,6 +89,7 @@ export interface RevenueData {
 
 export async function getRevenueStats(): Promise<RevenueData[]> {
     try {
+        await requireAdmin();
         const adminClient = createAdminClient();
 
         // Fetch last 12 months of successful payments

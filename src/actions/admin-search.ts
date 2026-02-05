@@ -19,10 +19,15 @@ export type GroupedResults = {
     subjects: SearchResult[];
 }
 
+const MAX_QUERY_LENGTH = 100;
+
 function sanitizeSearchQuery(query: string): string {
-    // Basic sanitization: allow letters, numbers, spaces, dots, dashes, at-signs.
-    // Remove potential SQL injection chars like quotes, semicolons, percentages (except implied).
-    return query.replace(/[^\w\s@.-]/gi, '').trim();
+    // Enhanced sanitization: allow Unicode letters/numbers, spaces, dots, dashes, at-signs.
+    // Remove potential SQL injection chars like quotes, semicolons, percentages.
+    return query
+        .trim()
+        .replace(/[^\p{L}\p{N}@._\-\s]/gu, "")
+        .slice(0, MAX_QUERY_LENGTH);
 }
 
 export async function globalSearch(query: string): Promise<GroupedResults> {

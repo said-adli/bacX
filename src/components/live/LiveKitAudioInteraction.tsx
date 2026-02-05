@@ -1,4 +1,5 @@
-import { LiveKitRoom, RoomAudioRenderer, useTracks, useParticipantContext } from '@livekit/components-react';
+import { LiveKitRoom, RoomAudioRenderer, useTracks } from '@livekit/components-react';
+import type { TrackReferenceOrPlaceholder } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import { useEffect, useState } from 'react';
 import { Loader2, Mic, MicOff } from 'lucide-react';
@@ -70,8 +71,13 @@ function AudioVisualizer() {
     );
 }
 
-function TrackVisualizer({ trackRef }: { trackRef: any }) {
-    const isMuted = trackRef.publication.isMuted;
+function TrackVisualizer({ trackRef }: { trackRef: TrackReferenceOrPlaceholder }) {
+    const isMuted = trackRef.publication?.isMuted ?? true;
+
+    // If no publication yet (placeholder), don't render
+    if (!trackRef.publication) {
+        return null;
+    }
 
     // In a real generic app, we'd use a canvas analyzer here. 
     // For now, let's just show an "Active" badge effectively.

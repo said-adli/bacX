@@ -1,21 +1,7 @@
 'use server';
 
-import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
-
-// Helpers
-async function requireAdmin() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-
-    // Check role? Or assume adminClient is safe if guarding with requireAdmin?
-    // Double check role
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
-
-    return createAdminClient();
-}
+import { requireAdmin } from "@/lib/auth-guard";
 
 interface PlanData {
     title: string;
@@ -28,8 +14,9 @@ interface PlanData {
 
 export async function createPlan(data: PlanData) {
     try {
-        const admin = await requireAdmin();
-        const { error } = await admin.from('plans').insert({
+        await requireAdmin();
+        const adminClient = createAdminClient();
+        const { error } = await adminClient.from('plans').insert({
             title: data.title,
             price: data.price,
             duration_days: data.durationDays,
@@ -47,8 +34,9 @@ export async function createPlan(data: PlanData) {
 
 export async function updatePlan(id: string, data: PlanData) {
     try {
-        const admin = await requireAdmin();
-        const { error } = await admin.from('plans').update({
+        await requireAdmin();
+        const adminClient = createAdminClient();
+        const { error } = await adminClient.from('plans').update({
             title: data.title,
             price: data.price,
             duration_days: data.durationDays,
@@ -66,8 +54,9 @@ export async function updatePlan(id: string, data: PlanData) {
 
 export async function deletePlan(id: string) {
     try {
-        const admin = await requireAdmin();
-        const { error } = await admin.from('plans').delete().eq('id', id);
+        await requireAdmin();
+        const adminClient = createAdminClient();
+        const { error } = await adminClient.from('plans').delete().eq('id', id);
         if (error) throw error;
         return { success: true };
     } catch (e) {
@@ -77,11 +66,13 @@ export async function deletePlan(id: string) {
 
 export async function togglePlanStatus(id: string, currentStatus: boolean) {
     try {
-        const admin = await requireAdmin();
-        const { error } = await admin.from('plans').update({ is_active: !currentStatus }).eq('id', id);
+        await requireAdmin();
+        const adminClient = createAdminClient();
+        const { error } = await adminClient.from('plans').update({ is_active: !currentStatus }).eq('id', id);
         if (error) throw error;
         return { success: true };
     } catch (e) {
         return { success: false, message: String(e) };
     }
 }
+

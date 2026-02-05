@@ -73,7 +73,7 @@ export function useProfileData(): UseProfileDataResult {
             // Raw data loaded (log removed)
 
             // Step 3: Build profile object
-            const majorName = (data?.branches as any)?.name || "غير محدد"; // Default from join
+            const majorName = (data?.branches as { name?: string } | null)?.name || "غير محدد"; // Default from join
 
             const profileData: ProfileData = {
                 id: user.id,
@@ -98,10 +98,11 @@ export function useProfileData(): UseProfileDataResult {
                 // Profile loaded (log removed)
             }
 
-        } catch (err: any) {
-            console.error('[useProfileData] ❌ Error:', err.message);
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            console.error('[useProfileData] ❌ Error:', errorMessage);
             if (isMountedRef.current) {
-                setError(err.message);
+                setError(errorMessage);
             }
         } finally {
             if (isMountedRef.current) {

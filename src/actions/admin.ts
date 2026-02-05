@@ -63,7 +63,7 @@ export async function approvePayment(paymentId: string, userId: string, duration
 
 export async function rejectPayment(paymentId: string, userId: string, reason: string = "No reason provided") {
     try {
-        const user = await requireAdmin();
+        const { user } = await requireAdmin();
         const adminClient = createAdminClient();
 
         const { error } = await adminClient
@@ -87,7 +87,7 @@ export async function rejectPayment(paymentId: string, userId: string, reason: s
 // User Management Actions
 export async function toggleBan(userId: string, currentStatus: boolean) {
     try {
-        const user = await requireAdmin();
+        const { user } = await requireAdmin();
         const adminClient = createAdminClient();
         const { error } = await adminClient
             .from('profiles')
@@ -104,7 +104,7 @@ export async function toggleBan(userId: string, currentStatus: boolean) {
 
 export async function manualSubscribe(userId: string) {
     try {
-        const user = await requireAdmin();
+        const { user } = await requireAdmin();
         const adminClient = createAdminClient();
         const expiryDate = new Date();
         expiryDate.setFullYear(expiryDate.getFullYear() + 1);
@@ -129,7 +129,7 @@ export async function manualSubscribe(userId: string) {
 
 export async function resetDevices(userId: string) {
     try {
-        const user = await requireAdmin();
+        const { user } = await requireAdmin();
         const adminClient = createAdminClient();
         const { error } = await adminClient
             .from('profiles')

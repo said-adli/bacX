@@ -22,6 +22,8 @@ export interface ChatMessage {
     role: 'student' | 'teacher' | 'admin';
     is_question: boolean;
     created_at: string;
+    /** Message delivery status for optimistic UI */
+    status?: 'pending' | 'sent' | 'failed';
 }
 
 export const useLiveInteraction = () => {
@@ -36,7 +38,7 @@ export const useLiveInteraction = () => {
 
     // Refs
     const lastMessageTimeRef = useRef<number>(0);
-    const channelRef = useRef<any>(null);
+    const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
 
     // 1. Polling (Adaptive)
     useEffect(() => {
@@ -145,8 +147,8 @@ export const useLiveInteraction = () => {
             created_at: new Date().toISOString()
         };
 
-        // 1. Optimistic Update
-        setMessages(prev => [...prev, msg]);
+        // 1. Optimistic Update with pending status
+        setMessages(prev => [...prev, { ...msg, status: 'pending' }]);
 
         // 2. Insert DB
         try {
@@ -160,12 +162,21 @@ export const useLiveInteraction = () => {
 
             if (error) {
                 console.error("Failed to send message", error);
-                // Rollback? Or show error state?
-                // For 'Production Refactor', maybe mark as failed.
-                // setMessages(prev => prev.map(m => m.id === tempId ? { ...m, failed: true } : m));
+                // Mark as failed for UI feedback
+                setMessages(prev => prev.map(m =>
+                    m.id === tempId ? { ...m, status: 'failed' as const } : m
+                ));
+            } else {
+                // Mark as sent
+                setMessages(prev => prev.map(m =>
+                    m.id === tempId ? { ...m, status: 'sent' as const } : m
+                ));
             }
         } catch (e) {
             console.error("Send exception", e);
+            setMessages(prev => prev.map(m =>
+                m.id === tempId ? { ...m, status: 'failed' as const } : m
+            ));
         }
     };
 

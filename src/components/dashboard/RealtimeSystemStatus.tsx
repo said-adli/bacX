@@ -30,7 +30,7 @@ export function RealtimeSystemStatus() {
     }, []);
 
     // Derived Logic
-    const maintenance = settings?.find((d: { key: string; value: any }) => d.key === "maintenance_mode")?.value;
+    const maintenance = settings?.find((d: { key: string; value: boolean | string }) => d.key === "maintenance_mode")?.value;
 
     if (!mounted) return null;
 

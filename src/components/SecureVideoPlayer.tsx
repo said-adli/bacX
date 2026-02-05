@@ -40,17 +40,18 @@ export default function SecureVideoPlayer({ lessonId, onEnded }: SecureVideoPlay
             if (!id) throw new Error("Video not available");
             setVideoId(id);
             setIsPlaying(true);
-        } catch (e: any) {
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : 'Unknown error';
             console.error("Video Load Error:", e);
-            setError(e.message || "Failed to load video");
-            toast.error("Access Denied: " + (e.message || "Please check your subscription"));
+            setError(errorMessage || "Failed to load video");
+            toast.error("Access Denied: " + (errorMessage || "Please check your subscription"));
         } finally {
             setIsLoading(false);
         }
     };
 
     // 2. Command Helper (PostMessage)
-    const sendCommand = useCallback((func: string, args: any[] = []) => {
+    const sendCommand = useCallback((func: string, args: unknown[] = []) => {
         if (!iframeRef.current?.contentWindow) return;
         iframeRef.current.contentWindow.postMessage(
             JSON.stringify({ event: 'command', func, args }),

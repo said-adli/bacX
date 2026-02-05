@@ -63,6 +63,7 @@ export async function createAnnouncementRPC(
     content: string,
     isActive: boolean = true
 ): Promise<RpcResult> {
+    await requireAdmin();
     const supabase = await createClient();
 
     const { data, error } = await supabase.rpc("manage_announcement", {
@@ -90,6 +91,7 @@ export async function updateAnnouncementRPC(
     content?: string,
     isActive?: boolean
 ): Promise<RpcResult> {
+    await requireAdmin();
     const supabase = await createClient();
 
     const { data, error } = await supabase.rpc("manage_announcement", {
@@ -112,6 +114,7 @@ export async function updateAnnouncementRPC(
 }
 
 export async function deleteAnnouncementRPC(announcementId: string): Promise<RpcResult> {
+    await requireAdmin();
     const supabase = await createClient();
 
     const { data, error } = await supabase.rpc("manage_announcement", {
@@ -147,6 +150,7 @@ export interface CreatePlanParams {
 }
 
 export async function createPlanRPC(params: CreatePlanParams): Promise<RpcResult> {
+    await requireAdmin();
     const supabase = await createClient();
 
     const { data, error } = await supabase.rpc("manage_plan", {
@@ -176,6 +180,7 @@ export async function updatePlanRPC(
     planId: string,
     params: Partial<CreatePlanParams>
 ): Promise<RpcResult> {
+    await requireAdmin();
     const supabase = await createClient();
 
     const { data, error } = await supabase.rpc("manage_plan", {
@@ -203,6 +208,7 @@ export async function updatePlanRPC(
 }
 
 export async function deletePlanRPC(planId: string): Promise<RpcResult> {
+    await requireAdmin();
     const supabase = await createClient();
 
     const { data, error } = await supabase.rpc("manage_plan", {
@@ -227,6 +233,7 @@ export async function deletePlanRPC(planId: string): Promise<RpcResult> {
 // ============================================
 
 export async function banUserRPC(userId: string): Promise<RpcResult> {
+    await requireAdmin();
     const supabase = await createClient();
     const supabaseAdmin = createAdminClient();
 
@@ -258,6 +265,7 @@ export async function banUserRPC(userId: string): Promise<RpcResult> {
 }
 
 export async function unbanUserRPC(userId: string): Promise<RpcResult> {
+    await requireAdmin();
     const supabase = await createClient();
     const supabaseAdmin = createAdminClient();
 
@@ -301,6 +309,7 @@ export interface CreatePlatformUpdateParams {
 export async function createPlatformUpdateRPC(
     params: CreatePlatformUpdateParams
 ): Promise<RpcResult> {
+    await requireAdmin();
     const supabase = await createClient();
 
     const { data, error } = await supabase.rpc("manage_platform_update", {
@@ -326,6 +335,7 @@ export async function updatePlatformUpdateRPC(
     updateId: string,
     params: Partial<CreatePlatformUpdateParams>
 ): Promise<RpcResult> {
+    await requireAdmin();
     const supabase = await createClient();
 
     const { data, error } = await supabase.rpc("manage_platform_update", {
@@ -349,6 +359,7 @@ export async function updatePlatformUpdateRPC(
 }
 
 export async function deletePlatformUpdateRPC(updateId: string): Promise<RpcResult> {
+    await requireAdmin();
     const supabase = await createClient();
 
     const { data, error } = await supabase.rpc("manage_platform_update", {

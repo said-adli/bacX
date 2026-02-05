@@ -17,7 +17,7 @@ export interface PaymentProof {
 
 // Fetch Pending Payments (Protected + Signed URLs)
 export async function getPendingPayments() {
-    const user = await requireAdmin(); // Centralized Guard
+    const { user } = await requireAdmin(); // Centralized Guard
     const supabase = await createClient();
     // Use Admin Client for storage operations to ensure we can sign URLs for private buckets if needed
     // (though usually standard client with admin user works, admin client is safer for system ops)
@@ -72,7 +72,7 @@ export async function getPendingPayments() {
 // Approve Payment (STRICT MODE & SECURED)
 export async function approvePayment(requestId: string, userId: string, planId: string) {
     // 1. Enforce Admin
-    const user = await requireAdmin();
+    const { user } = await requireAdmin();
     const supabase = await createClient();
 
     // 2. Atomic Transaction via RPC

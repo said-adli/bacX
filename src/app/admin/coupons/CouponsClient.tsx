@@ -45,8 +45,9 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
                 is_active: true
             });
             router.refresh();
-        } catch (error: any) {
-            toast.error("فشل إنشاء القسيمة: " + error.message);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            toast.error("فشل إنشاء القسيمة: " + errorMessage);
         } finally {
             setIsCreating(false);
         }
@@ -59,8 +60,9 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
             await deleteCoupon(id);
             toast.success("تم حذف القسيمة");
             router.refresh();
-        } catch (error: any) {
-            toast.error("فشل الحذف: " + error.message);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            toast.error("فشل الحذف: " + errorMessage);
         } finally {
             setIsDeleting(null);
         }
@@ -100,7 +102,7 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
                                     <select
                                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/90 focus:outline-none focus:border-blue-500"
                                         value={formData.discount_type}
-                                        onChange={(e) => setFormData({ ...formData, discount_type: e.target.value as any })}
+                                        onChange={(e) => setFormData({ ...formData, discount_type: e.target.value as 'percent' | 'fixed' })}
                                     >
                                         <option value="percent">نسبة مئوية (%)</option>
                                         <option value="fixed">مبلغ ثابت (DA)</option>

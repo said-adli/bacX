@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   // STATIC: No constraints. Plans passed as static data or handled by PricingSection internally if needed.
-  const plans: any[] = []; // Passing empty for now to match prop type, enabling full static build.
+  const plans: never[] = []; // Empty static array - PricingSection fetches its own data
 
   return (
     <div className="bg-background min-h-screen selection:bg-primary/30 overflow-hidden">

@@ -1,15 +1,16 @@
 "use client";
 
 import React, { createContext, useContext, useMemo } from "react";
-import { useSortable } from "@dnd-kit/sortable";
+import { useSortable, UseSortableArguments } from "@dnd-kit/sortable";
+import type { DraggableAttributes, DraggableSyntheticListeners } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 
 interface SortableItemContextProps {
-    attributes: any;
-    listeners: any;
+    attributes: DraggableAttributes;
+    listeners: DraggableSyntheticListeners;
     isDragging: boolean;
-    dragHandleProps: any; // Combined attributes + listeners
+    dragHandleProps: Record<string, unknown>; // Combined attributes + listeners
 }
 
 const SortableItemContext = createContext<SortableItemContextProps | undefined>(undefined);
@@ -34,7 +35,7 @@ interface SortableItemProps {
     id: string;
     children: React.ReactNode;
     className?: string;
-    as?: any;
+    as?: React.ElementType;
 }
 
 export function SortableItem({ id, children, className, as: Component = "div" }: SortableItemProps) {

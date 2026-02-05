@@ -42,7 +42,7 @@ export function GlobalVideoPlayer() {
     // ============================================================================
     // COMMAND BUS
     // ============================================================================
-    const sendCommand = useCallback((func: string, args: any[] = []) => {
+    const sendCommand = useCallback((func: string, args: unknown[] = []) => {
         if (!iframeRef.current?.contentWindow) return;
         iframeRef.current.contentWindow.postMessage(
             JSON.stringify({ event: 'command', func, args }),

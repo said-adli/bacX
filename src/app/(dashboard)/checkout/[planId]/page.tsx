@@ -122,9 +122,10 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
             toast.success("تم إرسال طلبك بنجاح! سيتم تفعيل حسابك قريباً", { id: toastId });
             setTimeout(() => router.push('/subscription'), 2000);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Upload failed';
             console.error(err);
-            toast.error("حدث خطأ أثناء الرفع: " + err.message, { id: toastId });
+            toast.error("حدث خطأ أثناء الرفع: " + errorMessage, { id: toastId });
         } finally {
             setUploading(false);
         }

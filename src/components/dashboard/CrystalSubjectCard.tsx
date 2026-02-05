@@ -14,7 +14,6 @@ interface Subject {
     description: string;
     color?: string;
     lessons?: { id: string; title: string }[];
-    [key: string]: any;
 }
 
 const getSubjectConfig = (name: string) => {
