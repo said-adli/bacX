@@ -100,8 +100,12 @@ export async function getSubjectsData(): Promise<DashboardSubject[]> {
 
             if (!data) return [];
 
+            interface RawSubject {
+                id: string; name: string; icon: string; description: string; color: string; slug: string; lesson_count: number;
+                lessons?: { id: string; title: string; required_plan_id: string | null; is_free: boolean }[];
+            }
             // Transform Raw DB Response to Strict DTO
-            return data.map((subject: any) => ({
+            return (data as RawSubject[]).map((subject) => ({
                 id: subject.id,
                 name: subject.name,
                 icon: subject.icon,
@@ -110,7 +114,7 @@ export async function getSubjectsData(): Promise<DashboardSubject[]> {
                 slug: subject.slug || subject.id, // Fallback if slug missing
                 lessonCount: subject.lesson_count || 0,
                 lessons: Array.isArray(subject.lessons)
-                    ? subject.lessons.map((l: any) => ({
+                    ? subject.lessons.map((l) => ({
                         id: l.id,
                         title: l.title
                     }))
@@ -155,10 +159,12 @@ export async function getStatsData(userId: string): Promise<DashboardStats> {
         .eq('is_completed', true);
 
     let totalMinutes = 0;
+    interface ProgressEntry { lesson_id: string; lessons: { duration: string } | { duration: string }[] | null }
     if (progress) {
-        progress.forEach((p: any) => {
-            if (p.lessons?.duration) {
-                totalMinutes += parseDurationToMinutes(p.lessons.duration);
+        (progress as unknown as ProgressEntry[]).forEach((p) => {
+            const lesson = Array.isArray(p.lessons) ? p.lessons[0] : p.lessons;
+            if (lesson?.duration) {
+                totalMinutes += parseDurationToMinutes(lesson.duration);
             }
         });
     }

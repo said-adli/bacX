@@ -9,9 +9,18 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-export default function PaymentQueueClient({ payments }: { payments: any[] }) {
+interface PaymentQueueItem {
+    id: string;
+    user_id: string;
+    plan_id?: string;
+    receipt_url?: string;
+    created_at: string;
+    profiles?: { full_name?: string; email?: string };
+}
+
+export default function PaymentQueueClient({ payments }: { payments: PaymentQueueItem[] }) {
     const router = useRouter();
-    const [selectedReceipt, setSelectedReceipt] = useState<any | null>(null);
+    const [selectedReceipt, setSelectedReceipt] = useState<PaymentQueueItem | null>(null);
     const [activePlans, setActivePlans] = useState<SubscriptionPlan[]>([]); // [NEW]
     const [selectedPlanId, setSelectedPlanId] = useState<string>(""); // [NEW]
     const [isProcessing, setIsProcessing] = useState(false);

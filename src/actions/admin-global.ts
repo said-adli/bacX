@@ -12,6 +12,7 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { revalidateTag } from "next/cache";
 import { CACHE_TAGS } from "@/lib/cache/cached-data";
+import { requireAdmin } from "@/lib/auth-guard";
 
 // ============================================
 // TYPES
@@ -23,11 +24,16 @@ interface RpcResult<T = string> {
     error?: string;
 }
 
+interface RpcError {
+    message?: string;
+    code?: string;
+}
+
 // ============================================
 // HELPER: Parse RPC Errors
 // ============================================
 
-function parseRpcError(error: any): string {
+function parseRpcError(error: RpcError | null): string {
     const message = error?.message || "";
 
     if (message.includes("Access Denied")) {

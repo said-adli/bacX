@@ -48,7 +48,7 @@ export async function getSubscriptionPlan(planId: string): Promise<CheckoutState
 
         return { success: true, plan: data as SubscriptionPlan };
 
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error("Checkout Fetch Error:", e);
         return { success: false, error: "Internal Server Error" };
     }

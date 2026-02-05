@@ -135,7 +135,7 @@ export function AuthProvider({
 
             return profile;
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("💥 Auth Connection Failed:", err);
             return null;
         }
@@ -198,13 +198,14 @@ export function AuthProvider({
                         setState(prev => ({ ...prev, loading: false }));
                     }
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : "Auth initialization failed";
                 console.error("💥 Init Crash:", err);
                 if (isMounted.current) {
                     setState(prev => ({
                         ...prev,
                         loading: false,
-                        error: err.message
+                        error: message
                     }));
                 }
             }
@@ -278,16 +279,26 @@ export function AuthProvider({
         try {
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) throw error;
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Login failed";
             console.error("Login Error:", error);
             if (isMounted.current) {
-                setState(prev => ({ ...prev, loading: false, error: error.message }));
+                setState(prev => ({ ...prev, loading: false, error: message }));
             }
             throw error;
         }
     };
 
-    const signupWithEmail = async (data: any) => {
+    interface SignupData {
+        email: string;
+        password: string;
+        fullName: string;
+        wilaya: string;
+        major: string;
+        studySystem?: string;
+    }
+
+    const signupWithEmail = async (data: SignupData) => {
         if (isMounted.current) setState(prev => ({ ...prev, loading: true, error: null }));
         try {
             const { error } = await supabase.auth.signUp({
@@ -303,9 +314,10 @@ export function AuthProvider({
                 }
             });
             if (error) throw error;
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Signup failed";
             if (isMounted.current) {
-                setState(prev => ({ ...prev, error: error.message }));
+                setState(prev => ({ ...prev, error: message }));
             }
             throw error;
         } finally {

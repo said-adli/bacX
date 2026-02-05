@@ -3,6 +3,7 @@
 import { createClient, verifyAdmin } from "@/utils/supabase/server";
 // Use dynamic import for admin client to avoid edge-runtime issues if needed, or keeping it as is if environment supports it.
 import { createAdminClient } from "@/utils/supabase/admin";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export interface DashboardStats {
     totalStudents: number;
@@ -14,6 +15,8 @@ export interface DashboardStats {
 
 export async function getDashboardStats(): Promise<DashboardStats> {
     try {
+        // Verify Admin
+        await requireAdmin();
         const adminClient = createAdminClient();
 
         const [
@@ -67,7 +70,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
             activeOnline
         };
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("CRITICAL ADMIN STATS ERROR:", err);
         return {
             totalStudents: 0,

@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/auth-guard";
 
 /**
  * Generic Toggle Action for Admin Dashboard
@@ -14,15 +15,8 @@ export async function toggleStatus(
     field: string,
     value: boolean
 ) {
-    const supabase = await createClient();
-
-    // 1. Verify Admin Role
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-
-    // Check role from profiles (assuming profiles has role 'admin')
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
+    // 1. Verify Admin Role (Centralized)
+    await requireAdmin();
 
     // 2. Perform Update using Admin Client
     // This allows updating any table (lessons, users, plans) without fighting strict RLS for specific fields
@@ -34,9 +28,13 @@ export async function toggleStatus(
         throw new Error(`Table ${table} is not whitelisted for generic toggle.`);
     }
 
+    // Dynamic field update - type assertion needed for dynamic key
+    interface ToggleUpdate { [key: string]: boolean }
+    const updatePayload: ToggleUpdate = { [field]: value };
+
     const { error } = await adminClient
         .from(table)
-        .update({ [field]: value } as any)
+        .update(updatePayload)
         .eq('id', id);
 
     if (error) {

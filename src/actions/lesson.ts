@@ -42,9 +42,10 @@ export async function getLessonData(lessonId: string) {
             isCompleted: progress?.is_completed || false,
         };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
         console.error("getLessonData Error:", error);
-        return { error: error.message };
+        return { error: message };
     }
 }
 
@@ -64,19 +65,21 @@ export async function getSubjectHierarchy(subjectId: string) {
         if (error) throw error;
 
         // Sort Units and Lessons
+        interface UnitWithMeta { created_at: string; lessons?: { created_at: string }[] }
         if (subject && subject.units) {
-            subject.units.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-            subject.units.forEach((unit: any) => {
+            (subject.units as UnitWithMeta[]).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            (subject.units as UnitWithMeta[]).forEach((unit) => {
                 if (unit.lessons) {
-                    unit.lessons.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                    unit.lessons.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
                 }
             });
         }
 
         return { subject };
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
         console.error("getSubjectHierarchy Error:", error);
-        return { error: error.message };
+        return { error: message };
     }
 }
 
@@ -108,7 +111,8 @@ export async function toggleLessonCompletion(lessonId: string, currentState: boo
 
         revalidatePath('/materials');
         return { success: true, isCompleted: newState };
-    } catch (error: any) {
-        return { error: error.message };
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        return { error: message };
     }
 }

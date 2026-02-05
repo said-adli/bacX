@@ -83,9 +83,10 @@ export function ResourceUploader({ onUploadComplete, className }: ResourceUpload
             onUploadComplete(resource);
             toast.success("تم رفع الملف بنجاح");
 
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unknown error";
             console.error("Upload error:", error);
-            toast.error("فشل رفع الملف: " + error.message);
+            toast.error("فشل رفع الملف: " + message);
         } finally {
             setIsUploading(false);
         }

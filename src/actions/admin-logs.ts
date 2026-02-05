@@ -13,7 +13,7 @@ export interface LogEntry {
     id: string;
     user_id: string | null; // Nullable if ON DELETE SET NULL
     event: string;
-    details: Record<string, any> | null; // Structured JSON or null
+    details: Record<string, unknown> | null; // Structured JSON or null
     ip_address: string;
     created_at: string;
     profiles?: SecurityProfile;
@@ -64,14 +64,23 @@ export async function getSecurityLogs(
     }
 
     // Strict Type Mapping
-    const logs: LogEntry[] = (data || []).map((log: any) => ({
+    interface RawLogEntry {
+        id: string; user_id: string | null; event: string;
+        details: Record<string, unknown> | null; ip_address: string; created_at: string;
+        profiles?: { full_name: string | null; email: string | null; role: string } | { full_name: string | null; email: string | null; role: string }[] | null;
+    }
+    const logs: LogEntry[] = ((data || []) as RawLogEntry[]).map((log) => ({
         id: log.id,
         user_id: log.user_id,
         event: log.event,
         details: log.details,
         ip_address: log.ip_address,
         created_at: log.created_at,
-        profiles: log.profiles ? {
+        profiles: Array.isArray(log.profiles) ? (log.profiles[0] ? {
+            full_name: log.profiles[0].full_name,
+            email: log.profiles[0].email,
+            role: log.profiles[0].role
+        } : undefined) : log.profiles ? {
             full_name: log.profiles.full_name,
             email: log.profiles.email,
             role: log.profiles.role

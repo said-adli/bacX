@@ -6,11 +6,13 @@ import { sendGlobalNotification, toggleMaintenanceMode, toggleLiveGlobal } from 
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
+interface BroadcastNotification { id: string; title: string; message: string; created_at: string }
+
 export default function GlobalControlsClient({
     recentNotifications,
     initialSettings
 }: {
-    recentNotifications: any[],
+    recentNotifications: BroadcastNotification[],
     initialSettings: { maintenance: boolean, live: boolean }
 }) {
     const router = useRouter();

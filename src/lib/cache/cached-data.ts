@@ -84,6 +84,7 @@ export const getCachedSubjects = unstable_cache(
 
             if (!data) return [];
 
+            interface RawLesson { id: string; title: string }
             return data.map((s) => ({
                 id: s.id,
                 name: s.name,
@@ -93,11 +94,11 @@ export const getCachedSubjects = unstable_cache(
                 slug: s.slug || s.id,
                 lessonCount: s.lessons?.length || 0,
                 lessons: Array.isArray(s.lessons)
-                    ? s.lessons.map((l: any) => ({ id: l.id, title: l.title }))
+                    ? (s.lessons as RawLesson[]).map((l) => ({ id: l.id, title: l.title }))
                     : [],
                 progress: 0
             }));
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("[CACHE] CRITICAL ERROR in getCachedSubjects:", err);
             return [];
         }
@@ -177,7 +178,7 @@ export const getCachedAnnouncements = unstable_cache(
                 createdAt: a.created_at,
                 isActive: a.is_active,
             }));
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("[CACHE] CRITICAL ERROR in getCachedAnnouncements:", err);
             return [];
         }
@@ -220,14 +221,15 @@ export const getCachedCurriculum = unstable_cache(
 
         if (!data) return [];
 
+        interface RawLessonCurr { id: string; title: string; order: number; is_free: boolean }
         return data.map((subject) => ({
             id: subject.id,
             name: subject.name,
             icon: subject.icon,
             lessonCount: subject.lesson_count || 0,
-            lessons: (subject.lessons || [])
-                .sort((a: any, b: any) => a.order - b.order)
-                .map((lesson: any) => ({
+            lessons: ((subject.lessons || []) as RawLessonCurr[])
+                .sort((a, b) => a.order - b.order)
+                .map((lesson) => ({
                     id: lesson.id,
                     title: lesson.title,
                     order: lesson.order,

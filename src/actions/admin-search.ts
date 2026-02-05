@@ -10,7 +10,7 @@ export type SearchResult = {
     subtitle: string;
     type: 'student' | 'coupon' | 'subject';
     href: string;
-    meta?: any;
+    meta?: Record<string, unknown>;
 }
 
 export type GroupedResults = {
@@ -66,27 +66,31 @@ export async function globalSearch(query: string): Promise<GroupedResults> {
     ]);
 
     // 3. Transform Results
-    const students: SearchResult[] = (studentsResult.data || []).map((s: any) => ({
+    interface RawStudent { id: string; full_name: string | null; email: string }
+    interface RawCoupon { id: string; code: string; discount_amount: number; discount_type: string }
+    interface RawSubject { id: string; name: string }
+
+    const students: SearchResult[] = ((studentsResult.data || []) as RawStudent[]).map((s) => ({
         id: s.id,
         title: s.full_name || "Unknown Student",
         subtitle: s.email,
-        type: 'student',
+        type: 'student' as const,
         href: `/admin/students/${s.id}`
     }));
 
-    const coupons: SearchResult[] = (couponsResult.data || []).map((c: any) => ({
+    const coupons: SearchResult[] = ((couponsResult.data || []) as RawCoupon[]).map((c) => ({
         id: c.id,
         title: c.code,
         subtitle: `${c.discount_amount}${c.discount_type === 'percentage' ? '%' : ' DA'}`,
-        type: 'coupon',
+        type: 'coupon' as const,
         href: `/admin/coupons?highlight=${c.id}`
     }));
 
-    const subjects: SearchResult[] = (subjectsResult.data || []).map((s: any) => ({
+    const subjects: SearchResult[] = ((subjectsResult.data || []) as RawSubject[]).map((s) => ({
         id: s.id,
         title: s.name,
         subtitle: "Subject Context",
-        type: 'subject',
+        type: 'subject' as const,
         href: `/admin/content?subjectId=${s.id}` // Assuming this route exists
     }));
 

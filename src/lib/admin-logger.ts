@@ -4,7 +4,7 @@ export async function logAdminAction(
     action: string,
     targetId: string | undefined,
     targetType: string,
-    details: any = {}
+    details: Record<string, unknown> = {}
 ) {
     try {
         const supabase = await createClient();

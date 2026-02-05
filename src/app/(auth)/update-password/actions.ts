@@ -4,7 +4,9 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
-export async function updatePasswordAction(prevState: any, formData: FormData) {
+interface AuthState { error?: string; success?: string }
+
+export async function updatePasswordAction(prevState: AuthState | null, formData: FormData) {
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
     const supabase = await createClient();

@@ -221,7 +221,7 @@ export default function StudentDetailClient({ student, payments, activityLogs, p
                                 <Clock size={18} className="text-zinc-500" /> Recent Activity
                             </h3>
                             <div className="space-y-3">
-                                {activityLogs.length > 0 ? activityLogs.map((log: any) => (
+                                {activityLogs.length > 0 ? activityLogs.map((log) => (
                                     <div key={log.id} className="text-sm">
                                         <p className="text-white">{log.event || "Login"}</p>
                                         <p className="text-xs text-zinc-500">{new Date(log.created_at).toLocaleString()}</p>
@@ -238,7 +238,7 @@ export default function StudentDetailClient({ student, payments, activityLogs, p
                                 <Activity size={18} className="text-zinc-500" /> Learning Path
                             </h3>
                             <div className="space-y-3">
-                                {progress.length > 0 ? progress.map((p: any) => (
+                                {progress.length > 0 ? progress.map((p) => (
                                     <div key={p.id} className="flex items-center gap-3">
                                         <div className="w-2 h-2 rounded-full bg-green-500" />
                                         <div className="flex-1 overflow-hidden">
@@ -270,7 +270,7 @@ export default function StudentDetailClient({ student, payments, activityLogs, p
                                     </tr>
                                 </thead>
                                 <tbody className="text-sm text-zinc-300">
-                                    {payments.length > 0 ? payments.map((pay: any) => (
+                                    {payments.length > 0 ? payments.map((pay) => (
                                         <tr key={pay.id} className="border-b border-white/5 hover:bg-white/5">
                                             <td className="py-4 pl-4">{new Date(pay.created_at).toLocaleDateString()}</td>
                                             <td className="py-4">

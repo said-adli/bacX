@@ -32,9 +32,10 @@ export async function toggleLessonCompletion(lessonId: string, isCompleted: bool
         revalidatePath(`/materials`);
         revalidatePath(`/materials/${lessonId}`);
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
         console.error("Error toggling completion:", error);
-        return { error: error.message };
+        return { error: message };
     }
 }
 

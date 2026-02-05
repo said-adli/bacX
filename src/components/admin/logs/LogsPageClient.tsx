@@ -14,7 +14,9 @@ import {
 import { getSecurityLogs, LogEntry } from "@/actions/admin-logs";
 import { useRouter } from "next/navigation";
 
-export default function LogsPage({ initialLogs }: { initialLogs: any }) {
+interface InitialLogsData { logs: LogEntry[] }
+
+export default function LogsPage({ initialLogs }: { initialLogs: InitialLogsData }) {
     const [logs] = useState<LogEntry[]>(initialLogs.logs);
     const router = useRouter();
     const [isFilterOpen, setIsFilterOpen] = useState(false);

@@ -44,7 +44,12 @@ export async function getPendingPayments() {
         // The select 'user:profiles(...)' usually returns an object or array depending on relation type.
         // Assuming one-to-many payments->profiles (technically many-to-one), so it should be single object.
 
-        const payments = data.map((p: any) => ({
+        interface RawPayment {
+            id: string; user_id: string; amount: number; currency?: string;
+            receipt_url: string; status: 'pending' | 'approved' | 'rejected'; created_at: string;
+            user?: { full_name: string; email: string } | { full_name: string; email: string }[];
+        }
+        const payments = (data as RawPayment[]).map((p) => ({
             ...p,
             user: Array.isArray(p.user) ? p.user[0] : p.user
         })) as PaymentRequest[];

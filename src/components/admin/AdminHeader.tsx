@@ -7,7 +7,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 
-export function AdminHeader({ user }: { user: any }) {
+interface AdminUser { email?: string | null }
+
+export function AdminHeader({ user }: { user: AdminUser | null }) {
     const router = useRouter();
     const supabase = createClient();
 
