@@ -25,42 +25,42 @@ export interface DashboardViewDTO {
  * Service to orchestrate dashboard data fetching.
  * Uses CACHED subjects/announcements + FRESH user progress.
  */
-export async function getDashboardView(userId: string): Promise<DashboardViewDTO> {
-    // Step A: Fetch data in parallel
-    // ⚡ Cached: subjects, announcements (stateless, instant)
-    // 🔒 Fresh: user progress (user-specific, requires auth)
-    const [subjects, progressMap, announcementsData] = await Promise.all([
-        getCachedSubjects(),           // ⚡ From Next.js cache
-        getUserProgressMapRaw(userId), // 🔒 Fresh query per user
-        getCachedAnnouncements(5),     // ⚡ From Next.js cache
+/**
+ * Service to orchestrate dashboard data fetching.
+ */
+
+export async function getDashboardSubjects(userId: string): Promise<SubjectDTO[]> {
+    // ⚡ Cached: subjects keys
+    // 🔒 Fresh: user progress
+    const [subjects, progressMap] = await Promise.all([
+        getCachedSubjects(),
+        getUserProgressMapRaw(userId),
     ]);
 
-    // Step B & C: Merge and Transform
-    const dashboardSubjects: SubjectDTO[] = subjects.map((subject) => {
-        // Safe lookup for progress (O(1))
+    // Merge
+    return subjects.map((subject) => {
         const progress = progressMap.get(subject.id) ?? 0;
-
         return {
-            ...subject, // Spread the DTO from cache (includes id, name, icon, lessons, etc)
+            ...subject,
             progress: progress,
-            // We can add derivative fields if needed, but SubjectDTO is strict.
-            // SubjectDTO doesn't have has 'isCompleted' or 'href' explicitly if not in DTO.
-            // Wait, SubjectDTO definition in step 7 didn't have 'href' or 'isCompleted'.
-            // But the UI might expect valid links.
-            // Let's rely on 'slug' in the DTO for links (client constructs it) OR add href to DTO.
-            // The DTO has 'slug'.
         };
     });
+}
 
-    // Step E: Transform Announcements
-    const announcements: AnnouncementDTO[] = announcementsData.map((a) => ({
+export async function getDashboardAnnouncements(): Promise<AnnouncementDTO[]> {
+    // ⚡ Cached: announcements
+    const announcementsData = await getCachedAnnouncements(5);
+
+    return announcementsData.map((a) => ({
         id: a.id,
-        title: a.title || "تحديث جديد", // Fallback if title missing
+        title: a.title || "تحديث جديد",
         content: a.content,
         createdAt: new Date(a.createdAt),
-        isNew: (new Date().getTime() - new Date(a.createdAt).getTime()) < (7 * 24 * 60 * 60 * 1000) // New if < 7 days
+        isNew: (new Date().getTime() - new Date(a.createdAt).getTime()) < (7 * 24 * 60 * 60 * 1000)
     }));
-
-    return { subjects: dashboardSubjects, announcements };
 }
+
+// Deprecated: kept only if something else broke, but we are removing its main usage.
+// We can remove it to enforce the new pattern.
+// export async function getDashboardView... REMOVED
 

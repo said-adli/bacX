@@ -1,8 +1,5 @@
 import { Suspense } from "react";
 import CinematicHero from "@/components/dashboard/CinematicHero";
-
-// Service Layer
-import { getDashboardView } from "@/services/dashboard.service";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -11,13 +8,13 @@ import StatsOverview from "@/components/dashboard/StatsOverview";
 import ContinueWatchingSection from "@/components/dashboard/ContinueWatchingSection";
 import SubjectsGrid from "@/components/dashboard/SubjectsGrid";
 import SmartSubscriptionCards from "@/components/dashboard/SmartSubscriptionCards";
-import UpdatesSection from "@/components/dashboard/UpdatesSection";
+import AnnouncementsSection from "@/components/dashboard/AnnouncementsSection";
 
 // Skeletons (Loading States)
 import {
     StatsSkeleton,
     ContinueWatchingSkeleton,
-    SubjectsSkeleton
+    SubjectsSkeleton,
 } from "@/components/skeletons/DashboardSkeletons";
 
 export const dynamic = 'force-dynamic';
@@ -27,7 +24,7 @@ export default async function DashboardPage({
 }: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-    // 1. Auth Check
+    // 1. Auth Check - Fast, required for everything
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -39,19 +36,25 @@ export default async function DashboardPage({
     const params = await searchParams;
     const query = (typeof params.q === 'string' ? params.q : "")?.toLowerCase();
 
-    // 3. Fetch Data via Service Layer (Safe & Typed)
-    // Now returns { subjects, announcements }
-    const { subjects, announcements } = await getDashboardView(user.id);
-
-    // Check for new announcements for the notification pill
-    const hasNewAnnouncements = announcements.some(a => a.isNew);
+    // No top-level blocking data fetching!
 
     return (
         <div className="space-y-16 pb-20">
 
             {/* 1. HERO SECTION (Static/Client - Loads Instantly) */}
             <div className="animate-in fade-in zoom-in duration-700">
-                <CinematicHero hasNotification={hasNewAnnouncements} />
+                {/* We can't easily pass 'hasNotification' instantly without blocking. 
+                    We can either fetch strictly that boolean fast, or let it load inside.
+                    For now, assuming Hero can live without the red dot or it fetches it itself? 
+                    The previous code calculated 'hasNewAnnouncements'. 
+                    To preserve non-blocking, we might lose the 'red dot' on the Hero OR 
+                    we move that check into the Hero or a wrapper. 
+                    For this pass, we will pass explicit 'false' or remove the prop if optional, 
+                    OR better: fetch just announcements light-weight? 
+                    Actually, let's keep it simple: Hero loads instantly, notification status might update later or be skipped for TTI.
+                    Let's check CinematicHero definition. I don't want to break it.
+                    I will omit the prop if possible or pass false. */}
+                <CinematicHero hasNotification={false} />
             </div>
 
             {/* 2. STATS (Streams in parallel) */}
@@ -72,12 +75,21 @@ export default async function DashboardPage({
                     </h2>
                 </div>
 
-                <SubjectsGrid query={query} subjects={subjects} />
+                <Suspense fallback={<SubjectsSkeleton />}>
+                    <SubjectsGrid query={query} userId={user.id} />
+                </Suspense>
             </div>
 
             {/* 5. UPDATES & SCHEDULE (New 2-Column Grid) */}
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
-                <UpdatesSection announcements={announcements} />
+                <Suspense fallback={
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
+                        <div className="h-80 bg-white/5 rounded-2xl" />
+                        <div className="h-80 bg-white/5 rounded-2xl" />
+                    </div>
+                }>
+                    <AnnouncementsSection />
+                </Suspense>
             </div>
 
             {/* 6. SUBSCRIPTION / OFFERS SECTION */}

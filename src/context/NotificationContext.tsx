@@ -1,10 +1,10 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, ReactNode } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
-import { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+import useSWR from "swr";
 
 export interface Notification {
     id: string;
@@ -15,7 +15,7 @@ export interface Notification {
     is_global: boolean;
     user_id?: string;
     target_audience?: string; // Backward compatibility
-    read_by?: string[];
+    user_notifications?: { id: string }[]; // Joined table for read status
 }
 
 interface NotificationContextType {
@@ -32,62 +32,48 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export function NotificationProvider({ children }: { children: ReactNode }) {
     const supabase = createClient();
     const { user } = useAuth();
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [loading, setLoading] = useState(true);
 
-    // Helper to check if read
-    const isRead = (n: Notification) => {
-        if (!user) return false;
-        return n.read_by?.includes(user.id);
-    };
-
-    const unreadCount = notifications.filter(n => !isRead(n)).length;
-
+    // Fetcher for SWR
     const fetchNotifications = async () => {
-        if (!user) return;
-        setLoading(true);
+        if (!user) return [];
         try {
-            // Fetch global or user specific
             const { data, error } = await supabase
                 .from('notifications')
-                .select('*')
+                .select('*, user_notifications(id)')
                 .or(`is_global.eq.true,user_id.eq.${user.id}`)
                 .order('created_at', { ascending: false })
                 .limit(20);
 
             if (error) throw error;
-            setNotifications(data as Notification[]);
+            return data as Notification[];
         } catch (err) {
             console.error("Error fetching notifications:", err);
-        } finally {
-            setLoading(false);
+            return [];
         }
     };
 
-    useEffect(() => {
-        fetchNotifications();
+    // SWR Hook - Smart Polling
+    // Key includes user.id to reset on login switch
+    // Interval: 5 minutes (300,000ms)
+    // Focus: Revalidates immediately when user comes back to tab
+    const { data: notifications = [], isLoading: loading, mutate } = useSWR(
+        user ? ['notifications', user.id] : null,
+        fetchNotifications,
+        {
+            refreshInterval: 300000,
+            revalidateOnFocus: true,
+            keepPreviousData: true
+        }
+    );
 
-        // Subscribe to realtime
-        const channel = supabase
-            .channel('public:notifications')
-            .on(
-                'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'notifications' },
-                (payload: RealtimePostgresChangesPayload<Notification>) => {
-                    const newNotif = payload.new as Notification;
-                    // Filter if relevant
-                    if (newNotif.is_global || newNotif.user_id === user?.id || !newNotif.user_id) { // !newNotif.user_id assumes global if simpler
-                        setNotifications(prev => [newNotif, ...prev]);
-                        toast(newNotif.title, { description: newNotif.message });
-                    }
-                }
-            )
-            .subscribe();
+    // Helper to check if read
+    const isRead = (n: Notification) => {
+        if (!user) return false;
+        // If the joined array has any entries, it means the user has read it
+        return (n.user_notifications?.length ?? 0) > 0;
+    };
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [user]);
+    const unreadCount = notifications.filter(n => !isRead(n)).length;
 
     const pushNotification = async (title: string, message: string, type: Notification["type"] = "info", isGlobal: boolean = true) => {
         if (!user) return;
@@ -104,9 +90,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
             });
 
             if (error) throw error;
-            // Optimization: Realtime listener will catch this and update UI
-            // But for instant feedback on sender side:
             toast.success("Notification sent!");
+
+            // Revalidate immediately to show own sent notification if relevant, 
+            // or just ensure consistency.
+            mutate();
         } catch (err) {
             console.error("Error sending notification:", err);
             toast.error("Failed to send notification");
@@ -120,36 +108,48 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         const targetNotification = notifications.find(n => n.id === id);
         if (!targetNotification) return;
 
-        const currentReads = targetNotification.read_by || [];
-        if (currentReads.includes(user.id)) return;
-
-        const newReads = [...currentReads, user.id];
+        if (isRead(targetNotification)) return;
 
         // Optimistic update
-        setNotifications(prev => prev.map(n => {
-            if (n.id === id) {
-                return { ...n, read_by: newReads };
-            }
-            return n;
-        }));
+        mutate(
+            (currentData) => {
+                return currentData?.map(n => {
+                    if (n.id === id) {
+                        return { ...n, user_notifications: [{ id: 'temp-optimistic-id' }] };
+                    }
+                    return n;
+                });
+            },
+            { revalidate: false } // Don't refetch immediately, assume success
+        );
 
-        // DB Update
+        // DB Update: Insert into junction table
         try {
             const { error } = await supabase
-                .from('notifications')
-                .update({ read_by: newReads })
-                .eq('id', id);
+                .from('user_notifications')
+                .insert({
+                    user_id: user.id,
+                    notification_id: id
+                });
 
-            if (error) throw error;
+            // Ignore duplicate key error (if user double clicked)
+            if (error && error.code !== '23505') throw error;
+
+            // Eventually revalidate to get real IDs or Ensure consistency
+            mutate();
         } catch (err) {
             console.error("Error persisting read status:", err);
             toast.error("Failed to update status");
-            // Revert optimistic update if needed, but for now we keep UI responsive
+            // Trigger actual re-fetch to revert to truth
+            mutate();
         }
     };
 
     const clearAll = () => {
-        setNotifications([]);
+        // Technically this should probably mark all as read or just clear local view?
+        // Implementation said "setNotifications([])". 
+        // With SWR, we can mutate to empty array locally.
+        mutate([], { revalidate: false });
     };
 
     return (
