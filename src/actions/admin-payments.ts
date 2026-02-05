@@ -59,9 +59,12 @@ export async function getPendingPayments() {
                 }
             }
 
+            const profiles = Array.isArray(payment.profiles) ? payment.profiles[0] : payment.profiles;
+
             return {
                 ...payment,
-                receipt_url: signedUrl
+                receipt_url: signedUrl,
+                profiles: profiles
             };
         })
     );
