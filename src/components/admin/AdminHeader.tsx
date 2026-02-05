@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState, memo } from "react";
 import { Bell, Search, Radio, LogOut, User, ChevronDown } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
