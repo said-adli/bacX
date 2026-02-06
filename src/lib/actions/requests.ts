@@ -31,58 +31,86 @@ export interface StudentRequest {
         wilaya?: string;
         branch_id?: string;
     };
+    // Helper to track origin table
+    origin_table: "profile_change_requests" | "student_requests";
 }
 
 /**
  * Fetch all pending student requests (Admin only)
+ * MERGES: `profile_change_requests` (New) + `student_requests` (Legacy/Deletions)
  */
 export async function getStudentRequests(): Promise<{ data: StudentRequest[]; error: string | null }> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-        return { data: [], error: "غير مصرح لك" };
-    }
+    if (!user) return { data: [], error: "Unauthorized" };
 
-    // Verify admin role
+    // Verify admin
     const { data: adminProfile } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
         .single();
 
-    if (adminProfile?.role !== "admin") {
-        return { data: [], error: "هذا الإجراء مخصص للمشرفين فقط" };
-    }
+    if (adminProfile?.role !== "admin") return { data: [], error: "Admin only" };
 
-    const { data, error } = await supabase
-        .from("student_requests")
+    // 1. Fetch Profile Changes (New Table)
+    const { data: profileChanges, error: pcError } = await supabase
+        .from("profile_change_requests")
         .select(`
-            *,
-            profiles:user_id (
-                full_name,
-                email,
-                wilaya,
-                branch_id
-            )
+            id, user_id, new_data, status, rejection_reason, created_at,
+            profiles:user_id ( full_name, email, wilaya, branch_id )
         `)
         .eq("status", "pending")
         .order("created_at", { ascending: true });
 
-    if (error) {
-        console.error("Error fetching student requests:", error);
-        return { data: [], error: error.message };
-    }
+    if (pcError) console.error("Error fetching profile changes:", pcError);
 
-    return { data: data || [], error: null };
+    // 2. Fetch Deletion Requests (Legacy Table)
+    const { data: deletions, error: delError } = await supabase
+        .from("student_requests")
+        .select(`
+            id, user_id, request_type, payload, status, admin_note, created_at,
+            profiles:user_id ( full_name, email, wilaya, branch_id )
+        `)
+        .eq("status", "pending")
+        .eq("request_type", "DELETE_ACCOUNT") // Only deletions
+        .order("created_at", { ascending: true });
+
+    if (delError) console.error("Error fetching deletions:", delError);
+
+    const mappedProfileChanges: StudentRequest[] = (profileChanges || []).map((pc: any) => ({
+        id: pc.id,
+        user_id: pc.user_id,
+        request_type: "UPDATE_PROFILE",
+        payload: pc.new_data,
+        status: pc.status,
+        admin_note: pc.rejection_reason,
+        created_at: pc.created_at,
+        profiles: Array.isArray(pc.profiles) ? pc.profiles[0] : pc.profiles,
+        origin_table: "profile_change_requests"
+    }));
+
+    const mappedDeletions: StudentRequest[] = (deletions || []).map((d: any) => ({
+        id: d.id,
+        user_id: d.user_id,
+        request_type: d.request_type,
+        payload: d.payload,
+        status: d.status,
+        admin_note: d.admin_note,
+        created_at: d.created_at,
+        profiles: Array.isArray(d.profiles) ? d.profiles[0] : d.profiles,
+        origin_table: "student_requests"
+    }));
+
+    // Merge and Sort
+    const allRequests = [...mappedProfileChanges, ...mappedDeletions].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
+    return { data: allRequests, error: null };
 }
 
-/**
- * Handle a student request (Approve or Reject)
- * @param requestId - The request ID to process
- * @param decision - 'approve' or 'reject'
- * @param adminNote - Optional rejection reason
- */
 export async function handleRequest(
     requestId: string,
     decision: "approve" | "reject",
@@ -91,136 +119,99 @@ export async function handleRequest(
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-        return { error: "غير مصرح لك" };
-    }
+    if (!user) return { error: "Unauthorized" };
 
-    // Verify admin role
+    // Verify admin
     const { data: adminProfile } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
         .single();
 
-    if (adminProfile?.role !== "admin") {
-        return { error: "هذا الإجراء مخصص للمشرفين فقط" };
-    }
+    if (adminProfile?.role !== "admin") return { error: "Admin only" };
 
-    // Fetch the request
-    const { data: request, error: fetchError } = await supabase
-        .from("student_requests")
-        .select("*")
-        .eq("id", requestId)
-        .single();
+    // Try to find request in both tables to know where to update
+    // OPTIMIZATION: Check profile_change_requests first as it is the priority
+    let originTable = "profile_change_requests";
+    let requestData: any = null;
 
-    if (fetchError || !request) {
-        return { error: "الطلب غير موجود" };
-    }
-
-    if (request.status !== "pending") {
-        return { error: "هذا الطلب تمت معالجته بالفعل" };
-    }
-
-    // REJECT: Simply update status and save reason
-    if (decision === "reject") {
-        const { error: rejectError } = await supabase
-            .from("student_requests")
-            .update({
-                status: "rejected",
-                admin_note: adminNote || null,
-                processed_by: user.id,
-                processed_at: new Date().toISOString()
-            })
-            .eq("id", requestId);
-
-        if (rejectError) {
-            console.error("Error rejecting request:", rejectError);
-            return { error: "حدث خطأ أثناء رفض الطلب" };
+    const { data: pcData } = await supabase.from("profile_change_requests").select("*").eq("id", requestId).single();
+    if (pcData) {
+        requestData = pcData;
+        originTable = "profile_change_requests";
+    } else {
+        const { data: legacyData } = await supabase.from("student_requests").select("*").eq("id", requestId).single();
+        if (legacyData) {
+            requestData = legacyData;
+            originTable = "student_requests";
         }
-
-        revalidatePath("/admin/requests");
-        return { success: "تم رفض الطلب" };
     }
 
-    // APPROVE: Handle based on request type
+    if (!requestData) return { error: "Request not found" };
+
+    // === REJECT ===
+    if (decision === "reject") {
+        if (originTable === "profile_change_requests") {
+            const { error } = await supabase.from("profile_change_requests").update({
+                status: "rejected",
+                rejection_reason: adminNote,
+                processed_by: user.id
+            }).eq("id", requestId);
+            if (error) return { error: error.message };
+        } else {
+            const { error } = await supabase.from("student_requests").update({
+                status: "rejected",
+                admin_note: adminNote,
+                processed_by: user.id
+            }).eq("id", requestId);
+            if (error) return { error: error.message };
+        }
+        revalidatePath("/admin/requests");
+        return { success: "Request rejected" };
+    }
+
+    // === APPROVE ===
     if (decision === "approve") {
+        if (originTable === "profile_change_requests") {
+            // Apply Profile Changes
+            const changes = requestData.new_data;
+            const userId = requestData.user_id;
 
-        // ========== UPDATE_PROFILE ==========
-        if (request.request_type === "UPDATE_PROFILE") {
-            if (!request.payload) {
-                return { error: "لا توجد بيانات للتحديث" };
-            }
+            const { error: updateError } = await supabase.from("profiles").update({
+                ...changes,
+                updated_at: new Date().toISOString()
+            }).eq("id", userId);
 
-            // Update the user's profile with the new data
-            const { error: updateError } = await supabase
-                .from("profiles")
-                .update({
-                    ...request.payload,
-                    updated_at: new Date().toISOString()
-                })
-                .eq("id", request.user_id);
+            if (updateError) return { error: "Failed to update profile" };
 
-            if (updateError) {
-                console.error("Error updating profile:", updateError);
-                return { error: "حدث خطأ أثناء تحديث الملف الشخصي" };
-            }
-
-            // Mark request as approved
-            const { error: approveError } = await supabase
-                .from("student_requests")
-                .update({
-                    status: "approved",
-                    processed_by: user.id,
-                    processed_at: new Date().toISOString()
-                })
-                .eq("id", requestId);
-
-            if (approveError) {
-                console.error("Error approving request:", approveError);
-                return { error: "حدث خطأ أثناء تأكيد الموافقة" };
-            }
+            await supabase.from("profile_change_requests").update({
+                status: "approved",
+                processed_by: user.id
+            }).eq("id", requestId);
 
             revalidatePath("/admin/requests");
-            revalidatePath("/profile");
-            return { success: "تمت الموافقة على تعديل الملف الشخصي" };
-        }
-
-        // ========== DELETE_ACCOUNT ==========
-        if (request.request_type === "DELETE_ACCOUNT") {
-            try {
-                // Use Admin Client for hard delete
+            return { success: "Profile updated" };
+        } else {
+            // Legacy / Deletion
+            if (requestData.request_type === "DELETE_ACCOUNT") {
                 const adminClient = createAdminClient();
+                const userId = requestData.user_id;
 
-                // 1. Delete associated data (payments, requests, etc.)
-                // CASCADE should handle most, but be explicit for safety
-                await adminClient.from("payments").delete().eq("user_id", request.user_id);
-                await adminClient.from("student_requests").delete().eq("user_id", request.user_id);
+                await adminClient.from("payments").delete().eq("user_id", userId);
+                await adminClient.from("student_requests").delete().eq("user_id", userId);
+                await adminClient.from("profile_change_requests").delete().eq("user_id", userId); // Cleanup new table too
 
-                // 2. Delete Auth User (triggers cascade on profiles)
-                const { error: deleteError } = await adminClient.auth.admin.deleteUser(request.user_id);
+                const { error } = await adminClient.auth.admin.deleteUser(userId);
+                if (error) return { error: "Failed to delete user" };
 
-                if (deleteError) {
-                    console.error("Error deleting user:", deleteError);
-                    return { error: "حدث خطأ أثناء حذف الحساب" };
-                }
-
-                revalidatePath("/admin/requests");
-                revalidatePath("/admin/students");
-                return { success: "تم حذف الحساب نهائياً" };
-
-            } catch (e) {
-                console.error("Hard delete error:", e);
-                return { error: "فشل حذف الحساب" };
+                return { success: "User deleted" };
             }
         }
     }
 
-    return { error: "نوع الإجراء غير معروف" };
+    return { error: "Unknown action" };
 }
 
-/**
- * Submit a new student request (for students/users)
- */
 export async function submitStudentRequest(
     requestType: "UPDATE_PROFILE" | "DELETE_ACCOUNT",
     payload?: StudentRequestPayload
@@ -228,36 +219,26 @@ export async function submitStudentRequest(
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-        return { error: "يجب تسجيل الدخول أولاً" };
-    }
+    if (!user) return { error: "Unauthorized" };
 
-    // Check for existing pending request of same type
-    const { data: existingRequest } = await supabase
-        .from("student_requests")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("request_type", requestType)
-        .eq("status", "pending")
-        .single();
-
-    if (existingRequest) {
-        return { error: "لديك طلب قيد المراجعة بالفعل" };
-    }
-
-    const { error } = await supabase
-        .from("student_requests")
-        .insert({
+    if (requestType === "UPDATE_PROFILE") {
+        // New Flow
+        const { error } = await supabase.from("profile_change_requests").insert({
             user_id: user.id,
-            request_type: requestType,
-            payload: payload || null,
+            new_data: payload,
             status: "pending"
         });
-
-    if (error) {
-        console.error("Error submitting request:", error);
-        return { error: "حدث خطأ أثناء إرسال الطلب" };
+        if (error) return { error: error.message };
+    } else {
+        // Legacy Flow (Deletions)
+        const { error } = await supabase.from("student_requests").insert({
+            user_id: user.id,
+            request_type: requestType,
+            payload: payload,
+            status: "pending"
+        });
+        if (error) return { error: error.message };
     }
 
-    return { success: "تم إرسال الطلب بنجاح" };
+    return { success: "Request submitted" };
 }

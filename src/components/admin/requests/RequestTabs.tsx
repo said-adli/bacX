@@ -14,7 +14,7 @@ import {
     MessageSquare,
     Loader2
 } from "lucide-react";
-import { handleRequest, StudentRequest } from "@/lib/actions/requests";
+// Deferring this edit until viewing page.tsx
 
 interface RequestTabsProps {
     requests: StudentRequest[];
@@ -122,8 +122,8 @@ export default function RequestTabs({ requests }: RequestTabsProps) {
                 <button
                     onClick={() => setActiveTab("profile")}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${activeTab === "profile"
-                            ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-                            : "bg-white/5 text-white/60 hover:bg-white/10"
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                        : "bg-white/5 text-white/60 hover:bg-white/10"
                         }`}
                 >
                     <UserPen size={18} />
@@ -137,8 +137,8 @@ export default function RequestTabs({ requests }: RequestTabsProps) {
                 <button
                     onClick={() => setActiveTab("deletion")}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${activeTab === "deletion"
-                            ? "bg-red-600 text-white shadow-lg shadow-red-600/20"
-                            : "bg-white/5 text-white/60 hover:bg-white/10"
+                        ? "bg-red-600 text-white shadow-lg shadow-red-600/20"
+                        : "bg-white/5 text-white/60 hover:bg-white/10"
                         }`}
                 >
                     <Trash2 size={18} />

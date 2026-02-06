@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { ALGERIAN_WILAYAS } from "@/lib/data/wilayas";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { User, Mail, Lock, MapPin, BookOpen, Eye, EyeOff, ArrowRight } from "lucide-react";
@@ -15,24 +15,46 @@ interface SignUpProps {
 
 export function SignUp({ onToggleLogin }: SignUpProps) {
     const { signupWithEmail } = useAuth();
+
+
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
-
-    // Form State
+    const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
-        fullName: "",
         email: "",
         password: "",
+        fullName: "",
         wilaya: "",
-        major: "شعبة علوم تجريبية" // Default
+        major: ""
     });
-    const [showPassword, setShowPassword] = useState(false);
 
-    const MAJORS = [
-        "شعبة علوم تجريبية",
-        "شعبة رياضيات",
-        "شعبة تقني رياضي"
-    ];
+    // Dynamic Data State
+    const [wilayas, setWilayas] = useState<{ id: string, name: string }[]>([]);
+    const [majors, setMajors] = useState<{ id: string, name: string }[]>([]);
+
+    // Fetch Static Data on Mount
+    useEffect(() => {
+        const loadStaticData = async () => {
+            try {
+                // Parallel fetch for speed
+                const [wList, mList] = await Promise.all([
+                    import("@/actions/static-data").then(mod => mod.getWilayas()),
+                    import("@/actions/static-data").then(mod => mod.getMajors())
+                ]);
+                setWilayas(wList);
+                setMajors(mList);
+
+                // Set default major if list available and no major selected
+                if (mList.length > 0 && !formData.major) {
+                    setFormData(prev => ({ ...prev, major: mList[0].name }));
+                }
+            } catch (error) {
+                console.error("Failed to load static data", error);
+                toast.error("Could not load form data options");
+            }
+        };
+        loadStaticData();
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -41,6 +63,7 @@ export function SignUp({ onToggleLogin }: SignUpProps) {
         if (!formData.fullName.trim()) return toast.error("الاسم الكامل مطلوب");
         if (!formData.wilaya) return toast.error("يرجى اختيار الولاية");
         if (formData.password.length < 8) return toast.error("كلمة المرور يجب أن تكون 8 أحرف على الأقل");
+        if (!formData.major) return toast.error("يرجى اختيار الشعبة");
 
         setIsLoading(true);
         try {
@@ -91,7 +114,7 @@ export function SignUp({ onToggleLogin }: SignUpProps) {
                     dir="rtl"
                 >
                     <option value="" className="bg-[#0A0A0F] text-zinc-500">اختر الولاية...</option>
-                    {ALGERIAN_WILAYAS.map(w => (
+                    {wilayas.map(w => (
                         <option key={w.id} value={w.name} className="bg-[#0A0A0F] text-white">
                             {w.name}
                         </option>
@@ -108,9 +131,10 @@ export function SignUp({ onToggleLogin }: SignUpProps) {
                     className="w-full bg-white/5 border border-white/10 rounded-2xl h-12 px-4 pr-12 text-zinc-200 outline-none focus:border-primary/50 transition-all appearance-none cursor-pointer text-base"
                     dir="rtl"
                 >
-                    {MAJORS.map(m => (
-                        <option key={m} value={m} className="bg-[#0A0A0F] text-white">
-                            {m}
+                    <option value="" className="bg-[#0A0A0F] text-zinc-500">اختر الشعبة...</option>
+                    {majors.map(m => (
+                        <option key={m.id} value={m.name} className="bg-[#0A0A0F] text-white">
+                            {m.name}
                         </option>
                     ))}
                 </select>

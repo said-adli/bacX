@@ -34,7 +34,7 @@ export async function getSecurityLogs(
     const PAGE_SIZE = 20;
 
     let query = supabaseAdmin
-        .from('security_logs')
+        .from('admin_audit_logs')
         .select(`
             id,
             user_id,

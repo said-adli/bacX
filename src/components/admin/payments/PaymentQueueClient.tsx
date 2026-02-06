@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, X, Eye, Calendar, User, AlertTriangle } from "lucide-react";
+import { Check, X, Eye, Calendar, User, AlertTriangle, Sparkles, Loader2 } from "lucide-react";
 import { SubscriptionCard } from "@/components/shared/SubscriptionCard";
 import { approvePayment, rejectPayment, PaymentProof } from "@/actions/admin-payments";
 import { getActivePlans, SubscriptionPlan } from "@/actions/admin-plans"; // [NEW]
@@ -84,8 +84,16 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
             <div className="flex gap-6 h-[calc(100vh-200px)]">
                 {/* List */}
                 <div className="w-1/3 min-w-[350px] bg-black/20 border border-white/5 rounded-3xl overflow-hidden flex flex-col">
-                    <div className="p-4 border-b border-white/5 bg-white/5">
-                        <h3 className="font-bold text-zinc-400 uppercase text-xs tracking-wider">Pending Requests ({payments.length})</h3>
+                    <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                        <h3 className="font-bold text-zinc-400 uppercase text-xs tracking-wider">Pending ({payments.length})</h3>
+                        <button
+                            onClick={handleAutoVerify}
+                            disabled={isVerifying || payments.length === 0}
+                            className="text-[10px] bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 px-2 py-1 rounded-lg flex items-center gap-1 transition-colors disabled:opacity-50"
+                        >
+                            {isVerifying ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                            Auto-Verify
+                        </button>
                     </div>
                     <div className="flex-1 overflow-y-auto p-2 space-y-2">
                         {payments.length === 0 && (

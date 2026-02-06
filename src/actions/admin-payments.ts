@@ -12,20 +12,71 @@ export interface PaymentProof {
     status: 'pending' | 'approved' | 'rejected';
     created_at: string;
     student_email: string;
-    plan_id: string;
+// Auto-Verify Logic
+export async function autoVerifyPayments() {
+    await requireAdmin(); // Centralized Guard
+    const supabaseAdmin = createAdminClient();
+
+    // 1. Fetch all pending
+    const { data: pending, error } = await supabaseAdmin
+        .from('payment_receipts')
+        .select('*')
+        .eq('status', 'pending');
+
+    if (error || !pending) return { count: 0, error: error?.message };
+
+    let approvedCount = 0;
+
+    // 2. Iterate and Verify
+    for (const payment of pending) {
+        // Condition: Must have a Plan ID selected by user (or system) AND a receipt image
+        if (payment.plan_id && payment.receipt_url) {
+
+            try {
+                // Subscription Logic
+                const { data: plan } = await supabaseAdmin
+                    .from('subscription_plans')
+                    .select('duration')
+                    .eq('id', payment.plan_id)
+                    .single();
+
+                const duration = plan?.duration || 30; // Default 30 days
+
+                const subscriptionEnd = new Date();
+                subscriptionEnd.setDate(subscriptionEnd.getDate() + duration);
+
+                // Update Profile
+                await supabaseAdmin.from('profiles').update({
+                    is_subscribed: true,
+                    subscription_end_date: subscriptionEnd.toISOString(),
+                    plan_id: payment.plan_id
+                }).eq('id', payment.user_id);
+
+                // Update Receipt
+                await supabaseAdmin.from('payment_receipts').update({
+                    status: 'approved',
+                    updated_at: new Date().toISOString()
+                }).eq('id', payment.id);
+
+                approvedCount++;
+            } catch (e) {
+                console.error(`Auto-verify failed for ${payment.id}`, e);
+            }
+        }
+    }
+
+    revalidatePath('/admin/payments');
+    return { count: approvedCount };
 }
+const { user } = await requireAdmin(); // Centralized Guard
+const supabase = await createClient();
+// Use Admin Client for storage operations to ensure we can sign URLs for private buckets if needed
+// (though usually standard client with admin user works, admin client is safer for system ops)
+const adminSupabase = createAdminClient();
 
-// Fetch Pending Payments (Protected + Signed URLs)
-export async function getPendingPayments() {
-    const { user } = await requireAdmin(); // Centralized Guard
-    const supabase = await createClient();
-    // Use Admin Client for storage operations to ensure we can sign URLs for private buckets if needed
-    // (though usually standard client with admin user works, admin client is safer for system ops)
-    const adminSupabase = createAdminClient();
-
-    const { data, error } = await supabase
-        .from('payment_requests') // Targeting the secured table
-        .select(`
+const { data, error } = await supabase
+    .from('payment_requests') // Targeting the secured table
+    .select(`
             id, 
             user_id, 
             status, 
@@ -33,43 +84,43 @@ export async function getPendingPayments() {
             created_at,
             profiles(email, full_name)
         `)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true });
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true });
 
-    if (error) {
-        console.error("Fetch payments error:", error);
-        return [];
-    }
+if (error) {
+    console.error("Fetch payments error:", error);
+    return [];
+}
 
-    // Transform receipts to Signed URLs
-    const paymentsWithSignedUrls = await Promise.all(
-        data.map(async (payment) => {
-            let signedUrl = payment.receipt_url;
+// Transform receipts to Signed URLs
+const paymentsWithSignedUrls = await Promise.all(
+    data.map(async (payment) => {
+        let signedUrl = payment.receipt_url;
 
-            // Check if it looks like a path (not a full http URL)
-            // If it starts with 'http', it's legacy public URL. If not, it's a path.
-            if (payment.receipt_url && !payment.receipt_url.startsWith('http')) {
-                const { data: signedData } = await adminSupabase
-                    .storage
-                    .from('receipts')
-                    .createSignedUrl(payment.receipt_url, 3600); // 1 Hour Validity
+        // Check if it looks like a path (not a full http URL)
+        // If it starts with 'http', it's legacy public URL. If not, it's a path.
+        if (payment.receipt_url && !payment.receipt_url.startsWith('http')) {
+            const { data: signedData } = await adminSupabase
+                .storage
+                .from('receipts')
+                .createSignedUrl(payment.receipt_url, 3600); // 1 Hour Validity
 
-                if (signedData?.signedUrl) {
-                    signedUrl = signedData.signedUrl;
-                }
+            if (signedData?.signedUrl) {
+                signedUrl = signedData.signedUrl;
             }
+        }
 
-            const profiles = Array.isArray(payment.profiles) ? payment.profiles[0] : payment.profiles;
+        const profiles = Array.isArray(payment.profiles) ? payment.profiles[0] : payment.profiles;
 
-            return {
-                ...payment,
-                receipt_url: signedUrl,
-                profiles: profiles
-            };
-        })
-    );
+        return {
+            ...payment,
+            receipt_url: signedUrl,
+            profiles: profiles
+        };
+    })
+);
 
-    return paymentsWithSignedUrls;
+return paymentsWithSignedUrls;
 }
 
 // Approve Payment (STRICT MODE & SECURED)
