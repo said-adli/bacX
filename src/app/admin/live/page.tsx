@@ -5,6 +5,8 @@ import AdminLiveClient from "@/components/admin/live/AdminLiveClient";
 import LiveSessionManager from "@/components/admin/live/LiveSessionManager";
 import { LiveSession } from "@/actions/admin-live";
 
+export const dynamic = 'force-dynamic';
+
 export default function AdminLivePage() {
     const [activeSession, setActiveSession] = useState<LiveSession | null>(null);
 
