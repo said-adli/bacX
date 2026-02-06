@@ -53,7 +53,7 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
                 await updateLiveSession(currentSession.id, payload);
                 toast.success("Updated");
             } else {
-                await createLiveSession(payload as any);
+                await createLiveSession(payload as Parameters<typeof createLiveSession>[0]);
                 toast.success("Created");
             }
             setIsEditing(false);
@@ -76,7 +76,7 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
         }
     };
 
-    const openEditor = (session?: any) => {
+    const openEditor = (session?: Partial<typeof currentSession>) => {
         setCurrentSession(session || {
             status: 'scheduled',
             published: true,
@@ -218,7 +218,7 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
                                     <select
                                         className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
                                         value={currentSession.status || 'scheduled'}
-                                        onChange={e => setCurrentSession({ ...currentSession, status: e.target.value as any })}
+                                        onChange={e => setCurrentSession({ ...currentSession, status: e.target.value as 'scheduled' | 'live' | 'ended' })}
                                     >
                                         <option value="scheduled">Scheduled</option>
                                         <option value="live">Live Now</option>

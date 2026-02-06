@@ -8,18 +8,17 @@ import '@livekit/components-styles';
 interface LiveKitAudioInteractionProps {
     roomName: string;
     userName: string; // The user's name
-    prefetchedToken?: string; // [NEW] Accept token directly
+    prefetchedToken?: string; // Accept token directly
     onDisconnected?: () => void;
 }
 
 export default function LiveKitAudioInteraction({ roomName, userName, prefetchedToken, onDisconnected }: LiveKitAudioInteractionProps) {
+    // Initialize from prop directly - avoids setState in effect
     const [token, setToken] = useState<string>(prefetchedToken || "");
 
     useEffect(() => {
-        if (prefetchedToken) {
-            setToken(prefetchedToken);
-            return; // Don't fetch if provided
-        }
+        // Skip fetching if we already have a token
+        if (token) return;
 
         (async () => {
             try {
@@ -30,7 +29,7 @@ export default function LiveKitAudioInteraction({ roomName, userName, prefetched
                 console.error(e);
             }
         })();
-    }, [roomName, userName, prefetchedToken]);
+    }, [roomName, userName, token]);
 
     if (!token) {
         return <div className="text-sm text-zinc-500 animate-pulse">Connecting to audio server...</div>;

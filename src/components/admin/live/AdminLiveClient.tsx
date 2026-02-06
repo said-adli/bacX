@@ -18,9 +18,7 @@ function AdminLiveContent({ onExit }: { onExit?: () => void }) {
         sendMessage,
         acceptStudent,
         endCall,
-        status,
         lowerAllHands,
-        isConnected // Future property
     } = useLiveInteraction();
 
     return (
@@ -30,7 +28,6 @@ function AdminLiveContent({ onExit }: { onExit?: () => void }) {
 
             <div className="flex items-center justify-between">
                 <div>
-                    {/* @ts-ignore */}
                     {onExit && (
                         <button onClick={onExit} className="text-zinc-400 hover:text-white mb-2 flex items-center gap-1 text-sm">
                             ← Back to Sessions
@@ -95,7 +92,7 @@ export default function AdminLiveClient({ roomName = "class_room_main", onExit }
                 console.error(e);
             }
         })();
-    }, []);
+    }, [roomName]);
 
     if (!token) return <div className="p-10 text-center animate-pulse">Initializing Secure Live Environment...</div>;
 
@@ -107,10 +104,8 @@ export default function AdminLiveClient({ roomName = "class_room_main", onExit }
             serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
             data-lk-theme="default"
             style={{ height: 'auto' }}
-        >
-            {/* @ts-ignore */}
             <AdminLiveContent onExit={onExit} />
-        </LiveKitRoom>
+        </LiveKitRoom >
     );
 }
 

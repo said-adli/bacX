@@ -23,7 +23,7 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
     // 1. Fetch Data
     // 1. Fetch Data
     const { getSecureVideoId } = await import("@/actions/video");
-    // @ts-ignore - isOwned is now returned
+    // @ts-expect-error - isOwned is now returned
     const { lesson, isCompleted, isOwned, error } = await getLessonData(lessonId);
 
     // Fetch Secure Token (Parallel)

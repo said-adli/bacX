@@ -18,32 +18,11 @@ export default function CompleteProfilePage() {
     const [wilayas, setWilayas] = useState<Wilaya[]>([]);
     const [majors, setMajors] = useState<Major[]>([]);
 
-    const [formData, setFormData] = useState({
-        fullName: "",
+    const [formData, setFormData] = useState(() => ({
+        fullName: user?.user_metadata?.full_name || "",
         wilaya: "",
         major: ""
-    });
-
-    // Fetch Static Data
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                const [w, m] = await Promise.all([getWilayas(), getMajors()]);
-                setWilayas(w);
-                setMajors(m);
-            } catch (e) {
-                console.error("Failed to load options", e);
-            }
-        };
-        loadData();
-    }, []);
-
-    // Auto-fill Name safety check
-    useEffect(() => {
-        if (user?.user_metadata?.full_name && !formData.fullName) {
-            setFormData(prev => ({ ...prev, fullName: user.user_metadata.full_name }));
-        }
-    }, [user, formData.fullName]);
+    }));
 
     const handleChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));

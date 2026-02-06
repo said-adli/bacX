@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { usePlayer } from "@/context/PlayerContext";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
-import { Loader2, Play, Pause, X, Maximize, Volume2, VolumeX, Volume1, Settings } from "lucide-react";
+import { Loader2, Play, Pause, X, Maximize, Volume2, VolumeX, Volume1 } from "lucide-react";
 import { useVideoHotkeys } from "@/hooks/useVideoHotkeys";
 
 export function GlobalVideoPlayer() {
@@ -21,7 +21,8 @@ export function GlobalVideoPlayer() {
     } = usePlayer();
 
     const { user } = useAuth();
-    const [decodedId, setDecodedId] = useState<string | null>(null);
+    // Simple derivation - no need for effect+setState
+    const decodedId = useMemo(() => videoId || null, [videoId]);
     const [isReady, setIsReady] = useState(false);
 
     // Internal Player State (Source of Truth for UI)
@@ -30,14 +31,14 @@ export function GlobalVideoPlayer() {
     const [volume, setVolume] = useState(100);
     const [isMuted, setIsMuted] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1);
-    const [buffered, setBuffered] = useState(0);
+    const [_buffered, setBuffered] = useState(0);
     const [isHovering, setIsHovering] = useState(false);
     const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
     // Refs
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const progressInterval = useRef<NodeJS.Timeout | null>(null);
+    const _progressInterval = useRef<NodeJS.Timeout | null>(null);
 
     // ============================================================================
     // COMMAND BUS
@@ -50,11 +51,7 @@ export function GlobalVideoPlayer() {
         );
     }, []);
 
-    // 1. Setup & Decryption
-    useEffect(() => {
-        if (!videoId) return;
-        setDecodedId(videoId); // Add real decryption later if needed
-    }, [videoId]);
+    // Note: decodedId is now derived via useMemo, no effect needed
 
     // 2. Play/Pause Sync
     useEffect(() => {

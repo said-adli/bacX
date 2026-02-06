@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo, useRef } from "react";
 
 // Types
 type ViewMode = 'hero' | 'mini' | 'hidden';
@@ -43,32 +43,20 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const [title, setTitle] = useState<string | undefined>(undefined);
     const [isLive, setIsLive] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isMuted, setIsMuted] = useState(false);
+    const [isMuted] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [volume, setVolumeState] = useState(100); // 0-100
+    const [duration] = useState(0);
+    const [_volume, setVolumeState] = useState(100); // 0-100
 
     // Portal Targets (DOM Nodes)
     const [heroTarget, setHeroTarget] = useState<HTMLElement | null>(null);
     const [miniTarget, setMiniTarget] = useState<HTMLElement | null>(null);
 
-    // Derived View Mode
-    const [viewMode, setViewMode] = useState<ViewMode>('hidden');
-
-    // Logic to determine ViewMode
-    useEffect(() => {
-        if (!videoId) {
-            setViewMode('hidden');
-            return;
-        }
-
-        // If Hero Target is present (we are on Lesson Page), prioritize Hero
-        if (heroTarget) {
-            setViewMode('hero');
-        } else {
-            // If not on Lesson Page but have video, show Mini
-            setViewMode('mini');
-        }
+    // Derived View Mode - use useMemo instead of useEffect+setState
+    const viewMode = useMemo<ViewMode>(() => {
+        if (!videoId) return 'hidden';
+        if (heroTarget) return 'hero';
+        return 'mini';
     }, [videoId, heroTarget]);
 
     // Actions

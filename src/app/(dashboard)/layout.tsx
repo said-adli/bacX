@@ -42,7 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         {/* THE SOUL */}
                         <div className="flex justify-center mb-12 animate-in fade-in slide-in-from-top-4 duration-1000 delay-300">
                             <p className="text-lg md:text-xl font-serif text-white/40 tracking-widest pointer-events-none select-none drop-shadow-md">
-                                "إنَّ اللهَ يَقْذِفُ العِلْمَ فِي قَلْبِ مَنْ يُحِبُّ"
+                                {`"إنَّ اللهَ يَقْذِفُ العِلْمَ فِي قَلْبِ مَنْ يُحِبُّ"`}
                             </p>
                         </div>
                         {children}
@@ -52,4 +52,3 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </SidebarProvider>
     );
 }
-
