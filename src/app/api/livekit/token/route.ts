@@ -79,9 +79,9 @@ export async function GET(request: NextRequest) {
 
             // Safe access for deep join
             // units is likely an array, safeguard access
-            // @ts-ignore
+            // @ts-expect-error - Deep join type safety
             const units = Array.isArray(lesson.units) ? lesson.units[0] : lesson.units;
-            // @ts-ignore
+            // @ts-expect-error - Deep join type safety
             const subjects = Array.isArray(units?.subjects) ? units.subjects[0] : units?.subjects;
             const subjectPublished = subjects?.published;
 

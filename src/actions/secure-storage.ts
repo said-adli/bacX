@@ -66,9 +66,9 @@ export async function getLessonResource(lessonId: string, resourcePath: string) 
     // 3. Authorization Logic (Unified)
     const { verifyContentAccess } = await import("@/lib/access-control");
 
-    // @ts-ignore - Deep join type safety
+    // @ts-expect-error - Deep join type safety
     const units = Array.isArray(lesson.units) ? lesson.units[0] : lesson.units;
-    // @ts-ignore
+    // @ts-expect-error - Deep join type safety
     const subjects = Array.isArray(units?.subjects) ? units.subjects[0] : units?.subjects;
     const published = subjects?.published ?? true;
 

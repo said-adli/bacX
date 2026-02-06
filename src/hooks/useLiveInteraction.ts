@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { chatStore } from '@/lib/chat-store';
@@ -13,21 +13,10 @@ export const useLiveInteraction = () => {
     const { user, profile } = useAuth();
     const supabase = createClient();
 
-    // LiveKit Context
-    // We assume this is called inside LiveKitRoom. If not, hooks might throw or return undefined.
-    // We'll wrap in try-catch or optional chaining if unsure, but we refactored pages to unnecessary it.
-    let roomReceived = false;
-    let room: any = null;
-    let localParticipant: any = null;
-
-    try {
-        room = useRoomContext();
-        const lp = useLocalParticipant();
-        localParticipant = lp.localParticipant;
-    } catch (e) {
-        // Fallback for when not inside Room (shouldn't happen after refactor)
-        console.warn("useLiveInteraction used outside LiveKitRoom");
-    }
+    // LiveKit Context - MUST be called unconditionally at top level (Rules of Hooks)
+    // These hooks will return undefined/null values if not inside LiveKitRoom
+    const room = useRoomContext();
+    const { localParticipant } = useLocalParticipant();
 
     // Subscribe to Store
     const storeState = useSyncExternalStore(

@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { usePlayer } from "@/context/PlayerContext";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { Lock, Users, Video } from "lucide-react";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -11,12 +11,21 @@ import { RaiseHandButton } from "@/components/live/RaiseHandButton";
 import LiveChat from "@/components/live/LiveChat";
 import LiveSessionSkeleton from "@/components/ui/skeletons/LiveSessionSkeleton";
 import { getHybridLiveSession } from "@/actions/live";
-import { LiveKitRoom, RoomAudioRenderer, useTracks } from "@livekit/components-react";
+import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react";
 import '@livekit/components-styles';
-import { Track } from "livekit-client";
+
+interface SecureSession {
+    loading: boolean;
+    authorized: boolean;
+    isLive: boolean;
+    title?: string;
+    youtubeId?: string;
+    liveToken?: string;
+    error?: string;
+}
 
 // --- INNER CONTENT ---
-function LiveSessionContent({ secureSession }: { secureSession: any }) {
+function LiveSessionContent({ secureSession }: { secureSession: SecureSession }) {
     const { profile } = useAuth();
     const { loadVideo, registerHeroTarget } = usePlayer();
     const heroTargetRef = useRef<HTMLDivElement>(null);
@@ -124,15 +133,7 @@ function LiveSessionContent({ secureSession }: { secureSession: any }) {
 // --- MAIN PAGE ---
 export default function LiveSessionsPage() {
     // [SECURE STATE]
-    const [secureSession, setSecureSession] = useState<{
-        loading: boolean;
-        authorized: boolean;
-        isLive: boolean;
-        title?: string;
-        youtubeId?: string;
-        liveToken?: string;
-        error?: string;
-    }>({
+    const [secureSession, setSecureSession] = useState<SecureSession>({
         loading: true,
         authorized: false,
         isLive: false
@@ -152,8 +153,7 @@ export default function LiveSessionsPage() {
                     liveToken: data.liveToken, // Token with publish: false
                     error: data.error
                 });
-            } catch (e) {
-                console.error("Live session init failed", e);
+            } catch {
                 setSecureSession(prev => ({ ...prev, loading: false, error: "Connection failed" }));
             }
         }
@@ -223,14 +223,16 @@ export default function LiveSessionsPage() {
 }
 
 function SelfAudioVisualizer() {
-    const tracks = useTracks([Track.Source.Microphone]);
-    // Use the first track that is ours? useTracks filters by source.
-    // We can just show a dummy wave or actual visualizer.
-    // For now, simple text or icon.
+    // Pre-calculate random values once on mount to avoid calling Math.random during render
+    const barStyles = useMemo(() => [1, 2, 3, 4].map(() => ({
+        height: `${Math.random() * 100}%`,
+        animationDuration: `${0.5 + Math.random()}s`
+    })), []);
+
     return (
         <div className="flex gap-1 h-4 items-end">
-            {[1, 2, 3, 4].map(i => (
-                <div key={i} className="w-1 bg-green-500 animate-pulse" style={{ height: `${Math.random() * 100}%`, animationDuration: `${0.5 + Math.random()}s` }} />
+            {barStyles.map((style, i) => (
+                <div key={i} className="w-1 bg-green-500 animate-pulse" style={style} />
             ))}
         </div>
     );

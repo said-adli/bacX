@@ -45,11 +45,9 @@ export async function getSecureVideoId(lessonId: string) {
 
     const ownedContentIds = ownership ? [ownership.content_id] : [];
 
-    // @ts-ignore - Deep join type safety
     const units = Array.isArray(lesson.units) ? lesson.units[0] : lesson.units;
-    // @ts-ignore
-    const subjects = Array.isArray(units?.subjects) ? units.subjects[0] : units?.subjects;
-    const published = subjects?.published ?? true;
+    const subjects = Array.isArray((units as { subjects?: unknown })?.subjects) ? ((units as { subjects: unknown[] }).subjects)[0] : (units as { subjects?: unknown })?.subjects;
+    const published = (subjects as { published?: boolean })?.published ?? true;
 
     const contentRequirement = {
         id: lesson.id,

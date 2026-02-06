@@ -92,7 +92,7 @@ export function ParticipationQueue({ queue, currentSpeaker, onAccept, onEndCall,
                                 </div>
                                 <div>
                                     <h4 className="text-sm font-medium text-white">{student.user_name}</h4>
-                                    <span className="text-[10px] text-white/40 block">منذ {Math.floor((Date.now() - new Date(student.created_at).getTime()) / 1000 / 60)} دقيقة</span>
+                                    <span className="text-[10px] text-white/40 block">{new Date(student.created_at).toLocaleTimeString()}</span>
                                 </div>
                             </div>
                             <button

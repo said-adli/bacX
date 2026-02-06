@@ -18,17 +18,18 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
     const [isEditing, setIsEditing] = useState(false);
     const [currentSession, setCurrentSession] = useState<Partial<LiveSession>>({});
 
-    useEffect(() => {
-        loadData();
-    }, []);
 
-    async function loadData() {
+    const loadData = async () => {
         setIsLoading(true);
         const [sParams, pParams] = await Promise.all([getLiveSessions(), getAdminPlans()]);
         setSessions(sParams);
         setPlans(pParams);
         setIsLoading(false);
-    }
+    };
+
+    useEffect(() => {
+        loadData();
+    }, []);
 
     const handleSave = async () => {
         if (!currentSession.title || !currentSession.youtube_id || !currentSession.start_time) {

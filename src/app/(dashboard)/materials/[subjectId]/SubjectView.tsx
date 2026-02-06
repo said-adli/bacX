@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import EncodedVideoPlayer from "@/components/lesson/VideoPlayer";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { Lock, PlayCircle, Clock } from "lucide-react";
 import Link from "next/link";
 import { PremiumLockScreen } from "@/components/dashboard/PremiumLockScreen";

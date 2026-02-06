@@ -123,7 +123,7 @@ export async function POST(request: Request) {
         }
 
         // P0 FIX: Check if Parent Subject is Published
-        // @ts-ignore - Supabase types might not be perfectly inferred for deep joins without generated types
+        // @ts-expect-error - Supabase types might not be perfectly inferred for deep joins without generated types
         // units is likely an array, safeguard access
         const units = Array.isArray(lesson.units) ? lesson.units[0] : lesson.units;
         const subjects = Array.isArray(units?.subjects) ? units.subjects[0] : units?.subjects;

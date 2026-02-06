@@ -1,4 +1,4 @@
-import { SupabaseClient } from '@supabase/supabase-js';
+// Unified Access Control Module
 
 type UserProfile = {
     id: string;

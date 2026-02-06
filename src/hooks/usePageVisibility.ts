@@ -1,24 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 
 export function usePageVisibility() {
-    const [isVisible, setIsVisible] = useState(true);
-
-    useEffect(() => {
-        const handleVisibilityChange = () => {
-            setIsVisible(document.visibilityState === "visible");
-        };
-
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-
-        // Initial check
-        setIsVisible(document.visibilityState === "visible");
-
-        return () => {
-            document.removeEventListener("visibilitychange", handleVisibilityChange);
-        };
-    }, []);
-
-    return isVisible;
+    return useSyncExternalStore(
+        (callback) => {
+            document.addEventListener("visibilitychange", callback);
+            return () => document.removeEventListener("visibilitychange", callback);
+        },
+        () => document.visibilityState === "visible",
+        () => true // Server assumes visible
+    );
 }

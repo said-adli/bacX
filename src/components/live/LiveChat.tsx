@@ -80,9 +80,7 @@ export default function LiveChat({ messages, onSendMessage }: LiveChatProps) {
                 </h3>
                 <div className="flex items-center gap-2 text-xs text-white/40">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    {queueRef.current.length > 0 ? (
-                        <span className="text-blue-400 text-[10px] animate-pulse">Syncing...</span>
-                    ) : "متصل"}
+                    متصل
                 </div>
             </div>
 

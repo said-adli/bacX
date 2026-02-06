@@ -2,7 +2,6 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
-import { Input } from "@/components/ui/Input";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { loginAction } from "./actions";
