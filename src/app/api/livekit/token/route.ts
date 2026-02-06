@@ -45,30 +45,30 @@ export async function GET(request: NextRequest) {
 
     // 4. Set Permissions
     // ACL: Validate access to the room
-    // Default Rule: "class_room_main" requires active subscription
-    const isMainRoom = roomName === 'class_room_main';
     const isAdmin = profile?.role === 'admin' || profile?.role === 'teacher';
-    const isSubscribed = profile?.is_subscribed === true;
 
-    // Strict ACL Logic
-    if (isAdmin) {
-        // Admins/Teachers access everything
-    } else if (isMainRoom) {
-        if (!isSubscribed) {
-            return NextResponse.json({ error: 'Subscription required to join this room' }, { status: 403 });
-        }
-    } else {
-        // Specific Course/Lesson Room
-        // Check enrollments table if it exists, or fallback to subscription
-        // For now, assuming subscription covers all course rooms
-        // TODO: Implement specific course enrollment check if granular selling is active
-        if (!isSubscribed) {
-            return NextResponse.json({ error: 'Active subscription required to join course rooms' }, { status: 403 });
+    if (!isAdmin) {
+        // Query the lesson to check access requirements
+        const { data: lesson, error: lessonError } = await supabase
+            .from('lessons')
+            .select('required_plan_id')
+            .eq('id', roomName)
+            .single();
+
+        if (lessonError || !lesson) {
+            // If room/lesson doesn't exist, deny access
+            // We return 403 to avoid leaking existence of private rooms if needed, or 404 if appropriate.
+            // Given "Forbidden" requirement:
+            return NextResponse.json({ error: 'Room access denied or not found' }, { status: 403 });
         }
 
-        // FUTURE: 
-        // const { data: enrollment } = await supabase.from('enrollments').select('id').eq('user_id', user.id).eq('course_id', getCourseIdFrom(roomName)).single();
-        // if (!enrollment) throw 403
+        // Strict Check: User must have the matching plan
+        // If lesson.required_plan_id is NULL, it is considered free/open.
+        if (lesson.required_plan_id) {
+            if (profile?.active_plan_id !== lesson.required_plan_id) {
+                return NextResponse.json({ error: 'Active subscription required to join this room' }, { status: 403 });
+            }
+        }
     }
 
     at.addGrant({
