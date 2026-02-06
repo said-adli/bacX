@@ -18,9 +18,15 @@ export async function getLessonData(lessonId: string) {
             .from('lessons')
             .select(`
                 *,
-                subscription_plans(id, name, price)
+                subscription_plans(id, name, price),
+                units!inner (
+                    subjects!inner (
+                        published
+                    )
+                )
             `)
             .eq('id', lessonId)
+            .eq('units.subjects.published', true) // SECURITY: Prevent access to drafts
             .single();
 
         if (lessonError) throw lessonError;
