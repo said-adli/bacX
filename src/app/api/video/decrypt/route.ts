@@ -6,8 +6,9 @@ import {
     createRateLimitResponse
 } from '@/lib/rate-limit';
 import { createClient } from "@/utils/supabase/server";
+import { createHmac } from "crypto";
 
-const SERVER_SALT = process.env.VIDEO_ENCRYPTION_SALT;
+const SERVER_SALT = process.env.VIDEO_ENCRYPTION_SALT || "default-secret-change-me";
 
 export async function POST(request: Request) {
     // 1. AUTHENTICATION (Supabase) - Moved Up for Identity-Based Rate Limiting
@@ -55,12 +56,34 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid context' }, { status: 400 });
         }
 
-        // 4. INTEGRITY CHECK (Salt Validation)
-        // Client sends: SALT + DATA + SALT (Base64)
-        const decodedString = Buffer.from(encodedId, 'base64').toString('utf-8');
-        if (!decodedString.startsWith(SERVER_SALT) || !decodedString.endsWith(SERVER_SALT)) {
-            // Salt mismatch
+        // 4. INTEGRITY CHECK (HMAC Validation)
+        // Client sends: encodedId = "base64Payload.signature"
+        const [base64Payload, clientSignature] = encodedId.split('.');
+        if (!base64Payload || !clientSignature) {
+            return NextResponse.json({ error: 'Invalid token format' }, { status: 400 });
+        }
+
+        // Verify Signature
+        const generatedSignature = createHmac('sha256', SERVER_SALT).update(base64Payload).digest('hex');
+        if (clientSignature !== generatedSignature) {
             return NextResponse.json({ error: 'Integrity failed' }, { status: 403 });
+        }
+
+        // Decode Payload
+        const payload = Buffer.from(base64Payload, 'base64').toString('utf-8');
+        const [tokenLessonId, tokenUserId, tokenExpiryStr] = payload.split(':');
+
+        // Verify Expiry
+        if (parseInt(tokenExpiryStr) < Date.now()) {
+            return NextResponse.json({ error: 'Token expired' }, { status: 401 });
+        }
+
+        // Verify Context Matches Token
+        if (tokenLessonId !== lessonId) {
+            return NextResponse.json({ error: 'Context mismatch' }, { status: 403 });
+        }
+        if (tokenUserId !== user.id) {
+            return NextResponse.json({ error: 'User mismatch' }, { status: 403 });
         }
 
         // Extract content (assuming obfuscated ID)

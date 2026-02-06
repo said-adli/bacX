@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { logAdminAction } from "@/lib/admin-logger";
 import { revalidatePath } from "next/cache";
 
 export interface SubscriptionPlan {
@@ -58,6 +59,7 @@ export async function createPlan(data: Omit<SubscriptionPlan, "id" | "is_active"
         }]);
 
     if (error) throw error;
+    await logAdminAction("CREATE_PLAN", data.name, "plan", { price: data.price });
     revalidatePath('/admin/offers');
     revalidatePath('/subscription');
 }
@@ -77,6 +79,7 @@ export async function updatePlan(id: string, data: Partial<SubscriptionPlan>) {
         .eq('id', id);
 
     if (error) throw error;
+    await logAdminAction("UPDATE_PLAN", id, "plan", data);
     revalidatePath('/admin/offers');
     revalidatePath('/subscription');
 }
@@ -96,6 +99,7 @@ export async function deletePlan(id: string) {
         .eq('id', id);
 
     if (error) throw error;
+    await logAdminAction("DELETE_PLAN", id, "plan", {});
     revalidatePath('/admin/offers');
     revalidatePath('/subscription');
 }

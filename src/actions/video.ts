@@ -1,6 +1,9 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { createHmac } from "crypto";
+
+const SERVER_SALT = process.env.VIDEO_ENCRYPTION_SALT || "default-secret-change-me";
 
 export async function getSecureVideoId(lessonId: string) {
     const supabase = await createClient();
@@ -11,7 +14,7 @@ export async function getSecureVideoId(lessonId: string) {
         throw new Error("Unauthorized");
     }
 
-    // 2. Fetch User Profile (Role & Entitlement)
+    // 2. Fetch User Profile
     const { data: profile } = await supabase
         .from('profiles')
         .select('id, role, plan_id, is_subscribed')
@@ -20,7 +23,7 @@ export async function getSecureVideoId(lessonId: string) {
 
     if (!profile) throw new Error("Profile not found");
 
-    // 3. Fetch Lesson Requirements
+    // 3. Fetch Lesson
     const { data: lesson } = await supabase
         .from('lessons')
         .select('id, required_plan_id, is_free, video_url')
@@ -30,30 +33,26 @@ export async function getSecureVideoId(lessonId: string) {
     if (!lesson) throw new Error("Lesson not found");
 
     // 4. Entitlement Logic
-    // Admins bypass all checks
-    if (profile.role === 'admin') {
-        return lesson.video_url;
+    const isAdmin = profile.role === 'admin';
+    const isFree = lesson.is_free;
+    const planMatch = lesson.required_plan_id ? profile.plan_id === lesson.required_plan_id : false;
+    const isSubscribed = !!profile.is_subscribed;
+
+    // Access Grant
+    if (!isAdmin && !isFree && !planMatch && !(!lesson.required_plan_id && isSubscribed)) {
+        if (lesson.required_plan_id) throw new Error("Upgrade required");
+        throw new Error("Subscription required");
     }
 
-    // Free lessons are open
-    if (lesson.is_free) {
-        return lesson.video_url;
-    }
+    // 5. Generate HMAC Token
+    const expiry = Date.now() + 60 * 1000; // 60 seconds
+    const payload = `${lesson.id}:${user.id}:${expiry}`;
+    const signature = createHmac('sha256', SERVER_SALT).update(payload).digest('hex');
+    const token = `${Buffer.from(payload).toString('base64')}.${signature}`;
 
-    // Plan-based restriction
-    // If lesson has a specific plan requirement, user must match it
-    if (lesson.required_plan_id) {
-        if (profile.plan_id !== lesson.required_plan_id) {
-            throw new Error("Upgrade required to view this lesson");
-        }
-    } else {
-        // General subscription check logic (fallback)
-        if (!profile.is_subscribed) {
-            throw new Error("Active subscription required");
-        }
-    }
-
-    // 5. Return Video ID
-    // We assume video_url stores the YouTube ID (standard for this project)
-    return lesson.video_url;
+    return {
+        videoId: lesson.video_url, // For immediate use if client needs it, but mostly opaque
+        token,
+        expiry
+    };
 }

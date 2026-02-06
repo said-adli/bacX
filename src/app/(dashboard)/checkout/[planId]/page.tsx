@@ -108,13 +108,21 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
 
             // 3. Create Payment Request
             // Store PATH only, for Signed URL generation by Admin Actions
-            const { error: dbError } = await supabase.from('payment_requests').insert({
+            // [IDEMPOTENCY] Generate key based on file + user + plan (simple client-side uniqueness for this session)
+            // Ideally should be generated once per "attempt" session, but here we use file name as part of entropy
+            const idempotencyKey = `${user.id}-${plan.id}-${file.lastModified}`;
+
+            const { error: dbError } = await supabase.from('payment_requests').upsert({
                 user_id: user.id,
                 plan_id: plan.id, // Using real plan ID
                 receipt_url: fileName, // PRIVATE STORAGE: Store Path
                 status: 'pending',
                 amount: appliedCoupon ? appliedCoupon.finalPrice : (plan.discount_price || plan.price), // Use Discounted Price
-                method: 'ccp'
+                method: 'ccp',
+                idempotency_key: idempotencyKey
+            }, {
+                onConflict: 'idempotency_key',
+                ignoreDuplicates: true
             });
 
             if (dbError) throw dbError;

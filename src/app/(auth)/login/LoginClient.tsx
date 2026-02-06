@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { loginAction } from "./actions";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -28,8 +28,17 @@ function SubmitButton() {
 
 export default function LoginClient() {
     const [state, formAction] = useFormState(loginAction, { error: "" });
+    const [deviceId, setDeviceId] = useState("");
 
     useEffect(() => {
+        // Generate or retrieve persistent Device ID
+        let storedId = localStorage.getItem("brainy_device_id");
+        if (!storedId) {
+            storedId = crypto.randomUUID();
+            localStorage.setItem("brainy_device_id", storedId);
+        }
+        setDeviceId(storedId);
+
         if (state?.error) {
             toast.error(state.error);
         }
@@ -53,6 +62,8 @@ export default function LoginClient() {
 
             {/* Form */}
             <form action={formAction} className="space-y-5">
+                <input type="hidden" name="deviceId" value={deviceId} />
+
                 <div className="space-y-4">
                     {/* Email Input */}
                     <div className="relative">

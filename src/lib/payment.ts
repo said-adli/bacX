@@ -29,8 +29,8 @@ export async function uploadReceipt(file: File, userId: string): Promise<string 
             return null;
         }
 
-        const { data } = supabase.storage.from('receipts').getPublicUrl(filePath);
-        return data.publicUrl;
+        // Return File Path instead of Public URL (Bucket is now Private)
+        return filePath;
     } catch (e) {
         console.error('Unexpected Upload Error:', e);
         return null;

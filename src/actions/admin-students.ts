@@ -104,6 +104,13 @@ export async function toggleBanStudent(userId: string, shouldBan: boolean) {
         await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: "0" });
     }
 
+    await logAdminAction(
+        shouldBan ? "BAN_USER" : "UNBAN_USER",
+        userId,
+        "user",
+        { timestamp: new Date().toISOString() }
+    );
+
     revalidatePath('/admin/students');
 }
 
@@ -297,6 +304,7 @@ export async function bulkUpdateStudents(
         if (error) throw error;
     }
 
+    await logAdminAction("BULK_UPDATE_STUDENTS", undefined, "user", { action, count: userIds.length, userIds });
     revalidatePath('/admin/students');
 }
 

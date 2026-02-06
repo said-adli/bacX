@@ -34,17 +34,19 @@ export async function checkAndRegisterDevice(deviceId: string, userAgent: string
     }
 
     // 3. New Device: Check Limit
+    // Use count from database
     const { count, error } = await supabase
         .from('user_devices')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
 
     if (error) {
+        console.error("Device Check Error:", error);
         return { success: false, error: "System Error" };
     }
 
+    // ALLOW UP TO 2 DEVICES (>= 2 means 3rd is attempting)
     if ((count || 0) >= 2) {
-        // LIMIT REACHED
         return {
             success: false,
             error: "لقد تجاوزت الحد المسموح (جهازين). يرجى تسجيل الخروج من جهاز آخر للمتابعة."
@@ -57,10 +59,11 @@ export async function checkAndRegisterDevice(deviceId: string, userAgent: string
         .insert({
             user_id: user.id,
             device_id: deviceId,
-            device_name: userAgent || "Unknown Device"
+            device_name: userAgent
         });
 
     if (insertError) {
+        console.error("Device Registration Error:", insertError);
         return { success: false, error: "Registration Failed" };
     }
 

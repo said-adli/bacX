@@ -21,7 +21,22 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
     }
 
     // 1. Fetch Data
+    const { getSecureVideoId } = await import("@/actions/video");
     const { lesson, isCompleted, error } = await getLessonData(lessonId);
+
+    // Fetch Secure Token (Parallel)
+    let secureVideoData: { videoId: string, token: string } | null = null;
+    let accessError = null;
+
+    try {
+        if (lesson && (isSubscribed || lesson.is_free || lesson.required_plan_id)) {
+            // Attempt to get token if we think user might have access
+            secureVideoData = await getSecureVideoId(lessonId);
+        }
+    } catch (e) {
+        // Access might be denied here, we handle it visually below
+        accessError = e;
+    }
 
     if (error || !lesson) {
         return (
@@ -43,9 +58,9 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
         <div className="flex flex-col gap-6">
             <div className="relative w-full aspect-video bg-black rounded-2xl border border-white/10 overflow-hidden shadow-2xl group">
                 {hasAccess ? (
-                    lesson.video_url ? (
+                    (secureVideoData?.token) ? (
                         <EncodedVideoPlayer
-                            encodedVideoId={lesson.video_url}
+                            encodedVideoId={secureVideoData.token}
                         />
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900">

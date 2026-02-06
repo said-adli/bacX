@@ -59,21 +59,22 @@ export function ResourceUploader({ onUploadComplete, className }: ResourceUpload
 
             if (error) throw error;
 
-            // Get Public URL (or signed, but here we assume generic read access for subscribed)
-            // Note: Use getPublicUrl if bucket is public, or user createSignedUrl.
-            // Since our bucket is PRIVATE but accessible via RLS to subscribed users, 
-            // we can use the direct URL path if we want to rely on RLS, 
-            // OR use createSignedUrl for temporary access. 
-            // However, the standard `getPublicUrl` returns a URL that works IF the user has RLS permission.
+            // Store PATH, not URL. The backend will generate Signed URLs on demand.
             const { data: { publicUrl } } = supabase.storage
                 .from('course-materials')
                 .getPublicUrl(filePath);
 
-            const type: 'pdf' | 'image' | 'other' = file.type.includes('pdf') ? 'pdf' : file.type.includes('image') ? 'image' : 'other';
+            // We keep "file_url" as the property name to avoid breaking frontend interfaces immediately,
+            // but for Private Buckets, we should treat this as a "path" or "reference".
+            // However, the `publicUrl` method simply constructs `.../storage/v1/object/public/...`.
+            // Accessing this directly will now return 400/403.
+            // For immediate UI feedback, we should technically `createSignedUrl` here for a preview,
+            // but `onUploadComplete` implies storage for the long term.
+            // So we pass the PATH.
 
             const resource: ResourceFile = {
-                title: file.name.replace(`.${fileExt}`, ''), // Default title = filename
-                file_url: publicUrl, // We store the Public URL. Access is blocked by RLS.
+                title: file.name.replace(`.${fileExt}`, ''),
+                file_url: filePath, // Storing PATH now.
                 // The frontend (LessonContent) will parse this to extract the path 
                 // and request a Signed URL via Server Action.
                 file_type: type,

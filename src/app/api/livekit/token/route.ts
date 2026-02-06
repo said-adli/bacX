@@ -44,7 +44,15 @@ export async function GET(request: NextRequest) {
     });
 
     // 4. Set Permissions
+    // ACL: Validate access to the room
+    // Default Rule: "class_room_main" requires active subscription
+    const isMainRoom = roomName === 'class_room_main';
     const isAdmin = profile?.role === 'admin' || profile?.role === 'teacher';
+    const isSubscribed = profile?.is_subscribed === true;
+
+    if (isMainRoom && !isAdmin && !isSubscribed) {
+        return NextResponse.json({ error: 'Subscription required to join this room' }, { status: 403 });
+    }
 
     at.addGrant({
         roomJoin: true,

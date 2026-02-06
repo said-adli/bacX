@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth-guard";
+import { logAdminAction } from "@/lib/admin-logger";
 import { revalidateSubjects, revalidateLessons, revalidateCurriculum } from "@/lib/cache/revalidate";
 
 // TYPES - Centralized DTOs
@@ -95,6 +96,7 @@ export async function createSubject(name: string, icon: string = 'Folder', order
     const supabase = await createClient();
     const { error } = await supabase.from('subjects').insert([{ name, icon, order }]);
     if (error) throw error;
+    await logAdminAction("CREATE_SUBJECT", name, "subject", { order });
     revalidateSubjects(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
@@ -106,6 +108,7 @@ export async function deleteSubject(id: string) {
     const supabase = await createClient();
     const { error } = await supabase.from('subjects').delete().eq('id', id);
     if (error) throw error;
+    await logAdminAction("DELETE_SUBJECT", id, "subject", {});
     revalidateSubjects(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
@@ -122,6 +125,7 @@ export async function createUnit(subjectId: string, title: string) {
         .insert([{ subject_id: subjectId, title }]);
 
     if (error) throw error;
+    await logAdminAction("CREATE_UNIT", title, "unit", { subjectId });
     revalidateCurriculum(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
@@ -133,6 +137,7 @@ export async function deleteUnit(id: string) {
     const supabase = await createClient();
     const { error } = await supabase.from('units').delete().eq('id', id);
     if (error) throw error;
+    await logAdminAction("DELETE_UNIT", id, "unit", {});
     revalidateCurriculum(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
@@ -149,6 +154,7 @@ export async function createLesson(data: Partial<Lesson>) {
         .single();
 
     if (error) throw error;
+    await logAdminAction("CREATE_LESSON", newLesson.id, "lesson", { title: data.title });
     revalidateLessons(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
@@ -166,6 +172,7 @@ export async function updateLesson(id: string, data: Partial<Lesson>) {
         .eq('id', id);
 
     if (error) throw error;
+    await logAdminAction("UPDATE_LESSON", id, "lesson", data);
     revalidateLessons(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
@@ -178,6 +185,7 @@ export async function deleteLesson(id: string) {
     const supabase = await createClient();
     const { error } = await supabase.from('lessons').delete().eq('id', id);
     if (error) throw error;
+    await logAdminAction("DELETE_LESSON", id, "lesson", {});
     revalidateLessons(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
@@ -190,6 +198,7 @@ export async function deleteLessonResource(id: string) {
     const supabase = await createClient();
     const { error } = await supabase.from('lesson_resources').delete().eq('id', id);
     if (error) throw error;
+    await logAdminAction("DELETE_RESOURCE", id, "resource", {});
     // No revalidatePath needed usually as this is fetched in client logic, but good practice if rendered server side elsewhere
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
