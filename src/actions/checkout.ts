@@ -61,7 +61,7 @@ export async function getContentDetails(type: 'lesson' | 'subject', id: string) 
         const table = type === 'lesson' ? 'lessons' : 'subjects';
 
         // Select logic varies slightly
-        let query = supabase
+        const query = supabase
             .from(table)
             .select(type === 'lesson'
                 ? 'id, title, price, is_purchasable'
@@ -80,7 +80,7 @@ export async function getContentDetails(type: 'lesson' | 'subject', id: string) 
             success: true,
             content: {
                 id: data.id,
-                title: (data as any).title || (data as any).name,
+                title: 'title' in data ? (data as { title?: string }).title : 'name' in data ? (data as { name?: string }).name : '',
                 price: data.price,
                 is_purchasable: data.is_purchasable
             }

@@ -27,17 +27,20 @@ function SubmitButton() {
 
 export default function LoginClient() {
     const [state, formAction] = useFormState(loginAction, { error: "" });
-    const [deviceId, setDeviceId] = useState("");
 
-    useEffect(() => {
-        // Generate or retrieve persistent Device ID
+    // Initialize device ID lazily on the client side only
+    const [deviceId] = useState(() => {
+        if (typeof window === 'undefined') return "";
         let storedId = localStorage.getItem("brainy_device_id");
         if (!storedId) {
             storedId = crypto.randomUUID();
             localStorage.setItem("brainy_device_id", storedId);
         }
-        setDeviceId(storedId);
+        return storedId;
+    });
 
+    // Handle error display separately
+    useEffect(() => {
         if (state?.error) {
             toast.error(state.error);
         }
