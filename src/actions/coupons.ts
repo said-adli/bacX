@@ -23,6 +23,7 @@ export interface CouponValidationResult {
     valid: boolean;
     message?: string;
     finalPrice: number;
+    discountAmount?: number;
     coupon?: Coupon;
 }
 
@@ -42,22 +43,22 @@ export async function validateCoupon(code: string, originalPrice: number): Promi
         .single();
 
     if (error || !coupon) {
-        return { valid: false, message: "Invalid coupon code", finalPrice: originalPrice };
+        return { valid: false, message: "Invalid coupon code", finalPrice: originalPrice, discountAmount: 0 };
     }
 
     // 1. Check Active Status
     if (!coupon.is_active) {
-        return { valid: false, message: "Coupon is inactive", finalPrice: originalPrice };
+        return { valid: false, message: "Coupon is inactive", finalPrice: originalPrice, discountAmount: 0 };
     }
 
     // 2. Check Expiration
     if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
-        return { valid: false, message: "Coupon has expired", finalPrice: originalPrice };
+        return { valid: false, message: "Coupon has expired", finalPrice: originalPrice, discountAmount: 0 };
     }
 
     // 3. Check Usage Limits
     if (coupon.used_count >= coupon.max_uses) {
-        return { valid: false, message: "Coupon usage limit reached", finalPrice: originalPrice };
+        return { valid: false, message: "Coupon usage limit reached", finalPrice: originalPrice, discountAmount: 0 };
     }
 
     // 4. Calculate Discount
@@ -77,6 +78,7 @@ export async function validateCoupon(code: string, originalPrice: number): Promi
     return {
         valid: true,
         finalPrice: roundedPrice,
+        discountAmount: discountAmount,
         coupon: coupon as Coupon
     };
 }
