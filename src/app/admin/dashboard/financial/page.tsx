@@ -6,25 +6,23 @@ export const dynamic = "force-dynamic";
 export default async function FinancialDashboardPage() {
     const supabase = await createClient();
 
-    // Fetch payments directly (Task says analytics_revenue but we fallback to raw aggregation if view missing)
-    // assuming 'payments' table exists.
-    const { data: payments } = await supabase
-        .from("payment_requests")
-        .select(`
-            id,
-            amount,
-            created_at,
-            status,
-            plan_id,
-            profiles:user_id (email)
-        `)
-        .eq('status', 'paid') // Usually 'paid' or 'succeeded' depending on gateway. Let's assume 'paid' or check schema.
-        .order("created_at", { ascending: false });
+    // Fetch from 'analytics_revenue' view
+    const { data, error } = await supabase
+        .from("analytics_revenue")
+        .select("*")
+        .single();
 
-    const formattedPayments = (payments || []).map((p: any) => ({
-        ...p,
-        profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles
-    }));
+    if (error || !data) {
+        console.error("Analytics fetch failed", error);
+        return <div className="p-10 text-red-500">Analytics Unavailable (SQL View Missing)</div>;
+    }
 
-    return <FinancialPageClient payments={formattedPayments} />;
+    const financialData = {
+        totalRevenue: data.total_revenue || 0,
+        totalTransactions: data.total_transactions || 0,
+        monthlyRevenue: data.monthly_revenue as Record<string, number> || {},
+        planStats: data.plan_stats as Record<string, number> || {}
+    };
+
+    return <FinancialPageClient data={financialData} />;
 }

@@ -18,7 +18,7 @@ export async function sendGlobalNotification(title: string, message: string) {
     // Use Admin Client for writes
     const supabaseAdmin = createAdminClient();
 
-    // UNIFIED: Insert into 'announcements' instead of 'global_notifications'
+    // UNIFIED: Insert into 'announcements'
     const { error } = await supabaseAdmin
         .from('announcements')
         .insert([{

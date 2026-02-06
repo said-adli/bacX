@@ -41,18 +41,18 @@ export async function createSubscriptionRequest(userId: string, plan: string, re
     const supabase = createClient();
 
     try {
+        // UNIFIED PAYMENT FLOW: Write to payment_requests
         const { error } = await supabase
-            .from('subscription_requests')
+            .from('payment_requests')
             .insert({
                 user_id: userId,
-                plan_name: plan,
-                payment_proof_url: receiptUrl,
+                plan_id: plan, // plan is UUID
+                receipt_url: receiptUrl,
                 status: 'pending'
             });
 
         if (error) {
             console.error('DB Insert Error:', error);
-            // If table doesn't exist, we error out now instead of simulating success
             return { success: false, error: "Database unavailable" };
         }
 

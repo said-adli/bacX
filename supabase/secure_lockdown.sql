@@ -66,7 +66,7 @@ CREATE POLICY "Private: Users create requests" ON public.profile_change_requests
 -- -------------------------------------------------------------------------
 -- STEP 3: CATEGORY 2 - PUBLIC CONTENT (Read-Only for Users, Admin Write)
 -- -------------------------------------------------------------------------
--- Tables: subjects, majors, wilayas, subscription_plans, global_notifications, 
+-- Tables: subjects, majors, wilayas, subscription_plans, 
 --         lessons, units, lesson_resources
 
 -- SUBJECTS
@@ -85,9 +85,7 @@ CREATE POLICY "Public: View wilayas" ON public.wilayas FOR SELECT USING (true);
 ALTER TABLE public.subscription_plans ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public: View active plans" ON public.subscription_plans FOR SELECT USING (is_active = true);
 
--- GLOBAL_NOTIFICATIONS
-ALTER TABLE public.global_notifications ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public: View notifications" ON public.global_notifications FOR SELECT USING (true);
+
 
 -- LESSONS
 ALTER TABLE public.lessons ENABLE ROW LEVEL SECURITY;
@@ -128,7 +126,7 @@ CREATE POLICY "Admin: Manage subjects" ON public.subjects FOR ALL USING ( is_adm
 CREATE POLICY "Admin: Manage units" ON public.units FOR ALL USING ( is_admin() );
 CREATE POLICY "Admin: Manage lessons" ON public.lessons FOR ALL USING ( is_admin() );
 CREATE POLICY "Admin: Manage plans" ON public.subscription_plans FOR ALL USING ( is_admin() );
-CREATE POLICY "Admin: Manage notifications" ON public.global_notifications FOR ALL USING ( is_admin() );
+
 
 -- SYSTEM LOGS (Admins can View)
 CREATE POLICY "Admin: View admin_logs" ON public.admin_logs FOR SELECT USING ( is_admin() );

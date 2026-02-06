@@ -2,30 +2,19 @@
 
 import { GlassCard } from "@/components/ui/GlassCard";
 import { CreditCard, TrendingUp, DollarSign } from "lucide-react";
-import { format } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
-// Mock data structure if real analytics_revenue view doesn't exist
-// We will aggregate from payments passed as prop
-interface Payment {
-    id: string;
-    amount: number;
-    created_at: string;
-    status: string;
-    plan_id: string; // or plan name joined
-    profiles?: { email: string };
+interface FinancialData {
+    totalRevenue: number;
+    totalTransactions: number;
+    monthlyRevenue: Record<string, number>;
+    planStats: Record<string, number>;
 }
 
-export default function FinancialPageClient({ payments }: { payments: Payment[] }) {
-    // Aggregation Logic
-    const totalRevenue = payments.reduce((acc, p) => acc + Number(p.amount), 0);
-    const monthlyData = payments.reduce((acc, p) => {
-        const month = format(new Date(p.created_at), 'MMM');
-        acc[month] = (acc[month] || 0) + Number(p.amount);
-        return acc;
-    }, {} as Record<string, number>);
+export default function FinancialPageClient({ data }: { data: FinancialData }) {
+    const { totalRevenue, totalTransactions, monthlyRevenue, planStats } = data;
 
-    const chartData = Object.entries(monthlyData).map(([name, value]) => ({ name, value }));
+    const chartData = Object.entries(monthlyRevenue).map(([name, value]) => ({ name, value }));
 
     return (
         <div className="container mx-auto max-w-7xl pb-20">
@@ -52,10 +41,12 @@ export default function FinancialPageClient({ payments }: { payments: Payment[] 
                         </div>
                         <div>
                             <p className="text-zinc-500 text-sm">Total Transactions</p>
-                            <h3 className="text-2xl font-bold text-white">{payments.length}</h3>
+                            <h3 className="text-2xl font-bold text-white">{totalTransactions}</h3>
                         </div>
                     </div>
                 </GlassCard>
+
+                {/* Optional: Plan Stats Card could go here */}
             </div>
 
             <GlassCard className="p-6 h-[400px]">

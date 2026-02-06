@@ -21,7 +21,6 @@ export async function bulkBroadcast(userIds: string[], message: string, title: s
     // forces unification to "announcements". 
     // IF userIds is ALL, then it's a global announcement.
 
-    // For now, per instruction, we REPLACE references to global_notifications (or legacy notification attempts)
     // with `announcements` insert.
 
     const { error } = await supabaseAdmin
