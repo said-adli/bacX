@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import SecureVideoPlayer from "@/components/SecureVideoPlayer";
 import { Sidebar } from "@/components/lesson/Sidebar";
 import { createClient } from "@/utils/supabase/client";
-import { FileText, Download, Lock, Loader2, Image as ImageIcon } from "lucide-react";
+import { FileText, Download, Loader2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { GlassCard } from "@/components/ui/GlassCard";
 

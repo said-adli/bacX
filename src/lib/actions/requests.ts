@@ -31,7 +31,6 @@ export interface StudentRequest {
         wilaya?: string;
         branch_id?: string;
     };
-    origin_table: "profile_change_requests"; // Unified
 }
 
 /**
@@ -53,7 +52,7 @@ export async function getStudentRequests(): Promise<{ data: StudentRequest[]; er
 
     if (adminProfile?.role !== "admin") return { data: [], error: "Admin only" };
 
-    // Fetch All Pending Requests
+    // Fetch Requests - Single Source of Truth
     const { data: requests, error } = await supabase
         .from("profile_change_requests")
         .select(`
@@ -69,7 +68,7 @@ export async function getStudentRequests(): Promise<{ data: StudentRequest[]; er
     }
 
     const mappedRequests: StudentRequest[] = (requests || []).map((req: any) => {
-        // Detect Request Type based on payload structure
+        // Detect Request Type
         const isDeletion = req.new_data?.request_type === "DELETE_ACCOUNT";
 
         return {
@@ -80,8 +79,7 @@ export async function getStudentRequests(): Promise<{ data: StudentRequest[]; er
             status: req.status,
             admin_note: req.rejection_reason,
             created_at: req.created_at,
-            profiles: Array.isArray(req.profiles) ? req.profiles[0] : req.profiles,
-            origin_table: "profile_change_requests"
+            profiles: Array.isArray(req.profiles) ? req.profiles[0] : req.profiles
         };
     });
 
@@ -98,7 +96,6 @@ export async function handleRequest(
 
     if (!user) return { error: "Unauthorized" };
 
-    // Verify admin
     const { data: adminProfile } = await supabase
         .from("profiles")
         .select("role")
@@ -107,7 +104,7 @@ export async function handleRequest(
 
     if (adminProfile?.role !== "admin") return { error: "Admin only" };
 
-    // Get Request Data
+    // 1. Get Request
     const { data: requestData, error: fetchError } = await supabase
         .from("profile_change_requests")
         .select("*")
@@ -116,7 +113,7 @@ export async function handleRequest(
 
     if (fetchError || !requestData) return { error: "Request not found" };
 
-    // === REJECT ===
+    // 2. Reject
     if (decision === "reject") {
         const { error } = await supabase.from("profile_change_requests").update({
             status: "rejected",
@@ -129,7 +126,7 @@ export async function handleRequest(
         return { success: "Request rejected" };
     }
 
-    // === APPROVE ===
+    // 3. Approve
     if (decision === "approve") {
         const isDeletion = requestData.new_data?.request_type === "DELETE_ACCOUNT";
 
@@ -138,22 +135,18 @@ export async function handleRequest(
             const adminClient = createAdminClient();
             const targetUserId = requestData.user_id;
 
-            // Cleanup related data
-            // Note: student_requests table is deprecated, but we might check if it exists or skip
-            // We assume standard cleanup:
+            // Purge related data
+            // We blindly try to delete from related tables. 
+            // If they don't exist, it might throw, but `profile_change_requests` is the master record now.
             await adminClient.from("payments").delete().eq("user_id", targetUserId);
-            // Also delete from this table (profile_change_requests) for this user to avoid FK issues if any?
-            // Actually CASCADE on user delete should handle it, BUT we need to mark THIS request as approved first?
-            // No, if we delete user, this request is deleted.
-            // So we must Approve it first? Or just delete?
-            // If we delete user, the request disappears. That's fine.
 
+            // Delete User
             const { error } = await adminClient.auth.admin.deleteUser(targetUserId);
             if (error) return { error: "Failed to delete user: " + error.message };
 
             return { success: "User deleted" };
         } else {
-            // PROFILE UPDATE LOGIC
+            // PROFILE UPDATE
             const changes = requestData.new_data;
             const targetUserId = requestData.user_id;
 
@@ -164,6 +157,7 @@ export async function handleRequest(
 
             if (updateError) return { error: "Failed to update profile" };
 
+            // Mark Approved
             await supabase.from("profile_change_requests").update({
                 status: "approved",
                 processed_by: user.id
@@ -186,10 +180,9 @@ export async function submitStudentRequest(
 
     if (!user) return { error: "Unauthorized" };
 
-    // Unified Submission Logic
-    // If Deletion, we wrap it in new_data
+    // Unified Logic: All requests go to profile_change_requests
     const dataToStore = requestType === "DELETE_ACCOUNT"
-        ? { request_type: "DELETE_ACCOUNT", reason: payload } // Payload might be reason string?
+        ? { request_type: "DELETE_ACCOUNT", reason: payload }
         : payload;
 
     const { error } = await supabase.from("profile_change_requests").insert({
@@ -202,4 +195,3 @@ export async function submitStudentRequest(
 
     return { success: "Request submitted" };
 }
-
