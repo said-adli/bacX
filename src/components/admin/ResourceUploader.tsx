@@ -60,24 +60,14 @@ export function ResourceUploader({ onUploadComplete, className }: ResourceUpload
             if (error) throw error;
 
             // Store PATH, not URL. The backend will generate Signed URLs on demand.
-            const { data: { publicUrl } } = supabase.storage
-                .from('course-materials')
-                .getPublicUrl(filePath);
-
-            // We keep "file_url" as the property name to avoid breaking frontend interfaces immediately,
-            // but for Private Buckets, we should treat this as a "path" or "reference".
-            // However, the `publicUrl` method simply constructs `.../storage/v1/object/public/...`.
-            // Accessing this directly will now return 400/403.
-            // For immediate UI feedback, we should technically `createSignedUrl` here for a preview,
-            // but `onUploadComplete` implies storage for the long term.
-            // So we pass the PATH.
+            // P0 FIX: Removed getPublicUrl. We never expose public links for private content.
 
             const resource: ResourceFile = {
                 title: file.name.replace(`.${fileExt}`, ''),
                 file_url: filePath, // Storing PATH now.
                 // The frontend (LessonContent) will parse this to extract the path 
                 // and request a Signed URL via Server Action.
-                file_type: type,
+                file_type: 'other', // Defaulting to 'other' or logic needed if you want specific types
                 file_size: file.size
             };
 

@@ -50,8 +50,25 @@ export async function GET(request: NextRequest) {
     const isAdmin = profile?.role === 'admin' || profile?.role === 'teacher';
     const isSubscribed = profile?.is_subscribed === true;
 
-    if (isMainRoom && !isAdmin && !isSubscribed) {
-        return NextResponse.json({ error: 'Subscription required to join this room' }, { status: 403 });
+    // Strict ACL Logic
+    if (isAdmin) {
+        // Admins/Teachers access everything
+    } else if (isMainRoom) {
+        if (!isSubscribed) {
+            return NextResponse.json({ error: 'Subscription required to join this room' }, { status: 403 });
+        }
+    } else {
+        // Specific Course/Lesson Room
+        // Check enrollments table if it exists, or fallback to subscription
+        // For now, assuming subscription covers all course rooms
+        // TODO: Implement specific course enrollment check if granular selling is active
+        if (!isSubscribed) {
+            return NextResponse.json({ error: 'Active subscription required to join course rooms' }, { status: 403 });
+        }
+
+        // FUTURE: 
+        // const { data: enrollment } = await supabase.from('enrollments').select('id').eq('user_id', user.id).eq('course_id', getCourseIdFrom(roomName)).single();
+        // if (!enrollment) throw 403
     }
 
     at.addGrant({

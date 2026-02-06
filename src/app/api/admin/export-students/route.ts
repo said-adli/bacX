@@ -22,7 +22,17 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Forbidden: Admin access only" }, { status: 403 });
     }
 
-    // 2. Fetch Data (Streaming/Batched approach ideal, but simple fetch for V1)
+    // 2. Audit Log
+    // Using import() to avoid circular deps or server-side issues if any
+    const { logAdminAction } = await import('@/lib/admin-logger');
+    await logAdminAction(
+        "EXPORT_STUDENTS",
+        user.id,
+        "system",
+        { action: "export_csv", timestamp: new Date().toISOString() }
+    );
+
+    // 3. Fetch Data (Streaming/Batched approach ideal, but simple fetch for V1)
     // Using Admin Client to ensure we get ALL users regardless of potential RLS hiccups on read
     const adminClient = createAdminClient();
 
