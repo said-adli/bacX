@@ -3,10 +3,14 @@
 import { useLiveInteraction } from "@/hooks/useLiveInteraction";
 import { ParticipationQueue } from "@/components/live/ParticipationQueue";
 import LiveChat from "@/components/live/LiveChat";
-import LiveKitAudioInteraction from "@/components/live/LiveKitAudioInteraction";
-import { Info, AlertCircle } from "lucide-react";
+import { Info } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LiveKitRoom, RoomAudioRenderer, useTracks } from "@livekit/components-react";
+import '@livekit/components-styles';
+import { Track } from "livekit-client";
 
-export default function AdminLiveClient() {
+// --- INNER CONTENT (Uses Context) ---
+function AdminLiveContent() {
     const {
         queue,
         currentSpeaker,
@@ -15,11 +19,15 @@ export default function AdminLiveClient() {
         acceptStudent,
         endCall,
         status,
-        lowerAllHands
+        lowerAllHands,
+        isConnected // Future property
     } = useLiveInteraction();
 
     return (
         <div className="space-y-6">
+            {/* Audio Renderer for hearing students */}
+            <RoomAudioRenderer />
+
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-serif font-bold text-white mb-1">Live Room Control</h1>
@@ -34,7 +42,6 @@ export default function AdminLiveClient() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* LEFT: Queue & Audio Control */}
                 <div className="space-y-6">
-                    {/* INSTRUCTIONS BLOCK (REQUESTED) */}
                     <div className="bg-blue-900/10 border border-blue-500/30 rounded-xl p-5">
                         <h3 className="text-blue-400 font-bold mb-3 flex items-center gap-2">
                             <Info size={18} />
@@ -42,22 +49,13 @@ export default function AdminLiveClient() {
                         </h3>
                         <ol className="list-decimal list-inside space-y-2 text-sm text-zinc-300 leading-relaxed">
                             <li>تأكد من أن متصفحك يملك صلاحية الميكروفون.</li>
-                            <li>عند قبول طالب (<span className="text-green-400 font-bold">Accept</span>)، سيتم تفعيل الـ LiveKit تلقائياً.</li>
-                            <li>صوت الطالب سيدخل مباشرة إلى جهازك، تأكد من أن <span className="text-white font-bold">OBS</span> يلتقط صوت Desktop Audio ليسمعه بقية الطلبة في يوتيوب.</li>
-                            <li>اضغط '<span className="text-red-400 font-bold">End</span>' لقطع الاتصال فوراً.</li>
+                            <li>عند قبول طالب (<span className="text-green-400 font-bold">Accept</span>)، سيتم تفعيل المايكروفون للطالب.</li>
+                            <li>صوت الطالب سيدخل مباشرة إلى جهازك، تأكد من أن <span className="text-white font-bold">OBS</span> يلتقط صوت Desktop Audio.</li>
                         </ol>
                     </div>
 
-                    {/* LIVEKIT AUDIO (HIDDEN/VISIBLE) */}
-                    {status === 'live' && currentSpeaker && (
-                        <div className="animate-in slide-in-from-top-4 fade-in">
-                            <LiveKitAudioInteraction
-                                roomName={`class_room_main`} // Can be dynamic based on subject
-                                userName="Teacher (Admin)"
-                                onDisconnected={endCall}
-                            />
-                        </div>
-                    )}
+                    {/* LIVEKIT VISUALIZER (Always visible if connected + tracks exist) */}
+                    <AdminAudioVisualizer />
 
                     <ParticipationQueue
                         queue={queue}
@@ -72,6 +70,58 @@ export default function AdminLiveClient() {
                 <div className="lg:col-span-2 h-[600px] flex flex-col">
                     <LiveChat messages={messages} onSendMessage={sendMessage} />
                 </div>
+            </div>
+        </div>
+    );
+}
+
+// --- MAIN WRAPPER (Providers) ---
+export default function AdminLiveClient() {
+    const [token, setToken] = useState("");
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const resp = await fetch(`/api/livekit/token?room=class_room_main`);
+                const data = await resp.json();
+                setToken(data.token);
+            } catch (e) {
+                console.error(e);
+            }
+        })();
+    }, []);
+
+    if (!token) return <div className="p-10 text-center animate-pulse">Initializing Secure Live Environment...</div>;
+
+    return (
+        <LiveKitRoom
+            video={false}
+            audio={true}
+            token={token}
+            serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
+            data-lk-theme="default"
+            style={{ height: 'auto' }}
+        >
+            <AdminLiveContent />
+        </LiveKitRoom>
+    );
+}
+
+// --- HELPER VISUALIZER ---
+function AdminAudioVisualizer() {
+    const tracks = useTracks([Track.Source.Microphone]);
+    if (tracks.length === 0) return null;
+
+    return (
+        <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-700 space-y-2">
+            <h4 className="text-xs font-bold text-zinc-500 uppercase">Active Audio Feeds</h4>
+            <div className="flex flex-wrap gap-2">
+                {tracks.map(t => (
+                    <div key={t.participant.identity} className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-green-500/30">
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-xs text-white">{t.participant.name}</span>
+                    </div>
+                ))}
             </div>
         </div>
     );

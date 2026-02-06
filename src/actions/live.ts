@@ -84,34 +84,23 @@ export async function getHybridLiveSession(): Promise<SecureLiveSession> {
     }
 
     // 5. Generate LiveKit Token (Audio Only)
-    const roomName = "class_room_main"; // Or use session.id if dynamic
+    const roomName = "class_room_main";
     const participantName = profile.full_name || user.email || "User";
-
-    const apiKey = process.env.LIVEKIT_API_KEY;
-    const apiSecret = process.env.LIVEKIT_API_SECRET;
 
     let liveToken = "";
 
-    if (apiKey && apiSecret) {
-        try {
-            const at = new AccessToken(apiKey, apiSecret, {
-                identity: user.id,
-                name: participantName,
-            });
+    try {
+        const { generateSecureToken } = await import("@/lib/livekit-token");
+        const isAdmin = profile.role === 'admin' || profile.role === 'teacher';
 
-            at.addGrant({
-                roomJoin: true,
-                room: roomName,
-                canPublish: true, // Audio permission
-                canSubscribe: true,
-                canPublishData: true,
-            });
-
-            liveToken = await at.toJwt();
-        } catch (e) {
-            console.error("LiveKit Token Gen Error", e);
-            // Don't block video if audio fails
-        }
+        liveToken = await generateSecureToken({
+            userId: user.id,
+            participantName,
+            roomName,
+            isAdmin
+        });
+    } catch (e) {
+        console.error("LiveKit Token Gen Error", e);
     }
 
     // 6. Return Secure Payload

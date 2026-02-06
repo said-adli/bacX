@@ -101,26 +101,15 @@ export async function GET(request: NextRequest) {
         }
     }
 
-    // Hardened Permissions: AUDIO ONLY (Signaling Purity)
-    // We strictly limit the user to only publishing audio (hand-raising/talking).
-    // No Video Publishing allowed for anyone (even admin? Maybe admin can, but let's stick to "Signalling Purity").
-    // If Admin needs video, we might relax it, but the mission says "LiveKit is ONLY for interactivity".
+    // Hardened Permissions: Consolidate Logic
+    const { generateSecureToken } = await import("@/lib/livekit-token");
 
-    const canPublish = isAdmin; // Only admins can publish fully if needed, OR false for everyone if strict.
-    // "Students should NEVER be able to publish audio/video." => canPublish = false (for students)
-
-    at.addGrant({
-        roomJoin: true,
-        room: roomName,
-        canPublish: isAdmin, // Students: false, Admin: true
-        canSubscribe: true,
-        canPublishData: true, // Hand raising
-        canPublishSources: isAdmin ? [TrackSource.CAMERA, TrackSource.MICROPHONE] : [], // Students: []
-        hidden: false,
+    const token = await generateSecureToken({
+        userId: user.id,
+        participantName,
+        roomName,
+        isAdmin
     });
-
-    // Generate the JWT
-    const token = await at.toJwt();
 
     return NextResponse.json({ token });
 }
