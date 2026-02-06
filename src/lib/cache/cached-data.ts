@@ -73,8 +73,8 @@ export const getCachedSubjects = unstable_cache(
 
             const { data, error } = await supabase
                 .from("subjects")
-                .select("id, name, slug, is_active, icon, description, lessons(id, title)")
-                .eq("is_active", true)
+                .select("id, name, slug, published, icon, description, lessons(id, title)")
+                .eq("published", true)
                 .order("created_at", { ascending: true });
 
             if (error) {
@@ -92,6 +92,7 @@ export const getCachedSubjects = unstable_cache(
                 description: s.description,
                 color: null,
                 slug: s.slug || s.id,
+                published: s.published,
                 lessonCount: s.lessons?.length || 0,
                 lessons: Array.isArray(s.lessons)
                     ? (s.lessons as RawLesson[]).map((l) => ({ id: l.id, title: l.title }))
@@ -205,6 +206,7 @@ export const getCachedCurriculum = unstable_cache(
                 name,
                 icon,
                 lesson_count,
+                published,
                 lessons (
                     id,
                     title,
@@ -212,6 +214,7 @@ export const getCachedCurriculum = unstable_cache(
                     is_free
                 )
             `)
+            .eq("published", true)
             .order("created_at", { ascending: true });
 
         if (error) {

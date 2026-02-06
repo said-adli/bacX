@@ -15,6 +15,7 @@ interface ManageSubjectParams {
     operationType: OperationType;
     subjectId?: string;
     order?: number;
+    published?: boolean;
 }
 
 interface ManageSubjectResult {
@@ -39,6 +40,7 @@ export async function manageSubjectRPC(
             p_operation_type: params.operationType,
             p_subject_id: params.subjectId ?? null,
             p_order: params.order ?? 0,
+            p_published: params.published ?? true, // Auto-publish default
         });
 
         if (error) {
@@ -69,7 +71,8 @@ export async function manageSubjectRPC(
         };
     } catch (err) {
         console.error('[manageSubjectRPC] Unexpected Error:', err);
-        return { success: false, error: 'حدث خطأ في الاتصال بالخادم.' };
+        const message = err instanceof Error ? err.message : 'حدث خطأ في الاتصال بالخادم.';
+        return { success: false, error: message }; // Return strict message
     }
 }
 
@@ -79,13 +82,15 @@ export async function manageSubjectRPC(
 export async function createSubjectRPC(
     name: string,
     icon: string = 'Folder',
-    order: number = 0
+    order: number = 0,
+    published: boolean = true
 ): Promise<ManageSubjectResult> {
     return manageSubjectRPC({
         name,
         icon,
         operationType: 'create',
         order,
+        published,
     });
 }
 
@@ -93,7 +98,8 @@ export async function updateSubjectRPC(
     subjectId: string,
     name: string,
     icon: string = 'Folder',
-    order: number = 0
+    order: number = 0,
+    published: boolean = true
 ): Promise<ManageSubjectResult> {
     return manageSubjectRPC({
         name,
@@ -101,5 +107,6 @@ export async function updateSubjectRPC(
         operationType: 'update',
         subjectId,
         order,
+        published,
     });
 }

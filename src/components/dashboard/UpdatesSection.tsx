@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { AnnouncementDTO } from "@/services/dashboard.service";
 import { Calendar, Bell, ChevronRight, X, Clock } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { format } from "date-fns";
 import { arMA } from "date-fns/locale";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface UpdatesSectionProps {
     announcements: AnnouncementDTO[];
@@ -14,6 +17,32 @@ interface UpdatesSectionProps {
 
 export default function UpdatesSection({ announcements }: UpdatesSectionProps) {
     const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementDTO | null>(null);
+    const router = useRouter();
+    const supabase = createClient();
+
+    // Mission: Real-Time Broadcast Engine
+    useEffect(() => {
+        const channel = supabase
+            .channel("realtime-announcements")
+            .on(
+                "postgres_changes",
+                {
+                    event: "*", // INSERT, UPDATE, DELETE
+                    schema: "public",
+                    table: "announcements",
+                },
+                () => {
+                    // Refresh the Server Component to fetch fresh data from invalid cache
+                    router.refresh();
+                    toast.info("تحديث جديد في الإعلانات");
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [router, supabase]);
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

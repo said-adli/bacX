@@ -1,7 +1,6 @@
 -- ============================================
--- FUNCTION: manage_subject
--- Purpose: Create or Update subjects with admin-only access
--- Run this in Supabase SQL Editor
+-- MIGRATION: 20260206150000_update_manage_subject_published.sql
+-- PURPOSE: Update manage_subject RPC to support 'published' flag.
 -- ============================================
 
 CREATE OR REPLACE FUNCTION manage_subject(
@@ -10,20 +9,19 @@ CREATE OR REPLACE FUNCTION manage_subject(
   p_operation_type TEXT DEFAULT 'create', -- 'create' | 'update'
   p_subject_id UUID DEFAULT NULL,
   p_order INTEGER DEFAULT 0,
-  p_published BOOLEAN DEFAULT TRUE
+  p_published BOOLEAN DEFAULT TRUE -- Auto-publish by default
 )
 RETURNS UUID
 LANGUAGE plpgsql
-SECURITY DEFINER -- Runs with function owner's privileges
-SET search_path = public -- Security best practice
+SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_user_role TEXT;
   v_result_id UUID;
 BEGIN
   -- ============================================
-  -- SECURITY CHECK: Verify user is Admin
-  -- Uses profiles table (matches project structure)
+  -- SECURITY CHECK
   -- ============================================
   SELECT role INTO v_user_role
   FROM profiles
@@ -38,7 +36,6 @@ BEGIN
   -- OPERATION: CREATE
   -- ============================================
   IF p_operation_type = 'create' THEN
-    -- Check for duplicate name
     IF EXISTS (SELECT 1 FROM subjects WHERE name = p_name) THEN
       RAISE EXCEPTION 'Duplicate Error: A subject with name "%" already exists.', p_name
         USING ERRCODE = 'unique_violation';
@@ -52,19 +49,16 @@ BEGIN
   -- OPERATION: UPDATE
   -- ============================================
   ELSIF p_operation_type = 'update' THEN
-    -- Validate subject_id is provided
     IF p_subject_id IS NULL THEN
       RAISE EXCEPTION 'Validation Error: subject_id is required for update operation.'
         USING ERRCODE = 'invalid_parameter_value';
     END IF;
 
-    -- Check if subject exists
     IF NOT EXISTS (SELECT 1 FROM subjects WHERE id = p_subject_id) THEN
       RAISE EXCEPTION 'Not Found: Subject with id "%" does not exist.', p_subject_id
         USING ERRCODE = 'no_data_found';
     END IF;
 
-    -- Check for duplicate name (excluding current subject)
     IF EXISTS (SELECT 1 FROM subjects WHERE name = p_name AND id != p_subject_id) THEN
       RAISE EXCEPTION 'Duplicate Error: A subject with name "%" already exists.', p_name
         USING ERRCODE = 'unique_violation';
@@ -79,9 +73,6 @@ BEGIN
     WHERE id = p_subject_id
     RETURNING id INTO v_result_id;
 
-  -- ============================================
-  -- INVALID OPERATION
-  -- ============================================
   ELSE
     RAISE EXCEPTION 'Invalid operation_type: %. Must be "create" or "update".', p_operation_type
       USING ERRCODE = 'invalid_parameter_value';
@@ -90,11 +81,3 @@ BEGIN
   RETURN v_result_id;
 END;
 $$;
-
--- ============================================
--- GRANT EXECUTION PERMISSION
--- ============================================
-GRANT EXECUTE ON FUNCTION manage_subject TO authenticated;
-
--- Optional: Add a comment for documentation
-COMMENT ON FUNCTION manage_subject IS 'Admin-only RPC to create or update subjects with published status.';

@@ -40,7 +40,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
             const { data, error } = await supabase
                 .from('notifications')
                 .select('*, user_notifications(id)')
-                .or(`is_global.eq.true,user_id.eq.${user.id}`)
+                .eq('user_id', user.id)
                 .order('created_at', { ascending: false })
                 .limit(20);
 
@@ -75,7 +75,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     const unreadCount = notifications.filter(n => !isRead(n)).length;
 
-    const pushNotification = async (title: string, message: string, type: Notification["type"] = "info", isGlobal: boolean = true) => {
+    const pushNotification = async (title: string, message: string, type: Notification["type"] = "info") => {
         if (!user) return;
 
         try {
@@ -83,9 +83,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
                 title,
                 message,
                 type,
-                is_global: isGlobal,
-                user_id: isGlobal ? null : user.id,
-                target_audience: isGlobal ? null : user.id, // Backward compatibility
+                // is_global removed - strictly user targeted now
+                is_global: false,
+                user_id: user.id,
+                target_audience: user.id, // Backward compatibility
                 created_at: new Date().toISOString(),
             });
 
