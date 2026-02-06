@@ -71,8 +71,8 @@ export default function LessonContent({ id, title, description }: LessonContentP
             const urlObj = new URL(resource.file_url);
             const pathParts = urlObj.pathname.split('/course-materials/');
             if (pathParts.length < 2) {
-                // Fallback: maybe it's just the filename in the DB?
-                window.open(resource.file_url, '_blank');
+                console.error("Security Block: Invalid resource path structure", resource.file_url);
+                toast.error("الملف غير صالح للتحميل الآمن");
                 return;
             }
             const storagePath = decodeURIComponent(pathParts[1]);
