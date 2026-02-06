@@ -27,7 +27,9 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
         type: (initialData?.type || "video") as "video" | "live_stream" | "pdf",
         video_url: initialData?.video_url || "",
         required_plan_id: initialData?.required_plan_id || "",
-        is_public: initialData?.is_public || false
+        is_public: initialData?.is_public || false,
+        is_purchasable: initialData?.is_purchasable || false,
+        price: initialData?.price || null
     });
     const [isSaving, setIsSaving] = useState(false);
 
@@ -86,7 +88,9 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
                 video_url: formData.video_url,
                 required_plan_id: formData.required_plan_id || null, // Granular Access Logic
                 unit_id: unitId,
-                is_public: formData.is_public
+                is_public: formData.is_public,
+                is_purchasable: formData.is_purchasable,
+                price: formData.price
             };
 
             let lessonId = initialData?.id;
@@ -236,6 +240,36 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
                                     <div className={`w-5 h-5 rounded-full bg-white transition-transform ${formData.is_public ? 'translate-x-5' : 'translate-x-0'}`} />
                                 </div>
                                 <span className="text-sm font-medium text-zinc-300">Is Public Preview?</span>
+                            </div>
+                        </div>
+
+                        {/* Lifetime Purchase Toggle */}
+                        <div className="mt-6 pt-6 border-t border-blue-500/20">
+                            <h5 className="text-xs font-bold text-blue-300 uppercase mb-3 flex items-center gap-2">
+                                Lifetime Ownership
+                            </h5>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div
+                                        className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-colors ${formData.is_purchasable ? 'bg-purple-500' : 'bg-zinc-700'}`}
+                                        onClick={() => setFormData({ ...formData, is_purchasable: !formData.is_purchasable })}
+                                    >
+                                        <div className={`w-5 h-5 rounded-full bg-white transition-transform ${formData.is_purchasable ? 'translate-x-5' : 'translate-x-0'}`} />
+                                    </div>
+                                    <span className="text-sm font-medium text-zinc-300">Enable Purchase</span>
+                                </div>
+
+                                {formData.is_purchasable && (
+                                    <div className="flex-1">
+                                        <input
+                                            type="number"
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-purple-500 outline-none text-sm"
+                                            placeholder="Price (DA)"
+                                            value={formData.price || ''}
+                                            onChange={(e) => setFormData({ ...formData, price: e.target.value ? parseFloat(e.target.value) : null })}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -10,7 +10,7 @@ import '@livekit/components-styles';
 import { Track } from "livekit-client";
 
 // --- INNER CONTENT (Uses Context) ---
-function AdminLiveContent() {
+function AdminLiveContent({ onExit }: { onExit?: () => void }) {
     const {
         queue,
         currentSpeaker,
@@ -30,6 +30,12 @@ function AdminLiveContent() {
 
             <div className="flex items-center justify-between">
                 <div>
+                    {/* @ts-ignore */}
+                    {onExit && (
+                        <button onClick={onExit} className="text-zinc-400 hover:text-white mb-2 flex items-center gap-1 text-sm">
+                            ← Back to Sessions
+                        </button>
+                    )}
                     <h1 className="text-3xl font-serif font-bold text-white mb-1">Live Room Control</h1>
                     <p className="text-zinc-500">Manage student interactions and broadcast chat</p>
                 </div>
@@ -76,13 +82,13 @@ function AdminLiveContent() {
 }
 
 // --- MAIN WRAPPER (Providers) ---
-export default function AdminLiveClient() {
+export default function AdminLiveClient({ roomName = "class_room_main", onExit }: { roomName?: string; onExit?: () => void }) {
     const [token, setToken] = useState("");
 
     useEffect(() => {
         (async () => {
             try {
-                const resp = await fetch(`/api/livekit/token?room=class_room_main`);
+                const resp = await fetch(`/api/livekit/token?room=${roomName}`);
                 const data = await resp.json();
                 setToken(data.token);
             } catch (e) {
@@ -102,7 +108,8 @@ export default function AdminLiveClient() {
             data-lk-theme="default"
             style={{ height: 'auto' }}
         >
-            <AdminLiveContent />
+            {/* @ts-ignore */}
+            <AdminLiveContent onExit={onExit} />
         </LiveKitRoom>
     );
 }

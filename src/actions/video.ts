@@ -35,6 +35,16 @@ export async function getSecureVideoId(lessonId: string) {
     // 4. Entitlement Logic (Unified)
     const { verifyContentAccess } = await import("@/lib/access-control");
 
+    // Fetch Ownership
+    const { data: ownership } = await supabase
+        .from('user_content_ownership')
+        .select('content_id')
+        .eq('user_id', user.id)
+        .eq('content_id', lesson.id)
+        .maybeSingle();
+
+    const ownedContentIds = ownership ? [ownership.content_id] : [];
+
     // @ts-ignore - Deep join type safety
     const units = Array.isArray(lesson.units) ? lesson.units[0] : lesson.units;
     // @ts-ignore
@@ -42,12 +52,16 @@ export async function getSecureVideoId(lessonId: string) {
     const published = subjects?.published ?? true;
 
     const contentRequirement = {
+        id: lesson.id,
         required_plan_id: lesson.required_plan_id,
         is_free: lesson.is_free,
         published: published
     };
 
-    const access = await verifyContentAccess(profile, contentRequirement);
+    const access = await verifyContentAccess({
+        ...profile,
+        owned_content_ids: ownedContentIds
+    }, contentRequirement);
 
     if (!access.allowed) {
         // Map access reasons to specific errors if needed, or generic

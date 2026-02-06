@@ -21,15 +21,17 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
     }
 
     // 1. Fetch Data
+    // 1. Fetch Data
     const { getSecureVideoId } = await import("@/actions/video");
-    const { lesson, isCompleted, error } = await getLessonData(lessonId);
+    // @ts-ignore - isOwned is now returned
+    const { lesson, isCompleted, isOwned, error } = await getLessonData(lessonId);
 
     // Fetch Secure Token (Parallel)
     let secureVideoData: { videoId: string, token: string } | null = null;
     let accessError = null;
 
     try {
-        if (lesson && (isSubscribed || lesson.is_free || lesson.required_plan_id)) {
+        if (lesson && (isSubscribed || lesson.is_free || lesson.required_plan_id || isOwned)) {
             // Attempt to get token if we think user might have access
             secureVideoData = await getSecureVideoId(lessonId);
         }
@@ -52,7 +54,7 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
     // Ideally userProfile should be passed down or re-fetched.
     // Assuming 'isSubscribed' is enough for general access, but specific plan logic needed if 'required_plan_id' exists.
 
-    const hasAccess = isSubscribed || lesson.is_free; // Or check specific plan if passed
+    const hasAccess = isSubscribed || lesson.is_free || isOwned; // Or check specific plan if passed
 
     return (
         <div className="flex flex-col gap-6">
@@ -75,6 +77,10 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
                         planName={lesson.subscription_plans?.name}
                         planId={lesson.subscription_plans?.id}
                         price={lesson.subscription_plans?.price?.toString()}
+                        isPurchasable={lesson.is_purchasable}
+                        purchasePrice={lesson.price}
+                        contentId={lesson.id}
+                        contentType="lesson"
                     />
                 )}
             </div>

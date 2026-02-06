@@ -16,5 +16,7 @@ export interface SubjectDTO {
     unitCount?: number;
 
     // Optional because it might be merged later or not always fetched
+    // Optional because it might be merged later or not always fetched
     progress?: number;
+    isOwned?: boolean;
 }

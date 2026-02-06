@@ -53,17 +53,30 @@ export async function getHybridLiveSession(): Promise<SecureLiveSession> {
 
     // 4. Unified Access Control
     if (session) {
+        // Fetch Ownership
+        const { data: ownership } = await supabase
+            .from('user_content_ownership')
+            .select('content_id')
+            .eq('user_id', user.id)
+            .eq('content_id', session.id)
+            .maybeSingle();
+
+        const ownedContentIds = ownership ? [ownership.content_id] : [];
+
         // Construct ContentRequirement object
         const contentRequirement = {
+            id: session.id,
             required_plan_id: session.required_plan_id,
             published: session.published ?? true, // Default to true if not present, but query requires it
-            is_free: false // Live sessions are generally not free unless specified, but schema doesn't seem to have is_free for live_sessions yet? 
-            // Assuming strict plan check if required_plan_id is present.
+            is_free: false // Live sessions are generally not free unless specified
         };
 
         // Use shared utility
         const { verifyContentAccess } = await import("@/lib/access-control");
-        const access = await verifyContentAccess(profile, contentRequirement);
+        const access = await verifyContentAccess({
+            ...profile,
+            owned_content_ids: ownedContentIds
+        }, contentRequirement);
 
         if (!access.allowed) {
             // Map reason to user-friendly error

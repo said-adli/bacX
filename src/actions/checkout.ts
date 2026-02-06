@@ -53,3 +53,41 @@ export async function getSubscriptionPlan(planId: string): Promise<CheckoutState
         return { success: false, error: "Internal Server Error" };
     }
 }
+
+export async function getContentDetails(type: 'lesson' | 'subject', id: string) {
+    const supabase = await createClient();
+
+    try {
+        const table = type === 'lesson' ? 'lessons' : 'subjects';
+
+        // Select logic varies slightly
+        let query = supabase
+            .from(table)
+            .select(type === 'lesson'
+                ? 'id, title, price, is_purchasable'
+                : 'id, name, price, is_purchasable' // Assuming subject has these too
+            )
+            .eq('id', id)
+            .single();
+
+        const { data, error } = await query;
+
+        if (error || !data) {
+            return { success: false, error: "Content not found" };
+        }
+
+        return {
+            success: true,
+            content: {
+                id: data.id,
+                title: (data as any).title || (data as any).name,
+                price: data.price,
+                is_purchasable: data.is_purchasable
+            }
+        };
+
+    } catch (e) {
+        console.error("Content Fetch Error:", e);
+        return { success: false, error: "Internal Error" };
+    }
+}

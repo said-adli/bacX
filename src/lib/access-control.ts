@@ -5,9 +5,11 @@ type UserProfile = {
     role: string;
     plan_id?: string;
     is_subscribed?: boolean;
+    owned_content_ids?: string[];
 };
 
 type ContentRequirement = {
+    id?: string; // Content ID for ownership check
     required_plan_id?: string | null;
     is_free?: boolean;
     published?: boolean;
@@ -21,6 +23,7 @@ type ContentRequirement = {
  * 1. Admin/Teacher Bypass
  * 2. Published Status (unless Admin)
  * 3. Plan Matching (Strict Plan ID check)
+ * 4. Content Ownership (Lifetime Access)
  */
 export async function verifyContentAccess(
     user: UserProfile,
@@ -38,12 +41,19 @@ export async function verifyContentAccess(
         return { allowed: false, reason: 'content_unpublished' };
     }
 
-    // 3. Free Content Check
+    // 3. Ownership Check (Lifetime Access) - HIGHEST PRIORITY for Students
+    // If the content ID is in the user's owned list, they get access regardless of subscription.
+    // We check this BEFORE subscription because it's a stronger right.
+    if (content.id && user.owned_content_ids?.includes(content.id)) {
+        return { allowed: true, reason: 'lifetime_ownership' };
+    }
+
+    // 4. Free Content Check
     if (content.is_free) {
         return { allowed: true, reason: 'content_free' };
     }
 
-    // 4. Plan Match Check
+    // 5. Plan Match Check
     if (content.required_plan_id) {
         if (!user.is_subscribed) {
             return { allowed: false, reason: 'subscription_required' };

@@ -32,10 +32,24 @@ export interface DashboardViewDTO {
 export async function getDashboardSubjects(userId: string): Promise<SubjectDTO[]> {
     // ⚡ Cached: subjects keys
     // 🔒 Fresh: user progress
-    const [subjects, progressMap] = await Promise.all([
+    // 🔑 Fresh: ownership
+    const { createClient } = await import("@/utils/supabase/server");
+    const supabase = await createClient();
+
+    const [subjects, progressMap, ownershipReq] = await Promise.all([
         getCachedSubjects(),
         getUserProgressMapRaw(userId),
+        supabase.from('user_content_ownership')
+            .select('content_id')
+            .eq('user_id', userId)
+            // Ideally we filter by content_type='subject' but the table might be generic.
+            // Assuming IDs are unique across tables or we just check existence.
+            // If table has 'content_type', use it: .eq('content_type', 'subject')
+            // My schema has content_type.
+            .eq('content_type', 'subject')
     ]);
+
+    const ownedSubjectIds = new Set((ownershipReq.data || []).map(o => o.content_id));
 
     // Merge
     return subjects.map((subject) => {
@@ -43,6 +57,7 @@ export async function getDashboardSubjects(userId: string): Promise<SubjectDTO[]
         return {
             ...subject,
             progress: progress,
+            isOwned: ownedSubjectIds.has(subject.id)
         };
     });
 }

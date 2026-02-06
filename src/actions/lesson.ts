@@ -44,15 +44,29 @@ export async function getLessonData(lessonId: string) {
         // Use shared utility
         const { verifyContentAccess } = await import("@/lib/access-control");
 
+        // Fetch Ownership
+        const { data: ownership } = await supabase
+            .from('user_content_ownership')
+            .select('content_id')
+            .eq('user_id', user.id)
+            .eq('content_id', lessonId)
+            .maybeSingle();
+
+        const ownedContentIds = ownership ? [ownership.content_id] : [];
+
         // Match ContentRequirement type
         const contentRequirement = {
+            id: lesson.id,
             required_plan_id: lesson.required_plan_id,
             is_free: lesson.is_free,
             // @ts-ignore - Supabase deep join type inference
             published: lesson.units?.subjects?.published ?? true
         };
 
-        const access = await verifyContentAccess(profile, contentRequirement);
+        const access = await verifyContentAccess({
+            ...profile,
+            owned_content_ids: ownedContentIds
+        }, contentRequirement);
 
         if (!access.allowed) {
             // Return specific error for client handling if needed, or generic

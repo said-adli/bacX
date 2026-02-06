@@ -2,25 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { Copy, Check, UploadCloud, ChevronRight, CreditCard, ShieldCheck, AlertTriangle, Tag } from "lucide-react";
+import { Copy, Check, UploadCloud, ChevronRight, CreditCard, ShieldCheck, AlertTriangle, Tag, Lock, Youtube } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { getSubscriptionPlan } from "@/actions/checkout";
-import { SubscriptionPlan } from "@/actions/admin-plans";
+import { getContentDetails } from "@/actions/checkout";
 import { Loader2 } from "lucide-react";
 
-export default function CheckoutPage({ params }: { params: { planId: string } }) {
+export default function ContentCheckoutPage({ params }: { params: { type: string, id: string } }) {
     const { user } = useAuth();
     const router = useRouter();
     const supabase = createClient();
+    const { type, id } = params;
 
     // States
     const [uploading, setUploading] = useState(false);
-    const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
-    const [loadingPlan, setLoadingPlan] = useState(true);
+    const [content, setContent] = useState<{ id: string; title: string; price: number } | null>(null);
+    const [loadingContent, setLoadingContent] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     // Coupon State
@@ -29,13 +29,11 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
     const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number; finalPrice: number } | null>(null);
 
     const handleApplyCoupon = async () => {
-        if (!couponCode || !plan) return;
+        if (!couponCode || !content) return;
         setValidatingCoupon(true);
         try {
-            // Dynamically import to avoid server-action issues if mixed
             const { validateCoupon } = await import("@/actions/coupons");
-            const price = plan.discount_price || plan.price;
-            const result = await validateCoupon(couponCode, price);
+            const result = await validateCoupon(couponCode, content.price);
 
             if (result.valid) {
                 setAppliedCoupon({
@@ -55,27 +53,34 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
         }
     };
 
-
-    // Fetch Plan on Mount
+    // Fetch Content on Mount
     useEffect(() => {
-        async function fetchPlan() {
-            setLoadingPlan(true);
-            const { success, plan, error } = await getSubscriptionPlan(params.planId);
-
-            if (success && plan) {
-                setPlan(plan);
-            } else {
-                setError(error || "Plan not found");
-                // Optional: Redirect after delay or let user choose
-                toast.error(error || "Invalid Plan");
+        async function fetchContent() {
+            setLoadingContent(true);
+            if (type !== 'lesson' && type !== 'subject') {
+                setError("Invalid content type");
+                setLoadingContent(false);
+                return;
             }
-            setLoadingPlan(false);
+
+            const { success, content, error } = await getContentDetails(type as 'lesson' | 'subject', id);
+
+            if (success && content) {
+                if (!content.is_purchasable || !content.price) {
+                    setError("This content is not available for individual purchase.");
+                } else {
+                    setContent({ ...content, price: content.price });
+                }
+            } else {
+                setError(error || "Content not found");
+            }
+            setLoadingContent(false);
         }
 
-        if (params.planId) {
-            fetchPlan();
+        if (id) {
+            fetchContent();
         }
-    }, [params.planId]);
+    }, [id, type]);
 
     const CCP_INFO = {
         name: "منصة برايني للتعليم",
@@ -91,7 +96,7 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !user || !plan) return;
+        if (!file || !user || !content) return;
 
         setUploading(true);
         const toastId = toast.loading("جاري رفع الوصل وتأكيد الطلب...");
@@ -103,22 +108,20 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
 
             if (uploadError) throw uploadError;
 
-            // 2. Get Public URL (REMOVED - Privacy Update)
-            // const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(fileName);
-
-            // 3. Create Payment Request (Secure Action)
+            // 2. Create Payment Request (Secure Action)
             const { createPaymentRequest } = await import("@/actions/payment");
             const { success, error } = await createPaymentRequest({
                 userId: user.id,
-                planId: plan.id,
+                contentId: content.id,
+                contentType: type as 'lesson' | 'subject',
                 receiptUrl: fileName,
-                couponCode: couponCode || undefined // Pass cleaned code
+                couponCode: couponCode || undefined
             });
 
             if (!success) throw new Error(error || "Failed to create request");
 
-            toast.success("تم إرسال طلبك بنجاح! سيتم تفعيل حسابك قريباً", { id: toastId });
-            setTimeout(() => router.push('/subscription'), 2000);
+            toast.success("تم إرسال طلبك بنجاح! سيتم تفعيل الدرس قريباً", { id: toastId });
+            setTimeout(() => router.push('/materials'), 2000);
 
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : 'Upload failed';
@@ -129,7 +132,7 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
         }
     };
 
-    if (loadingPlan) {
+    if (loadingContent) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <Loader2 className="animate-spin text-white w-8 h-8" />
@@ -137,29 +140,29 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
         );
     }
 
-    if (error || !plan) {
+    if (error || !content) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center p-4">
                 <AlertTriangle className="text-red-500 w-12 h-12" />
-                <h1 className="text-2xl font-bold text-white">عذراً، الباقة غير متوفرة</h1>
+                <h1 className="text-2xl font-bold text-white">عذراً، المحتوى غير متاح للشراء</h1>
                 <p className="text-white/50">{error}</p>
                 <button
-                    onClick={() => router.push('/subscription')}
+                    onClick={() => router.push('/materials')}
                     className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors"
                 >
-                    العودة لصفحة الاشتراكات
+                    العودة للمواد
                 </button>
             </div>
         );
     }
 
     return (
-        <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+        <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 pt-10 px-4">
 
             {/* Header */}
             <div className="flex items-center gap-2 text-white/50 mb-4 cursor-pointer hover:text-white transition-colors" onClick={() => router.back()}>
                 <ChevronRight size={16} />
-                <span>العودة للاشتراكات</span>
+                <span>العودة</span>
             </div>
 
             <div className="flex flex-col md:flex-row gap-8">
@@ -167,8 +170,8 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
                 {/* LEFT: Payment Info & Steps */}
                 <div className="flex-1 space-y-6">
                     <div>
-                        <h1 className="text-4xl font-serif font-bold text-white mb-2">إتمام الاشتراك</h1>
-                        <p className="text-white/60">أنت على بعد خطوة واحدة من الانضمام للنخبة.</p>
+                        <h1 className="text-4xl font-serif font-bold text-white mb-2">شراء {type === 'lesson' ? 'درس' : 'مادة'}</h1>
+                        <p className="text-white/60">امتلاك مدى الحياة لهذا المحتوى.</p>
                     </div>
 
                     {/* Security Badge */}
@@ -260,56 +263,35 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
 
                         <div className="space-y-4 mb-6 pb-6 border-b border-white/5">
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-white/60">الباقة المختارة</span>
-                                <span className="font-bold text-white">{plan.name}</span>
+                                <span className="text-white/60">المحتوى</span>
+                                <span className="font-bold text-white text-right w-1/2 truncate">{content.title}</span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-white/60">السعر</span>
-                                <span className="font-bold text-white">
-                                    {plan.discount_price ? (
-                                        <>
-                                            <span className="line-through text-white/30 mr-2 text-xs">{plan.price}</span>
-                                            {plan.discount_price}
-                                        </>
-                                    ) : plan.price} دج
-                                </span>
+                                <span className="text-white/60">النوع</span>
+                                <span className="font-bold text-blue-400">{type === 'lesson' ? 'درس (فيديو)' : 'مادة كاملة'}</span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-white/60">المدة</span>
-                                <span className="font-bold text-green-400">سنة كاملة (2026)</span>
+                                <span className="font-bold text-green-400">مدى الحياة</span>
                             </div>
                         </div>
 
                         <div className="flex justify-between items-center mb-6">
                             <span className="font-bold text-lg text-white">المجموع</span>
                             <span className="font-bold text-2xl text-blue-400">
-                                {appliedCoupon ? appliedCoupon.finalPrice : (plan.discount_price || plan.price)} دج
+                                {appliedCoupon ? appliedCoupon.finalPrice : content.price} دج
                             </span>
                         </div>
 
-                        <div className="space-y-3">
-                            {plan.features?.map((feature, i) => (
-                                <div key={i} className="flex items-center gap-2 text-xs text-white/50">
-                                    <div className="w-4 h-4 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                                        <Check size={8} className="text-green-500" />
-                                    </div>
-                                    {feature}
-                                </div>
-                            ))}
-                        </div>
-                    </GlassCard>
-
-                    {/* COUPON SECTION */}
-                    <GlassCard className="p-6 mt-4 border-white/10">
-                        <div className="flex items-center gap-2 mb-3 text-white/80">
-                            <Tag size={16} />
-                            <span className="font-bold text-sm">قسيمة التخفيض</span>
+                        <div className="p-3 mb-4 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300 leading-relaxed">
+                            هذا شراء لمرة واحدة. ستتمكن من الوصول لهذا المحتوى للأبد بمجرد تفعيل الدفع.
                         </div>
 
+                        {/* COUPON SECTION */}
                         <div className="flex gap-2">
                             <input
                                 disabled={!!appliedCoupon}
-                                placeholder="أدخل الكود هنا"
+                                placeholder="كود الخصم (اختياري)"
                                 className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 disabled:opacity-50"
                                 value={couponCode}
                                 onChange={(e) => setCouponCode(e.target.value.toUpperCase())}

@@ -15,6 +15,7 @@ interface Lesson {
     duration: string | null;
     is_free: boolean;
     unit_id: string;
+    isOwned?: boolean;
 }
 
 interface Unit {
@@ -148,7 +149,8 @@ export function Sidebar({ units = [], activeLessonId, subjectId = "" }: SidebarP
                                             >
                                                 <div className="p-2 space-y-1">
                                                     {(unit.lessons || []).map((lesson) => {
-                                                        const isLocked = !hasAccess && !lesson.is_free;
+                                                        // CHECK: Admin OR Subscribed OR Free OR Owned
+                                                        const isLocked = !hasAccess && !lesson.is_free && !lesson.isOwned;
                                                         const isActive = activeLessonId === lesson.id;
                                                         const LinkComponent = isLocked ? 'div' : Link;
 

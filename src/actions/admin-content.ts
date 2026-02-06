@@ -147,36 +147,63 @@ export async function deleteUnit(id: string) {
 export async function createLesson(data: Partial<Lesson>) {
     await requireAdmin();
     const supabase = await createClient();
-    const { data: newLesson, error } = await supabase
-        .from('lessons')
-        .insert([data])
-        .select()
-        .single();
+    try {
+        const { data: newLesson, error } = await supabase
+            .from('lessons')
+            .insert({
+                title: data.title,
+                type: data.type,
+                video_url: data.video_url,
+                required_plan_id: data.required_plan_id,
+                unit_id: data.unit_id,
+                is_public: data.is_public,
+                is_purchasable: data.is_purchasable ?? false,
+                price: data.price ?? null
+            })
+            .select()
+            .single();
 
-    if (error) throw error;
-    await logAdminAction("CREATE_LESSON", newLesson.id, "lesson", { title: data.title });
-    revalidateLessons(); // Invalidate Next.js cache
-    revalidatePath('/admin/content');
-    revalidatePath('/dashboard');
-    revalidatePath('/materials', 'layout');
-    return newLesson;
+        if (error) throw error;
+        await logAdminAction("CREATE_LESSON", newLesson.id, "lesson", { title: data.title });
+        revalidateLessons(); // Invalidate Next.js cache
+        revalidatePath('/admin/content');
+        revalidatePath('/dashboard');
+        revalidatePath('/materials', 'layout');
+        return newLesson;
+    } catch (error) {
+        console.error("Create Lesson Error", error);
+        throw error;
+    }
 }
 
 // updateLesson
 export async function updateLesson(id: string, data: Partial<Lesson>) {
     await requireAdmin();
     const supabase = await createClient();
-    const { error } = await supabase
-        .from('lessons')
-        .update(data)
-        .eq('id', id);
+    try {
+        const { error } = await supabase
+            .from('lessons')
+            .update({
+                title: data.title,
+                type: data.type,
+                video_url: data.video_url,
+                required_plan_id: data.required_plan_id,
+                is_public: data.is_public,
+                is_purchasable: data.is_purchasable,
+                price: data.price
+            })
+            .eq('id', id);
 
-    if (error) throw error;
-    await logAdminAction("UPDATE_LESSON", id, "lesson", data);
-    revalidateLessons(); // Invalidate Next.js cache
-    revalidatePath('/admin/content');
-    revalidatePath('/dashboard');
-    revalidatePath('/materials', 'layout');
+        if (error) throw error;
+        await logAdminAction("UPDATE_LESSON", id, "lesson", data);
+        revalidateLessons(); // Invalidate Next.js cache
+        revalidatePath('/admin/content');
+        revalidatePath('/dashboard');
+        revalidatePath('/materials', 'layout');
+    } catch (error) {
+        console.error("Update Lesson Error", error);
+        throw error;
+    }
 }
 
 // deleteLesson

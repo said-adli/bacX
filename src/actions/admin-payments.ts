@@ -66,14 +66,27 @@ export async function getPendingPayments() {
 }
 
 // Approve Payment (Atomic Transaction)
-export async function approvePayment(requestId: string, userId: string, planId: string) {
+export async function approvePayment(requestId: string, userId: string, planId?: string | null, contentId?: string | null) {
     const { user } = await requireAdmin();
     const supabase = await createClient();
 
-    const { error } = await supabase.rpc('approve_payment_transaction', {
-        p_request_id: requestId,
-        p_admin_id: user.id
-    });
+    let error;
+
+    if (contentId) {
+        // Content Purchase Approval
+        const { error: rpcError } = await supabase.rpc('approve_content_purchase', {
+            p_request_id: requestId,
+            p_admin_id: user.id
+        });
+        error = rpcError;
+    } else {
+        // Plan Subscription Approval
+        const { error: rpcError } = await supabase.rpc('approve_payment_transaction', {
+            p_request_id: requestId,
+            p_admin_id: user.id
+        });
+        error = rpcError;
+    }
 
     if (error) {
         console.error("Payment approval transaction failed", error);

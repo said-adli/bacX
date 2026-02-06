@@ -57,8 +57,13 @@ export const SubjectCard = ({ subject }: { subject: SubjectDTO }) => {
                     </div>
 
                     <div>
-                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-white transition-colors">
+                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-white transition-colors flex items-center gap-2">
                             {subject.name}
+                            {subject.isOwned && (
+                                <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] font-bold uppercase tracking-wider">
+                                    Owned
+                                </span>
+                            )}
                         </h3>
                         {subject.description && (
                             <p className="text-sm text-white/40 line-clamp-2 leading-relaxed">
