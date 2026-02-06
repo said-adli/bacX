@@ -35,9 +35,7 @@ export async function getLessonData(lessonId: string) {
                 )
             `)
             .eq('id', lessonId)
-            // .eq('units.subjects.published', true) // Access Control handles this more gracefully now? 
-            // Actually, keep this for optimization, but verifyContentAccess is the authority.
-            // Let's rely on verifyContentAccess for logic to avoid duplication.
+            .eq('units.subjects.published', true)
             .single();
 
         if (lessonError) throw lessonError;

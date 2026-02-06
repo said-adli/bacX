@@ -14,6 +14,7 @@ import {
     MessageSquare,
     Loader2
 } from "lucide-react";
+import { StudentRequest, handleRequest } from "@/lib/actions/requests";
 // Deferring this edit until viewing page.tsx
 
 interface RequestTabsProps {

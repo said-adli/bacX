@@ -47,12 +47,12 @@ export async function getLessonResource(lessonId: string, resourcePath: string) 
     const [lessonResult, profileResult] = await Promise.all([
         supabase
             .from('lessons')
-            .select('required_plan_id, is_public')
+            .select('required_plan_id, is_public, units(subjects(published))') // Fetched published status
             .eq('id', lessonId)
             .single(),
         supabase
             .from('profiles')
-            .select('active_plan_id, role')
+            .select('id, plan_id, role, is_subscribed') // Standardized to plan_id and is_subscribed
             .eq('id', user.id)
             .single()
     ]);
@@ -61,20 +61,27 @@ export async function getLessonResource(lessonId: string, resourcePath: string) 
     const profile = profileResult.data;
 
     if (!lesson) throw new Error("Lesson not found");
+    if (!profile) throw new Error("Profile not found");
 
-    // 3. Authorization Logic (Entitlement)
-    let hasAccess = false;
+    // 3. Authorization Logic (Unified)
+    const { verifyContentAccess } = await import("@/lib/access-control");
 
-    if (lesson.is_public) {
-        hasAccess = true;
-    } else if (profile?.role === 'admin') {
-        hasAccess = true;
-    } else if (lesson.required_plan_id && profile?.active_plan_id === lesson.required_plan_id) {
-        hasAccess = true;
-    }
+    // @ts-ignore - Deep join type safety
+    const units = Array.isArray(lesson.units) ? lesson.units[0] : lesson.units;
+    // @ts-ignore
+    const subjects = Array.isArray(units?.subjects) ? units.subjects[0] : units?.subjects;
+    const published = subjects?.published ?? true;
 
-    if (!hasAccess) {
-        throw new Error("Subscription Plan Required for this content.");
+    const contentRequirement = {
+        required_plan_id: lesson.required_plan_id,
+        is_free: lesson.is_public, // Map public -> free
+        published: published
+    };
+
+    const access = await verifyContentAccess(profile, contentRequirement);
+
+    if (!access.allowed) {
+        throw new Error(access.reason || "Subscription Plan Required for this content.");
     }
 
     // 4. SECURITY CHECK: Verify Resource Ownership (IDOR Patch)

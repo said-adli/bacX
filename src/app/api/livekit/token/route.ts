@@ -106,17 +106,16 @@ export async function GET(request: NextRequest) {
     // No Video Publishing allowed for anyone (even admin? Maybe admin can, but let's stick to "Signalling Purity").
     // If Admin needs video, we might relax it, but the mission says "LiveKit is ONLY for interactivity".
 
-    // Note: LiveKit JS SDK might not enforce 'canPublishSources' on all server versions without specific config,
-    // but we set 'canPublish: true' to allow *some* publishing, and try to restrict.
-    // However, if we want to be strict:
+    const canPublish = isAdmin; // Only admins can publish fully if needed, OR false for everyone if strict.
+    // "Students should NEVER be able to publish audio/video." => canPublish = false (for students)
 
     at.addGrant({
         roomJoin: true,
         room: roomName,
-        canPublish: true,
+        canPublish: isAdmin, // Students: false, Admin: true
         canSubscribe: true,
         canPublishData: true, // Hand raising
-        canPublishSources: [TrackSource.MICROPHONE], // STRICT: Only Audio
+        canPublishSources: isAdmin ? [TrackSource.CAMERA, TrackSource.MICROPHONE] : [], // Students: []
         hidden: false,
     });
 

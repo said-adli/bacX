@@ -26,22 +26,33 @@ export async function getSecureVideoId(lessonId: string) {
     // 3. Fetch Lesson
     const { data: lesson } = await supabase
         .from('lessons')
-        .select('id, required_plan_id, is_free, video_url')
+        .select('id, required_plan_id, is_free, video_url, units(subjects(published))') // Fetched published status
         .eq('id', lessonId)
         .single();
 
     if (!lesson) throw new Error("Lesson not found");
 
-    // 4. Entitlement Logic
-    const isAdmin = profile.role === 'admin';
-    const isFree = lesson.is_free;
-    const planMatch = lesson.required_plan_id ? profile.plan_id === lesson.required_plan_id : false;
-    const isSubscribed = !!profile.is_subscribed;
+    // 4. Entitlement Logic (Unified)
+    const { verifyContentAccess } = await import("@/lib/access-control");
 
-    // Access Grant
-    if (!isAdmin && !isFree && !planMatch && !(!lesson.required_plan_id && isSubscribed)) {
-        if (lesson.required_plan_id) throw new Error("Upgrade required");
-        throw new Error("Subscription required");
+    // @ts-ignore - Deep join type safety
+    const units = Array.isArray(lesson.units) ? lesson.units[0] : lesson.units;
+    // @ts-ignore
+    const subjects = Array.isArray(units?.subjects) ? units.subjects[0] : units?.subjects;
+    const published = subjects?.published ?? true;
+
+    const contentRequirement = {
+        required_plan_id: lesson.required_plan_id,
+        is_free: lesson.is_free,
+        published: published
+    };
+
+    const access = await verifyContentAccess(profile, contentRequirement);
+
+    if (!access.allowed) {
+        // Map access reasons to specific errors if needed, or generic
+        if (access.reason === 'upgrade_required') throw new Error("Upgrade required"); // map if needed
+        throw new Error(access.reason || "Subscription required");
     }
 
     // 5. Generate HMAC Token

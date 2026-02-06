@@ -133,7 +133,6 @@ export async function POST(request: Request) {
         // If it's undefined (bad data) or true, we might proceed, but securely we should block if undefined.
         // Assuming strict "published" requirement:
         if (subjectPublished === false && !isAdmin) {
-            console.log(`[Security] Blocked access to unpublished subject for lesson ${lessonId}`);
             return NextResponse.json({ error: 'Content is not published' }, { status: 403 });
         }
 
@@ -151,7 +150,6 @@ export async function POST(request: Request) {
 
         if (!access.allowed) {
             // Denied access
-            console.log(`[Security] Video Access Denied: ${access.reason} for user ${user.id}`);
             return NextResponse.json({ error: 'Subscription required' }, { status: 403 });
         }
 
