@@ -143,7 +143,7 @@ export default function AdminPlatformUpdates() {
                                     <select
                                         className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none"
                                         value={currentUpdate.type}
-                                        onChange={(e) => setCurrentUpdate({ ...currentUpdate, type: e.target.value as any })}
+                                        onChange={(e) => setCurrentUpdate({ ...currentUpdate, type: e.target.value as PlatformUpdate['type'] })}
                                     >
                                         <option value="feature">✨ Feature</option>
                                         <option value="improvement">🚀 Improvement</option>

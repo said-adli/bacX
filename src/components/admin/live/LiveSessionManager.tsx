@@ -28,7 +28,15 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
     };
 
     useEffect(() => {
-        loadData();
+        let isMounted = true;
+
+        const init = async () => {
+            if (isMounted) await loadData();
+        };
+
+        init();
+
+        return () => { isMounted = false; };
     }, []);
 
     const handleSave = async () => {
