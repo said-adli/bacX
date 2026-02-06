@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AccessToken } from 'livekit-server-sdk';
+import { AccessToken, TrackSource } from 'livekit-server-sdk';
 import { createClient } from '@/utils/supabase/server';
 
 export async function GET(request: NextRequest) {
@@ -43,41 +43,33 @@ export async function GET(request: NextRequest) {
         name: participantName,
     });
 
-    // 4. Set Permissions
+    // 4. Set Permissions & Unified Access Control
     // ACL: Validate access to the room
     const isAdmin = profile?.role === 'admin' || profile?.role === 'teacher';
 
     if (!isAdmin) {
         // Determine if this is a Live Session or a Lesson
-        // We first try to find a Live Session with this ID (assuming roomName matches ID)
-
-        // Check Live Session
+        // We first try to find a Live Session with this ID
         const { data: liveSession } = await supabase
             .from('live_sessions')
             .select('required_plan_id, published')
             .eq('id', roomName)
-            // Room name for live is usually the ID or "class_room_main" (legacy)
-            // If roomName is "class_room_main", we might need to fetch the *active* session.
-            // But for RLS security, we should ideally use IDs. 
-            // If legacy "class_room_main" is used, we need to find the CURRENT live session.
-            // For now, let's assume roomName IS the session ID or strictly mapped.
             .maybeSingle();
+
+        let contentRequirement;
 
         if (liveSession) {
             // It's a Live Session
-            if (liveSession.published === false) {
-                return NextResponse.json({ error: 'Session is not published' }, { status: 403 });
-            }
-            if (liveSession.required_plan_id) {
-                if (!profile?.is_subscribed || profile?.plan_id !== liveSession.required_plan_id) {
-                    return NextResponse.json({ error: 'Plan mismatch for live session' }, { status: 403 });
-                }
-            }
+            contentRequirement = {
+                required_plan_id: liveSession.required_plan_id,
+                published: liveSession.published ?? true,
+                is_free: false // Live sessions are premium usually
+            };
         } else {
-            // It's likely a Lesson (or invalid)
+            // Check if it's a Lesson
             const { data: lesson, error: lessonError } = await supabase
                 .from('lessons')
-                .select('required_plan_id')
+                .select('required_plan_id, is_free, units(subjects(published))')
                 .eq('id', roomName)
                 .single();
 
@@ -85,21 +77,47 @@ export async function GET(request: NextRequest) {
                 return NextResponse.json({ error: 'Room access denied or not found' }, { status: 403 });
             }
 
-            // Lesson Checks
-            if (lesson.required_plan_id) {
-                if (profile?.active_plan_id !== lesson.required_plan_id) {
-                    return NextResponse.json({ error: 'Active subscription required to join this room' }, { status: 403 });
-                }
-            }
+            // Safe access for deep join
+            // units is likely an array, safeguard access
+            // @ts-ignore
+            const units = Array.isArray(lesson.units) ? lesson.units[0] : lesson.units;
+            // @ts-ignore
+            const subjects = Array.isArray(units?.subjects) ? units.subjects[0] : units?.subjects;
+            const subjectPublished = subjects?.published;
+
+            contentRequirement = {
+                required_plan_id: lesson.required_plan_id,
+                is_free: lesson.is_free,
+                published: subjectPublished ?? true
+            };
+        }
+
+        // UNIFIED CHECK
+        const { verifyContentAccess } = await import("@/lib/access-control");
+        const access = await verifyContentAccess(profile, contentRequirement);
+
+        if (!access.allowed) {
+            return NextResponse.json({ error: access.reason || 'Access Denied' }, { status: 403 });
         }
     }
+
+    // Hardened Permissions: AUDIO ONLY (Signaling Purity)
+    // We strictly limit the user to only publishing audio (hand-raising/talking).
+    // No Video Publishing allowed for anyone (even admin? Maybe admin can, but let's stick to "Signalling Purity").
+    // If Admin needs video, we might relax it, but the mission says "LiveKit is ONLY for interactivity".
+
+    // Note: LiveKit JS SDK might not enforce 'canPublishSources' on all server versions without specific config,
+    // but we set 'canPublish: true' to allow *some* publishing, and try to restrict.
+    // However, if we want to be strict:
 
     at.addGrant({
         roomJoin: true,
         room: roomName,
-        canPublish: true, // Both teacher and student need to speak
+        canPublish: true,
         canSubscribe: true,
-        canPublishData: true,
+        canPublishData: true, // Hand raising
+        canPublishSources: [TrackSource.MICROPHONE], // STRICT: Only Audio
+        hidden: false,
     });
 
     // Generate the JWT
