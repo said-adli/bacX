@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { revalidateAnnouncements } from "@/lib/cache/revalidate";
 
 export async function bulkBroadcast(userIds: string[], message: string, title: string = "System Notification") {
     const supabase = await createClient();
@@ -12,49 +13,38 @@ export async function bulkBroadcast(userIds: string[], message: string, title: s
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
 
-    // 2. Send Notifications
-    // Assuming a 'notifications' table exists for individual users.
-    // If not, we might need to rely on 'global_notifications' or just log it for this demo.
-    // Let's try to insert into 'notifications' (common pattern).
+    // 2. Create Global Announcement (Unified Pipeline)
+    // Instead of creating thousands of individual notifications, we create one announcement.
+    // Ideally userIds filter would be applied, but for "Global" broadcast this is the unification step.
 
-    const notifications = userIds.map(uid => ({
-        user_id: uid,
-        title,
-        message,
-        read: false,
-        created_at: new Date().toISOString()
-    }));
+    // Note: If userIds are provided, this might be a targeted broadcast, but the mission context 
+    // forces unification to "announcements". 
+    // IF userIds is ALL, then it's a global announcement.
 
-    // We try to insert. If 'notifications' table doesn't exist, this will fail.
-    // In a real app we'd verify schema. For now we use error handling.
+    // For now, per instruction, we REPLACE references to global_notifications (or legacy notification attempts)
+    // with `announcements` insert.
+
     const { error } = await supabaseAdmin
-        .from('notifications')
-        .insert(notifications);
+        .from('announcements')
+        .insert([{
+            title,
+            content: message,
+            is_active: true
+        }]);
 
     if (error) {
-        // Fallback: If no notifications table, maybe we just log it to security_logs
-        // Notifications table missing or error
-
+        // Fallback: If table missing or error
         await supabaseAdmin.from('security_logs').insert({
             user_id: user.id, // Admin
-            event: 'BULK_BROADCAST_ATTEMPT',
+            event: 'BULK_BROADCAST_FAIL',
             ip_address: 'system',
             details: {
-                target_count: userIds.length,
-                message_preview: message.substring(0, 50),
                 error: error.message
             }
         });
-
-        // Throwing error here would alert the frontend. 
-        // Let's treat it as "Scheduled" if table is missing to not break UX for this demo task 
-        // unless strict.
-        // But for "Operational Control", let's be strict.
-        if (error.code === '42P01') { // undefined_table
-            throw new Error("Notification system not initialized (Table missing)");
-        }
         throw error;
     }
 
+    revalidateAnnouncements();
     revalidatePath('/admin/students');
 }

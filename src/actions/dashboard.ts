@@ -95,6 +95,7 @@ export async function getSubjectsData(): Promise<DashboardSubject[]> {
             const { data } = await supabase
                 .from('subjects')
                 .select('id, name, icon, description, color, slug, lesson_count, lessons(id, title, required_plan_id, is_free)') // Explicit select
+                .eq('published', true) // FILTER: Only published subjects
                 .in('name', ['Mathematics', 'Physics', 'الرياضيات', 'الفيزياء']) // Strict Filtering
                 .order('order_index', { ascending: true });
 

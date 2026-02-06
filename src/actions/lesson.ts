@@ -60,6 +60,7 @@ export async function getSubjectHierarchy(subjectId: string) {
             .from('subjects')
             .select('*, units(*, lessons(id, title, duration, is_free, unit_id))')
             .eq('id', subjectId)
+            .eq('published', true) // STRICT: Only published subjects
             .single();
 
         if (error) throw error;

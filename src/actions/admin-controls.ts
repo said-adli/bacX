@@ -3,8 +3,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { revalidateAnnouncements } from "@/lib/cache/revalidate";
 
-// GLOBAL NOTIFICATIONS
+// ANNOUNCEMENTS (Unified Pipeline)
 export async function sendGlobalNotification(title: string, message: string) {
     const supabase = await createClient();
 
@@ -14,15 +15,21 @@ export async function sendGlobalNotification(title: string, message: string) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
     if (profile?.role !== 'admin') throw new Error("Forbidden");
 
-    // Use Admin Client for Insert if RLS is strict, but notifications usually allow admin insert.
-    // Let's use clean Separation: Admin Client for writes.
+    // Use Admin Client for writes
     const supabaseAdmin = createAdminClient();
 
+    // UNIFIED: Insert into 'announcements' instead of 'global_notifications'
     const { error } = await supabaseAdmin
-        .from('global_notifications')
-        .insert([{ title, message }]);
+        .from('announcements')
+        .insert([{
+            title,
+            content: message,
+            is_active: true
+        }]);
 
     if (error) throw error;
+
+    revalidateAnnouncements();
     revalidatePath('/admin/controls');
     revalidatePath('/dashboard');
 }
@@ -30,8 +37,10 @@ export async function sendGlobalNotification(title: string, message: string) {
 export async function getRecentNotifications() {
     // Read can be standard client (RLS allows Public/Admin read)
     const supabase = await createClient();
+
+    // UNIFIED: Select from 'announcements'
     const { data, error } = await supabase
-        .from('global_notifications')
+        .from('announcements')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
@@ -47,8 +56,12 @@ export async function deleteNotification(id: string) {
 
     // Use Admin Client
     const supabaseAdmin = createAdminClient();
-    const { error } = await supabaseAdmin.from('global_notifications').delete().eq('id', id);
+
+    // UNIFIED: Delete from 'announcements'
+    const { error } = await supabaseAdmin.from('announcements').delete().eq('id', id);
     if (error) throw error;
+
+    revalidateAnnouncements();
     revalidatePath('/admin/controls');
 }
 
@@ -125,3 +138,4 @@ export async function getSystemStatus() {
     }
     return settings;
 }
+
