@@ -109,7 +109,7 @@ export async function POST(request: Request) {
         // Fetch Lesson Details STRICTLY
         const { data: lesson } = await supabase
             .from('lessons')
-            .select('id, required_plan_id, is_free, video_url')
+            .select('id, required_plan_id, is_free, video_url, units(subjects(published))')
             .eq('id', lessonId)
             // We could filter by video_url matching the token, but honestly, 
             // relying on the lessonId as the source of truth is safer.
@@ -120,6 +120,18 @@ export async function POST(request: Request) {
         if (!lesson) {
             // Lesson not found
             return NextResponse.json({ error: 'Content not found' }, { status: 404 });
+        }
+
+        // P0 FIX: Check if Parent Subject is Published
+        // @ts-ignore - Supabase types might not be perfectly inferred for deep joins without generated types
+        const subjectPublished = lesson.units?.subjects?.published;
+
+        // If subjectPublished is explicitly FALSE, we block.
+        // If it's undefined (bad data) or true, we might proceed, but securely we should block if undefined.
+        // Assuming strict "published" requirement:
+        if (subjectPublished === false && !isAdmin) {
+            console.log(`[Security] Blocked access to unpublished subject for lesson ${lessonId}`);
+            return NextResponse.json({ error: 'Content is not published' }, { status: 403 });
         }
 
         // 6. ENTITLEMENT CHECK

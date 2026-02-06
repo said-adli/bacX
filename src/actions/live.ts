@@ -43,20 +43,30 @@ export async function getHybridLiveSession(): Promise<SecureLiveSession> {
     }
 
     // 3. Fetch Live Session Data (Securely)
-    // We only fetch if authorized. 
-    // RLS will double-check, but we do it here to return clean errors.
+    // We only fetch based on new constraints.
     const { data: session, error: sessionError } = await supabase
         .from('live_sessions')
-        .select('*')
+        .select('*, required_plan_id, published')
         .or('status.eq.live,status.eq.scheduled')
+        .eq('published', true) // Must be published
         .order('started_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
     if (sessionError) {
         console.error("Live fetch error", sessionError);
-        // This might happen if RLS blocks us unpredictably, but we are authorized above.
         return { authorized: false, error: "Could not fetch session data" };
+    }
+
+    // Force Check: Even if DB returned it, we double check plan match in code
+    if (session && session.required_plan_id && !isAdmin) {
+        if (profile.plan_id !== session.required_plan_id) {
+            // Silent fail or explicit error?
+            // Since we filtered for 'published', getting here means it exists.
+            // But if RLS works, we wouldn't see it if we didn't match plan.
+            // However, let's be redundant.
+            return { authorized: false, error: "Plan mismatch" };
+        }
     }
 
     if (!session) {

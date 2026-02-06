@@ -48,25 +48,48 @@ export async function GET(request: NextRequest) {
     const isAdmin = profile?.role === 'admin' || profile?.role === 'teacher';
 
     if (!isAdmin) {
-        // Query the lesson to check access requirements
-        const { data: lesson, error: lessonError } = await supabase
-            .from('lessons')
-            .select('required_plan_id')
+        // Determine if this is a Live Session or a Lesson
+        // We first try to find a Live Session with this ID (assuming roomName matches ID)
+
+        // Check Live Session
+        const { data: liveSession } = await supabase
+            .from('live_sessions')
+            .select('required_plan_id, published')
             .eq('id', roomName)
-            .single();
+            // Room name for live is usually the ID or "class_room_main" (legacy)
+            // If roomName is "class_room_main", we might need to fetch the *active* session.
+            // But for RLS security, we should ideally use IDs. 
+            // If legacy "class_room_main" is used, we need to find the CURRENT live session.
+            // For now, let's assume roomName IS the session ID or strictly mapped.
+            .maybeSingle();
 
-        if (lessonError || !lesson) {
-            // If room/lesson doesn't exist, deny access
-            // We return 403 to avoid leaking existence of private rooms if needed, or 404 if appropriate.
-            // Given "Forbidden" requirement:
-            return NextResponse.json({ error: 'Room access denied or not found' }, { status: 403 });
-        }
+        if (liveSession) {
+            // It's a Live Session
+            if (liveSession.published === false) {
+                return NextResponse.json({ error: 'Session is not published' }, { status: 403 });
+            }
+            if (liveSession.required_plan_id) {
+                if (!profile?.is_subscribed || profile?.plan_id !== liveSession.required_plan_id) {
+                    return NextResponse.json({ error: 'Plan mismatch for live session' }, { status: 403 });
+                }
+            }
+        } else {
+            // It's likely a Lesson (or invalid)
+            const { data: lesson, error: lessonError } = await supabase
+                .from('lessons')
+                .select('required_plan_id')
+                .eq('id', roomName)
+                .single();
 
-        // Strict Check: User must have the matching plan
-        // If lesson.required_plan_id is NULL, it is considered free/open.
-        if (lesson.required_plan_id) {
-            if (profile?.active_plan_id !== lesson.required_plan_id) {
-                return NextResponse.json({ error: 'Active subscription required to join this room' }, { status: 403 });
+            if (lessonError || !lesson) {
+                return NextResponse.json({ error: 'Room access denied or not found' }, { status: 403 });
+            }
+
+            // Lesson Checks
+            if (lesson.required_plan_id) {
+                if (profile?.active_plan_id !== lesson.required_plan_id) {
+                    return NextResponse.json({ error: 'Active subscription required to join this room' }, { status: 403 });
+                }
             }
         }
     }
