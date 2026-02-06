@@ -55,8 +55,9 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
             toast.success("Activated successfully");
             setSelectedReceipt(null);
             router.refresh();
-        } catch (e: any) {
-            toast.error(e.message || "Activation failed");
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : "Activation failed";
+            toast.error(message);
         } finally {
             setIsProcessing(false);
         }
@@ -76,8 +77,9 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
             setShowRejectDialog(false);
             setSelectedReceipt(null);
             router.refresh();
-        } catch (e: any) {
-            toast.error(e.message || "Rejection failed");
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : "Rejection failed";
+            toast.error(message);
         } finally {
             setIsProcessing(false);
         }
