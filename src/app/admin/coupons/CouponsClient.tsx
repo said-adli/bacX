@@ -140,6 +140,20 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
                                 </div>
                             </div>
 
+                            <div className="flex items-center gap-2 mt-2 p-3 bg-white/5 rounded-lg border border-white/10">
+                                <input
+                                    type="checkbox"
+                                    id="is_lifetime"
+                                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    checked={formData.is_lifetime || false}
+                                    onChange={(e) => setFormData({ ...formData, is_lifetime: e.target.checked })}
+                                />
+                                <label htmlFor="is_lifetime" className="text-sm font-bold text-white cursor-pointer select-none">
+                                    دخول مدى الحياة (Lifetime Access)
+                                </label>
+                            </div>
+
+
                             <button
                                 type="submit"
                                 disabled={isCreating}
@@ -166,6 +180,11 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
                                     <div className="flex items-center gap-2 mb-1">
                                         <Tag className="w-4 h-4 text-zinc-400" />
                                         <h3 className="text-xl font-bold font-mono tracking-wider text-white">{coupon.code}</h3>
+                                        {coupon.is_lifetime && (
+                                            <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] border border-indigo-500/30 font-bold">
+                                                LIFETIME
+                                            </span>
+                                        )}
                                     </div>
                                     <p className="text-sm text-zinc-400">
                                         {coupon.discount_type === 'percent' ? `${coupon.value}% خصم` : `${coupon.value} دج خصم`}

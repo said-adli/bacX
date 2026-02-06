@@ -93,6 +93,39 @@ export async function approvePayment(requestId: string, userId: string, planId?:
         throw new Error('Transaction failed: ' + error.message);
     }
 
+    // Check for Lifetime Coupon
+    if (requestId && contentId) {
+        // Fetch Request to check coupon
+        const { data: request } = await supabase
+            .from('payment_requests')
+            .select('coupon_code, content_type')
+            .eq('id', requestId)
+            .single();
+
+        if (request?.coupon_code) {
+            const { data: coupon } = await supabase
+                .from('coupons') // Admin client can read coupons
+                .select('is_lifetime')
+                .eq('code', request.coupon_code)
+                .single();
+
+            if (coupon?.is_lifetime) {
+                console.log(`[LIFETIME] Granting lifetime access for User ${userId} Content ${contentId}`);
+                // Explicitly grant lifetime ownership
+                const { error: ownError } = await supabase
+                    .from('user_content_ownership')
+                    .upsert({
+                        user_id: userId,
+                        content_id: contentId,
+                        content_type: request.content_type || 'lesson',
+                        access_level: 'lifetime'
+                    }, { onConflict: 'user_id, content_id' });
+
+                if (ownError) console.error("Failed to grant lifetime access:", ownError);
+            }
+        }
+    }
+
     revalidatePath('/admin/payments');
 }
 
