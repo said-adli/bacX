@@ -260,3 +260,44 @@ export async function ensureSubjects() {
     // Given the task is "Ensure Hardcoded Subjects", I'll add logic here or assume migration did it.
     // I'll skip auto-creation here to avoid race conditions, but provide logic if needed.
 }
+
+// TOGGLE STATUS
+export async function toggleResourceStatus(
+    resourceId: string,
+    resourceType: 'subject' | 'lesson' | 'unit' | 'user' | 'coupon',
+    newStatus: boolean
+) {
+    await requireAdmin();
+    const supabase = await createClient();
+
+    try {
+        const { error } = await supabase.rpc('toggle_resource_status', {
+            resource_id: resourceId,
+            resource_type: resourceType,
+            new_status: Boolean(newStatus) // Explicit cast for safety
+        });
+
+        if (error) {
+            console.error("Toggle RPC Error:", error);
+            // Return failure but don't crash
+            return { success: false, error: error.message };
+        }
+
+        // Smart Revalidation based on type
+        if (resourceType === 'subject') {
+            revalidateSubjects();
+            revalidatePath('/dashboard');
+        } else if (resourceType === 'lesson') {
+            revalidateLessons();
+        } else if (resourceType === 'unit') {
+            revalidateCurriculum();
+        }
+
+        revalidatePath('/admin/content');
+        return { success: true };
+
+    } catch (err: any) {
+        console.error("Server Action Error (Toggle):", err);
+        return { success: false, error: "Internal Server Error" };
+    }
+}
