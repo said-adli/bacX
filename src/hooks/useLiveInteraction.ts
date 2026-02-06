@@ -30,7 +30,7 @@ export const useLiveInteraction = () => {
     useEffect(() => {
         if (!room) return;
 
-        const onData = (payload: Uint8Array, participant: RemoteParticipant | undefined, kind: DataPacket_Kind, topic?: string) => {
+        const onData = (payload: Uint8Array, participant: RemoteParticipant | undefined, kind: DataPacket_Kind | undefined, topic?: string) => {
             const strData = new TextDecoder().decode(payload);
 
             if (topic === 'raise-hand') {

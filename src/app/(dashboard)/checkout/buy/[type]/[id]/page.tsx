@@ -38,7 +38,7 @@ export default function ContentCheckoutPage({ params }: { params: { type: string
             if (result.valid) {
                 setAppliedCoupon({
                     code: couponCode,
-                    discountAmount: result.discountAmount,
+                    discountAmount: result.discountAmount || 0,
                     finalPrice: result.finalPrice
                 });
                 toast.success(result.message);
@@ -69,7 +69,11 @@ export default function ContentCheckoutPage({ params }: { params: { type: string
                 if (!content.is_purchasable || !content.price) {
                     setError("This content is not available for individual purchase.");
                 } else {
-                    setContent({ ...content, price: content.price });
+                    setContent({
+                        id: content.id,
+                        title: content.title || "Untitled Content",
+                        price: content.price
+                    });
                 }
             } else {
                 setError(error || "Content not found");

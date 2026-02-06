@@ -123,11 +123,12 @@ export async function POST(request: Request) {
         }
 
         // P0 FIX: Check if Parent Subject is Published
-        // @ts-expect-error - Supabase types might not be perfectly inferred for deep joins without generated types
-        // units is likely an array, safeguard access
-        const units = Array.isArray(lesson.units) ? lesson.units[0] : lesson.units;
-        const subjects = Array.isArray(units?.subjects) ? units.subjects[0] : units?.subjects;
-        const subjectPublished = subjects?.published;
+        interface UnitWithSubject { subjects: { published: boolean } | { published: boolean }[] | null }
+        const units = (Array.isArray(lesson.units) ? lesson.units[0] : lesson.units) as unknown as UnitWithSubject;
+
+        const subjectData = units?.subjects;
+        const subject = Array.isArray(subjectData) ? subjectData[0] : subjectData;
+        const subjectPublished = subject?.published;
 
         // If subjectPublished is explicitly FALSE, we block.
         // If it's undefined (bad data) or true, we might proceed, but securely we should block if undefined.

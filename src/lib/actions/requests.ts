@@ -67,19 +67,54 @@ export async function getStudentRequests(): Promise<{ data: StudentRequest[]; er
         return { data: [], error: error.message };
     }
 
-    const mappedRequests: StudentRequest[] = (requests || []).map((req: any) => {
+    interface RequestsRow {
+        id: string;
+        user_id: string;
+        new_data: Record<string, unknown> | null;
+        status: "pending" | "approved" | "rejected";
+        rejection_reason: string | null;
+        created_at: string;
+        profiles: {
+            full_name: string;
+            email: string;
+            wilaya?: string;
+            branch_id?: string;
+        } | {
+            full_name: string;
+            email: string;
+            wilaya?: string;
+            branch_id?: string;
+        }[] | null;
+    }
+
+    const mappedRequests: StudentRequest[] = (requests as unknown as RequestsRow[]).map((req) => {
         // Detect Request Type
         const isDeletion = req.new_data?.request_type === "DELETE_ACCOUNT";
+
+        // Safe Profile Access
+        const profileData = req.profiles;
+        const profile = Array.isArray(profileData) ? profileData[0] : profileData;
+
+        // Construct Typed Profile
+        const safeProfile = profile ? {
+            full_name: profile.full_name,
+            email: profile.email,
+            wilaya: profile.wilaya ?? undefined,
+            branch_id: profile.branch_id ?? undefined
+        } : undefined;
+
+        // Safe Payload Cast
+        const payload = req.new_data as StudentRequestPayload;
 
         return {
             id: req.id,
             user_id: req.user_id,
             request_type: isDeletion ? "DELETE_ACCOUNT" : "UPDATE_PROFILE",
-            payload: req.new_data,
+            payload: payload,
             status: req.status,
             admin_note: req.rejection_reason,
             created_at: req.created_at,
-            profiles: Array.isArray(req.profiles) ? req.profiles[0] : req.profiles
+            profiles: safeProfile
         };
     });
 

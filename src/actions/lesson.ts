@@ -59,7 +59,6 @@ export async function getLessonData(lessonId: string) {
             id: lesson.id,
             required_plan_id: lesson.required_plan_id,
             is_free: lesson.is_free,
-            // @ts-expect-error - Supabase deep join type inference
             published: lesson.units?.subjects?.published ?? true
         };
 

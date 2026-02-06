@@ -40,7 +40,7 @@ export default function CheckoutPage({ params }: { params: { planId: string } })
             if (result.valid) {
                 setAppliedCoupon({
                     code: couponCode,
-                    discountAmount: result.discountAmount,
+                    discountAmount: result.discountAmount || 0,
                     finalPrice: result.finalPrice
                 });
                 toast.success(result.message);

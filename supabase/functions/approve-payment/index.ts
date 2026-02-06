@@ -51,7 +51,13 @@ serve(async (req: Request) => {
             )
         }
 
-        const { paymentId, userId, durationDays = 30 } = await req.json()
+        interface ApprovePaymentBody {
+            paymentId?: string;
+            userId?: string;
+            durationDays?: number;
+        }
+
+        const { paymentId, userId, durationDays = 30 } = (await req.json()) as ApprovePaymentBody
 
         if (!paymentId || !userId) {
             throw new Error("Missing parameters")
@@ -87,9 +93,10 @@ serve(async (req: Request) => {
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         )
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
         return new Response(
-            JSON.stringify({ error: error.message }),
+            JSON.stringify({ error: errorMessage }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
         )
     }

@@ -104,8 +104,9 @@ export default function AdminLiveClient({ roomName = "class_room_main", onExit }
             serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
             data-lk-theme="default"
             style={{ height: 'auto' }}
+        >
             <AdminLiveContent onExit={onExit} />
-        </LiveKitRoom >
+        </LiveKitRoom>
     );
 }
 

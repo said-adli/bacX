@@ -29,7 +29,12 @@ serve(async (req: Request) => {
             throw new Error("Unauthorized")
         }
 
-        const { deviceId, deviceName } = await req.json()
+        interface RegisterDeviceBody {
+            deviceId?: string;
+            deviceName?: string;
+        }
+
+        const { deviceId, deviceName } = (await req.json()) as RegisterDeviceBody
         if (!deviceId || !deviceName) throw new Error("Missing device info")
 
         // Service Role for managing profile data strictly
@@ -44,11 +49,18 @@ serve(async (req: Request) => {
             .eq('id', user.id)
             .single()
 
-        const devices = (profile?.active_devices as any[]) || []
+        interface Device {
+            deviceId: string;
+            deviceName: string;
+            registeredAt: string;
+            lastSeen: string;
+        }
+
+        const devices = (profile?.active_devices as unknown as Device[]) || []
         const MAX_DEVICES = 2
 
         // Check existing
-        const existingIndex = devices.findIndex((d: any) => d.deviceId === deviceId)
+        const existingIndex = devices.findIndex((d) => d.deviceId === deviceId)
 
         if (existingIndex !== -1) {
             // Update last seen
@@ -94,9 +106,10 @@ serve(async (req: Request) => {
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         )
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
         return new Response(
-            JSON.stringify({ error: error.message }),
+            JSON.stringify({ error: errorMessage }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
         )
     }

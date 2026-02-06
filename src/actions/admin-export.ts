@@ -28,9 +28,34 @@ export async function exportLogsAsCSV() {
     if (error) throw new Error(error.message);
 
     // Flatten
+    interface Profile {
+        email: string | null;
+        full_name: string | null;
+        role: string | null;
+    }
+
+    interface LogEntry {
+        created_at: string;
+        event: string;
+        ip_address: string | null;
+        details: unknown;
+        profiles: Profile | Profile[] | null;
+    }
+
+    interface ExportData {
+        timestamp: string;
+        event: string;
+        ip_address: string | null;
+        user_email: string;
+        user_name: string;
+        user_role: string;
+        details: string;
+    }
+
     // Safe access to profiles which might be returned as array or object depending on Supabase inference
-    const flattenedLogs = logs.map((log: any) => {
-        const profile = Array.isArray(log.profiles) ? log.profiles[0] : log.profiles;
+    const flattenedLogs: ExportData[] = (logs as unknown as LogEntry[]).map((log) => {
+        const profileData = log.profiles;
+        const profile = Array.isArray(profileData) ? profileData[0] : profileData;
 
         return {
             timestamp: log.created_at,
@@ -49,12 +74,12 @@ export async function exportLogsAsCSV() {
 
     try {
         // Manual CSV Generation (Zero Dependency)
-        const headers = ["timestamp", "event", "ip_address", "user_email", "user_name", "user_role", "details"];
+        const headers: (keyof ExportData)[] = ["timestamp", "event", "ip_address", "user_email", "user_name", "user_role", "details"];
         const csvRows = [headers.join(",")];
 
         for (const row of flattenedLogs) {
             const values = headers.map(header => {
-                const val = (row as any)[header] ?? "";
+                const val = row[header] ?? "";
                 return `"${val}"`; // Wrap in quotes
             });
             csvRows.push(values.join(","));

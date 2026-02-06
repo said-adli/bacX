@@ -79,11 +79,14 @@ export async function GET(request: NextRequest) {
 
             // Safe access for deep join
             // units is likely an array, safeguard access
-            // @ts-expect-error - Deep join type safety
-            const units = Array.isArray(lesson.units) ? lesson.units[0] : lesson.units;
-            // @ts-expect-error - Deep join type safety
-            const subjects = Array.isArray(units?.subjects) ? units.subjects[0] : units?.subjects;
-            const subjectPublished = subjects?.published;
+            // Safe access for deep join
+            // units is likely an array, safeguard access
+            interface UnitWithSubject { subjects: { published: boolean } | { published: boolean }[] | null }
+            const units = (Array.isArray(lesson.units) ? lesson.units[0] : lesson.units) as unknown as UnitWithSubject;
+
+            const subjectData = units?.subjects;
+            const subject = Array.isArray(subjectData) ? subjectData[0] : subjectData;
+            const subjectPublished = subject?.published;
 
             contentRequirement = {
                 required_plan_id: lesson.required_plan_id,
