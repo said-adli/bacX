@@ -1,12 +1,17 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function updateSession(request: NextRequest) {
+export async function updateSession(request: NextRequest, customHeaders?: Headers) {
     let response = NextResponse.next({
         request: {
-            headers: request.headers,
+            headers: customHeaders || request.headers,
         },
     })
+
+    // Ensure CSP is also on the response (for the browser to enforce)
+    if (customHeaders?.has('Content-Security-Policy')) {
+        response.headers.set('Content-Security-Policy', customHeaders.get('Content-Security-Policy')!);
+    }
 
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,

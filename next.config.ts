@@ -29,24 +29,10 @@ const nextConfig: NextConfig = {
   },
   reactCompiler: true,
   async headers() {
-    const cspHeader = `
-      default-src 'self';
-      script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.youtube.com https://img.youtube.com;
-      style-src 'self' 'unsafe-inline';
-      img-src 'self' blob: data: https://*.supabase.co https://lh3.googleusercontent.com https://*.googleusercontent.com https://img.youtube.com https://via.placeholder.com;
-      font-src 'self' data:;
-      connect-src 'self' https://*.supabase.co wss://*.supabase.co;
-      frame-src 'self' https://www.youtube.com;
-    `.replace(/\s{2,}/g, ' ').trim();
-
     return [
       {
         source: '/:path*',
         headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: cspHeader
-          },
           {
             key: 'X-DNS-Prefetch-Control',
             value: 'on'

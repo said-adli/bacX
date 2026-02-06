@@ -97,10 +97,19 @@ export async function checkRateLimitDistributed(
                 limit: result.limit
             };
         } catch (error) {
-            console.error('[RATE LIMIT] Upstash error, falling back to memory:', error);
-            // In strict production mode, we might want to throw here too, but users usually prefer fallback over downtime if Redis flickers.
-            // However, the prompt asked to fail-closed if ENV VARS are missing, which is handled above.
-            // If Redis is configured but DOWN, fallback is acceptable behavior vs blocking all users.
+            console.error('[RATE LIMIT] Upstash error:', error);
+
+            // STRICT SECURITY: Fail-Closed in Production on Connection Errors
+            if (process.env.NODE_ENV === 'production' && !process.env.SKIP_RATE_LIMIT_CHECK) {
+                console.error('[SECURITY CRITICAL] Rate Limit Check Failed (Connection Error). Denying access.');
+                return {
+                    success: false,
+                    remaining: 0,
+                    reset: Date.now() + 60000,
+                    limit: 0
+                };
+            }
+            // In Dev/Test, we allow fallback or if explicitly allowed via env
         }
     }
 
