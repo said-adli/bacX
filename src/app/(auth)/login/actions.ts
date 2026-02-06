@@ -13,7 +13,7 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
     const password = formData.get("password") as string;
 
     // --- RATE LIMIT CHECK ---
-    const ip = headers().get("x-forwarded-for") || "unknown";
+    const ip = (await headers()).get("x-forwarded-for") || "unknown";
     const { success } = await checkRateLimitDistributed(ip, loginRateLimiter);
 
     if (!success) {
