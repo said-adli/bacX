@@ -6,6 +6,8 @@ import { ArrowLeft, Compass } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
+export const dynamic = 'force-dynamic';
+
 export default function NotFound() {
     const router = useRouter();
 
