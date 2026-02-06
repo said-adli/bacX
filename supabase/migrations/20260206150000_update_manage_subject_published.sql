@@ -3,6 +3,9 @@
 -- PURPOSE: Update manage_subject RPC to support 'published' flag.
 -- ============================================
 
+-- Drop the old function signature to prevent ambiguity (Error 42725)
+DROP FUNCTION IF EXISTS manage_subject(TEXT, TEXT, TEXT, UUID, INTEGER);
+
 CREATE OR REPLACE FUNCTION manage_subject(
   p_name TEXT,
   p_icon TEXT DEFAULT 'Folder',

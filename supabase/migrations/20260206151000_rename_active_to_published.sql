@@ -6,7 +6,8 @@
 DO $$
 BEGIN
   -- Check if column exists before renaming to avoid errors
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'subjects' AND column_name = 'is_active') THEN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'subjects' AND column_name = 'is_active') 
+     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'subjects' AND column_name = 'published') THEN
     ALTER TABLE subjects RENAME COLUMN is_active TO published;
   END IF;
 
