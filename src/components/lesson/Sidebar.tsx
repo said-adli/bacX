@@ -179,7 +179,14 @@ export function Sidebar({ units = [], activeLessonId, subjectId = "" }: SidebarP
                                                                 </div>
 
                                                                 <div className="min-w-0 flex-1">
-                                                                    <p className="text-xs font-medium truncate">{lesson.title}</p>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <p className="text-xs font-medium truncate">{lesson.title}</p>
+                                                                        {lesson.isOwned && (
+                                                                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 shrink-0">
+                                                                                مملوكة
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
                                                                     <p className="text-[10px] text-white/30 truncate mt-0.5">{lesson.duration || "PDF / نص"}</p>
                                                                 </div>
                                                             </LinkComponent>

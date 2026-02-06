@@ -19,7 +19,67 @@ export interface Coupon {
     is_lifetime?: boolean;
 }
 
-// ... existing code ...
+export interface CouponValidationResult {
+    valid: boolean;
+    message?: string;
+    finalPrice: number;
+    coupon?: Coupon;
+}
+
+/**
+ * Validates a coupon and returns the calculated price
+ */
+export async function validateCoupon(code: string, originalPrice: number): Promise<CouponValidationResult> {
+    const supabase = await createClient();
+
+    // Normalize code
+    const normalizedCode = code.trim().toUpperCase();
+
+    const { data: coupon, error } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('code', normalizedCode)
+        .single();
+
+    if (error || !coupon) {
+        return { valid: false, message: "Invalid coupon code", finalPrice: originalPrice };
+    }
+
+    // 1. Check Active Status
+    if (!coupon.is_active) {
+        return { valid: false, message: "Coupon is inactive", finalPrice: originalPrice };
+    }
+
+    // 2. Check Expiration
+    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+        return { valid: false, message: "Coupon has expired", finalPrice: originalPrice };
+    }
+
+    // 3. Check Usage Limits
+    if (coupon.used_count >= coupon.max_uses) {
+        return { valid: false, message: "Coupon usage limit reached", finalPrice: originalPrice };
+    }
+
+    // 4. Calculate Discount
+    let discountAmount = 0;
+    if (coupon.discount_type === 'percent') {
+        discountAmount = (originalPrice * coupon.value) / 100;
+    } else {
+        discountAmount = coupon.value;
+    }
+
+    // Ensure price doesn't go below 0
+    const finalPrice = Math.max(0, originalPrice - discountAmount);
+
+    // Round to 2 decimal places to be safe
+    const roundedPrice = Math.round(finalPrice * 100) / 100;
+
+    return {
+        valid: true,
+        finalPrice: roundedPrice,
+        coupon: coupon as Coupon
+    };
+}
 
 /**
  * Creates a new coupon (Admin only)
@@ -67,6 +127,7 @@ export async function deleteCoupon(id: string) {
 
 /**
  * Uses a coupon (Commit) - Should be called on successful payment
+ * @deprecated Use atomic RPC `increment_coupon_usage` or `approve_content_purchase` instead
  */
 export async function incrementCouponUsage(code: string) {
     const adminClient = createAdminClient();

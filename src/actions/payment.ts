@@ -113,17 +113,12 @@ export async function createPaymentRequest(data: {
             const table = data.contentType === 'lesson' ? 'lessons' : 'subjects';
             const { data: content } = await supabase
                 .from(table)
-                .select(data.contentType === 'lesson' ? 'price, is_purchasable' : 'price, is_purchasable') // Unified schema ideally
-                // Note: Subject might need different select if schema differs, but assuming somewhat standard
-                // If subject table uses 'name' not 'title', select might be just '*' or specific fields.
-                // Safest to query generically if we know the schema, but explicit is better.
-                // For Subject:
-                // .select('price, is_purchasable')
+                // Select price and check if purchasable
+                .select('price, is_purchasable')
                 .eq('id', data.contentId)
                 .single();
 
             if (!content) throw new Error("Content not found");
-            // Check purchasable?
             if (!content.is_purchasable) throw new Error("Content not purchasable");
 
             basePrice = content.price;
@@ -135,30 +130,19 @@ export async function createPaymentRequest(data: {
 
         // 2. Apply Coupon
         if (data.couponCode) {
-            // Import dynamically to avoid circle if helper is here (it's in @/actions/coupons)
             const { validateCoupon } = await import("@/actions/coupons");
-            const result = await validateCoupon(data.couponCode, basePrice);
+            // Pass basePrice (number) to validateCoupon
+            const result = await validateCoupon(data.couponCode, Number(basePrice));
+
             if (result.valid) {
                 finalAmount = result.finalPrice;
-            } else {
-                // If invalid code, we ignore it? or fail?
-                // Better to strip it and charge full price? Or fail if user expects discount?
-                // Let's strip it but maybe warn? For strictness, if code is sent, we expect it to be valid or we fail.
-                // But generally safer to just ignore invalid coupons and charge full price to ensure conversion, 
-                // OR fail to avoid "Hey I paid full price but had a coupon!".
-                // Let's fail if invalid code presented.
-                // throw new Error("Invalid coupon code"); 
-                // Actually, client validates UI side. If server fails, it prevents "using expired code".
-                // We'll proceed with VALID price. If code invalid, we just don't apply it.
-                // Wait, if I submitted with Coupon, I expect discount.
-                // If I get charged full, I'm mad.
-                // But this is manual review. The Admin sees the amount.
-                // We will just record what we calculated.
             }
+            // If invalid, we implicitly ignore the coupon and charge basePrice.
+            // This is safer than failing for the user workflow in some cases, 
+            // but for transparency, the UI should have validated it first.
         }
 
         // 3. Insert Securely
-        // Idempotency: user + content/plan + receipt (approx)
         const idempotencyKey = `${data.userId}-${data.planId || data.contentId}-${data.receiptUrl.split('/').pop()}`;
 
         const { error } = await supabase.from('payment_requests').upsert({

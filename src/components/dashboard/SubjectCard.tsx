@@ -61,7 +61,7 @@ export const SubjectCard = ({ subject }: { subject: SubjectDTO }) => {
                             {subject.name}
                             {subject.isOwned && (
                                 <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] font-bold uppercase tracking-wider">
-                                    Owned
+                                    Mamlouka / مملوكة
                                 </span>
                             )}
                         </h3>
