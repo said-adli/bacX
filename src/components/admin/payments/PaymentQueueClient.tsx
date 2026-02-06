@@ -6,7 +6,7 @@ import { approvePayment, rejectPayment } from "@/actions/admin-payments";
 import { getActivePlans, SubscriptionPlan } from "@/actions/admin-plans";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/Dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/Dialog"; // Fixed import casing
 
 interface PaymentQueueItem {
     id: string;

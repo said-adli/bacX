@@ -36,7 +36,7 @@ export default function SecureVideoPlayer({ lessonId, onEnded }: SecureVideoPlay
         setError(null);
 
         try {
-            const id = await getSecureVideoId(lessonId);
+            const { videoId: id } = await getSecureVideoId(lessonId);
             if (!id) throw new Error("Video not available");
             setVideoId(id);
             setIsPlaying(true);
