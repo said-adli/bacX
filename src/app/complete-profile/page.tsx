@@ -9,37 +9,14 @@ import { BrainyStoneLogoSVG } from "@/components/ui/BrainyStoneLogoSVG";
 import { User, MapPin, BookOpen, AlertCircle, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-
-
-// --- DATA CONSTANTS ---
-// (Ideally imported from a shared constant file, but duplicating for safety/speed now)
-const WILAYAS = [
-    "01 - Adrar", "02 - Chlef", "03 - Laghouat", "04 - Oum El Bouaghi", "05 - Batna",
-    "06 - Béjaïa", "07 - Biskra", "08 - Béchar", "09 - Blida", "10 - Bouira",
-    "11 - Tamanrasset", "12 - Tébessa", "13 - Tlemcen", "14 - Tiaret", "15 - Tizi Ouzou",
-    "16 - Algiers", "17 - Djelfa", "18 - Jijel", "19 - Sétif", "20 - Saïda",
-    "21 - Skikda", "22 - Sidi Bel Abbès", "23 - Annaba", "24 - Guelma", "25 - Constantine",
-    "26 - Médéa", "27 - Mostaganem", "28 - M'Sila", "29 - Mascara", "30 - Ouargla",
-    "31 - Oran", "32 - El Bayadh", "33 - Illizi", "34 - Bordj Bou Arréridj", "35 - Boumerdès",
-    "36 - El Tarf", "37 - Tindouf", "38 - Tissemsilt", "39 - El Oued", "40 - Khenchela",
-    "41 - Souk Ahras", "42 - Tipaza", "43 - Mila", "44 - Aïn Defla", "45 - Naâma",
-    "46 - Aïn Témouchent", "47 - Ghardaïa", "48 - Relizane", "49 - Timimoun", "50 - Bordj Badji Mokhtar",
-    "51 - Ouled Djellal", "52 - Béni Abbès", "53 - In Salah", "54 - In Guezzam", "55 - Touggourt",
-    "56 - Djanet", "57 - El M'Ghair", "58 - El Meniaa"
-];
-
-const MAJORS = [
-    { id: "science", label: "العلوم التجريبية" },
-    { id: "math", label: "الرياضيات" },
-    { id: "tech", label: "التقني رياضي" },
-    { id: "management", label: "التسيير والاقتصاد" },
-    { id: "lit_philo", label: "الآداب والفلسفة" },
-    { id: "languages", label: "اللغات الأجنبية" },
-];
+import { getWilayas, getMajors, Wilaya, Major } from "@/actions/static-data";
 
 export default function CompleteProfilePage() {
     const { user, completeOnboarding, loading, error } = useAuth();
-    // const router = useRouter(); // Unused
+
+    // Dynamic Data State
+    const [wilayas, setWilayas] = useState<Wilaya[]>([]);
+    const [majors, setMajors] = useState<Major[]>([]);
 
     const [formData, setFormData] = useState({
         fullName: "",
@@ -47,31 +24,26 @@ export default function CompleteProfilePage() {
         major: ""
     });
 
-    // Initialize with user data if available
-    // Initialize with user data if available - NO EFFECT (Fix lint)
-    // We can rely on 'user' being available eventually, but better to set it once or let the user fill it.
-    // Actually, we can check 'user' on render or just use key-based reset if we really want sync.
-    // For now, let's just pre-fill if user is present on mount, or leave it.
-    // A better pattern is to use `defaultValue` or `key` on the form, OR only setState if empty.
-
-    // Fix: Just use an effect that CHECKS if we need to update to avoid loop/warning, 
-    // BUT the linter complained about sync state update.
-    // Best fix: Set initial state lazily or check inside effect with a ref? 
-    // Simplest: Check condition strictly before setting.
+    // Fetch Static Data
     useEffect(() => {
-        const userName = user?.user_metadata?.full_name;
-        if (userName) {
-            // Defer update to avoid synchronous setState warning and cascading renders
-            const timer = setTimeout(() => {
-                setFormData(prev => {
-                    // Only auto-fill if currently empty
-                    if (prev.fullName !== "") return prev;
-                    return { ...prev, fullName: userName || "" };
-                });
-            }, 0);
-            return () => clearTimeout(timer);
+        const loadData = async () => {
+            try {
+                const [w, m] = await Promise.all([getWilayas(), getMajors()]);
+                setWilayas(w);
+                setMajors(m);
+            } catch (e) {
+                console.error("Failed to load options", e);
+            }
+        };
+        loadData();
+    }, []);
+
+    // Auto-fill Name safety check
+    useEffect(() => {
+        if (user?.user_metadata?.full_name && !formData.fullName) {
+            setFormData(prev => ({ ...prev, fullName: user.user_metadata.full_name }));
         }
-    }, [user?.user_metadata?.full_name]);
+    }, [user, formData.fullName]);
 
     const handleChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -92,7 +64,6 @@ export default function CompleteProfilePage() {
                 major: formData.major
             });
             toast.success("تم إعداد حسابك بنجاح!");
-            // Navigation handled by AuthContext
         } catch (err) {
             console.error(err);
             toast.error("حدث خطأ أثناء حفظ البيانات");
@@ -156,8 +127,8 @@ export default function CompleteProfilePage() {
                                     required
                                 >
                                     <option value="" disabled className="bg-background">اختر الولاية</option>
-                                    {WILAYAS.map(w => (
-                                        <option key={w} value={w} className="bg-background text-foreground">{w}</option>
+                                    {wilayas.map(w => (
+                                        <option key={w.id} value={w.name} className="bg-background text-foreground">{w.name}</option>
                                     ))}
                                 </select>
                                 <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 pointer-events-none text-text-muted" />
@@ -174,8 +145,8 @@ export default function CompleteProfilePage() {
                                     required
                                 >
                                     <option value="" disabled className="bg-background">اختر الشعبة</option>
-                                    {MAJORS.map(m => (
-                                        <option key={m.id} value={m.id} className="bg-background text-foreground">{m.label}</option>
+                                    {majors.map(m => (
+                                        <option key={m.id} value={m.name} className="bg-background text-foreground">{m.name}</option>
                                     ))}
                                 </select>
                                 <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 pointer-events-none text-text-muted" />
@@ -197,3 +168,4 @@ export default function CompleteProfilePage() {
         </div>
     );
 }
+

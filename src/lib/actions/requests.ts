@@ -31,13 +31,12 @@ export interface StudentRequest {
         wilaya?: string;
         branch_id?: string;
     };
-    // Helper to track origin table
-    origin_table: "profile_change_requests" | "student_requests";
+    origin_table: "profile_change_requests"; // Unified
 }
 
 /**
  * Fetch all pending student requests (Admin only)
- * MERGES: `profile_change_requests` (New) + `student_requests` (Legacy/Deletions)
+ * SOURCE: `profile_change_requests` ONLY
  */
 export async function getStudentRequests(): Promise<{ data: StudentRequest[]; error: string | null }> {
     const supabase = await createClient();
@@ -54,8 +53,8 @@ export async function getStudentRequests(): Promise<{ data: StudentRequest[]; er
 
     if (adminProfile?.role !== "admin") return { data: [], error: "Admin only" };
 
-    // 1. Fetch Profile Changes (New Table)
-    const { data: profileChanges, error: pcError } = await supabase
+    // Fetch All Pending Requests
+    const { data: requests, error } = await supabase
         .from("profile_change_requests")
         .select(`
             id, user_id, new_data, status, rejection_reason, created_at,
@@ -64,51 +63,29 @@ export async function getStudentRequests(): Promise<{ data: StudentRequest[]; er
         .eq("status", "pending")
         .order("created_at", { ascending: true });
 
-    if (pcError) console.error("Error fetching profile changes:", pcError);
+    if (error) {
+        console.error("Error fetching requests:", error);
+        return { data: [], error: error.message };
+    }
 
-    // 2. Fetch Deletion Requests (Legacy Table)
-    const { data: deletions, error: delError } = await supabase
-        .from("student_requests")
-        .select(`
-            id, user_id, request_type, payload, status, admin_note, created_at,
-            profiles:user_id ( full_name, email, wilaya, branch_id )
-        `)
-        .eq("status", "pending")
-        .eq("request_type", "DELETE_ACCOUNT") // Only deletions
-        .order("created_at", { ascending: true });
+    const mappedRequests: StudentRequest[] = (requests || []).map((req: any) => {
+        // Detect Request Type based on payload structure
+        const isDeletion = req.new_data?.request_type === "DELETE_ACCOUNT";
 
-    if (delError) console.error("Error fetching deletions:", delError);
+        return {
+            id: req.id,
+            user_id: req.user_id,
+            request_type: isDeletion ? "DELETE_ACCOUNT" : "UPDATE_PROFILE",
+            payload: req.new_data,
+            status: req.status,
+            admin_note: req.rejection_reason,
+            created_at: req.created_at,
+            profiles: Array.isArray(req.profiles) ? req.profiles[0] : req.profiles,
+            origin_table: "profile_change_requests"
+        };
+    });
 
-    const mappedProfileChanges: StudentRequest[] = (profileChanges || []).map((pc: any) => ({
-        id: pc.id,
-        user_id: pc.user_id,
-        request_type: "UPDATE_PROFILE",
-        payload: pc.new_data,
-        status: pc.status,
-        admin_note: pc.rejection_reason,
-        created_at: pc.created_at,
-        profiles: Array.isArray(pc.profiles) ? pc.profiles[0] : pc.profiles,
-        origin_table: "profile_change_requests"
-    }));
-
-    const mappedDeletions: StudentRequest[] = (deletions || []).map((d: any) => ({
-        id: d.id,
-        user_id: d.user_id,
-        request_type: d.request_type,
-        payload: d.payload,
-        status: d.status,
-        admin_note: d.admin_note,
-        created_at: d.created_at,
-        profiles: Array.isArray(d.profiles) ? d.profiles[0] : d.profiles,
-        origin_table: "student_requests"
-    }));
-
-    // Merge and Sort
-    const allRequests = [...mappedProfileChanges, ...mappedDeletions].sort(
-        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
-
-    return { data: allRequests, error: null };
+    return { data: mappedRequests, error: null };
 }
 
 export async function handleRequest(
@@ -130,57 +107,60 @@ export async function handleRequest(
 
     if (adminProfile?.role !== "admin") return { error: "Admin only" };
 
-    // Try to find request in both tables to know where to update
-    // OPTIMIZATION: Check profile_change_requests first as it is the priority
-    let originTable = "profile_change_requests";
-    let requestData: any = null;
+    // Get Request Data
+    const { data: requestData, error: fetchError } = await supabase
+        .from("profile_change_requests")
+        .select("*")
+        .eq("id", requestId)
+        .single();
 
-    const { data: pcData } = await supabase.from("profile_change_requests").select("*").eq("id", requestId).single();
-    if (pcData) {
-        requestData = pcData;
-        originTable = "profile_change_requests";
-    } else {
-        const { data: legacyData } = await supabase.from("student_requests").select("*").eq("id", requestId).single();
-        if (legacyData) {
-            requestData = legacyData;
-            originTable = "student_requests";
-        }
-    }
-
-    if (!requestData) return { error: "Request not found" };
+    if (fetchError || !requestData) return { error: "Request not found" };
 
     // === REJECT ===
     if (decision === "reject") {
-        if (originTable === "profile_change_requests") {
-            const { error } = await supabase.from("profile_change_requests").update({
-                status: "rejected",
-                rejection_reason: adminNote,
-                processed_by: user.id
-            }).eq("id", requestId);
-            if (error) return { error: error.message };
-        } else {
-            const { error } = await supabase.from("student_requests").update({
-                status: "rejected",
-                admin_note: adminNote,
-                processed_by: user.id
-            }).eq("id", requestId);
-            if (error) return { error: error.message };
-        }
+        const { error } = await supabase.from("profile_change_requests").update({
+            status: "rejected",
+            rejection_reason: adminNote,
+            processed_by: user.id
+        }).eq("id", requestId);
+
+        if (error) return { error: error.message };
         revalidatePath("/admin/requests");
         return { success: "Request rejected" };
     }
 
     // === APPROVE ===
     if (decision === "approve") {
-        if (originTable === "profile_change_requests") {
-            // Apply Profile Changes
+        const isDeletion = requestData.new_data?.request_type === "DELETE_ACCOUNT";
+
+        if (isDeletion) {
+            // DELETION LOGIC
+            const adminClient = createAdminClient();
+            const targetUserId = requestData.user_id;
+
+            // Cleanup related data
+            // Note: student_requests table is deprecated, but we might check if it exists or skip
+            // We assume standard cleanup:
+            await adminClient.from("payments").delete().eq("user_id", targetUserId);
+            // Also delete from this table (profile_change_requests) for this user to avoid FK issues if any?
+            // Actually CASCADE on user delete should handle it, BUT we need to mark THIS request as approved first?
+            // No, if we delete user, this request is deleted.
+            // So we must Approve it first? Or just delete?
+            // If we delete user, the request disappears. That's fine.
+
+            const { error } = await adminClient.auth.admin.deleteUser(targetUserId);
+            if (error) return { error: "Failed to delete user: " + error.message };
+
+            return { success: "User deleted" };
+        } else {
+            // PROFILE UPDATE LOGIC
             const changes = requestData.new_data;
-            const userId = requestData.user_id;
+            const targetUserId = requestData.user_id;
 
             const { error: updateError } = await supabase.from("profiles").update({
                 ...changes,
                 updated_at: new Date().toISOString()
-            }).eq("id", userId);
+            }).eq("id", targetUserId);
 
             if (updateError) return { error: "Failed to update profile" };
 
@@ -191,21 +171,6 @@ export async function handleRequest(
 
             revalidatePath("/admin/requests");
             return { success: "Profile updated" };
-        } else {
-            // Legacy / Deletion
-            if (requestData.request_type === "DELETE_ACCOUNT") {
-                const adminClient = createAdminClient();
-                const userId = requestData.user_id;
-
-                await adminClient.from("payments").delete().eq("user_id", userId);
-                await adminClient.from("student_requests").delete().eq("user_id", userId);
-                await adminClient.from("profile_change_requests").delete().eq("user_id", userId); // Cleanup new table too
-
-                const { error } = await adminClient.auth.admin.deleteUser(userId);
-                if (error) return { error: "Failed to delete user" };
-
-                return { success: "User deleted" };
-            }
         }
     }
 
@@ -221,24 +186,20 @@ export async function submitStudentRequest(
 
     if (!user) return { error: "Unauthorized" };
 
-    if (requestType === "UPDATE_PROFILE") {
-        // New Flow
-        const { error } = await supabase.from("profile_change_requests").insert({
-            user_id: user.id,
-            new_data: payload,
-            status: "pending"
-        });
-        if (error) return { error: error.message };
-    } else {
-        // Legacy Flow (Deletions)
-        const { error } = await supabase.from("student_requests").insert({
-            user_id: user.id,
-            request_type: requestType,
-            payload: payload,
-            status: "pending"
-        });
-        if (error) return { error: error.message };
-    }
+    // Unified Submission Logic
+    // If Deletion, we wrap it in new_data
+    const dataToStore = requestType === "DELETE_ACCOUNT"
+        ? { request_type: "DELETE_ACCOUNT", reason: payload } // Payload might be reason string?
+        : payload;
+
+    const { error } = await supabase.from("profile_change_requests").insert({
+        user_id: user.id,
+        new_data: dataToStore || {},
+        status: "pending"
+    });
+
+    if (error) return { error: error.message };
 
     return { success: "Request submitted" };
 }
+

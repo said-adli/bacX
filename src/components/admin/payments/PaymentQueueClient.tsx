@@ -24,6 +24,28 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
     const [activePlans, setActivePlans] = useState<SubscriptionPlan[]>([]); // [NEW]
     const [selectedPlanId, setSelectedPlanId] = useState<string>(""); // [NEW]
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
+
+    const handleAutoVerify = async () => {
+        setIsVerifying(true);
+        try {
+            toast.info("Starting intelligent verification...");
+            const { autoVerifyPayments } = await import("@/actions/admin-payments");
+            const result = await autoVerifyPayments();
+
+            if (result.count > 0) {
+                toast.success(`Auto-verified ${result.count} payments!`);
+                router.refresh();
+            } else {
+                toast.info("No matching payments found to auto-verify.");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Auto-verification failed");
+        } finally {
+            setIsVerifying(false);
+        }
+    };
 
     // [NEW] Fetch Plans on Mount
     useEffect(() => {
