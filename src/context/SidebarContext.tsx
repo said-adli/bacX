@@ -1,7 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useMediaQuery } from "../hooks/use-media-query"; // Using relative path to fix resolution issue
+import { createContext, useContext, useState, ReactNode, useSyncExternalStore } from "react";
 
 interface SidebarContextType {
     isCollapsed: boolean;
@@ -13,16 +12,28 @@ interface SidebarContextType {
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
-export function SidebarProvider({ children }: { children: ReactNode }) {
-    // Default to false (expanded) on desktop
-    const [isCollapsed, setIsCollapsed] = useState(false);
-    const [isMobileOpen, setIsMobileOpen] = useState(false);
+// External store for localStorage sync
+function subscribeToStorage(callback: () => void) {
+    window.addEventListener("storage", callback);
+    return () => window.removeEventListener("storage", callback);
+}
 
-    // Optional: Persist state
-    useEffect(() => {
-        const savedState = localStorage.getItem("sidebarCollapsed");
-        if (savedState) setIsCollapsed(JSON.parse(savedState));
-    }, []);
+function getCollapsedState(): boolean {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem("sidebarCollapsed");
+    return saved ? JSON.parse(saved) : false;
+}
+
+export function SidebarProvider({ children }: { children: ReactNode }) {
+    // Use useSyncExternalStore for localStorage to avoid setState in effect
+    const storedCollapsed = useSyncExternalStore(
+        subscribeToStorage,
+        getCollapsedState,
+        () => false // Server snapshot
+    );
+
+    const [isCollapsed, setIsCollapsed] = useState(storedCollapsed);
+    const [isMobileOpen, setIsMobileOpen] = useState(false);
 
     const toggleCollapse = () => {
         setIsCollapsed((prev) => {

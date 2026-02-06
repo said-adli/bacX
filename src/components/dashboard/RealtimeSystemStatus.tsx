@@ -1,14 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { createClient } from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { AlertTriangle, Radio } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 export function RealtimeSystemStatus() {
-    const router = useRouter();
     const supabase = createClient();
 
     // FETCH (SWR)
@@ -17,22 +13,17 @@ export function RealtimeSystemStatus() {
         return data || [];
     };
 
-    const { data: settings } = useSWR('system_settings', fetchData, {
+    const { data: settings, isLoading } = useSWR('system_settings', fetchData, {
         refreshInterval: 60000, // 1 Minute Polling
         revalidateOnFocus: true,
         dedupingInterval: 10000,
     });
 
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
     // Derived Logic
     const maintenance = settings?.find((d: { key: string; value: boolean | string }) => d.key === "maintenance_mode")?.value;
 
-    if (!mounted) return null;
+    // Skip render during SSR/loading to avoid hydration mismatch
+    if (isLoading) return null;
 
     return maintenance ? (
         <div className="fixed inset-0 z-[100] bg-[#050510] flex flex-col items-center justify-center text-center p-8">

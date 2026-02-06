@@ -23,7 +23,7 @@ export default function YouTubeSecurityAlert() {
                         </li>
                         <li className="flex items-center gap-2">
                             <CheckCircle2 size={12} className="text-zinc-500" />
-                            "Allow embedding" is <strong className="text-white">Checked</strong>?
+                            {'"Allow embedding"'} is <strong className="text-white">Checked</strong>?
                         </li>
                     </ul>
 

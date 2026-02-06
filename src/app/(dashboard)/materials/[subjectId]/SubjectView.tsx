@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import EncodedVideoPlayer from "@/components/lesson/VideoPlayer";
 import { Lock, PlayCircle, Clock } from "lucide-react";
 import Link from "next/link";
@@ -31,14 +31,10 @@ interface SubjectViewProps {
 }
 
 export default function SubjectView({ subject, lessons, isSubscribed }: SubjectViewProps) {
-    const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
-
-    // Set initial lesson
-    useEffect(() => {
-        if (lessons?.length > 0 && !activeLessonId) {
-            setActiveLessonId(lessons[0].id);
-        }
-    }, [lessons, activeLessonId]);
+    // Initialize with first lesson ID to avoid setState in effect
+    const [activeLessonId, setActiveLessonId] = useState<string | null>(
+        () => lessons?.length > 0 ? lessons[0].id : null
+    );
 
     const activeLesson = lessons.find((l) => l.id === activeLessonId) || lessons[0];
 

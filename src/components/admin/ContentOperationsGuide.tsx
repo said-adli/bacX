@@ -5,7 +5,6 @@ import {
     Video,
     Upload,
     Wifi,
-    AlertTriangle,
     CheckCircle2,
     Copy,
     ChevronDown,
@@ -157,9 +156,9 @@ export function ContentOperationsGuide() {
                                     </h5>
                                     <ol className="list-decimal list-inside space-y-2 text-sm text-blue-100/80">
                                         <li>ابدأ البث في OBS أولاً (Start Streaming).</li>
-                                        <li>انتظر ظهور "Excellent Connection" باللون الأخضر في يوتيوب.</li>
+                                        <li>{`انتظر ظهور "Excellent Connection" باللون الأخضر في يوتيوب.`}</li>
                                         <li>انسخ Video ID وضعه في لوحة التحكم هنا.</li>
-                                        <li>اضغط "Go Live" في يوتيوب لبدء الحصه.</li>
+                                        <li>{`اضغط "Go Live" في يوتيوب لبدء الحصه.`}</li>
                                     </ol>
                                 </div>
                             </div>

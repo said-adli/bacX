@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Megaphone, Radio, Power, AlertTriangle, Send } from "lucide-react";
+import { Megaphone, Radio, AlertTriangle, Send } from "lucide-react";
 import { sendGlobalNotification, toggleMaintenanceMode, toggleLiveGlobal } from "@/actions/admin-controls";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -103,7 +103,7 @@ export default function GlobalControlsClient({
                             </div>
                             <div>
                                 <h3 className="font-bold text-white">Global Live Alert</h3>
-                                <p className="text-xs text-zinc-500">Show 'LIVE NOW' banner</p>
+                                <p className="text-xs text-zinc-500">{`Show 'LIVE NOW' banner`}</p>
                             </div>
                         </div>
                         <button

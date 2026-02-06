@@ -223,11 +223,13 @@ export default function LiveSessionsPage() {
 }
 
 function SelfAudioVisualizer() {
-    // Pre-calculate random values once on mount to avoid calling Math.random during render
-    const barStyles = useMemo(() => [1, 2, 3, 4].map(() => ({
-        height: `${Math.random() * 100}%`,
-        animationDuration: `${0.5 + Math.random()}s`
-    })), []);
+    // Using fixed pseudo-random values for visual variety while maintaining render purity
+    const barStyles = [
+        { height: '68%', animationDuration: '0.8s' },
+        { height: '42%', animationDuration: '1.1s' },
+        { height: '85%', animationDuration: '0.6s' },
+        { height: '55%', animationDuration: '0.9s' },
+    ];
 
     return (
         <div className="flex gap-1 h-4 items-end">

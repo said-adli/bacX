@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Search, Loader2, User, Ticket, BookOpen, X } from "lucide-react";
 import { globalSearch, GroupedResults } from "@/actions/admin-search";
-import { useDebounce } from "@/hooks/useDebounce"; // Assuming this exists, otherwise I'll implement inline debounce
 
 // Simple inline debounce hook if file doesn't exist
 function useDebounceValue<T>(value: T, delay: number): T {
@@ -40,7 +39,9 @@ export function CommandPalette() {
     // Perform Search
     useEffect(() => {
         if (debouncedQuery.length < 2) {
-            setResults(null);
+            startTransition(() => {
+                setResults(null);
+            });
             return;
         }
 
@@ -160,7 +161,7 @@ export function CommandPalette() {
                                     results.coupons.length === 0 &&
                                     results.subjects.length === 0 && (
                                         <div className="py-12 text-center text-zinc-500">
-                                            No results found for "{query}"
+                                            {`No results found for "${query}"`}
                                         </div>
                                     )}
                             </>
