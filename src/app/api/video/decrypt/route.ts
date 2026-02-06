@@ -99,7 +99,7 @@ export async function POST(request: Request) {
         // Fetch User's Plan (Standardized to plan_id)
         const { data: profile } = await supabase
             .from('profiles')
-            .select('plan_id, role, is_subscribed')
+            .select('id, plan_id, role, is_subscribed') // Added 'id'
             .eq('id', user.id)
             .single();
 
@@ -124,7 +124,10 @@ export async function POST(request: Request) {
 
         // P0 FIX: Check if Parent Subject is Published
         // @ts-ignore - Supabase types might not be perfectly inferred for deep joins without generated types
-        const subjectPublished = lesson.units?.subjects?.published;
+        // units is likely an array, safeguard access
+        const units = Array.isArray(lesson.units) ? lesson.units[0] : lesson.units;
+        const subjects = Array.isArray(units?.subjects) ? units.subjects[0] : units?.subjects;
+        const subjectPublished = subjects?.published;
 
         // If subjectPublished is explicitly FALSE, we block.
         // If it's undefined (bad data) or true, we might proceed, but securely we should block if undefined.
@@ -134,22 +137,21 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Content is not published' }, { status: 403 });
         }
 
-        // 6. ENTITLEMENT CHECK
-        let hasAccess = false;
-        if (isAdmin) {
-            hasAccess = true;
-        } else if (lesson.is_free) {
-            hasAccess = true;
-        } else if (lesson.required_plan_id) {
-            // Strict Plan Match
-            hasAccess = profile.plan_id === lesson.required_plan_id;
-        } else {
-            // Legacy/Fallback
-            hasAccess = !!profile.is_subscribed;
-        }
+        // 6. AUTHORIZATION (The Real Fix)
+        // Unified Access Control via Shared Utility
+        const contentRequirement = {
+            required_plan_id: lesson.required_plan_id,
+            is_free: lesson.is_free,
+            published: subjectPublished ?? true // Use the resolved value
+        };
 
-        if (!hasAccess) {
+        // Use shared utility
+        const { verifyContentAccess } = await import("@/lib/access-control");
+        const access = await verifyContentAccess(profile, contentRequirement);
+
+        if (!access.allowed) {
             // Denied access
+            console.log(`[Security] Video Access Denied: ${access.reason} for user ${user.id}`);
             return NextResponse.json({ error: 'Subscription required' }, { status: 403 });
         }
 

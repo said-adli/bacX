@@ -13,7 +13,16 @@ export async function getLessonData(lessonId: string) {
     if (!user) return { error: "Unauthorized" };
 
     try {
-        // 1. Fetch Lesson Metadata
+        // 1. Fetch User Profile (Required for Access Control)
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, role, plan_id, is_subscribed')
+            .eq('id', user.id)
+            .single();
+
+        if (!profile) return { error: "Profile not found" };
+
+        // 2. Fetch Lesson Metadata
         const { data: lesson, error: lessonError } = await supabase
             .from('lessons')
             .select(`
@@ -26,12 +35,33 @@ export async function getLessonData(lessonId: string) {
                 )
             `)
             .eq('id', lessonId)
-            .eq('units.subjects.published', true) // SECURITY: Prevent access to drafts
+            // .eq('units.subjects.published', true) // Access Control handles this more gracefully now? 
+            // Actually, keep this for optimization, but verifyContentAccess is the authority.
+            // Let's rely on verifyContentAccess for logic to avoid duplication.
             .single();
 
         if (lessonError) throw lessonError;
 
-        // 2. Fetch Completion Status
+        // 3. UNIFIED ACCESS CONTROL
+        // Use shared utility
+        const { verifyContentAccess } = await import("@/lib/access-control");
+
+        // Match ContentRequirement type
+        const contentRequirement = {
+            required_plan_id: lesson.required_plan_id,
+            is_free: lesson.is_free,
+            // @ts-ignore - Supabase deep join type inference
+            published: lesson.units?.subjects?.published ?? true
+        };
+
+        const access = await verifyContentAccess(profile, contentRequirement);
+
+        if (!access.allowed) {
+            // Return specific error for client handling if needed, or generic
+            return { error: access.reason || "Access Denied" };
+        }
+
+        // 4. Fetch Completion Status
         // SCHEMA FIX: Using 'user_progress' (not 'student_progress') per official schema
         const { data: progress } = await supabase
             .from('user_progress')
@@ -40,7 +70,7 @@ export async function getLessonData(lessonId: string) {
             .eq('lesson_id', lessonId)
             .maybeSingle();
 
-        // 3. Mark as "Last Accessed" (Side Effect - Fire and Forget mostly, but we define it here)
+        // 5. Mark as "Last Accessed" (Side Effect - Fire and Forget mostly, but we define it here)
         // Ideally handled by separate action or background job to not block read
 
         return {

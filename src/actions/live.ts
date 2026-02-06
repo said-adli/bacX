@@ -35,13 +35,6 @@ export async function getHybridLiveSession(): Promise<SecureLiveSession> {
 
     if (!profile) return { authorized: false, error: "Profile not found" };
 
-    const isAdmin = profile.role === 'admin' || profile.role === 'teacher';
-    const isSubscribed = profile.is_subscribed === true;
-
-    if (!isAdmin && !isSubscribed) {
-        return { authorized: false, error: "Active subscription required" };
-    }
-
     // 3. Fetch Live Session Data (Securely)
     // We only fetch based on new constraints.
     const { data: session, error: sessionError } = await supabase
@@ -58,22 +51,39 @@ export async function getHybridLiveSession(): Promise<SecureLiveSession> {
         return { authorized: false, error: "Could not fetch session data" };
     }
 
-    // Force Check: Even if DB returned it, we double check plan match in code
-    if (session && session.required_plan_id && !isAdmin) {
-        if (profile.plan_id !== session.required_plan_id) {
-            // Silent fail or explicit error?
-            // Since we filtered for 'published', getting here means it exists.
-            // But if RLS works, we wouldn't see it if we didn't match plan.
-            // However, let's be redundant.
-            return { authorized: false, error: "Plan mismatch" };
+    // 4. Unified Access Control
+    if (session) {
+        // Construct ContentRequirement object
+        const contentRequirement = {
+            required_plan_id: session.required_plan_id,
+            published: session.published ?? true, // Default to true if not present, but query requires it
+            is_free: false // Live sessions are generally not free unless specified, but schema doesn't seem to have is_free for live_sessions yet? 
+            // Assuming strict plan check if required_plan_id is present.
+        };
+
+        // Use shared utility
+        const { verifyContentAccess } = await import("@/lib/access-control");
+        const access = await verifyContentAccess(profile, contentRequirement);
+
+        if (!access.allowed) {
+            // Map reason to user-friendly error
+            let errorMsg = "Access Denied";
+            if (access.reason === 'subscription_required') errorMsg = "Active subscription required";
+            if (access.reason === 'plan_mismatch') errorMsg = "Plan mismatch";
+
+            return { authorized: false, error: errorMsg };
         }
     }
 
     if (!session) {
-        return { authorized: true, isLive: false }; // User is auth'd, but no session active
+        // If no session, but user is authorized (authenticated + checked profile), we return authorized=true but isLive=false
+        // Wait, the previous logic allowed "authorized: true" if no session existed? 
+        // "return { authorized: true, isLive: false }; // User is auth'd, but no session active"
+        // Yes, this is for showing the "No live session" UI state vs "Login required".
+        return { authorized: true, isLive: false };
     }
 
-    // 4. Generate LiveKit Token (Audio Only)
+    // 5. Generate LiveKit Token (Audio Only)
     const roomName = "class_room_main"; // Or use session.id if dynamic
     const participantName = profile.full_name || user.email || "User";
 
@@ -104,7 +114,7 @@ export async function getHybridLiveSession(): Promise<SecureLiveSession> {
         }
     }
 
-    // 5. Return Secure Payload
+    // 6. Return Secure Payload
     return {
         authorized: true,
         youtubeId: session.youtube_id,
