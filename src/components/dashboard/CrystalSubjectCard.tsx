@@ -2,7 +2,7 @@
 import React from "react";
 
 import { useRef, useState } from "react";
-import { GlassCard } from "@/components/ui/GlassCard";
+
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";

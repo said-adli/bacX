@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/Skeleton";
-import { GlassCard } from "@/components/ui/GlassCard";
+
 
 export function ProfileSkeleton() {
     return (

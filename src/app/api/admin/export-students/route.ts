@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
     // 1. Security Check: Verify Admin
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();

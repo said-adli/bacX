@@ -32,7 +32,7 @@ export function ManageSubscriptionModal({ student, onClose, onSuccess }: ManageS
                 setPlans(data);
                 // If user has no plan but is subscribed (legacy hell), defaults might form here.
                 // But for now we just show what is there.
-            } catch (err) {
+            } catch (_err) {
                 toast.error("Failed to load plans");
             } finally {
                 setIsLoadingPlans(false);

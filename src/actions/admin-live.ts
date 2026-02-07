@@ -5,8 +5,6 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logAdminAction } from "@/lib/admin-logger";
 
-// Standard ISO Date Regex
-const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
 
 export interface LiveSession {
     id: string;
@@ -132,7 +130,7 @@ export async function updateLiveSession(id: string, data: Partial<NewLiveSession
     // No, Supabase RPC params are named. We should pass explicit nulls or values.
     // But our RPC has DEFAULT NULL, so we can omit them.
 
-    const rpcParams: any = {
+    const rpcParams: Record<string, unknown> = {
         p_session_id: id,
         p_lesson_id: targetLessonId || null, // Pass null if no lesson linked
         p_title: data.title,

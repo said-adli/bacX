@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+
 import { getDeviceSessions } from "@/actions/admin-security";
 import DeviceSecurityClient from "@/components/admin/security/DeviceSecurityClient";
 

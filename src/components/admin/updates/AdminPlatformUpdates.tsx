@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { Plus, Edit, Trash2, Save, X, Calendar, Sparkles, AlertCircle } from "lucide-react";
+import { Plus, Edit, Trash2, X, Calendar, Sparkles, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
@@ -28,9 +28,9 @@ export default function AdminPlatformUpdates() {
 
     useEffect(() => {
         fetchUpdates();
-    }, []);
+    }, [fetchUpdates]);
 
-    const fetchUpdates = async () => {
+    const fetchUpdates = useCallback(async () => {
         setIsLoading(true);
         const { data, error } = await supabase
             .from('platform_updates')
@@ -44,7 +44,7 @@ export default function AdminPlatformUpdates() {
             setUpdates(data || []);
         }
         setIsLoading(false);
-    };
+    }, [supabase]);
 
     const handleSave = async () => {
         if (!currentUpdate.title || !currentUpdate.description) {

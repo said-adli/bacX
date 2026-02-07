@@ -1,6 +1,5 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { logAdminAction } from "@/lib/admin-logger";
@@ -29,7 +28,6 @@ export async function getStudents(
     // Read-only can be done with standard client usually, as Admin RLS lets them see all.
     // For complete robustness, we can switch to AdminClient, but let's stick to standard for Reads 
     // to verify RLS "Select" works.
-    const supabase = await createClient();
     const adminClient = createAdminClient(); // Fallback for some filters if needed without RLS.
 
     // Verify Admin
@@ -80,7 +78,6 @@ export async function getStudents(
 
 // TOGGLE BAN (God Mode)
 export async function toggleBanStudent(userId: string, shouldBan: boolean) {
-    const supabase = await createClient();
     const supabaseAdmin = createAdminClient();
 
     // Verify Admin
@@ -116,7 +113,6 @@ export async function toggleBanStudent(userId: string, shouldBan: boolean) {
 
 // MANUAL EXPIRY / TERMINATE
 export async function manualsExpireSubscription(userId: string) {
-    const supabase = await createClient();
     const supabaseAdmin = createAdminClient();
 
     // Verify Admin
@@ -137,7 +133,6 @@ export async function manualsExpireSubscription(userId: string) {
 
 // EXTEND SUBSCRIPTION (God Mode)
 export async function extendSubscription(userId: string, daysToAdd: number) {
-    const supabase = await createClient();
     const supabaseAdmin = createAdminClient();
 
     // Verify Admin
@@ -228,7 +223,6 @@ export async function getStudentDetails(studentId: string) {
 // ------------------------------------------------------------------
 
 export async function generateImpersonationLink(userId: string) {
-    const supabase = await createClient();
     const supabaseAdmin = createAdminClient();
 
     // 1. Verify Admin (Redundant check but safe)
@@ -270,7 +264,6 @@ export async function bulkUpdateStudents(
     userIds: string[],
     action: 'ban' | 'unban' | 'expire'
 ) {
-    const supabase = await createClient();
     const supabaseAdmin = createAdminClient();
 
     // 1. Verify Admin
@@ -313,7 +306,6 @@ export async function bulkUpdateStudents(
 // ------------------------------------------------------------------
 
 export async function setStudentPlan(userId: string, planId: string | null, isSubscribed: boolean) {
-    const supabase = await createClient();
     const supabaseAdmin = createAdminClient();
 
     // Verify Admin
@@ -368,7 +360,6 @@ export async function setStudentPlan(userId: string, planId: string | null, isSu
 // ------------------------------------------------------------------
 
 export async function updateStudentProfile(userId: string, data: { fullName?: string, email?: string, wilaya?: string }) {
-    const supabase = await createClient();
     const supabaseAdmin = createAdminClient();
 
     // Verify Admin
@@ -398,7 +389,6 @@ export async function updateStudentProfile(userId: string, data: { fullName?: st
 }
 
 export async function deleteStudent(userId: string) {
-    const supabase = await createClient();
     const supabaseAdmin = createAdminClient();
 
     // Verify Admin

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Plus, Trash2, Check, AlertCircle } from "lucide-react";
+import { X, Plus, Check } from "lucide-react";
 import { createPlan, updatePlan, SubscriptionPlan } from "@/actions/admin-plans";
 import { toast } from "sonner";
 

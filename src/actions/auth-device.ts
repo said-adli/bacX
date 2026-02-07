@@ -10,7 +10,7 @@ export async function checkAndRegisterDevice(deviceId: string, userAgent: string
     const supabase = await createClient();
 
     // 1. Verify User (from Cookie)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
         return { success: false, error: "Unauthorized" };

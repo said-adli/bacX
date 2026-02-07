@@ -38,81 +38,81 @@ export async function GET(request: NextRequest) {
     // Name: use full name or email
     const participantName = profile?.full_name || user.email || 'User';
 
-    const at = new AccessToken(apiKey, apiSecret, {
-        identity: user.id,
+    // const at = new AccessToken(apiKey, apiSecret, {
+    identity: user.id,
         name: participantName,
     });
 
-    // 4. Set Permissions & Unified Access Control
-    // ACL: Validate access to the room
-    const isAdmin = profile?.role === 'admin' || profile?.role === 'teacher';
+// 4. Set Permissions & Unified Access Control
+// ACL: Validate access to the room
+const isAdmin = profile?.role === 'admin' || profile?.role === 'teacher';
 
-    if (!isAdmin) {
-        // Determine if this is a Live Session or a Lesson
-        // We first try to find a Live Session with this ID
-        const { data: liveSession } = await supabase
-            .from('live_sessions')
-            .select('required_plan_id, published')
+if (!isAdmin) {
+    // Determine if this is a Live Session or a Lesson
+    // We first try to find a Live Session with this ID
+    const { data: liveSession } = await supabase
+        .from('live_sessions')
+        .select('required_plan_id, published')
+        .eq('id', roomName)
+        .maybeSingle();
+
+    let contentRequirement;
+
+    if (liveSession) {
+        // It's a Live Session
+        contentRequirement = {
+            required_plan_id: liveSession.required_plan_id,
+            published: liveSession.published ?? true,
+            is_free: false // Live sessions are premium usually
+        };
+    } else {
+        // Check if it's a Lesson
+        const { data: lesson, error: lessonError } = await supabase
+            .from('lessons')
+            .select('required_plan_id, is_free, units(subjects(published))')
             .eq('id', roomName)
-            .maybeSingle();
+            .single();
 
-        let contentRequirement;
-
-        if (liveSession) {
-            // It's a Live Session
-            contentRequirement = {
-                required_plan_id: liveSession.required_plan_id,
-                published: liveSession.published ?? true,
-                is_free: false // Live sessions are premium usually
-            };
-        } else {
-            // Check if it's a Lesson
-            const { data: lesson, error: lessonError } = await supabase
-                .from('lessons')
-                .select('required_plan_id, is_free, units(subjects(published))')
-                .eq('id', roomName)
-                .single();
-
-            if (lessonError || !lesson) {
-                return NextResponse.json({ error: 'Room access denied or not found' }, { status: 403 });
-            }
-
-            // Safe access for deep join
-            // units is likely an array, safeguard access
-            // Safe access for deep join
-            // units is likely an array, safeguard access
-            interface UnitWithSubject { subjects: { published: boolean } | { published: boolean }[] | null }
-            const units = (Array.isArray(lesson.units) ? lesson.units[0] : lesson.units) as unknown as UnitWithSubject;
-
-            const subjectData = units?.subjects;
-            const subject = Array.isArray(subjectData) ? subjectData[0] : subjectData;
-            const subjectPublished = subject?.published;
-
-            contentRequirement = {
-                required_plan_id: lesson.required_plan_id,
-                is_free: lesson.is_free,
-                published: subjectPublished ?? true
-            };
+        if (lessonError || !lesson) {
+            return NextResponse.json({ error: 'Room access denied or not found' }, { status: 403 });
         }
 
-        // UNIFIED CHECK
-        const { verifyContentAccess } = await import("@/lib/access-control");
-        const access = await verifyContentAccess(profile, contentRequirement);
+        // Safe access for deep join
+        // units is likely an array, safeguard access
+        // Safe access for deep join
+        // units is likely an array, safeguard access
+        interface UnitWithSubject { subjects: { published: boolean } | { published: boolean }[] | null }
+        const units = (Array.isArray(lesson.units) ? lesson.units[0] : lesson.units) as unknown as UnitWithSubject;
 
-        if (!access.allowed) {
-            return NextResponse.json({ error: access.reason || 'Access Denied' }, { status: 403 });
-        }
+        const subjectData = units?.subjects;
+        const subject = Array.isArray(subjectData) ? subjectData[0] : subjectData;
+        const subjectPublished = subject?.published;
+
+        contentRequirement = {
+            required_plan_id: lesson.required_plan_id,
+            is_free: lesson.is_free,
+            published: subjectPublished ?? true
+        };
     }
 
-    // Hardened Permissions: Consolidate Logic
-    const { generateSecureToken } = await import("@/lib/livekit-token");
+    // UNIFIED CHECK
+    const { verifyContentAccess } = await import("@/lib/access-control");
+    const access = await verifyContentAccess(profile, contentRequirement);
 
-    const token = await generateSecureToken({
-        userId: user.id,
-        participantName,
-        roomName,
-        isAdmin
-    });
+    if (!access.allowed) {
+        return NextResponse.json({ error: access.reason || 'Access Denied' }, { status: 403 });
+    }
+}
 
-    return NextResponse.json({ token });
+// Hardened Permissions: Consolidate Logic
+const { generateSecureToken } = await import("@/lib/livekit-token");
+
+const token = await generateSecureToken({
+    userId: user.id,
+    participantName,
+    roomName,
+    isAdmin
+});
+
+return NextResponse.json({ token });
 }

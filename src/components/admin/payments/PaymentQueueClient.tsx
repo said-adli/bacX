@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
+
 import { Check, X, Eye, Calendar, User, AlertTriangle, Sparkles, Loader2, ZoomIn } from "lucide-react";
 import { approvePayment, rejectPayment } from "@/actions/admin-payments";
 import { getActivePlans, SubscriptionPlan } from "@/actions/admin-plans";
@@ -128,12 +130,15 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
                             <div className="flex-1 relative rounded-xl bg-black/40 border border-white/5 flex items-center justify-center overflow-hidden">
                                 {selectedReceipt.receipt_url ? (
                                     <>
-                                        <img
-                                            src={selectedReceipt.receipt_url}
-                                            alt="Receipt"
-                                            className="max-w-full max-h-full object-contain cursor-zoom-in"
-                                            onClick={() => setIsZoomed(true)}
-                                        />
+                                        <div className="relative w-full h-full">
+                                            <Image
+                                                src={selectedReceipt.receipt_url}
+                                                alt="Receipt"
+                                                fill
+                                                className="object-contain cursor-zoom-in"
+                                                onClick={() => setIsZoomed(true)}
+                                            />
+                                        </div>
                                         <button
                                             onClick={() => setIsZoomed(true)}
                                             className="absolute bottom-4 right-4 bg-black/80 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -228,11 +233,14 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
                     className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-8 backdrop-blur-sm"
                     onClick={() => setIsZoomed(false)}
                 >
-                    <img
-                        src={selectedReceipt.receipt_url}
-                        alt="Zoomed Receipt"
-                        className="max-w-full max-h-full object-contain shadow-2xl"
-                    />
+                    <div className="relative w-full h-full max-w-4xl max-h-[90vh]">
+                        <Image
+                            src={selectedReceipt.receipt_url}
+                            alt="Zoomed Receipt"
+                            fill
+                            className="object-contain shadow-2xl"
+                        />
+                    </div>
                     <button className="absolute top-6 right-6 text-white bg-white/10 p-2 rounded-full hover:bg-white/20">
                         <X size={24} />
                     </button>

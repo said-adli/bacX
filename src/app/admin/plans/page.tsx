@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, CheckCircle, XCircle, Package } from "lucide-react";
+import { Plus, Edit2, Trash2, CheckCircle, Package } from "lucide-react";
 import { getAdminPlans, deletePlan, SubscriptionPlan } from "@/actions/admin-plans";
 import { toast } from "sonner";
 import { PlanForm } from "@/components/admin/plans/PlanForm";
@@ -16,7 +16,7 @@ export default function PlansPage() {
         try {
             const data = await getAdminPlans();
             setPlans(data);
-        } catch (error) {
+        } catch {
             toast.error("Failed to load plans");
         } finally {
             setIsLoading(false);
@@ -34,7 +34,7 @@ export default function PlansPage() {
             await deletePlan(id);
             toast.success("Plan deleted successfully");
             fetchPlans();
-        } catch (error) {
+        } catch {
             toast.error("Failed to delete plan");
         }
     };

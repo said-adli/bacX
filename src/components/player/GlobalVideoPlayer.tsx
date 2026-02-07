@@ -31,14 +31,12 @@ export function GlobalVideoPlayer() {
     const [volume, setVolume] = useState(100);
     const [isMuted, setIsMuted] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1);
-    const [_buffered, setBuffered] = useState(0);
     const [isHovering, setIsHovering] = useState(false);
     const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
     // Refs
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const _progressInterval = useRef<NodeJS.Timeout | null>(null);
 
     // ============================================================================
     // COMMAND BUS

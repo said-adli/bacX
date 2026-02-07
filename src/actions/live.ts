@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { AccessToken } from 'livekit-server-sdk';
 
 interface SecureLiveSession {
     authorized: boolean;

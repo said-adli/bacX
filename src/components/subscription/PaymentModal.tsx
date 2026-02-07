@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Copy, Upload, X, Loader2, CheckCircle } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PAYMENT_METHODS } from "@/lib/payment";

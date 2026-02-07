@@ -64,7 +64,7 @@ export async function getPendingPayments() {
 
 export async function approvePayment(paymentId: string, userId: string) {
     try {
-        const { user: admin } = await verifyAdmin();
+        await verifyAdmin();
         const supabase = createAdminClient();
 
         // Call Edge Function for consistent business logic (subscription end dates, etc.)
@@ -99,7 +99,7 @@ export async function approvePayment(paymentId: string, userId: string) {
 
 export async function rejectPayment(paymentId: string, reason: string) {
     try {
-        const { user: admin } = await verifyAdmin();
+        await verifyAdmin();
         const supabase = createAdminClient();
 
         // 1. Update Payment Status

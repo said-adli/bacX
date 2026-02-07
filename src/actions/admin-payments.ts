@@ -19,7 +19,7 @@ export interface PaymentProof {
 
 // Fetch Pending Payments (Manual Review Only)
 export async function getPendingPayments() {
-    const { user } = await requireAdmin();
+    await requireAdmin();
     const supabase = await createClient();
     const adminSupabase = createAdminClient();
 

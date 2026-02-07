@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Lesson, createLesson, updateLesson, deleteLesson } from "@/actions/admin-content";
 import { SubscriptionPlan } from "@/actions/admin-plans";
 import { toast } from "sonner";
@@ -46,11 +46,11 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
         if (isEditing && initialData?.id) {
             fetchResources(initialData.id);
         }
-    }, [initialData, isEditing]);
+    }, [initialData, isEditing, fetchResources]);
 
-    async function fetchResources(lessonId: string) {
+    const fetchResources = useCallback(async (lessonId: string) => {
         setIsLoadingResources(true);
-        const { data, error } = await supabase
+        const { data } = await supabase
             .from('lesson_resources')
             .select('*')
             .eq('lesson_id', lessonId);
@@ -59,7 +59,7 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
             setResources(data as AttachedResource[]);
         }
         setIsLoadingResources(false);
-    }
+    }, [supabase]);
 
     const handleResourceUpload = (file: ResourceFile) => {
         setResources(prev => [...prev, file]);

@@ -45,7 +45,7 @@ function AdminHeaderComponent({ user }: { user: AdminUser | null }) {
             clearInterval(interval);
             document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
-    }, []);
+    }, [supabase]);
 
     // Handlers
     const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {

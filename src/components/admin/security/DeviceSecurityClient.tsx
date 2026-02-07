@@ -28,7 +28,7 @@ export default function DeviceSecurityClient({ sessions }: { sessions: DeviceSes
             await revokeDevice(id);
             toast.success("Session revoked");
             router.refresh(); // Refresh list
-        } catch (err) {
+        } catch (_err) {
             toast.error("Failed to revoke session");
         }
     }

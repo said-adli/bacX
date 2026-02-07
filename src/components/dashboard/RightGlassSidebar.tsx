@@ -3,18 +3,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, BookOpen, Video, ChevronRight, ChevronLeft, Settings, User, Sparkles } from "lucide-react";
 import { useSidebar } from "@/context/SidebarContext";
-import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { toast } from "sonner";
 import { Logo } from "@/components/ui/Logo";
 
 const RightGlassSidebarComponent = function RightGlassSidebar() {
   const pathname = usePathname();
   const { isCollapsed, toggleCollapse } = useSidebar();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const { user, profile } = useAuth();
+  const { profile } = useAuth();
 
   const navItems = [
     { name: "الصفحة الرئيسية", href: "/dashboard", icon: Home },

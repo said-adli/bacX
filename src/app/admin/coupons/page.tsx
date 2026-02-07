@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { getCoupons } from "@/actions/coupons";
 import { CouponsClient } from "@/app/admin/coupons/CouponsClient";
-import { GlassCard } from "@/components/ui/GlassCard";
+
 import { Loader2 } from "lucide-react";
 
 export default async function CouponsPage() {

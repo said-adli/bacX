@@ -45,8 +45,11 @@ export function SignUp({ onToggleLogin }: SignUpProps) {
                 setMajors(mList);
 
                 // Set default major if list available and no major selected
-                if (mList.length > 0 && !formData.major) {
-                    setFormData(prev => ({ ...prev, major: mList[0].name }));
+                if (mList.length > 0) {
+                    setFormData(prev => {
+                        if (!prev.major) return { ...prev, major: mList[0].name };
+                        return prev;
+                    });
                 }
             } catch (error) {
                 console.error("Failed to load static data", error);

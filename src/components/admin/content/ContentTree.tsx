@@ -26,7 +26,7 @@ interface ContentTreeProps {
 export default function ContentTree({ subjects: initialSubjects, activePlans }: ContentTreeProps) {
     const [subjects, setSubjects] = useState<SubjectWithUnitsDTO[]>(initialSubjects);
     const [expandedUnits, setExpandedUnits] = useState<Record<string, boolean>>({});
-    const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+
     const [isCreatingLesson, setIsCreatingLesson] = useState<{ unitId: string } | null>(null);
     const [selectedLesson, setSelectedLesson] = useState<LessonDTO | null>(null); // For editor
     const [isCreatingSubject, setIsCreatingSubject] = useState(false); // [NEW] Subject Modal State
@@ -42,7 +42,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
         setSubjects(newSubjects); // Optimistic
         try {
             await reorderItems("subjects", newSubjects.map(s => s.id));
-        } catch (error) {
+        } catch {
             toast.error("Failed to reorder subjects");
             setSubjects(subjects); // Revert
         }
@@ -65,7 +65,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
 
         try {
             await reorderItems("lessons", newLessons.map(l => l.id));
-        } catch (error) {
+        } catch {
             toast.error("Failed to reorder lessons");
             setSubjects(subjects); // Revert
         }
@@ -84,7 +84,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
         try {
             await createUnit(subjectId, title);
             toast.success("Unit Added");
-        } catch (e) {
+        } catch {
             toast.error("Failed to add unit");
         }
     };
@@ -100,15 +100,6 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
     };
 
     // Lesson Actions
-    const handleDeleteLesson = async (id: string) => {
-        if (!confirm("Delete this lesson?")) return;
-        try {
-            await deleteLesson(id);
-            toast.success("Lesson Deleted");
-        } catch (e) {
-            toast.error("Failed");
-        }
-    };
 
     const openEditor = (unitId: string, lesson?: LessonDTO) => {
         setIsCreatingLesson({ unitId });

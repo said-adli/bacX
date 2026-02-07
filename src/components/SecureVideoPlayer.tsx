@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Play, Loader2, ShieldAlert, Maximize, Pause, Volume2, VolumeX } from "lucide-react";
+import { Play, Loader2, ShieldAlert, Maximize, Pause } from "lucide-react";
 import { getSecureVideoId } from "@/actions/video";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -13,7 +13,7 @@ interface SecureVideoPlayerProps {
     onEnded?: () => void;
 }
 
-export default function SecureVideoPlayer({ lessonId, onEnded }: SecureVideoPlayerProps) {
+export default function SecureVideoPlayer({ lessonId }: SecureVideoPlayerProps) {
     const [videoId, setVideoId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false); // UI State for controls

@@ -1,6 +1,6 @@
 "use client";
 
-import { GlassCard } from "@/components/ui/GlassCard";
+
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 

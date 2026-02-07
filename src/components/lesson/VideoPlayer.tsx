@@ -22,16 +22,15 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
     const [isPlaying, setIsPlaying] = useState(false);
     const [isReady, setIsReady] = useState(false); // [NEW] Anti-Red Flash
     const [isBuffering, setIsBuffering] = useState(false); // [NEW] Custom Buffering
-    const [progress, setProgress] = useState(0); // 0-100
+    // const [progress, setProgress] = useState(0); // 0-100
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [isMuted, setIsMuted] = useState(shouldMute);
-    const [volume, setVolume] = useState(100);
+    // const [volume, setVolume] = useState(100);
     const [isHovering, setIsHovering] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
 
     const { user } = useAuth();
-    const [sessionIp] = useState("192.168.x.x");
+    // const [sessionIp] = useState("192.168.x.x");
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const progressInterval = useRef<NodeJS.Timeout | null>(null);
@@ -102,7 +101,7 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
                         // Player State: 1 = Playing, 2 = Paused, 3 = Buffering, 0 = Ended
                         if (data.info.playerState === 1) {
                             setIsPlaying(true);
-                            setIsLoading(false);
+                            // setIsLoading(false);
                             setIsBuffering(false);
                         } else if (data.info.playerState === 2) {
                             setIsPlaying(false);
@@ -148,7 +147,7 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
     const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
         // [MOD] If Live, seeking might be restricted or jump to live. 
         const newTime = (parseFloat(e.target.value) / 100) * duration;
-        setProgress(parseFloat(e.target.value));
+        // setProgress(parseFloat(e.target.value));
         setCurrentTime(newTime);
         sendCommand('seekTo', [newTime, true]);
     };
