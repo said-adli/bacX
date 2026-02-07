@@ -31,9 +31,11 @@ export async function createAnnouncement(formData: FormData) {
         throw new Error("Failed to create announcement");
     }
 
-    revalidateAnnouncements(); // Invalidate Next.js cache
-    revalidatePath("/dashboard");
-    revalidatePath("/admin/announcements");
+    revalidateAnnouncements();
+    revalidatePath('/admin/announcements');
+    revalidatePath('/admin/content');
+    revalidatePath('/admin/live');
+    revalidatePath('/dashboard');
 }
 
 export async function deleteAnnouncement(id: string) {
@@ -50,9 +52,11 @@ export async function deleteAnnouncement(id: string) {
         throw new Error("Failed to delete announcement");
     }
 
-    revalidateAnnouncements(); // Invalidate Next.js cache
-    revalidatePath("/dashboard");
-    revalidatePath("/admin/announcements");
+    revalidateAnnouncements();
+    revalidatePath('/admin/announcements');
+    revalidatePath('/admin/content');
+    revalidatePath('/admin/live');
+    revalidatePath('/dashboard');
 }
 
 export async function getAdminAnnouncements() {
