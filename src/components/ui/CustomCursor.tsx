@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 export function CustomCursor() {
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-    const [isVisible, setIsVisible] = useState(false);
+    const [isVisible, setIsVisible] = useState(true);
 
     useEffect(() => {
         const updateMousePosition = (e: MouseEvent) => {
@@ -22,7 +22,6 @@ export function CustomCursor() {
         document.body.addEventListener("mouseenter", handleMouseEnter);
         document.body.addEventListener("mouseleave", handleMouseLeave);
 
-        setIsVisible(true);
 
         return () => {
             window.removeEventListener("mousemove", updateMousePosition);

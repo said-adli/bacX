@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/Dialog"; // Will need to quickly mock a Dialog or use a simple modal overlay
+import { GlassCard } from "@/components/ui/GlassCard";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, X } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { createClient } from "@/utils/supabase/client";
 
 // Since we don't have a Dialog component yet, I'll build a custom Modal here or use a quick portal.
 // For Simplicity in this "One Shot", I will create a focused Modal overlay.
@@ -21,9 +20,10 @@ interface ReauthModalProps {
 }
 
 export function ReauthModal({ isOpen, onClose, onSuccess }: ReauthModalProps) {
-    const { user } = useAuth();
+    const { user } = useAuth(); // We need email from here
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const supabase = createClient(); // Use client component client
 
     const handleReauth = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,12 +31,22 @@ export function ReauthModal({ isOpen, onClose, onSuccess }: ReauthModalProps) {
 
         setLoading(true);
         try {
-            const credential = EmailAuthProvider.credential(user.email, password);
-            await reauthenticateWithCredential(user, credential);
+            // REAL RE-AUTH: Verify password by attempting a fresh sign-in
+            // We verify credentials without persisting the new session (or we just accept it refreshes)
+            const { error } = await supabase.auth.signInWithPassword({
+                email: user.email,
+                password: password
+            });
+
+            if (error) {
+                throw error;
+            }
+
+            // If successful, we proved user knows password.
             toast.success("تم تأكيد الهوية بنجاح");
             onSuccess();
             onClose();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
             toast.error("كلمة المرور غير صحيحة", {
                 description: "يرجى المحاولة مرة أخرى لتأكيد هويتك."
@@ -51,52 +61,50 @@ export function ReauthModal({ isOpen, onClose, onSuccess }: ReauthModalProps) {
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        className="absolute inset-0 bg-black/80 backdrop-blur-md"
                     />
 
-                    {/* Modal Content */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
                         className="relative w-full max-w-md"
                     >
-                        <GlassCard className="p-6 border-primary/20 shadow-[0_0_50px_rgba(41,151,255,0.1)]">
-                            <button onClick={onClose} className="absolute left-4 top-4 text-zinc-500 hover:text-white">
-                                <X className="w-5 h-5" />
+                        <GlassCard className="p-8 border-red-500/30 shadow-[0_0_50px_rgba(220,38,38,0.2)]">
+                            <button onClick={onClose} className="absolute left-4 top-4 text-zinc-500 hover:text-white transition-colors">
+                                <X className="w-6 h-6" />
                             </button>
 
-                            <div className="flex flex-col items-center mb-6">
-                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4 text-primary">
-                                    <Lock className="w-6 h-6" />
+                            <div className="flex flex-col items-center mb-8">
+                                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-6 text-red-500 border border-red-500/20">
+                                    <Lock className="w-8 h-8" />
                                 </div>
-                                <h2 className="text-xl font-bold text-white font-tajawal">تأكيد الهوية</h2>
-                                <p className="text-sm text-zinc-400 text-center mt-2 max-w-[80%] font-tajawal">
-                                    لأغراض أمنية، يرجى إدخال كلمة المرور الحالية للمتابعة.
+                                <h2 className="text-2xl font-bold text-white font-tajawal">تأكيد أمني مطلوب</h2>
+                                <p className="text-zinc-400 text-center mt-3 font-tajawal leading-relaxed">
+                                    هذا إجراء حساس. يرجى إعادة إدخال كلمة المرور للمتابعة.
                                 </p>
                             </div>
 
-                            <form onSubmit={handleReauth} className="space-y-4">
+                            <form onSubmit={handleReauth} className="space-y-6">
                                 <Input
                                     type="password"
-                                    placeholder="كلمة المرور"
+                                    placeholder="كلمة المرور الحالية"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="bg-black/40 border-white/10"
+                                    className="bg-black/40 border-white/10 h-12 text-lg"
                                     autoFocus
                                 />
                                 <Button
                                     isLoading={loading}
-                                    className="w-full"
+                                    className="w-full h-12 text-lg font-bold bg-red-600 hover:bg-red-700 text-white"
                                     size="lg"
                                 >
-                                    تأكيد
+                                    تأكيد الهوية
                                 </Button>
                             </form>
                         </GlassCard>

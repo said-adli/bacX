@@ -16,7 +16,7 @@ export default function MaintenancePage() {
 
                 <h1 className="text-3xl font-bold text-white mb-4 font-tajawal">تحت الصيانة</h1>
                 <p className="text-zinc-400 text-lg leading-relaxed font-tajawal mb-8">
-                    نقوم حالياً بإجراء تحديثات هامة لتحسين تجربتك في BacX.
+                    نقوم حالياً بإجراء تحديثات هامة لتحسين تجربتك في Brainy.
                     <br />
                     سنعود للعمل قريباً جداً.
                 </p>
