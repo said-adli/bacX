@@ -120,9 +120,19 @@ export async function deleteSubject(id: string) {
 export async function createUnit(subjectId: string, title: string) {
     await requireAdmin();
     const supabase = await createClient();
+    // Get next order index
+    const { count } = await supabase
+        .from('units')
+        .select('*', { count: 'exact', head: true })
+        .eq('subject_id', subjectId);
+
     const { error } = await supabase
         .from('units')
-        .insert([{ subject_id: subjectId, title }]);
+        .insert([{
+            subject_id: subjectId,
+            title,
+            order_index: count || 0
+        }]);
 
     if (error) throw error;
     await logAdminAction("CREATE_UNIT", title, "unit", { subjectId });
@@ -148,6 +158,16 @@ export async function createLesson(data: Partial<Lesson>) {
     await requireAdmin();
     const supabase = await createClient();
     try {
+        // Calculate Order Index if not provided
+        let orderIndex = data.order_index;
+        if (orderIndex === undefined && data.unit_id) {
+            const { count } = await supabase
+                .from('lessons')
+                .select('*', { count: 'exact', head: true })
+                .eq('unit_id', data.unit_id);
+            orderIndex = count || 0;
+        }
+
         const { data: newLesson, error } = await supabase
             .from('lessons')
             .insert({
@@ -158,7 +178,8 @@ export async function createLesson(data: Partial<Lesson>) {
                 unit_id: data.unit_id,
                 is_free: data.is_free,
                 is_purchasable: data.is_purchasable ?? false,
-                price: data.price ?? null
+                price: data.price ?? null,
+                order_index: orderIndex ?? 0
             })
             .select()
             .single();

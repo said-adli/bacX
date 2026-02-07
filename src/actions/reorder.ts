@@ -31,4 +31,5 @@ export async function reorderItems(
     revalidatePath(pathToRevalidate);
     revalidatePath('/admin/live');
     revalidatePath('/dashboard');
+    revalidatePath('/admin/content');
 }
