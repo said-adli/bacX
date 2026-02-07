@@ -91,12 +91,12 @@ export async function getContentTree(): Promise<SubjectWithUnitsDTO[]> {
 }
 
 // createSubject
-export async function createSubject(name: string, icon: string = 'Folder', order: number = 0) {
+export async function createSubject(name: string, icon: string = 'Folder', order_index: number = 0) {
     await requireAdmin();
     const supabase = await createClient();
-    const { error } = await supabase.from('subjects').insert([{ name, icon, order }]);
+    const { error } = await supabase.from('subjects').insert([{ name, icon, order_index }]);
     if (error) throw error;
-    await logAdminAction("CREATE_SUBJECT", name, "subject", { order });
+    await logAdminAction("CREATE_SUBJECT", name, "subject", { order_index });
     revalidateSubjects(); // Invalidate Next.js cache
     revalidatePath('/admin/content');
     revalidatePath('/dashboard');
@@ -156,7 +156,7 @@ export async function createLesson(data: Partial<Lesson>) {
                 video_url: data.video_url,
                 required_plan_id: data.required_plan_id,
                 unit_id: data.unit_id,
-                is_public: data.is_public,
+                is_free: data.is_free,
                 is_purchasable: data.is_purchasable ?? false,
                 price: data.price ?? null
             })
@@ -165,6 +165,32 @@ export async function createLesson(data: Partial<Lesson>) {
 
         if (error) throw error;
         await logAdminAction("CREATE_LESSON", newLesson.id, "lesson", { title: data.title });
+
+        // [SYNC] Create Live Session if type is 'live_stream'
+        if (data.type === 'live_stream') {
+            // Extract or default scheduled time. 
+            // Ideally we should have passed it in `data`, but assuming existing payload structure needs extension or default.
+            // For now, defaulting to now + 1 hour if not provided, or parsing from payload if extended.
+            // Since User requested "Add scheduled_at to Form", let's assume `data` might have it if we extend LessonDTO.
+            // But LessonDTO doesn't have it explicitly. I will check DTO update or use a default.
+            // Let's use a safe default for now to prevent crash, user can update in Live Manager.
+            // EXTRACT FROM PAYLOAD (even if type definition misses it, runtime has it)
+            const payloadSchedule = (data as any).scheduled_at;
+            const startTime = payloadSchedule ? new Date(payloadSchedule).toISOString() : new Date(Date.now() + 3600000).toISOString();
+
+            await supabase.from('live_sessions').insert({
+                title: data.title,
+                youtube_id: data.video_url || 'pending', // Use video_url as stream ID/URL
+                start_time: startTime, // Default default
+                status: 'scheduled',
+                required_plan_id: data.required_plan_id,
+                is_purchasable: data.is_purchasable ?? false,
+                price: data.price ?? null,
+                published: true,
+                lesson_id: newLesson.id // LINKING HERE
+            });
+        }
+
         revalidateLessons(); // Invalidate Next.js cache
         revalidatePath('/admin/content');
         revalidatePath('/dashboard');
@@ -188,7 +214,7 @@ export async function updateLesson(id: string, data: Partial<Lesson>) {
                 type: data.type,
                 video_url: data.video_url,
                 required_plan_id: data.required_plan_id,
-                is_public: data.is_public,
+                is_free: data.is_free,
                 is_purchasable: data.is_purchasable,
                 price: data.price
             })

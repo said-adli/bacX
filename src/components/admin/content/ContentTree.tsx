@@ -5,7 +5,8 @@ import { Folder, FileVideo, Plus, Trash2, ChevronRight, ChevronDown, Lock as Loc
 import {
     createUnit,
     deleteUnit,
-    deleteLesson
+    deleteLesson,
+    createSubject
 } from "@/actions/admin-content";
 import { SubjectWithUnitsDTO, UnitDTO, LessonDTO } from "@/types/curriculum";
 import { toast } from "sonner";
@@ -28,6 +29,8 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
     const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
     const [isCreatingLesson, setIsCreatingLesson] = useState<{ unitId: string } | null>(null);
     const [selectedLesson, setSelectedLesson] = useState<LessonDTO | null>(null); // For editor
+    const [isCreatingSubject, setIsCreatingSubject] = useState(false); // [NEW] Subject Modal State
+    const [newSubjectName, setNewSubjectName] = useState("");
 
     // Sync props to state (for initial load and checks, though mostly local mutation matters for drag)
     useEffect(() => {
@@ -117,6 +120,20 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
         setSelectedLesson(null);
     };
 
+    // [NEW] Subject Creation Handler
+    const handleCreateSubject = async () => {
+        if (!newSubjectName.trim()) return;
+        try {
+            await createSubject(newSubjectName, 'Folder', subjects.length); // Default icon and append order
+            toast.success("Subject Created");
+            setIsCreatingSubject(false);
+            setNewSubjectName("");
+        } catch (e) {
+            console.error(e);
+            toast.error("Failed to create subject");
+        }
+    };
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-150px)]">
 
@@ -124,6 +141,12 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
             <div className="lg:col-span-1 bg-black/20 border border-white/5 rounded-3xl overflow-hidden flex flex-col">
                 <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
                     <h3 className="font-bold text-zinc-400 uppercase text-xs tracking-wider">Course Structure</h3>
+                    <button
+                        onClick={() => setIsCreatingSubject(true)}
+                        className="p-1.5 hover:bg-blue-500 hover:text-white rounded-lg text-blue-500 transition-colors flex items-center gap-1 text-xs font-bold px-2"
+                    >
+                        <Plus size={14} /> NEW SUBJECT
+                    </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
@@ -251,6 +274,39 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
                     </div>
                 )}
             </div>
+            {/* [NEW] Simple Modal for Subject Creation */}
+            {isCreatingSubject && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-sm p-6 space-y-4">
+                        <h3 className="text-lg font-bold text-white">New Subject</h3>
+                        <div>
+                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Subject Name</label>
+                            <input
+                                className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-blue-500 outline-none"
+                                value={newSubjectName}
+                                onChange={(e) => setNewSubjectName(e.target.value)}
+                                placeholder="e.g. Mathematics"
+                                autoFocus
+                                onKeyDown={(e) => e.key === 'Enter' && handleCreateSubject()}
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={() => setIsCreatingSubject(false)}
+                                className="px-4 py-2 hover:bg-white/10 text-zinc-400 rounded-lg text-sm font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleCreateSubject}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold transition-colors"
+                            >
+                                Create
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

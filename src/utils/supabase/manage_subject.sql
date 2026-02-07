@@ -1,15 +1,15 @@
 -- ============================================
--- FUNCTION: manage_subject
--- Purpose: Create or Update subjects with admin-only access
--- Run this in Supabase SQL Editor
+-- DROP OLD FUNCTION FIRST
 -- ============================================
+DROP FUNCTION IF EXISTS manage_subject(text, text, text, uuid, integer, boolean);
+
 
 CREATE OR REPLACE FUNCTION manage_subject(
   p_name TEXT,
   p_icon TEXT DEFAULT 'Folder',
   p_operation_type TEXT DEFAULT 'create', -- 'create' | 'update'
   p_subject_id UUID DEFAULT NULL,
-  p_order INTEGER DEFAULT 0,
+  p_order_index INTEGER DEFAULT 0,
   p_published BOOLEAN DEFAULT TRUE
 )
 RETURNS UUID
@@ -44,8 +44,8 @@ BEGIN
         USING ERRCODE = 'unique_violation';
     END IF;
 
-    INSERT INTO subjects (name, icon, "order", published, created_at)
-    VALUES (p_name, p_icon, p_order, p_published, NOW())
+    INSERT INTO subjects (name, icon, order_index, published, created_at)
+    VALUES (p_name, p_icon, p_order_index, p_published, NOW())
     RETURNING id INTO v_result_id;
 
   -- ============================================
@@ -74,7 +74,7 @@ BEGIN
     SET 
       name = COALESCE(p_name, name),
       icon = COALESCE(p_icon, icon),
-      "order" = COALESCE(p_order, "order"),
+      order_index = COALESCE(p_order_index, order_index),
       published = COALESCE(p_published, published)
     WHERE id = p_subject_id
     RETURNING id INTO v_result_id;

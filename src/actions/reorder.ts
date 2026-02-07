@@ -12,10 +12,10 @@ export async function reorderItems(
 ) {
     const supabase = await createClient();
 
-    // Transform array of IDs into array of { id, order: index }
+    // Transform array of IDs into array of { id, order_index: index }
     const updates = orderedIds.map((id, index) => ({
         id,
-        order: index
+        order_index: index
     }));
 
     const { error } = await supabase.rpc("reorder_items", {

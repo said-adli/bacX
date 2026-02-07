@@ -5,9 +5,9 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { requireAdmin } from "@/lib/auth-guard";
 
 // Types
-interface SubjectData { name: string; icon: string; order: number; }
-interface UnitData { name: string; order: number; }
-interface LessonData { title: string; videoUrl: string; duration: string; isFree: boolean; order: number; }
+interface SubjectData { name: string; icon: string; order_index: number; }
+interface UnitData { name: string; order_index: number; }
+interface LessonData { title: string; videoUrl: string; duration: string; isFree: boolean; order_index: number; }
 
 // SUBJECTS
 export async function createSubject(data: SubjectData) {
@@ -17,7 +17,7 @@ export async function createSubject(data: SubjectData) {
         const { error } = await admin.from('subjects').insert({
             name: data.name,
             icon: data.icon,
-            order: data.order
+            order_index: data.order_index
         });
         if (error) throw error;
         return { success: true };
@@ -44,7 +44,7 @@ export async function createUnit(subjectId: string, data: UnitData) {
         const { error } = await admin.from('units').insert({
             subject_id: subjectId,
             name: data.name,
-            order: data.order
+            order_index: data.order_index
         });
         if (error) throw error;
         return { success: true };
@@ -72,7 +72,7 @@ export async function createLesson(unitId: string, data: LessonData) {
             video_url: data.videoUrl,
             duration: data.duration,
             is_free: data.isFree,
-            order: data.order,
+            order_index: data.order_index,
             created_at: new Date().toISOString()
         });
         if (error) throw error;

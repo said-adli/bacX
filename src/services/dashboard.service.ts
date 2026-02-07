@@ -36,8 +36,11 @@ export async function getDashboardSubjects(userId: string): Promise<SubjectDTO[]
     const { createClient } = await import("@/utils/supabase/server");
     const supabase = await createClient();
 
-    const [subjects, progressMap, ownershipReq] = await Promise.all([
-        getCachedSubjects(),
+    const [subjectsData, progressMap, ownershipReq] = await Promise.all([
+        supabase.from('subjects')
+            .select('id, name, icon, description, color, slug, lesson_count, lessons(id, title, required_plan_id, is_free)') // Explicit select
+            .eq('published', true) // FILTER: Only published subjects
+            .order('order_index', { ascending: true }),
         getUserProgressMapRaw(userId),
         supabase.from('user_content_ownership')
             .select('content_id')
@@ -49,15 +52,24 @@ export async function getDashboardSubjects(userId: string): Promise<SubjectDTO[]
             .eq('content_type', 'subject')
     ]);
 
+    const subjects = subjectsData.data || [];
     const ownedSubjectIds = new Set((ownershipReq.data || []).map(o => o.content_id));
 
     // Merge
-    return subjects.map((subject) => {
+    return subjects.map((subject: any) => {
         const progress = progressMap.get(subject.id) ?? 0;
         return {
-            ...subject,
+            id: subject.id,
+            name: subject.name,
+            icon: subject.icon,
+            description: subject.description,
+            color: subject.color,
+            slug: subject.slug || subject.id,
+            lessonCount: subject.lesson_count,
+            lessons: subject.lessons || [],
             progress: progress,
-            isOwned: ownedSubjectIds.has(subject.id)
+            isOwned: ownedSubjectIds.has(subject.id),
+            published: subject.published // [FIX] Added missing property
         };
     });
 }

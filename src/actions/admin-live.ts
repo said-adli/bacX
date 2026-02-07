@@ -15,6 +15,7 @@ export interface LiveSession {
     is_purchasable: boolean;
     price?: number | null;
     published: boolean;
+    lesson_id?: string | null;
     created_at: string;
 }
 
@@ -54,7 +55,8 @@ export async function createLiveSession(data: NewLiveSessionPayload) {
             required_plan_id: data.required_plan_id || null,
             is_purchasable: data.is_purchasable ?? false,
             price: data.price ?? null,
-            published: data.published ?? true
+            published: data.published ?? true,
+            lesson_id: data.lesson_id ?? null
         })
         .select()
         .single();
@@ -80,7 +82,8 @@ export async function updateLiveSession(id: string, data: Partial<NewLiveSession
             required_plan_id: data.required_plan_id,
             is_purchasable: data.is_purchasable,
             price: data.price,
-            published: data.published
+            published: data.published,
+            lesson_id: data.lesson_id
         })
         .eq('id', id);
 

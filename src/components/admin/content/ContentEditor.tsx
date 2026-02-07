@@ -27,9 +27,10 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
         type: (initialData?.type || "video") as "video" | "live_stream" | "pdf",
         video_url: initialData?.video_url || "",
         required_plan_id: initialData?.required_plan_id || "",
-        is_public: initialData?.is_public || false,
+        is_free: initialData?.is_free || false,
         is_purchasable: initialData?.is_purchasable || false,
-        price: initialData?.price || null
+        price: initialData?.price || null,
+        scheduled_at: "" // [NEW] for Live Creation
     });
     const [isSaving, setIsSaving] = useState(false);
 
@@ -88,9 +89,14 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
                 video_url: formData.video_url,
                 required_plan_id: formData.required_plan_id || null, // Granular Access Logic
                 unit_id: unitId,
-                is_public: formData.is_public,
+                is_free: formData.is_free,
                 is_purchasable: formData.is_purchasable,
-                price: formData.price
+                price: formData.price,
+                // Pass scheduled_at via extended payload if we update the action signature or rely on it being in `data` (partial)
+                // But `createLesson` takes Partial<Lesson>, and LessonDTO doesn't have scheduled_at yet.
+                // We need to pass it. I will append it to the payload object cast as any or extend the type.
+                // Given the instruction "add scheduled_at to form", I'll send it.
+                scheduled_at: formData.scheduled_at
             };
 
             let lessonId = initialData?.id;
@@ -193,16 +199,32 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
                     </div>
 
                     {formData.type !== 'pdf' && (
-                        <div>
-                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
-                                {formData.type === 'live_stream' ? 'YouTube Live URL' : 'Video Source URL'}
-                            </label>
-                            <input
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-mono text-zinc-300 focus:border-blue-500 outline-none"
-                                placeholder="https://..."
-                                value={formData.video_url}
-                                onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                            />
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
+                                    {formData.type === 'live_stream' ? 'Stream URL / ID' : 'Video Source URL'}
+                                </label>
+                                <input
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-mono text-zinc-300 focus:border-blue-500 outline-none"
+                                    placeholder="https://..."
+                                    value={formData.video_url}
+                                    onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                                />
+                            </div>
+
+                            {formData.type === 'live_stream' && (
+                                <div>
+                                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
+                                        Scheduled Start Time
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
+                                        value={formData.scheduled_at}
+                                        onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -234,12 +256,12 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
                             {/* Toggle Public */}
                             <div className="flex items-center gap-3 mt-6">
                                 <div
-                                    className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-colors ${formData.is_public ? 'bg-emerald-500' : 'bg-zinc-700'}`}
-                                    onClick={() => setFormData({ ...formData, is_public: !formData.is_public })}
+                                    className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-colors ${formData.is_free ? 'bg-emerald-500' : 'bg-zinc-700'}`}
+                                    onClick={() => setFormData({ ...formData, is_free: !formData.is_free })}
                                 >
-                                    <div className={`w-5 h-5 rounded-full bg-white transition-transform ${formData.is_public ? 'translate-x-5' : 'translate-x-0'}`} />
+                                    <div className={`w-5 h-5 rounded-full bg-white transition-transform ${formData.is_free ? 'translate-x-5' : 'translate-x-0'}`} />
                                 </div>
-                                <span className="text-sm font-medium text-zinc-300">Is Public Preview?</span>
+                                <span className="text-sm font-medium text-zinc-300">Is Free Preview?</span>
                             </div>
                         </div>
 

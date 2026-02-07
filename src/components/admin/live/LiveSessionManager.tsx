@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { getLiveSessions, createLiveSession, updateLiveSession, deleteLiveSession, LiveSession } from "@/actions/admin-live";
 import { SubscriptionPlan, getAdminPlans } from "@/actions/admin-plans";
+import { getContentTree, Subject, Lesson } from "@/actions/admin-content";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2, Video, Calendar, DollarSign, Lock, PlayCircle, ExternalLink, X, Save } from "lucide-react";
+import { Plus, Edit, Trash2, Video, Calendar, DollarSign, Lock, PlayCircle, ExternalLink, X, Save, Link as LinkIcon } from "lucide-react";
 import { format } from "date-fns";
 import { GlassCard } from "@/components/ui/GlassCard";
 
@@ -14,6 +15,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: (session: LiveSession) => void }) {
     const [sessions, setSessions] = useState<(LiveSession & { subscription_plans?: { name: string } })[]>([]);
     const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+    const [lessons, setLessons] = useState<{ id: string, title: string, subjectName: string }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [currentSession, setCurrentSession] = useState<Partial<LiveSession>>({});
@@ -21,9 +23,21 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
 
     const loadData = async () => {
         setIsLoading(true);
-        const [sParams, pParams] = await Promise.all([getLiveSessions(), getAdminPlans()]);
+        const [sParams, pParams, treeParams] = await Promise.all([getLiveSessions(), getAdminPlans(), getContentTree()]);
         setSessions(sParams);
         setPlans(pParams);
+
+        // Flatten lessons for easier selection
+        const flatLessons: { id: string, title: string, subjectName: string }[] = [];
+        treeParams.forEach(s => {
+            s.units?.forEach(u => {
+                u.lessons?.forEach(l => {
+                    flatLessons.push({ id: l.id, title: l.title, subjectName: s.name });
+                });
+            });
+        });
+        setLessons(flatLessons);
+
         setIsLoading(false);
     };
 
@@ -54,7 +68,8 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
                 required_plan_id: currentSession.required_plan_id || null,
                 is_purchasable: currentSession.is_purchasable || false,
                 price: currentSession.price || null,
-                published: currentSession.published ?? true
+                published: currentSession.published ?? true,
+                lesson_id: currentSession.lesson_id || null
             };
 
             if (currentSession.id) {
@@ -199,85 +214,104 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">YouTube ID</label>
-                                    <input
-                                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none font-mono"
-                                        value={currentSession.youtube_id || ''}
-                                        onChange={e => setCurrentSession({ ...currentSession, youtube_id: e.target.value })}
-                                        placeholder="Video ID"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Schedule Start</label>
-                                    <input
-                                        type="datetime-local"
-                                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
-                                        value={currentSession.start_time ? new Date(currentSession.start_time).toISOString().slice(0, 16) : ''}
-                                        onChange={e => setCurrentSession({ ...currentSession, start_time: new Date(e.target.value).toISOString() })}
-                                    />
-                                </div>
-                            </div>
+                        </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Status</label>
-                                    <select
-                                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
-                                        value={currentSession.status || 'scheduled'}
-                                        onChange={e => setCurrentSession({ ...currentSession, status: e.target.value as 'scheduled' | 'live' | 'ended' })}
-                                    >
-                                        <option value="scheduled">Scheduled</option>
-                                        <option value="live">Live Now</option>
-                                        <option value="ended">Ended</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Required Plan</label>
-                                    <select
-                                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
-                                        value={currentSession.required_plan_id || ''}
-                                        onChange={e => setCurrentSession({ ...currentSession, required_plan_id: e.target.value })}
-                                    >
-                                        <option value="">Public (Free)</option>
-                                        {plans.map(p => (
-                                            <option key={p.id} value={p.id}>{p.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20 space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <input
-                                        type="checkbox"
-                                        id="purchasable"
-                                        className="w-5 h-5 rounded border-zinc-600 bg-zinc-800 text-purple-600 focus:ring-purple-500"
-                                        checked={currentSession.is_purchasable || false}
-                                        onChange={e => setCurrentSession({ ...currentSession, is_purchasable: e.target.checked })}
-                                    />
-                                    <label htmlFor="purchasable" className="text-sm font-bold text-zinc-300">Enable Lifetime Purchase</label>
-                                </div>
-                                {currentSession.is_purchasable && (
-                                    <input
-                                        type="number"
-                                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-purple-500 outline-none"
-                                        value={currentSession.price || ''}
-                                        onChange={e => setCurrentSession({ ...currentSession, price: parseFloat(e.target.value) })}
-                                        placeholder="Price (DA)"
-                                    />
-                                )}
-                            </div>
-
-                            <div className="flex justify-end pt-4">
-                                <button
-                                    onClick={handleSave}
-                                    className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition-all flex items-center gap-2"
+                        {/* Linked Lesson */}
+                        <div>
+                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Linked Lesson (Required)</label>
+                            <div className="relative">
+                                <LinkIcon className="absolute left-3 top-3 text-zinc-500" size={18} />
+                                <select
+                                    className="w-full bg-black/50 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:border-blue-500 outline-none appearance-none"
+                                    value={currentSession.lesson_id || ''}
+                                    onChange={e => setCurrentSession({ ...currentSession, lesson_id: e.target.value })}
                                 >
-                                    <Save size={18} /> Save Session
-                                </button>
+                                    <option value="">Select a Lesson...</option>
+                                    {lessons.map(l => (
+                                        <option key={l.id} value={l.id}>{l.subjectName} - {l.title}</option>
+                                    ))}
+                                </select>
                             </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Stream URL / ID</label>
+                                <input
+                                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none font-mono"
+                                    value={currentSession.youtube_id || ''}
+                                    onChange={e => setCurrentSession({ ...currentSession, youtube_id: e.target.value })}
+                                    placeholder="YouTube ID or URL"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Scheduled At</label>
+                                <input
+                                    type="datetime-local"
+                                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
+                                    value={currentSession.start_time ? new Date(currentSession.start_time).toISOString().slice(0, 16) : ''}
+                                    onChange={e => setCurrentSession({ ...currentSession, start_time: new Date(e.target.value).toISOString() })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Status</label>
+                                <select
+                                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
+                                    value={currentSession.status || 'scheduled'}
+                                    onChange={e => setCurrentSession({ ...currentSession, status: e.target.value as 'scheduled' | 'live' | 'ended' })}
+                                >
+                                    <option value="scheduled">Scheduled</option>
+                                    <option value="live">Live Now</option>
+                                    <option value="ended">Ended</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Required Plan</label>
+                                <select
+                                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
+                                    value={currentSession.required_plan_id || ''}
+                                    onChange={e => setCurrentSession({ ...currentSession, required_plan_id: e.target.value })}
+                                >
+                                    <option value="">Public (Free)</option>
+                                    {plans.map(p => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20 space-y-4">
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    id="purchasable"
+                                    className="w-5 h-5 rounded border-zinc-600 bg-zinc-800 text-purple-600 focus:ring-purple-500"
+                                    checked={currentSession.is_purchasable || false}
+                                    onChange={e => setCurrentSession({ ...currentSession, is_purchasable: e.target.checked })}
+                                />
+                                <label htmlFor="purchasable" className="text-sm font-bold text-zinc-300">Enable Lifetime Purchase</label>
+                            </div>
+                            {currentSession.is_purchasable && (
+                                <input
+                                    type="number"
+                                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-purple-500 outline-none"
+                                    value={currentSession.price || ''}
+                                    onChange={e => setCurrentSession({ ...currentSession, price: parseFloat(e.target.value) })}
+                                    placeholder="Price (DA)"
+                                />
+                            )}
+                        </div>
+
+                        <div className="flex justify-end pt-4">
+                            <button
+                                onClick={handleSave}
+                                className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition-all flex items-center gap-2"
+                            >
+                                <Save size={18} /> Save Session
+                            </button>
                         </div>
                     </div>
                 </div>

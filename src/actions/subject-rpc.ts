@@ -14,7 +14,7 @@ interface ManageSubjectParams {
     icon?: string;
     operationType: OperationType;
     subjectId?: string;
-    order?: number;
+    order_index?: number;
     published?: boolean;
 }
 
@@ -39,7 +39,7 @@ export async function manageSubjectRPC(
             p_icon: params.icon ?? 'Folder',
             p_operation_type: params.operationType,
             p_subject_id: params.subjectId ?? null,
-            p_order: params.order ?? 0,
+            p_order_index: params.order_index ?? 0,
             p_published: params.published ?? true, // Auto-publish default
         });
 
@@ -82,14 +82,14 @@ export async function manageSubjectRPC(
 export async function createSubjectRPC(
     name: string,
     icon: string = 'Folder',
-    order: number = 0,
+    order_index: number = 0,
     published: boolean = true
 ): Promise<ManageSubjectResult> {
     return manageSubjectRPC({
         name,
         icon,
         operationType: 'create',
-        order,
+        order_index,
         published,
     });
 }
@@ -98,7 +98,7 @@ export async function updateSubjectRPC(
     subjectId: string,
     name: string,
     icon: string = 'Folder',
-    order: number = 0,
+    order_index: number = 0,
     published: boolean = true
 ): Promise<ManageSubjectResult> {
     return manageSubjectRPC({
@@ -106,7 +106,7 @@ export async function updateSubjectRPC(
         icon,
         operationType: 'update',
         subjectId,
-        order,
+        order_index,
         published,
     });
 }

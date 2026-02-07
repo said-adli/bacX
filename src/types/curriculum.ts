@@ -10,7 +10,6 @@ export interface LessonDTO {
     type: 'video' | 'live_stream' | 'pdf' | 'quiz';
     video_url?: string | null;
     required_plan_id?: string | null;
-    is_public?: boolean;
     is_free?: boolean;
     duration?: string | null;
     order_index?: number;

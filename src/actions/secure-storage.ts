@@ -47,7 +47,7 @@ export async function getLessonResource(lessonId: string, resourcePath: string) 
     const [lessonResult, profileResult] = await Promise.all([
         supabase
             .from('lessons')
-            .select('required_plan_id, is_public, units(subjects(published))') // Fetched published status
+            .select('required_plan_id, is_free, units(subjects(published))') // Fetched published status
             .eq('id', lessonId)
             .single(),
         supabase
@@ -75,7 +75,7 @@ export async function getLessonResource(lessonId: string, resourcePath: string) 
 
     const contentRequirement = {
         required_plan_id: lesson.required_plan_id,
-        is_free: lesson.is_public, // Map public -> free
+        is_free: lesson.is_free, // Map public -> free
         published: published
     };
 
