@@ -96,7 +96,7 @@ export async function getSubjectsData(): Promise<DashboardSubject[]> {
                 .from('subjects')
                 .select('id, name, icon, description, color, slug, lesson_count, lessons(id, title, required_plan_id, is_free)') // Explicit select
                 .eq('published', true) // FILTER: Only published subjects
-                .in('name', ['Mathematics', 'Physics', 'الرياضيات', 'الفيزياء']) // Strict Filtering
+                // Removed strict name filtering to allow all dynamic subjects
                 .order('order_index', { ascending: true });
 
             if (!data) return [];

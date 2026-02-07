@@ -1,16 +1,11 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { getLiveSessions, createLiveSession, updateLiveSession, deleteLiveSession, LiveSession } from "@/actions/admin-live";
+import { getLiveSessions, createLiveSession, updateLiveSession, deleteLiveSession, LiveSession, NewLiveSessionPayload } from "@/actions/admin-live";
 import { SubscriptionPlan, getAdminPlans } from "@/actions/admin-plans";
-import { getContentTree, Subject, Lesson } from "@/actions/admin-content";
+import { getContentTree } from "@/actions/admin-content";
 import { toast } from "sonner";
 import { Plus, Edit, Trash2, Video, Calendar, DollarSign, Lock, PlayCircle, ExternalLink, X, Save, Link as LinkIcon } from "lucide-react";
 import { format } from "date-fns";
 import { GlassCard } from "@/components/ui/GlassCard";
-
-// Using generic UI components or raw Tailwind
-// Assuming GlassCard exists as seen in ContentEditor
 
 export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: (session: LiveSession) => void }) {
     const [sessions, setSessions] = useState<(LiveSession & { subscription_plans?: { name: string } })[]>([]);
@@ -18,8 +13,9 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
     const [lessons, setLessons] = useState<{ id: string, title: string, subjectName: string }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
-    const [currentSession, setCurrentSession] = useState<Partial<LiveSession>>({});
 
+    // UI State uses standardized naming
+    const [currentSession, setCurrentSession] = useState<Partial<NewLiveSessionPayload> & { id?: string }>({});
 
     const loadData = async () => {
         setIsLoading(true);
@@ -43,27 +39,24 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
 
     useEffect(() => {
         let isMounted = true;
-
         const init = async () => {
             if (isMounted) await loadData();
         };
-
         init();
-
         return () => { isMounted = false; };
     }, []);
 
     const handleSave = async () => {
-        if (!currentSession.title || !currentSession.youtube_id || !currentSession.start_time) {
-            toast.error("Please fill required fields (Title, YouTube ID, Start Time)");
+        if (!currentSession.title || !currentSession.stream_url || !currentSession.scheduled_at) {
+            toast.error("Please fill required fields (Title, Stream URL, Schedule)");
             return;
         }
 
         try {
-            const payload = {
+            const payload: NewLiveSessionPayload = {
                 title: currentSession.title,
-                youtube_id: currentSession.youtube_id,
-                start_time: currentSession.start_time,
+                stream_url: currentSession.stream_url,
+                scheduled_at: currentSession.scheduled_at,
                 status: currentSession.status || 'scheduled',
                 required_plan_id: currentSession.required_plan_id || null,
                 is_purchasable: currentSession.is_purchasable || false,
@@ -76,7 +69,7 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
                 await updateLiveSession(currentSession.id, payload);
                 toast.success("Updated");
             } else {
-                await createLiveSession(payload as Parameters<typeof createLiveSession>[0]);
+                await createLiveSession(payload);
                 toast.success("Created");
             }
             setIsEditing(false);
@@ -99,13 +92,29 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
         }
     };
 
-    const openEditor = (session?: Partial<typeof currentSession>) => {
-        setCurrentSession(session || {
-            status: 'scheduled',
-            published: true,
-            is_purchasable: false,
-            start_time: new Date().toISOString().slice(0, 16) // Default to now-ish format for datetime-local
-        });
+    const openEditor = (session?: Partial<LiveSession>) => {
+        if (session) {
+            // Map DB fields back to UI fields if editing
+            setCurrentSession({
+                id: session.id,
+                title: session.title,
+                stream_url: session.youtube_id, // MAP BACK
+                scheduled_at: session.start_time, // MAP BACK
+                status: session.status,
+                required_plan_id: session.required_plan_id,
+                is_purchasable: session.is_purchasable,
+                price: session.price,
+                published: session.published,
+                lesson_id: session.lesson_id
+            });
+        } else {
+            setCurrentSession({
+                status: 'scheduled',
+                published: true,
+                is_purchasable: false,
+                scheduled_at: new Date().toISOString().slice(0, 16) // Default to now-ish format for datetime-local
+            });
+        }
         setIsEditing(true);
     };
 
@@ -171,7 +180,7 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
                                 href={`https://youtu.be/${s.youtube_id}`}
                                 target="_blank"
                                 className="p-2 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                                title="Open YouTube"
+                                title="Open Stream"
                             >
                                 <ExternalLink size={18} />
                             </a>
@@ -239,8 +248,8 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
                                 <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Stream URL / ID</label>
                                 <input
                                     className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none font-mono"
-                                    value={currentSession.youtube_id || ''}
-                                    onChange={e => setCurrentSession({ ...currentSession, youtube_id: e.target.value })}
+                                    value={currentSession.stream_url || ''}
+                                    onChange={e => setCurrentSession({ ...currentSession, stream_url: e.target.value })}
                                     placeholder="YouTube ID or URL"
                                 />
                             </div>
@@ -249,8 +258,8 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
                                 <input
                                     type="datetime-local"
                                     className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
-                                    value={currentSession.start_time ? new Date(currentSession.start_time).toISOString().slice(0, 16) : ''}
-                                    onChange={e => setCurrentSession({ ...currentSession, start_time: new Date(e.target.value).toISOString() })}
+                                    value={currentSession.scheduled_at?.slice(0, 16) || ''}
+                                    onChange={e => setCurrentSession({ ...currentSession, scheduled_at: new Date(e.target.value).toISOString() })}
                                 />
                             </div>
                         </div>

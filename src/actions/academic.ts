@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth-guard";
 
 // Types
@@ -20,6 +21,9 @@ export async function createSubject(data: SubjectData) {
             order_index: data.order_index
         });
         if (error) throw error;
+        revalidatePath('/admin/content');
+        revalidatePath('/admin/live');
+        revalidatePath('/dashboard');
         return { success: true };
     } catch (e) { return { success: false, message: String(e) }; }
 }
@@ -32,6 +36,9 @@ export async function deleteSubject(id: string) {
         // If not, we might need manual cleanup. Assuming DB cascade.
         const { error } = await admin.from('subjects').delete().eq('id', id);
         if (error) throw error;
+        revalidatePath('/admin/content');
+        revalidatePath('/admin/live');
+        revalidatePath('/dashboard');
         return { success: true };
     } catch (e) { return { success: false, message: String(e) }; }
 }
@@ -47,6 +54,9 @@ export async function createUnit(subjectId: string, data: UnitData) {
             order_index: data.order_index
         });
         if (error) throw error;
+        revalidatePath('/admin/content');
+        revalidatePath('/admin/live');
+        revalidatePath('/dashboard');
         return { success: true };
     } catch (e) { return { success: false, message: String(e) }; }
 }
@@ -57,6 +67,9 @@ export async function deleteUnit(id: string) {
         const admin = createAdminClient();
         const { error } = await admin.from('units').delete().eq('id', id);
         if (error) throw error;
+        revalidatePath('/admin/content');
+        revalidatePath('/admin/live');
+        revalidatePath('/dashboard');
         return { success: true };
     } catch (e) { return { success: false, message: String(e) }; }
 }
@@ -76,6 +89,9 @@ export async function createLesson(unitId: string, data: LessonData) {
             created_at: new Date().toISOString()
         });
         if (error) throw error;
+        revalidatePath('/admin/content');
+        revalidatePath('/admin/live');
+        revalidatePath('/dashboard');
         return { success: true };
     } catch (e) { return { success: false, message: String(e) }; }
 }
@@ -86,6 +102,9 @@ export async function deleteLesson(id: string) {
         const admin = createAdminClient();
         const { error } = await admin.from('lessons').delete().eq('id', id);
         if (error) throw error;
+        revalidatePath('/admin/content');
+        revalidatePath('/admin/live');
+        revalidatePath('/dashboard');
         return { success: true };
     } catch (e) { return { success: false, message: String(e) }; }
 }
