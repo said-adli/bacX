@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logAdminAction } from "@/lib/admin-logger";
 
+// Standard ISO Date Regex
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
+
 export interface LiveSession {
     id: string;
     title: string;
@@ -30,6 +33,7 @@ export type NewLiveSessionPayload = {
     price?: number | null;
     published?: boolean;
     lesson_id?: string | null;
+    description?: string; // Added for completeness in RPC
 };
 
 export async function getLiveSessions() {
@@ -56,12 +60,25 @@ export async function createLiveSession(data: NewLiveSessionPayload) {
     await requireAdmin();
     const supabase = await createClient();
 
+    // 1. Strict Date Validation
+    if (!data.scheduled_at) {
+        throw new Error("Validation Error: Scheduled time is required.");
+    }
+    // Simple check if it's a valid date structure (browser ISO string)
+    // We can also let Postgres handle it, but failing fast is better.
+    const scheduledDate = new Date(data.scheduled_at);
+    if (isNaN(scheduledDate.getTime())) {
+        throw new Error("Validation Error: Invalid scheduled date format.");
+    }
+    const safeStartTime = scheduledDate.toISOString();
+
+
     const { data: newSession, error } = await supabase
         .from('live_sessions')
         .insert({
             title: data.title,
             youtube_id: data.stream_url, // MAP: stream_url -> youtube_id
-            start_time: data.scheduled_at, // MAP: scheduled_at -> start_time
+            start_time: safeStartTime, // MAP: scheduled_at -> start_time (Validated)
             status: data.status || 'scheduled',
             required_plan_id: data.required_plan_id || null,
             is_purchasable: data.is_purchasable ?? false,
@@ -87,55 +104,57 @@ export async function updateLiveSession(id: string, data: Partial<NewLiveSession
     await requireAdmin();
     const supabase = await createClient();
 
-    // 1. Update Live Session
-    const updateData: any = {};
-    if (data.title !== undefined) updateData.title = data.title;
-    if (data.stream_url !== undefined) updateData.youtube_id = data.stream_url; // MAP
-    if (data.scheduled_at !== undefined) updateData.start_time = data.scheduled_at; // MAP
-    if (data.status !== undefined) updateData.status = data.status;
-    if (data.required_plan_id !== undefined) updateData.required_plan_id = data.required_plan_id;
-    if (data.is_purchasable !== undefined) updateData.is_purchasable = data.is_purchasable;
-    if (data.price !== undefined) updateData.price = data.price;
-    if (data.published !== undefined) updateData.published = data.published;
-    if (data.lesson_id !== undefined) updateData.lesson_id = data.lesson_id;
+    // 1. Strict Date Validation (if provided)
+    let safeStartTime: string | undefined;
+    if (data.scheduled_at) {
+        const d = new Date(data.scheduled_at);
+        if (isNaN(d.getTime())) {
+            throw new Error("Validation Error: Invalid scheduled date format.");
+        }
+        safeStartTime = d.toISOString();
+    }
 
-    const { error } = await supabase
-        .from('live_sessions')
-        .update(updateData)
-        .eq('id', id);
-
-    if (error) throw error;
-
-    // 2. DUAL UPDATE: Sync Lesson if linked
-    // We need to fetch the existing session to get the lesson_id if not provided in payload, 
-    // or use the one in payload.
-    // However, to be safe and atomic-ish, let's just update if we have a lesson_id.
-    // Optimization: If we didn't change title/access, skip. But "Consistency" is key.
-
+    // 2. Resolve Lesson ID (if not provided but needed for RPC)
+    // If we want to atomically update the lesson, we need its ID.
+    // If data.lesson_id is provided, use it. If not, fetch it.
     let targetLessonId = data.lesson_id;
-
-    // If not in payload, fetch from DB? Or assumes caller passes it? 
-    // The instructions say "Update the corresponding record in the lessons table".
-    // We should probably fetch the current session to get the lesson_id if we don't have it.
-    if (!targetLessonId) {
+    if (targetLessonId === undefined) {
+        // Optimization: Only fetch if we are actually updating fields that sync (title, dest, time)
+        // But for RPC simplicty, let's just fetch.
         const { data: current } = await supabase.from('live_sessions').select('lesson_id').eq('id', id).single();
         if (current?.lesson_id) targetLessonId = current.lesson_id;
     }
 
-    if (targetLessonId && (data.title || data.stream_url || data.scheduled_at)) {
-        const lessonUpdate: any = {};
-        if (data.title) lessonUpdate.title = data.title;
-        // Map fields that exist in lessons
-        if (data.stream_url) lessonUpdate.video_url = data.stream_url; // Assuming video_url holds the stream ID/URL for Lessons too
-        // Lessons doesn't have scheduled_at/start_time usually visible/used for sorting, but maybe in metadata? 
-        // For now, syncing Title and Video URL is the most critical visual sync in Content Tree.
+    // 3. Call ATOMIC RPC
+    // We pass all fields. Standardize undefined to null for RPC if needed,
+    // but Postgres function defaults handle nulls if we don't pass them?
+    // Actually, calling RPC from JS client passes undefined as missing param usually?
+    // No, Supabase RPC params are named. We should pass explicit nulls or values.
+    // But our RPC has DEFAULT NULL, so we can omit them.
 
-        const { error: lessonError } = await supabase
-            .from('lessons')
-            .update(lessonUpdate)
-            .eq('id', targetLessonId);
+    const rpcParams: any = {
+        p_session_id: id,
+        p_lesson_id: targetLessonId || null, // Pass null if no lesson linked
+        p_title: data.title,
+        p_description: data.description, // DTO doesn't have description yet but RPC supports it.
+        p_start_time: safeStartTime,
+        p_youtube_id: data.stream_url,
+        // Optional status updates
+        p_status: data.status,
+        p_is_purchasable: data.is_purchasable,
+        p_price: data.price,
+        p_published: data.published,
+        p_required_plan_id: data.required_plan_id
+    };
 
-        if (lessonError) console.error("Failed to sync lesson:", lessonError);
+    // Remove undefined keys so RPC uses defaults (which are NULL/Ignore in our SQL logic)
+    Object.keys(rpcParams).forEach(key => rpcParams[key] === undefined && delete rpcParams[key]);
+
+    const { error } = await supabase.rpc('update_live_session_and_lesson', rpcParams);
+
+    if (error) {
+        console.error("Atomic Update Failed:", error);
+        throw error;
     }
 
     await logAdminAction("UPDATE_LIVE", id, "live_session", data);
