@@ -13,11 +13,16 @@ export async function toggleStatusAction(
 ) {
     const supabase = await createClient();
 
+    // Map legacy table names to new resource types
+    let resourceType = "";
+    if (table === "subjects") resourceType = "subject";
+    else if (table === "coupons") resourceType = "coupon";
+    else if (table === "profiles") resourceType = "user";
+
     const { error } = await supabase.rpc("toggle_resource_status", {
-        table_name: table,
-        record_id: id,
-        field_name: field,
-        new_value: newValue
+        resource_id: id,
+        resource_type: resourceType,
+        new_status: newValue
     });
 
     if (error) {

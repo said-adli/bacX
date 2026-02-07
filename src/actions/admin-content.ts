@@ -271,6 +271,7 @@ export async function toggleResourceStatus(
     const supabase = await createClient();
 
     try {
+        // STRICT_RPC_ALIGNMENT: separate keys, explicit casting
         const { data, error } = await supabase.rpc('toggle_resource_status', {
             resource_id: resourceId,
             resource_type: resourceType,
