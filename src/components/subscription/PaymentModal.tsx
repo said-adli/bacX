@@ -111,7 +111,13 @@ export function PaymentModal({ planName, price, isOpen, onClose, onSubmit }: Pay
                             <div className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all ${selectedFile ? 'border-green-500/50 bg-green-500/5' : 'border-white/20 hover:border-blue-500/50 hover:bg-blue-500/5'}`}>
                                 {previewUrl ? (
                                     <div className="relative w-full h-32 flex items-center justify-center">
-                                        <img src={previewUrl} alt="Receipt" className="h-full object-contain rounded-lg shadow-lg" />
+                                        <Image
+                                            src={previewUrl}
+                                            alt="Receipt"
+                                            fill
+                                            className="object-contain rounded-lg shadow-lg"
+                                            unoptimized // Blob URLs work better unoptimized locally sometimes
+                                        />
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity rounded-lg">
                                             <p className="text-white text-sm font-bold">تغيير الصورة</p>
                                         </div>

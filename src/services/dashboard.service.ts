@@ -29,6 +29,25 @@ export interface DashboardViewDTO {
  * Service to orchestrate dashboard data fetching.
  */
 
+interface RawLesson {
+    id: string;
+    title: string;
+    required_plan_id: string | null;
+    is_free: boolean;
+}
+
+interface RawSubject {
+    id: string;
+    name: string;
+    icon: string;
+    description: string;
+    color: string;
+    slug: string;
+    lesson_count: number;
+    lessons: RawLesson[];
+    published: boolean;
+}
+
 export async function getDashboardSubjects(userId: string): Promise<SubjectDTO[]> {
     // ⚡ Cached: subjects keys
     // 🔒 Fresh: user progress
@@ -38,7 +57,7 @@ export async function getDashboardSubjects(userId: string): Promise<SubjectDTO[]
 
     const [subjectsData, progressMap, ownershipReq] = await Promise.all([
         supabase.from('subjects')
-            .select('id, name, icon, description, color, slug, lesson_count, lessons(id, title, required_plan_id, is_free)') // Explicit select
+            .select('id, name, icon, description, color, slug, lesson_count, published, lessons(id, title, required_plan_id, is_free)') // Explicit select
             .eq('published', true) // FILTER: Only published subjects
             .order('order_index', { ascending: true }),
         getUserProgressMapRaw(userId),
@@ -56,7 +75,7 @@ export async function getDashboardSubjects(userId: string): Promise<SubjectDTO[]
     const ownedSubjectIds = new Set((ownershipReq.data || []).map(o => o.content_id));
 
     // Merge
-    return subjects.map((subject: any) => {
+    return subjects.map((subject: RawSubject) => {
         const progress = progressMap.get(subject.id) ?? 0;
         return {
             id: subject.id,
@@ -86,8 +105,4 @@ export async function getDashboardAnnouncements(): Promise<AnnouncementDTO[]> {
         isNew: (new Date().getTime() - new Date(a.createdAt).getTime()) < (7 * 24 * 60 * 60 * 1000)
     }));
 }
-
-// Deprecated: kept only if something else broke, but we are removing its main usage.
-// We can remove it to enforce the new pattern.
-// export async function getDashboardView... REMOVED
 

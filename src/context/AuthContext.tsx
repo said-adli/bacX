@@ -79,6 +79,12 @@ export function AuthProvider({
     });
 
     const isMounted = useRef(false);
+    const profileRef = useRef<EnrichedProfile | null>(null);
+
+    // Keep ref strict synced
+    useEffect(() => {
+        profileRef.current = state.profile;
+    }, [state.profile]);
 
     // --- FETCH STRATEGY: SINGLE RELATIONAL JOIN ---
     const fetchProfile = useCallback(async (userId: string): Promise<EnrichedProfile | null> => {
@@ -223,7 +229,7 @@ export function AuthProvider({
                     // Optimistic
                     setState(prev => ({ ...prev, session, user: session.user }));
 
-                    if (event === 'SIGNED_IN' || !state.profile || state.profile.id !== session.user.id) {
+                    if (event === 'SIGNED_IN' || !profileRef.current || profileRef.current.id !== session.user.id) {
                         try {
                             const profile = await fetchProfile(session.user.id);
                             if (isMounted.current) {
@@ -270,7 +276,7 @@ export function AuthProvider({
             isMounted.current = false;
             subscription.unsubscribe();
         };
-    }, [supabase, fetchProfile, router]); // Removed 'state.profile' from deps to avoid infinite loop if ref diffs
+    }, [supabase, fetchProfile, router]);
 
     // --- ACTIONS ---
 
