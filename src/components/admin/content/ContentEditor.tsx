@@ -41,13 +41,6 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
     // [NEW] Supabase Client for Resource Operations
     const supabase = createClient();
 
-    // [NEW] Fetch Existing Resources
-    useEffect(() => {
-        if (isEditing && initialData?.id) {
-            fetchResources(initialData.id);
-        }
-    }, [initialData, isEditing, fetchResources]);
-
     const fetchResources = useCallback(async (lessonId: string) => {
         setIsLoadingResources(true);
         const { data } = await supabase
@@ -60,6 +53,13 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
         }
         setIsLoadingResources(false);
     }, [supabase]);
+
+    // [NEW] Fetch Existing Resources
+    useEffect(() => {
+        if (isEditing && initialData?.id) {
+            fetchResources(initialData.id);
+        }
+    }, [initialData, isEditing, fetchResources]);
 
     const handleResourceUpload = (file: ResourceFile) => {
         setResources(prev => [...prev, file]);

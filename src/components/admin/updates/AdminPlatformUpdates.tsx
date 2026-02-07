@@ -26,10 +26,6 @@ export default function AdminPlatformUpdates() {
 
     const supabase = createClient();
 
-    useEffect(() => {
-        fetchUpdates();
-    }, [fetchUpdates]);
-
     const fetchUpdates = useCallback(async () => {
         setIsLoading(true);
         const { data, error } = await supabase
@@ -45,6 +41,10 @@ export default function AdminPlatformUpdates() {
         }
         setIsLoading(false);
     }, [supabase]);
+
+    useEffect(() => {
+        fetchUpdates();
+    }, [fetchUpdates]);
 
     const handleSave = async () => {
         if (!currentUpdate.title || !currentUpdate.description) {
