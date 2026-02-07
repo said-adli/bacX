@@ -271,10 +271,10 @@ export async function toggleResourceStatus(
     const supabase = await createClient();
 
     try {
-        const { error } = await supabase.rpc('toggle_resource_status', {
+        const { data, error } = await supabase.rpc('toggle_resource_status', {
             resource_id: resourceId,
             resource_type: resourceType,
-            new_status: Boolean(newStatus) // Explicit cast for safety
+            new_status: Boolean(newStatus)
         });
 
         if (error) {
