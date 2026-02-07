@@ -263,27 +263,29 @@ export async function ensureSubjects() {
 
 // TOGGLE STATUS
 export async function toggleResourceStatus(
-    resourceId: string, 
-    resourceType: string, 
+    resourceType: string,
+    resourceId: string,
+    columnName: string,
     newStatus: boolean
 ) {
     await requireAdmin();
     const supabase = await createClient();
 
-    // MUST wrap arguments in a single 'payload' key to match the JSONB SQL signature
+    // Mapping the incoming args to the exact JSONB structure the SQL function expects
     const { data, error } = await supabase.rpc('toggle_resource_status', {
         payload: {
-            resource_id: resourceId,
-            resource_type: resourceType,
-            new_status: Boolean(newStatus)
+            resource_id: resourceId,   // Uses the 2nd argument
+            resource_type: resourceType, // Uses the 1st argument
+            new_status: Boolean(newStatus) // Uses the 4th argument
         }
     });
 
     if (error) {
-        console.error("❌ RPC CRASHED:", error);
+        console.error("❌ RPC Alignment Error:", error);
         return { success: false, error: error.message };
     }
 
     revalidatePath('/admin/content');
+    revalidatePath('/dashboard');
     return { success: true };
 }
