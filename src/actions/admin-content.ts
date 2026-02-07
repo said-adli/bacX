@@ -263,44 +263,27 @@ export async function ensureSubjects() {
 
 // TOGGLE STATUS
 export async function toggleResourceStatus(
-    resourceId: string,
-    resourceType: 'subject' | 'lesson' | 'unit' | 'user' | 'coupon',
+    resourceId: string, 
+    resourceType: string, 
     newStatus: boolean
 ) {
     await requireAdmin();
     const supabase = await createClient();
 
-    try {
-        // STRICT_RPC_ALIGNMENT: separate keys, explicit casting
-        const { data, error } = await supabase.rpc('toggle_resource_status', {
-            payload: {
-                resource_id: resourceId,
-                resource_type: resourceType,
-                new_status: Boolean(newStatus)
-            }
-        });
-
-        if (error) {
-            console.error("Toggle RPC Error:", error);
-            // Return failure but don't crash
-            return { success: false, error: error.message };
+    // MUST wrap arguments in a single 'payload' key to match the JSONB SQL signature
+    const { data, error } = await supabase.rpc('toggle_resource_status', {
+        payload: {
+            resource_id: resourceId,
+            resource_type: resourceType,
+            new_status: Boolean(newStatus)
         }
+    });
 
-        // Smart Revalidation based on type
-        if (resourceType === 'subject') {
-            revalidateSubjects();
-            revalidatePath('/dashboard');
-        } else if (resourceType === 'lesson') {
-            revalidateLessons();
-        } else if (resourceType === 'unit') {
-            revalidateCurriculum();
-        }
-
-        revalidatePath('/admin/content');
-        return { success: true };
-
-    } catch (err: any) {
-        console.error("Server Action Error (Toggle):", err);
-        return { success: false, error: "Internal Server Error" };
+    if (error) {
+        console.error("❌ RPC CRASHED:", error);
+        return { success: false, error: error.message };
     }
+
+    revalidatePath('/admin/content');
+    return { success: true };
 }
