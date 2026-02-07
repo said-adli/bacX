@@ -265,23 +265,21 @@ export async function ensureSubjects() {
 export async function toggleResourceStatus(
     resourceType: string,
     resourceId: string,
-    columnName: string,
+    columnName: string, // هادي خليها بصح ماراناش نبعثوها للـ RPC درك
     newStatus: boolean
 ) {
     await requireAdmin();
     const supabase = await createClient();
 
-    // Mapping the incoming args to the exact JSONB structure the SQL function expects
+    // نبعثوا المتغيرات مباشرة بلا payload
     const { data, error } = await supabase.rpc('toggle_resource_status', {
-        payload: {
-            resource_id: resourceId,   // Uses the 2nd argument
-            resource_type: resourceType, // Uses the 1st argument
-            new_status: Boolean(newStatus) // Uses the 4th argument
-        }
+        res_id: resourceId,
+        res_type: resourceType,
+        res_status: Boolean(newStatus)
     });
 
     if (error) {
-        console.error("❌ RPC Alignment Error:", error);
+        console.error("❌ RPC Error:", error);
         return { success: false, error: error.message };
     }
 
