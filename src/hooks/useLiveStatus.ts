@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
@@ -14,7 +14,7 @@ export interface LiveSession {
 }
 
 export function useLiveStatus() {
-    const supabase = useMemo(() => createClient(), []);
+    const supabase = createClient();
     const [liveSession, setLiveSession] = useState<LiveSession | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -76,7 +76,7 @@ export function useLiveStatus() {
             clearInterval(intervalId);
             window.removeEventListener('focus', onFocus);
         };
-    }, [supabase]);
+    }, []);
 
     const isLive = liveSession?.status === "live";
     const title = liveSession?.title || "";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import SecureVideoPlayer from "@/components/SecureVideoPlayer";
 import { Sidebar } from "@/components/lesson/Sidebar";
 import { createClient } from "@/utils/supabase/client";
@@ -27,7 +27,7 @@ export default function LessonContent({ id, title, description }: LessonContentP
     // [NEW] Resources State
     const [resources, setResources] = useState<LessonResource[]>([]);
     const [isLoadingResources, setIsLoadingResources] = useState(true);
-    const supabase = useMemo(() => createClient(), []);
+    const supabase = createClient();
 
     // [NEW] Fetch Resources Effect
     useEffect(() => {
@@ -55,7 +55,7 @@ export default function LessonContent({ id, title, description }: LessonContentP
         if (id) {
             fetchResources();
         }
-    }, [id, supabase]);
+    }, [id]);
 
     const handleDownload = async (resource: LessonResource) => {
         try {

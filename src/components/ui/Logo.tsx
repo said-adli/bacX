@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 interface LogoProps {
@@ -9,13 +8,12 @@ interface LogoProps {
 
 export const Logo = ({ className, width, height }: LogoProps) => {
   return (
-    <Image
+    <img
       src="/images/logo.png"
       alt="Brainy Platform Logo"
-      className={cn("object-contain dark:invert", className)}
-      width={width || 120}
-      height={height || 40}
-      priority
+      className={cn("w-auto h-auto object-contain dark:invert", className)}
+      width={width}
+      height={height}
     />
   );
 };

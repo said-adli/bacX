@@ -154,7 +154,7 @@ export async function deleteUnit(id: string) {
 }
 
 // createLesson
-export async function createLesson(data: Partial<Lesson> & { scheduled_at?: string }) {
+export async function createLesson(data: Partial<Lesson>) {
     await requireAdmin();
     const supabase = await createClient();
     try {
@@ -189,7 +189,7 @@ export async function createLesson(data: Partial<Lesson> & { scheduled_at?: stri
 
         // [SYNC] Create Live Session if type is 'live_stream'
         if (data.type === 'live_stream') {
-            const payloadSchedule = data.scheduled_at;
+            const payloadSchedule = (data as any).scheduled_at;
             let safeStartTime: string;
 
             if (payloadSchedule) {
