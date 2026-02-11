@@ -2,7 +2,7 @@
 import React from "react";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, Bell, ChevronDown, LogOut, User, Settings, CreditCard } from "lucide-react";
+import { Search, Bell, ChevronDown, LogOut, User, Settings, CreditCard, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import LiveStatus from "@/components/dashboard/LiveStatus";
@@ -21,6 +21,7 @@ const StickyGlassMenuComponent = function StickyGlassMenu() {
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const notifDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -37,6 +38,22 @@ const StickyGlassMenuComponent = function StickyGlassMenu() {
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    const handleLogout = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        setIsLoggingOut(true);
+        
+        try {
+            await logout();
+            // Force reload to clear all states/cache
+            window.location.href = '/';
+        } catch (error) {
+            console.error("Logout failed", error);
+            setIsLoggingOut(false);
+        }
+    };
 
     return (
         <div className="fixed top-0 left-0 right-0 z-[60] px-4 md:px-12 pt-6 pointer-events-none">
@@ -187,15 +204,12 @@ const StickyGlassMenuComponent = function StickyGlassMenu() {
                                     <div className="p-2 border-t border-white/5">
                                         <button
                                             type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                logout();
-                                                setIsProfileOpen(false);
-                                            }}
-                                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
+                                            disabled={isLoggingOut}
+                                            onClick={handleLogout}
+                                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            <LogOut size={16} />
-                                            تسجيل الخروج
+                                            {isLoggingOut ? <Loader2 size={16} className="animate-spin" /> : <LogOut size={16} />}
+                                            {isLoggingOut ? "جاري الخروج..." : "تسجيل الخروج"}
                                         </button>
                                     </div>
                                 </motion.div>
