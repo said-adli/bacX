@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { createClient } from "@/utils/supabase/client";
 import {
     Shield, Key, Loader2, Settings, Bell, Smartphone,
-    LogOut, Monitor, Clock, Mail
+    LogOut, Monitor, Clock, Mail, Globe, Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 import { SmartButton } from "@/components/ui/SmartButton";
@@ -13,6 +13,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/context/AuthContext";
+import { getActiveSessions, deleteOtherSessions, type SessionRecord } from "@/actions/sessions";
+import { DeleteAccountModal } from "@/components/settings/DeleteAccountModal";
 
 // Password Change Schema
 const passwordSchema = z.object({
@@ -31,16 +33,19 @@ interface SettingsFormProps {
 }
 
 export default function SettingsForm({ initialEmailPrefs }: SettingsFormProps) {
-    const { user } = useAuth(); // Client side auth check for signout/email
+    const { user } = useAuth();
     const supabase = createClient();
 
     const [isChangingPassword, setIsChangingPassword] = useState(false);
     const [isSigningOutOthers, setIsSigningOutOthers] = useState(false);
     const [notifyEmail, setNotifyEmail] = useState(initialEmailPrefs);
     const [isSavingEmail, setIsSavingEmail] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-    // Device Info
-    const [sessionInfo, setSessionInfo] = useState({ os: "جاري التحميل...", browser: "" });
+    // Real Session Data
+    const [sessions, setSessions] = useState<SessionRecord[]>([]);
+    const [currentToken, setCurrentToken] = useState<string | null>(null);
+    const [isLoadingSessions, setIsLoadingSessions] = useState(true);
 
     const passwordForm = useForm<PasswordFormValues>({
         resolver: zodResolver(passwordSchema),
@@ -51,24 +56,23 @@ export default function SettingsForm({ initialEmailPrefs }: SettingsFormProps) {
         }
     });
 
-    useEffect(() => {
-        if (typeof window !== "undefined" && window.navigator) {
-            const ua = window.navigator.userAgent;
-            let os = "نظام غير معروف";
-            if (ua.includes("Win")) os = "Windows";
-            else if (ua.includes("Mac")) os = "MacOS";
-            else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
-            else if (ua.includes("Android")) os = "Android";
-
-            let browser = "متصفح";
-            if (ua.includes("Edg/")) browser = "Edge";
-            else if (ua.includes("Chrome")) browser = "Chrome";
-            else if (ua.includes("Firefox")) browser = "Firefox";
-            else if (ua.includes("Safari")) browser = "Safari";
-
-            setSessionInfo({ os, browser });
+    // Fetch real sessions from DB
+    const fetchSessions = useCallback(async () => {
+        setIsLoadingSessions(true);
+        try {
+            const result = await getActiveSessions();
+            setSessions(result.sessions);
+            setCurrentToken(result.currentToken);
+        } catch (error) {
+            console.error("Failed to fetch sessions:", error);
+        } finally {
+            setIsLoadingSessions(false);
         }
     }, []);
+
+    useEffect(() => {
+        fetchSessions();
+    }, [fetchSessions]);
 
     const onPasswordSubmit = async (values: PasswordFormValues) => {
         setIsChangingPassword(true);
@@ -102,9 +106,18 @@ export default function SettingsForm({ initialEmailPrefs }: SettingsFormProps) {
     const handleSignOutOtherDevices = async () => {
         setIsSigningOutOthers(true);
         try {
+            // 1. Sign out other Supabase sessions
             const { error } = await supabase.auth.signOut({ scope: "others" });
             if (error) throw error;
+
+            // 2. Clean up DB records
+            const result = await deleteOtherSessions();
+            if (!result.success) throw new Error(result.error);
+
             toast.success("تم تسجيل الخروج من جميع الأجهزة الأخرى");
+
+            // 3. Refresh the session list
+            await fetchSessions();
         } catch (error) {
             console.error(error);
             toast.error("فشلت العملية");
@@ -129,7 +142,7 @@ export default function SettingsForm({ initialEmailPrefs }: SettingsFormProps) {
 
             if (error) throw error;
             toast.success(newValue ? "تم تفعيل الإشعارات" : "تم إيقاف الإشعارات");
-        } catch (error) {
+        } catch {
             setNotifyEmail(previousValue);
             toast.error("فشل حفظ التغيير");
         } finally {
@@ -137,7 +150,20 @@ export default function SettingsForm({ initialEmailPrefs }: SettingsFormProps) {
         }
     };
 
-    const deleteAccountMailto = `mailto:support@bac-x.com?subject=Account Deletion&body=User Email: ${user?.email}`;
+    // Format relative time
+    const formatLastActive = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+
+        if (diffMins < 1) return "نشط الآن";
+        if (diffMins < 60) return `منذ ${diffMins} دقيقة`;
+        const diffHours = Math.floor(diffMins / 60);
+        if (diffHours < 24) return `منذ ${diffHours} ساعة`;
+        const diffDays = Math.floor(diffHours / 24);
+        return `منذ ${diffDays} يوم`;
+    };
 
     return (
         <div className="max-w-4xl mx-auto pb-20 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pt-6">
@@ -178,28 +204,81 @@ export default function SettingsForm({ initialEmailPrefs }: SettingsFormProps) {
                         </form>
                     </GlassCard>
 
-                    {/* Sessions */}
+                    {/* Active Sessions — Real Data */}
                     <GlassCard className="p-6 space-y-6 border-white/10">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <Smartphone className="text-purple-400" size={20} />
                             الجلسات النشطة
+                            {!isLoadingSessions && sessions.length > 0 && (
+                                <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full border border-purple-500/30">
+                                    {sessions.length}
+                                </span>
+                            )}
                         </h2>
-                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                                    <Monitor className="w-5 h-5 text-green-400" />
-                                </div>
-                                <div>
-                                    <p className="text-white font-medium">{sessionInfo.os} — {sessionInfo.browser}</p>
-                                    <p className="text-white/40 text-xs flex items-center gap-1"><Clock className="w-3 h-3" /> نشط الآن</p>
-                                </div>
+
+                        {isLoadingSessions ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="w-6 h-6 text-purple-400 animate-spin" />
+                                <span className="text-white/40 text-sm mr-2">جاري التحميل...</span>
                             </div>
-                            <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">الجلسة الحالية</span>
-                        </div>
-                        <SmartButton isLoading={isSigningOutOthers} onClick={handleSignOutOtherDevices} className="w-full bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-500/30 px-6 py-3 rounded-xl font-bold">
-                            <LogOut className="w-4 h-4 ml-2" />
-                            تسجيل الخروج من الأجهزة الأخرى
-                        </SmartButton>
+                        ) : sessions.length === 0 ? (
+                            <div className="text-center py-6 text-white/40 text-sm">
+                                لا توجد جلسات نشطة
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {sessions.map((session) => {
+                                    const isCurrent = session.session_token === currentToken;
+                                    return (
+                                        <div
+                                            key={session.id}
+                                            className={`flex items-center justify-between p-4 rounded-xl border transition-all ${isCurrent
+                                                    ? "bg-green-500/5 border-green-500/20"
+                                                    : "bg-white/5 border-white/10"
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isCurrent ? "bg-green-500/20" : "bg-white/10"
+                                                    }`}>
+                                                    <Monitor className={`w-5 h-5 ${isCurrent ? "text-green-400" : "text-white/40"}`} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-white font-medium text-sm">{session.terminal_info}</p>
+                                                    <div className="flex items-center gap-3 mt-1">
+                                                        <p className="text-white/40 text-xs flex items-center gap-1">
+                                                            <Clock className="w-3 h-3" />
+                                                            {isCurrent ? "نشط الآن" : formatLastActive(session.last_active)}
+                                                        </p>
+                                                        {session.ip_address && (
+                                                            <p className="text-white/30 text-xs flex items-center gap-1">
+                                                                <Globe className="w-3 h-3" />
+                                                                {session.ip_address}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {isCurrent && (
+                                                <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30 shrink-0">
+                                                    الجلسة الحالية
+                                                </span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {sessions.length > 1 && (
+                            <SmartButton
+                                isLoading={isSigningOutOthers}
+                                onClick={handleSignOutOtherDevices}
+                                className="w-full bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-500/30 px-6 py-3 rounded-xl font-bold"
+                            >
+                                <LogOut className="w-4 h-4 ml-2" />
+                                تسجيل الخروج من الأجهزة الأخرى
+                            </SmartButton>
+                        )}
                     </GlassCard>
 
                     {/* Notifications */}
@@ -239,14 +318,30 @@ export default function SettingsForm({ initialEmailPrefs }: SettingsFormProps) {
                             <li>• تحقق من الجلسات بانتظام</li>
                         </ul>
                     </GlassCard>
-                    <GlassCard className="p-6 border-white/10 bg-red-600/5">
-                        <h3 className="text-lg font-bold text-white mb-2">حذف الحساب</h3>
-                        <a href={deleteAccountMailto} className="inline-flex items-center gap-2 text-sm text-red-400 hover:text-red-300 underline transition-colors">
-                            <Mail className="w-4 h-4" /> طلب الحذف
-                        </a>
+
+                    {/* Delete Account — Danger Zone */}
+                    <GlassCard className="p-6 border-red-500/20 bg-red-600/5">
+                        <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                            <Trash2 className="w-5 h-5 text-red-400" />
+                            منطقة الخطر
+                        </h3>
+                        <p className="text-white/40 text-xs mb-4">حذف الحساب بشكل نهائي ولا يمكن التراجع عنه.</p>
+                        <button
+                            onClick={() => setIsDeleteModalOpen(true)}
+                            className="w-full px-4 py-3 rounded-xl border border-red-500/30 bg-red-600/10 hover:bg-red-600/20 text-red-400 font-bold text-sm transition-all flex items-center justify-center gap-2"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            حذف الحساب
+                        </button>
                     </GlassCard>
                 </div>
             </div>
+
+            {/* Account Deletion Modal */}
+            <DeleteAccountModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+            />
         </div>
     );
 }

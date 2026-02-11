@@ -4,6 +4,7 @@ import { createContext, useContext, useState, ReactNode, useCallback, useEffect,
 import { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { upsertSession } from "@/actions/sessions";
 
 // --- TYPES ---
 
@@ -222,6 +223,25 @@ export function AuthProvider({
                 if (session?.user) {
                     // Optimistic
                     setState(prev => ({ ...prev, session, user: session.user }));
+
+                    // Track session in DB on login (fire-and-forget)
+                    if (event === 'SIGNED_IN' && typeof window !== 'undefined') {
+                        const ua = window.navigator.userAgent;
+                        let os = 'Unknown OS';
+                        if (ua.includes('Win')) os = 'Windows';
+                        else if (ua.includes('Mac')) os = 'MacOS';
+                        else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+                        else if (ua.includes('Android')) os = 'Android';
+                        else if (ua.includes('Linux')) os = 'Linux';
+
+                        let browser = 'Browser';
+                        if (ua.includes('Edg/')) browser = 'Edge';
+                        else if (ua.includes('Chrome')) browser = 'Chrome';
+                        else if (ua.includes('Firefox')) browser = 'Firefox';
+                        else if (ua.includes('Safari')) browser = 'Safari';
+
+                        upsertSession(`${os} — ${browser}`).catch(console.error);
+                    }
 
                     if (event === 'SIGNED_IN' || !state.profile || state.profile.id !== session.user.id) {
                         try {
