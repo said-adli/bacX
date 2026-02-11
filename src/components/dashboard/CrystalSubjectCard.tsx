@@ -1,11 +1,7 @@
 "use client";
-import React from "react";
-
-import { useRef, useState } from "react";
-
-
+import React, { useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Calculator, Zap, Microscope, BookOpen, Feather, Globe, LayoutGrid } from "lucide-react";
 
 interface Subject {
     id: string;
@@ -39,8 +35,6 @@ const getSubjectConfig = (name: string) => {
     // Default
     return { icon: LayoutGrid, color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'group-hover:border-slate-500/30' };
 };
-
-import { Calculator, Zap, Microscope, BookOpen, Feather, Globe, LayoutGrid } from "lucide-react";
 
 const CrystalSubjectCardComponent = function CrystalSubjectCard({ subject }: { subject: Subject }) {
     const cardRef = useRef<HTMLDivElement>(null);

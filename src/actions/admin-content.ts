@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth-guard";
 import { logAdminAction } from "@/lib/admin-logger";
@@ -189,7 +188,14 @@ export async function createLesson(data: Partial<Lesson>) {
 
         // [SYNC] Create Live Session if type is 'live_stream'
         if (data.type === 'live_stream') {
-            const payloadSchedule = (data as any).scheduled_at;
+            // Fix explicit any: Define the expected payload shape locally
+            interface CreateLessonPayload {
+                scheduled_at?: string | number | Date;
+            }
+            // Safe cast through unknown
+            const payload = data as unknown as CreateLessonPayload;
+            const payloadSchedule = payload.scheduled_at;
+
             let safeStartTime: string;
 
             if (payloadSchedule) {
@@ -328,7 +334,6 @@ export async function ensureSubjects() {
     // 'Mathematics' and 'Physics' (Arabic or English as per user? "Subjects: Hardcode 'Mathematics' and 'Physics'")
     // Assuming English keys for internal logic, but user might want Arabic. 
     // Plan said: "Subjects: Hardcode 'Mathematics' and 'Physics'".
-    const supabase = await createClient();
 
     // We can run a quick check? 
     // Or just let them be created manually or via migration.
@@ -340,14 +345,13 @@ export async function ensureSubjects() {
 export async function toggleResourceStatus(
     resourceType: string,
     resourceId: string,
-    columnName: string, // هادي خليها بصح ماراناش نبعثوها للـ RPC درك
     newStatus: boolean
 ) {
     await requireAdmin();
     const supabase = await createClient();
 
     // نبعثوا المتغيرات مباشرة بلا payload
-    const { data, error } = await supabase.rpc('toggle_resource_status', {
+    const { error } = await supabase.rpc('toggle_resource_status', {
         res_id: resourceId,
         res_type: resourceType,
         res_status: Boolean(newStatus)

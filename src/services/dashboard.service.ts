@@ -1,4 +1,4 @@
-import { getCachedSubjects, getCachedAnnouncements } from "@/lib/cache/cached-data";
+import { getCachedAnnouncements } from "@/lib/cache/cached-data";
 import { getUserProgressMapRaw } from "@/lib/data/raw-db";
 
 /**
@@ -56,7 +56,25 @@ export async function getDashboardSubjects(userId: string): Promise<SubjectDTO[]
     const ownedSubjectIds = new Set((ownershipReq.data || []).map(o => o.content_id));
 
     // Merge
-    return subjects.map((subject: any) => {
+    // Fix explicit any: Define the shape returned by the Supabase select above
+    interface DashboardSubjectRaw {
+        id: string;
+        name: string;
+        icon: string | null;
+        description: string | null;
+        color: string | null;
+        slug: string | null;
+        lesson_count: number;
+        published: boolean;
+        lessons: {
+            id: string;
+            title: string;
+            required_plan_id: string | null;
+            is_free: boolean;
+        }[];
+    }
+
+    return (subjects as unknown as DashboardSubjectRaw[]).map((subject) => {
         const progress = progressMap.get(subject.id) ?? 0;
         return {
             id: subject.id,
