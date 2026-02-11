@@ -330,8 +330,10 @@ export function AuthProvider({
             await supabase.auth.signOut();
         } finally {
             if (isMounted.current) {
+                // Clear local state immediately
                 setState({ user: null, profile: null, session: null, loading: false, error: null, connectionError: false });
                 router.replace('/');
+                router.refresh(); // Force cache invalidation
             }
         }
     };
