@@ -1,0 +1,2 @@
+ALTER TABLE payment_requests 
+ADD COLUMN IF NOT EXISTS amount NUMERIC(10, 2) DEFAULT 0.00;

@@ -1,0 +1,470 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import {
+    Search,
+    Filter,
+    MessageSquare,
+    Send,
+    Edit,
+    Trash2,
+    VenetianMask,
+    ShieldAlert,
+    CheckCircle,
+    XCircle,
+    Clock
+} from "lucide-react";
+import { StatusToggle } from "@/components/admin/shared/StatusToggle";
+import { manualsExpireSubscription, generateImpersonationLink, deleteStudent } from "@/actions/admin-students";
+import { bulkBroadcast } from "@/actions/admin-broadcast";
+import { toast } from "sonner";
+import { useDebounce } from "@/hooks/useDebounce";
+import { ManageSubscriptionModal } from "./ManageSubscriptionModal";
+
+interface Student {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    wilaya: string | null;
+    study_system: string | null;
+    is_banned: boolean;
+    is_subscribed: boolean;
+    created_at: string;
+    avatar_url?: string;
+    subscription_end_date?: string | null;
+    plan_id: string | null;
+}
+
+export function StudentTable({ students, totalPages }: { students: Student[], totalPages: number }) {
+    const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Debounced Search Logic
+    const [searchTerm, setSearchTerm] = useState(
+        typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get("query") || "" : ""
+    );
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (debouncedSearchTerm) {
+            params.set("query", debouncedSearchTerm);
+        } else {
+            params.delete("query");
+        }
+        params.set("page", "1");
+        router.replace(`?${params.toString()}`);
+    }, [debouncedSearchTerm, router]);
+
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
+    const [broadcastMessage, setBroadcastMessage] = useState("");
+    const [managingStudent, setManagingStudent] = useState<Student | null>(null);
+
+    // Virtualization Setup
+    const parentRef = useRef<HTMLDivElement>(null);
+    const rowVirtualizer = useVirtualizer({
+        count: students.length,
+        getScrollElement: () => parentRef.current,
+        estimateSize: () => 64,
+        overscan: 5,
+    });
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedIds(new Set(students.map(s => s.id)));
+        } else {
+            setSelectedIds(new Set());
+        }
+    };
+
+    const handleSelectRow = (id: string, checked: boolean) => {
+        const newSet = new Set(selectedIds);
+        if (checked) newSet.add(id);
+        else newSet.delete(id);
+        setSelectedIds(newSet);
+    };
+
+    const handleBulkAction = async (action: 'ban' | 'unban' | 'expire') => {
+        if (!confirm(`Are you sure you want to ${action.toUpperCase()} ${selectedIds.size} users?`)) return;
+        setIsLoading(true);
+        // Dynamic import to avoid circular dependency issues if any
+        const { bulkUpdateStudents } = await import("@/actions/admin-students");
+        try {
+            await bulkUpdateStudents(Array.from(selectedIds), action);
+            toast.success(`Bulk ${action} successful`);
+            setSelectedIds(new Set());
+            router.refresh();
+        } catch (e) {
+            toast.error("Bulk action failed");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleBroadcast = async () => {
+        if (!broadcastMessage.trim()) {
+            toast.error("Message cannot be empty.");
+            return;
+        }
+        setIsLoading(true);
+        try {
+            await bulkBroadcast(Array.from(selectedIds), broadcastMessage);
+            toast.success("Messages sent successfully!");
+            setIsBroadcastOpen(false);
+            setBroadcastMessage("");
+            setSelectedIds(new Set());
+            router.refresh();
+        } catch (e) {
+            toast.error("Failed to send messages.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleTerminate = async (id: string) => {
+        if (!confirm("Are you sure you want to terminate this subscription immediately?")) return;
+        setIsLoading(true);
+        try {
+            await manualsExpireSubscription(id);
+            toast.success("Subscription terminated");
+            router.refresh();
+        } catch (e) {
+            toast.error("Action failed");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleImpersonate = async (id: string, name: string) => {
+        if (!confirm(`Are you sure you want to log in as ${name}? This action will be logged.`)) return;
+        setIsLoading(true);
+        try {
+            const magicLink = await generateImpersonationLink(id);
+            if (magicLink) {
+                toast.success("Redirecting to student view...");
+                window.open(magicLink, '_blank');
+            }
+        } catch (e) {
+            toast.error("Impersonation failed");
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("DANGER: This will permanently delete the student and all their data. This cannot be undone.")) return;
+        setIsLoading(true);
+        try {
+            await deleteStudent(id);
+            toast.success("Student deleted permanently");
+            router.refresh();
+        } catch (e) {
+            toast.error("Delete failed");
+            console.error(e);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    return (
+        <div className="space-y-6">
+            {/* Controls */}
+            <div className="flex gap-4 mb-6">
+                <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+                    <input
+                        placeholder="Search name, email, or phone..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3 bg-black/20 border border-white/5 rounded-xl text-white focus:outline-none focus:border-blue-500/50"
+                    />
+                </div>
+                <div className="flex gap-2">
+                    <button className="px-4 py-2 bg-black/20 border border-white/5 rounded-xl text-zinc-400 hover:text-white flex items-center gap-2">
+                        <Filter size={18} />
+                        Filters
+                    </button>
+                    <select
+                        className="px-4 py-2 bg-black/20 border border-white/5 rounded-xl text-zinc-400 focus:outline-none"
+                        onChange={(e) => {
+                            const params = new URLSearchParams(window.location.search);
+                            params.set("filter", e.target.value);
+                            router.push(`?${params.toString()}`);
+                        }}
+                    >
+                        <option value="all">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="expired">Expired</option>
+                        <option value="banned">Banned</option>
+                    </select>
+                </div>
+            </div>
+
+            {/* Table */}
+            <div className="border border-white/5 rounded-2xl overflow-hidden bg-black/20 backdrop-blur-sm">
+                <div
+                    ref={parentRef}
+                    className="h-[600px] overflow-auto w-full relative scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+                >
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-white/5 text-zinc-400 font-medium text-sm text-right sticky top-0 z-10 backdrop-blur-md">
+                            <tr className="flex w-full border-b border-white/5">
+                                <th className="p-4 w-[5%] flex items-center justify-center">
+                                    <input
+                                        type="checkbox"
+                                        className="rounded border-white/20 bg-black/20 text-blue-600 focus:ring-blue-500"
+                                        onChange={(e) => handleSelectAll(e.target.checked)}
+                                        checked={selectedIds.size === students.length && students.length > 0}
+                                    />
+                                </th>
+                                <th className="p-4 w-[25%]">Student</th>
+                                <th className="p-4 w-[15%]">Wilaya</th>
+                                <th className="p-4 w-[15%]">System</th>
+                                <th className="p-4 w-[20%]">Status</th>
+                                <th className="p-4 w-[20%]">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody
+                            className="relative block" // Ensure block for height
+                            style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+                        >
+                            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                                const student = students[virtualRow.index];
+                                return (
+                                    <tr
+                                        key={student.id}
+                                        data-index={virtualRow.index}
+                                        ref={rowVirtualizer.measureElement}
+                                        className={`transition-colors cursor-pointer absolute top-0 left-0 w-full flex items-center border-b border-white/5 ${selectedIds.has(student.id) ? 'bg-blue-900/10' : 'hover:bg-white/5'}`}
+                                        style={{
+                                            height: `${virtualRow.size}px`,
+                                            transform: `translateY(${virtualRow.start}px)`,
+                                            willChange: 'transform' // GPU Acceleration
+                                        }}
+                                        onClick={(e) => {
+                                            if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('div[role="switch"]')) return;
+                                            router.push(`/admin/students/${student.id}`);
+                                        }}
+                                    >
+                                        <td className="p-4 w-[5%] flex items-center justify-center">
+                                            <input
+                                                type="checkbox"
+                                                className="rounded border-white/20 bg-black/20 text-blue-600 focus:ring-blue-500"
+                                                checked={selectedIds.has(student.id)}
+                                                onChange={(e) => handleSelectRow(student.id, e.target.checked)}
+                                            />
+                                        </td>
+                                        <td className="p-4 w-[25%] overflow-hidden">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold border border-blue-500/30 flex-shrink-0">
+                                                    {student.full_name?.[0] || "?"}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="font-bold text-white truncate">{student.full_name || "Unknown"}</p>
+                                                    <p className="text-xs text-zinc-500 truncate">{student.email}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="p-4 w-[15%] text-zinc-400 text-right truncate">{student.wilaya || "-"}</td>
+                                        <td className="p-4 w-[15%] text-zinc-400 text-right truncate">{student.study_system || "-"}</td>
+                                        <td className="p-4 w-[20%] flex justify-end">
+                                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                                <StatusToggle
+                                                    table="profiles"
+                                                    id={student.id}
+                                                    field="is_banned"
+                                                    initialValue={student.is_banned}
+                                                    labelActive="BANNED"
+                                                    labelInactive="OK"
+                                                />
+                                                {student.is_subscribed ? (
+                                                    <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 flex w-fit items-center gap-1">
+                                                        <CheckCircle size={12} /> ACTIVE
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-3 py-1 rounded-full bg-zinc-500/10 text-zinc-500 text-xs font-bold border border-zinc-500/20 flex w-fit items-center gap-1">
+                                                        <Clock size={12} /> EXPIRED
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="p-4 w-[20%] flex justify-end">
+                                            <div className="flex items-center justify-end gap-2">
+                                                {student.is_subscribed && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleTerminate(student.id)
+                                                        }}
+                                                        className="p-2 rounded-lg bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-colors"
+                                                        title="Terminate Subscription"
+                                                    >
+                                                        <XCircle size={16} />
+                                                    </button>
+                                                )}
+
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setManagingStudent(student);
+                                                    }}
+                                                    className="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-colors"
+                                                    title="Manage Subscription"
+                                                >
+                                                    <Edit size={16} />
+                                                </button>
+
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleImpersonate(student.id, student.full_name || "Student");
+                                                    }}
+                                                    className="p-2 rounded-lg bg-purple-500/10 text-purple-500 hover:bg-purple-500/20 transition-colors"
+                                                    title="Impersonate User (God Mode)"
+                                                >
+                                                    <VenetianMask size={16} />
+                                                </button>
+
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete(student.id);
+                                                    }}
+                                                    className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                                                    title="Delete Student"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+
+                    {students.length === 0 && (
+                        <div className="p-8 text-center text-zinc-500">
+                            No students found matching your criteria.
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Pagination Placeholder */}
+            {totalPages > 1 && (
+                <div className="flex justify-center gap-2">
+                    <button className="px-3 py-1 rounded bg-white/5 text-zinc-400">Prev</button>
+                    <span className="px-3 py-1 text-white">Page 1</span>
+                    <button className="px-3 py-1 rounded bg-white/5 text-zinc-400">Next</button>
+                </div>
+            )}
+
+            {/* BULK ACTION BAR */}
+            {selectedIds.size > 0 && (
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#0A0A15] border border-blue-500/30 shadow-[0_0_50px_rgba(0,0,0,0.8)] rounded-2xl p-4 flex items-center gap-6 z-50 animate-in slide-in-from-bottom-10 fade-in duration-300">
+                    <div className="flex items-center gap-3 border-r border-white/10 pr-6">
+                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white">
+                            {selectedIds.size}
+                        </div>
+                        <span className="text-white font-medium">Selected</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => handleBulkAction('ban')}
+                            disabled={isLoading}
+                            className="px-4 py-2 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors text-sm font-bold flex items-center gap-2"
+                        >
+                            <ShieldAlert size={16} /> Ban Selected
+                        </button>
+                        <button
+                            onClick={() => handleBulkAction('unban')}
+                            disabled={isLoading}
+                            className="px-4 py-2 rounded-xl bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors text-sm font-bold flex items-center gap-2"
+                        >
+                            <CheckCircle size={16} /> Unban
+                        </button>
+                        <button
+                            onClick={() => handleBulkAction('expire')}
+                            disabled={isLoading}
+                            className="px-4 py-2 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 hover:bg-orange-500/20 transition-colors text-sm font-bold flex items-center gap-2"
+                        >
+                            <XCircle size={16} /> Expire
+                        </button>
+                        <button
+                            onClick={() => setIsBroadcastOpen(true)}
+                            disabled={isLoading}
+                            className="px-4 py-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors text-sm font-bold flex items-center gap-2"
+                        >
+                            <MessageSquare size={16} /> Send Message
+                        </button>
+                    </div>
+
+                    <button
+                        onClick={() => setSelectedIds(new Set())}
+                        className="ml-2 text-zinc-500 hover:text-white"
+                    >
+                        <XCircle size={20} />
+                    </button>
+                </div>
+            )}
+
+            {/* BROADCAST MODAL */}
+            {isBroadcastOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-md bg-[#0A0A15] border border-white/10 rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                            <Send size={20} className="text-blue-500" /> Broadcast Message
+                        </h3>
+                        <p className="text-zinc-400 text-sm mb-6">
+                            Sending to <b className="text-white">{selectedIds.size}</b> selected students.
+                        </p>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Message</label>
+                                <textarea
+                                    className="w-full h-32 bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500/50 resize-none"
+                                    placeholder="Type your announcement here..."
+                                    value={broadcastMessage}
+                                    onChange={(e) => setBroadcastMessage(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    onClick={() => setIsBroadcastOpen(false)}
+                                    className="px-4 py-2 text-zinc-400 hover:text-white"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleBroadcast}
+                                    disabled={isLoading || !broadcastMessage.trim()}
+                                    className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isLoading ? 'Sending...' : 'Send Now'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MANAGE SUBSCRIPTION MODAL */}
+            {managingStudent && (
+                <ManageSubscriptionModal
+                    student={managingStudent}
+                    onClose={() => setManagingStudent(null)}
+                    onSuccess={() => {
+                        router.refresh(); // Refresh table data
+                    }}
+                />
+            )}
+        </div>
+    );
+}
