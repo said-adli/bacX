@@ -61,7 +61,7 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
                 required_plan_id: currentSession.required_plan_id || null,
                 is_purchasable: currentSession.is_purchasable || false,
                 price: currentSession.price || null,
-                published: currentSession.published ?? true,
+                is_active: currentSession.is_active ?? true,
                 lesson_id: currentSession.lesson_id || null
             };
 
@@ -99,18 +99,18 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
                 id: session.id,
                 title: session.title,
                 stream_url: session.youtube_id, // MAP BACK
-                scheduled_at: session.start_time, // MAP BACK
+                scheduled_at: session.started_at, // MAP BACK
                 status: session.status,
                 required_plan_id: session.required_plan_id,
                 is_purchasable: session.is_purchasable,
                 price: session.price,
-                published: session.published,
+                is_active: session.is_active,
                 lesson_id: session.lesson_id
             });
         } else {
             setCurrentSession({
                 status: 'scheduled',
-                published: true,
+                is_active: true,
                 is_purchasable: false,
                 scheduled_at: new Date().toISOString().slice(0, 16) // Default to now-ish format for datetime-local
             });
@@ -147,7 +147,7 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
                                 <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-400 mt-1">
                                     <span className="flex items-center gap-1.5">
                                         <Calendar size={12} />
-                                        {format(new Date(s.start_time), 'MMM d, yyyy HH:mm')}
+                                        {format(new Date(s.started_at), 'MMM d, yyyy HH:mm')}
                                     </span>
                                     {s.required_plan_id ? (
                                         <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">

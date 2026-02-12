@@ -12,7 +12,7 @@ type ContentRequirement = {
     id?: string; // Content ID for ownership check
     required_plan_id?: string | null;
     is_free?: boolean;
-    published?: boolean;
+    is_active?: boolean;
 };
 
 /**
@@ -21,7 +21,7 @@ type ContentRequirement = {
  * Centralized logic to verify if a user can access specific content.
  * Enforces:
  * 1. Admin/Teacher Bypass
- * 2. Published Status (unless Admin)
+ * 2. Active Status (unless Admin)
  * 3. Plan Matching (Strict Plan ID check)
  * 4. Content Ownership (Lifetime Access)
  */
@@ -35,10 +35,10 @@ export async function verifyContentAccess(
         return { allowed: true, reason: 'admin_bypass' };
     }
 
-    // 2. Published Check
-    // If content has a 'published' flag and it is false, DENY.
-    if (content.published === false) {
-        return { allowed: false, reason: 'content_unpublished' };
+    // 2. Active Check
+    // If content has an 'is_active' flag and it is false, DENY.
+    if (content.is_active === false) {
+        return { allowed: false, reason: 'content_inactive' };
     }
 
     // 3. Ownership Check (Lifetime Access) - HIGHEST PRIORITY for Students

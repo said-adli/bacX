@@ -15,7 +15,7 @@ interface PlatformUpdate {
     content: string;
     version: string | null;
     type: string;
-    published: boolean;
+    is_active: boolean;
     created_at: string;
 }
 
@@ -42,7 +42,7 @@ export default function UpdatesPageClient({ updates }: { updates: PlatformUpdate
                 content,
                 version,
                 type,
-                published: true // Auto-publish for now or toggle? Let's assume true for admins
+                is_active: true // Auto-activate for now
             });
 
             if (error) throw error;
@@ -72,7 +72,7 @@ export default function UpdatesPageClient({ updates }: { updates: PlatformUpdate
 
     const togglePublish = async (id: string, current: boolean) => {
         try {
-            await supabase.from('platform_updates').update({ is_published: !current }).eq('id', id);
+            await supabase.from('platform_updates').update({ is_active: !current }).eq('id', id);
             toast.success(current ? "تم إلغاء النشر" : "تم النشر");
             router.refresh();
         } catch (err) {
@@ -157,11 +157,11 @@ export default function UpdatesPageClient({ updates }: { updates: PlatformUpdate
                         </div>
                         <div className="flex items-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
-                                onClick={() => togglePublish(update.id, update.published)}
-                                className={`p-2 rounded-lg transition-colors ${update.published ? 'text-green-400 hover:bg-green-500/10' : 'text-zinc-600 hover:bg-white/5'}`}
-                                title={update.published ? "Unpublish" : "Publish"}
+                                onClick={() => togglePublish(update.id, update.is_active)}
+                                className={`p-2 rounded-lg transition-colors ${update.is_active ? 'text-green-400 hover:bg-green-500/10' : 'text-zinc-600 hover:bg-white/5'}`}
+                                title={update.is_active ? "Deactivate" : "Activate"}
                             >
-                                {update.published ? <CheckCircle size={18} /> : <XCircle size={18} />}
+                                {update.is_active ? <CheckCircle size={18} /> : <XCircle size={18} />}
                             </button>
                             <button
                                 onClick={() => handleDelete(update.id)}

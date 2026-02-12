@@ -36,7 +36,7 @@ export default async function SubjectDetailsPage({ params, searchParams }: Subje
             .from('subjects')
             .select('name, id')
             .eq('id', subjectId)
-            .eq('published', true) // STRICT: Only published subjects
+            .eq('is_active', true) // STRICT: Only active subjects
             .single()
     ]);
 

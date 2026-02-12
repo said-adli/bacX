@@ -11,11 +11,11 @@ export interface LiveSession {
     title: string;
     youtube_id: string; // Database column
     status: 'scheduled' | 'live' | 'ended';
-    start_time: string; // Database column
+    started_at: string; // Database column
     required_plan_id?: string | null;
     is_purchasable: boolean;
     price?: number | null;
-    published: boolean;
+    is_active: boolean;
     lesson_id?: string | null;
     created_at: string;
 }
@@ -24,12 +24,12 @@ export interface LiveSession {
 export type NewLiveSessionPayload = {
     title: string;
     stream_url: string; // Mapped to youtube_id
-    scheduled_at: string; // Mapped to start_time
+    scheduled_at: string; // Mapped to started_at
     status?: string;
     required_plan_id?: string | null;
     is_purchasable?: boolean;
     price?: number | null;
-    published?: boolean;
+    is_active?: boolean;
     lesson_id?: string | null;
     description?: string; // Added for completeness in RPC
 };
@@ -44,7 +44,7 @@ export async function getLiveSessions() {
             *,
             subscription_plans(name)
         `)
-        .order('start_time', { ascending: false });
+        .order('started_at', { ascending: false });
 
     if (error) {
         console.error("Fetch Live Sessions Error", error);
@@ -76,12 +76,12 @@ export async function createLiveSession(data: NewLiveSessionPayload) {
         .insert({
             title: data.title,
             youtube_id: data.stream_url, // MAP: stream_url -> youtube_id
-            start_time: safeStartTime, // MAP: scheduled_at -> start_time (Validated)
+            started_at: safeStartTime, // MAP: scheduled_at -> started_at (Validated)
             status: data.status || 'scheduled',
             required_plan_id: data.required_plan_id || null,
             is_purchasable: data.is_purchasable ?? false,
             price: data.price ?? null,
-            published: data.published ?? true,
+            is_active: data.is_active ?? true,
             lesson_id: data.lesson_id ?? null
         })
         .select()
@@ -135,13 +135,13 @@ export async function updateLiveSession(id: string, data: Partial<NewLiveSession
         p_lesson_id: targetLessonId || null, // Pass null if no lesson linked
         p_title: data.title,
         p_description: data.description, // DTO doesn't have description yet but RPC supports it.
-        p_start_time: safeStartTime,
+        p_started_at: safeStartTime,
         p_youtube_id: data.stream_url,
         // Optional status updates
         p_status: data.status,
         p_is_purchasable: data.is_purchasable,
         p_price: data.price,
-        p_published: data.published,
+        p_is_active: data.is_active,
         p_required_plan_id: data.required_plan_id
     };
 

@@ -36,7 +36,7 @@ export interface SubjectWithUnitsDTO {
     slug?: string;
     icon?: string | null;
     description?: string | null;
-    published?: boolean;
+    is_active?: boolean;
     order_index?: number;
     units?: UnitDTO[];
 }

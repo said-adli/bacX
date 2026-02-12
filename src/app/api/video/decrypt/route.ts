@@ -109,7 +109,7 @@ export async function POST(request: Request) {
         // Fetch Lesson Details STRICTLY
         const { data: lesson } = await supabase
             .from('lessons')
-            .select('id, required_plan_id, is_free, video_url, units(subjects(published))')
+            .select('id, required_plan_id, is_free, video_url, units(subjects(is_active))')
             .eq('id', lessonId)
             // We could filter by video_url matching the token, but honestly, 
             // relying on the lessonId as the source of truth is safer.
@@ -122,19 +122,18 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Content not found' }, { status: 404 });
         }
 
-        // P0 FIX: Check if Parent Subject is Published
-        interface UnitWithSubject { subjects: { published: boolean } | { published: boolean }[] | null }
+        // P0 FIX: Check if Parent Subject is Active
+        interface UnitWithSubject { subjects: { is_active: boolean } | { is_active: boolean }[] | null }
         const units = (Array.isArray(lesson.units) ? lesson.units[0] : lesson.units) as unknown as UnitWithSubject;
 
         const subjectData = units?.subjects;
         const subject = Array.isArray(subjectData) ? subjectData[0] : subjectData;
-        const subjectPublished = subject?.published;
+        const subjectActive = subject?.is_active;
 
-        // If subjectPublished is explicitly FALSE, we block.
-        // If it's undefined (bad data) or true, we might proceed, but securely we should block if undefined.
-        // Assuming strict "published" requirement:
-        if (subjectPublished === false && !isAdmin) {
-            return NextResponse.json({ error: 'Content is not published' }, { status: 403 });
+        // If subjectActive is explicitly FALSE, we block.
+        // Assuming strict "is_active" requirement:
+        if (subjectActive === false && !isAdmin) {
+            return NextResponse.json({ error: 'Content is not active' }, { status: 403 });
         }
 
         // 6. AUTHORIZATION (The Real Fix)
@@ -142,7 +141,7 @@ export async function POST(request: Request) {
         const contentRequirement = {
             required_plan_id: lesson.required_plan_id,
             is_free: lesson.is_free,
-            published: subjectPublished ?? true // Use the resolved value
+            is_active: subjectActive ?? true // Use the resolved value
         };
 
         // Use shared utility

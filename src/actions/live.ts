@@ -38,10 +38,10 @@ export async function getHybridLiveSession(): Promise<SecureLiveSession> {
     // We only fetch based on new constraints.
     const { data: session, error: sessionError } = await supabase
         .from('live_sessions')
-        .select('*, required_plan_id, published')
+        .select('*, required_plan_id, is_active')
         .or('status.eq.live,status.eq.scheduled')
-        .eq('published', true) // Must be published
-        .order('start_time', { ascending: false })
+        .eq('is_active', true) // Must be active
+        .order('started_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 

@@ -158,8 +158,8 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
                                             <StatusToggle
                                                 table="subjects"
                                                 id={subject.id}
-                                                field="published"
-                                                initialValue={subject.published ?? false}
+                                                field="is_active"
+                                                initialValue={subject.is_active ?? false}
                                                 labelActive="PUB"
                                                 labelInactive="DRAFT"
                                             />

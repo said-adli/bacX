@@ -39,7 +39,7 @@ export async function getDashboardSubjects(userId: string): Promise<SubjectDTO[]
     const [subjectsData, progressMap, ownershipReq] = await Promise.all([
         supabase.from('subjects')
             .select('id, name, icon, description, color, slug, lesson_count, lessons(id, title, required_plan_id, is_free)') // Explicit select
-            .eq('published', true) // FILTER: Only published subjects
+            .eq('is_active', true) // FILTER: Only active subjects
             .order('order_index', { ascending: true }),
         getUserProgressMapRaw(userId),
         supabase.from('user_content_ownership')
@@ -65,7 +65,7 @@ export async function getDashboardSubjects(userId: string): Promise<SubjectDTO[]
         color: string | null;
         slug: string | null;
         lesson_count: number;
-        published: boolean;
+        is_active: boolean;
         lessons: {
             id: string;
             title: string;
@@ -87,7 +87,7 @@ export async function getDashboardSubjects(userId: string): Promise<SubjectDTO[]
             lessons: subject.lessons || [],
             progress: progress,
             isOwned: ownedSubjectIds.has(subject.id),
-            published: subject.published // [FIX] Added missing property
+            is_active: subject.is_active
         };
     });
 }

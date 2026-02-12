@@ -5,7 +5,7 @@ export interface SubjectDTO {
     description: string | null;
     color: string | null;
     slug: string;
-    published: boolean;
+    is_active: boolean;
     // We include a minimal lesson structure because the UI currently uses it for search filtering.
     lessons: {
         id: string;

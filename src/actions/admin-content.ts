@@ -233,7 +233,7 @@ export async function createLesson(data: Partial<Lesson>) {
             await supabase.from('live_sessions').insert({
                 title: data.title,
                 youtube_id: data.video_url || 'pending', // Use video_url as stream ID/URL
-                start_time: safeStartTime,
+                started_at: safeStartTime,
                 status: 'scheduled',
                 required_plan_id: data.required_plan_id,
                 is_purchasable: data.is_purchasable ?? false,

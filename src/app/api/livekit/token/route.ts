@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
         // We first try to find a Live Session with this ID
         const { data: liveSession } = await supabase
             .from('live_sessions')
-            .select('required_plan_id, published')
+            .select('required_plan_id, is_active')
             .eq('id', roomName)
             .maybeSingle();
 
@@ -59,14 +59,14 @@ export async function GET(request: NextRequest) {
             // It's a Live Session
             contentRequirement = {
                 required_plan_id: liveSession.required_plan_id,
-                published: liveSession.published ?? true,
+                is_active: liveSession.is_active ?? true,
                 is_free: false // Live sessions are premium usually
             };
         } else {
             // Check if it's a Lesson
             const { data: lesson, error: lessonError } = await supabase
                 .from('lessons')
-                .select('required_plan_id, is_free, units(subjects(published))')
+                .select('required_plan_id, is_free, units(subjects(is_active))')
                 .eq('id', roomName)
                 .single();
 
@@ -78,17 +78,17 @@ export async function GET(request: NextRequest) {
             // units is likely an array, safeguard access
             // Safe access for deep join
             // units is likely an array, safeguard access
-            interface UnitWithSubject { subjects: { published: boolean } | { published: boolean }[] | null }
+            interface UnitWithSubject { subjects: { is_active: boolean } | { is_active: boolean }[] | null }
             const units = (Array.isArray(lesson.units) ? lesson.units[0] : lesson.units) as unknown as UnitWithSubject;
 
             const subjectData = units?.subjects;
             const subject = Array.isArray(subjectData) ? subjectData[0] : subjectData;
-            const subjectPublished = subject?.published;
+            const subjectActive = subject?.is_active;
 
             contentRequirement = {
                 required_plan_id: lesson.required_plan_id,
                 is_free: lesson.is_free,
-                published: subjectPublished ?? true
+                is_active: subjectActive ?? true
             };
         }
 

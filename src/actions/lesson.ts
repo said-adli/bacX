@@ -30,12 +30,12 @@ export async function getLessonData(lessonId: string) {
                 subscription_plans(id, name, price),
                 units!inner (
                     subjects!inner (
-                        published
+                        is_active
                     )
                 )
             `)
             .eq('id', lessonId)
-            .eq('units.subjects.published', true)
+            .eq('units.subjects.is_active', true)
             .single();
 
         if (lessonError) throw lessonError;
@@ -59,7 +59,7 @@ export async function getLessonData(lessonId: string) {
             id: lesson.id,
             required_plan_id: lesson.required_plan_id,
             is_free: lesson.is_free,
-            published: lesson.units?.subjects?.published ?? true
+            is_active: lesson.units?.subjects?.is_active ?? true
         };
 
         const access = await verifyContentAccess({
@@ -107,7 +107,7 @@ export async function getSubjectHierarchy(subjectId: string) {
             .from('subjects')
             .select('*, units(*, lessons(id, title, duration, is_free, unit_id))')
             .eq('id', subjectId)
-            .eq('published', true) // STRICT: Only published subjects
+            .eq('is_active', true) // STRICT: Only active subjects
             .single();
 
         if (error) throw error;

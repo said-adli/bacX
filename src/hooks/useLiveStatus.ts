@@ -8,7 +8,7 @@ export interface LiveSession {
     id: string;
     title: string;
     status: "scheduled" | "live" | "ended";
-    start_time: string | null;
+    started_at: string | null;
     viewer_count: number;
     youtube_id: string | null;
 }
@@ -28,7 +28,7 @@ export function useLiveStatus() {
                     .from("live_sessions")
                     .select("*")
                     .or("status.eq.live,status.eq.scheduled")
-                    .order("start_time", { ascending: false })
+                    .order("started_at", { ascending: false })
                     .limit(1)
                     .maybeSingle();
 

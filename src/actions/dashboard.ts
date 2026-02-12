@@ -95,7 +95,7 @@ export async function getSubjectsData(): Promise<DashboardSubject[]> {
             const { data } = await supabase
                 .from('subjects')
                 .select('id, name, icon, description, color, slug, lesson_count, lessons(id, title, required_plan_id, is_free)') // Explicit select
-                .eq('published', true) // FILTER: Only published subjects
+                .eq('is_active', true) // FILTER: Only active subjects
                 .order('order_index', { ascending: true });
 
             if (!data) return [];
