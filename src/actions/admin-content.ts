@@ -26,7 +26,7 @@ export async function getContentTree(): Promise<SubjectWithUnitsDTO[]> {
         .select(`
             id, 
             name,
-            published,
+            is_active,
             order_index,
             units (
                 id, 
@@ -59,13 +59,13 @@ export async function getContentTree(): Promise<SubjectWithUnitsDTO[]> {
         id: string; title: string; subject_id: string; order_index: number; lessons: RawLesson[];
     }
     interface RawSubject {
-        id: string; name: string; published: boolean; order_index: number; units: RawUnit[];
+        id: string; name: string; is_active: boolean; order_index: number; units: RawUnit[];
     }
 
     return (data as unknown as RawSubject[] || []).map((subject) => ({
         id: subject.id,
         name: subject.name,
-        published: subject.published ?? false,
+        is_active: subject.is_active ?? false,
         order_index: subject.order_index,
         units: (subject.units || [])
             .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
@@ -238,7 +238,7 @@ export async function createLesson(data: Partial<Lesson>) {
                 required_plan_id: data.required_plan_id,
                 is_purchasable: data.is_purchasable ?? false,
                 price: data.price ?? null,
-                published: true,
+                is_active: true,
                 lesson_id: newLesson.id // Automatic Linking
             });
 

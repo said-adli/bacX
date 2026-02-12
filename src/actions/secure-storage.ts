@@ -47,7 +47,7 @@ export async function getLessonResource(lessonId: string, resourcePath: string) 
     const [lessonResult, profileResult] = await Promise.all([
         supabase
             .from('lessons')
-            .select('required_plan_id, is_free, units(subjects(published))') // Fetched published status
+            .select('required_plan_id, is_free, units(subjects(is_active))') // Fetched is_active status
             .eq('id', lessonId)
             .single(),
         supabase
@@ -66,17 +66,17 @@ export async function getLessonResource(lessonId: string, resourcePath: string) 
     // 3. Authorization Logic (Unified)
     const { verifyContentAccess } = await import("@/lib/access-control");
 
-    interface UnitWithSubject { subjects: { published: boolean } | { published: boolean }[] | null }
+    interface UnitWithSubject { subjects: { is_active: boolean } | { is_active: boolean }[] | null }
     const units = (Array.isArray(lesson.units) ? lesson.units[0] : lesson.units) as unknown as UnitWithSubject;
 
     const subjectData = units?.subjects;
     const subject = Array.isArray(subjectData) ? subjectData[0] : subjectData;
-    const published = subject?.published ?? true;
+    const is_active = subject?.is_active ?? true;
 
     const contentRequirement = {
         required_plan_id: lesson.required_plan_id,
         is_free: lesson.is_free, // Map public -> free
-        published: published
+        is_active: is_active
     };
 
     const access = await verifyContentAccess(profile, contentRequirement);

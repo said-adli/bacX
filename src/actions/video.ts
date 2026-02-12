@@ -26,7 +26,7 @@ export async function getSecureVideoId(lessonId: string) {
     // 3. Fetch Lesson
     const { data: lesson } = await supabase
         .from('lessons')
-        .select('id, required_plan_id, is_free, video_url, units(subjects(published))') // Fetched published status
+        .select('id, required_plan_id, is_free, video_url, units(subjects(is_active))') // Fetched is_active status
         .eq('id', lessonId)
         .single();
 
@@ -47,13 +47,13 @@ export async function getSecureVideoId(lessonId: string) {
 
     const units = Array.isArray(lesson.units) ? lesson.units[0] : lesson.units;
     const subjects = Array.isArray((units as { subjects?: unknown })?.subjects) ? ((units as { subjects: unknown[] }).subjects)[0] : (units as { subjects?: unknown })?.subjects;
-    const published = (subjects as { published?: boolean })?.published ?? true;
+    const is_active = (subjects as { is_active?: boolean })?.is_active ?? true;
 
     const contentRequirement = {
         id: lesson.id,
         required_plan_id: lesson.required_plan_id,
         is_free: lesson.is_free,
-        published: published
+        is_active: is_active
     };
 
     const access = await verifyContentAccess({

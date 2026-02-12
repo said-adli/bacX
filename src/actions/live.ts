@@ -66,7 +66,7 @@ export async function getHybridLiveSession(): Promise<SecureLiveSession> {
         const contentRequirement = {
             id: session.id,
             required_plan_id: session.required_plan_id,
-            published: session.published ?? true, // Default to true if not present, but query requires it
+            is_active: session.is_active ?? true,
             is_free: false // Live sessions are generally not free unless specified
         };
 
