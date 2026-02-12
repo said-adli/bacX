@@ -122,9 +122,9 @@ export async function getCachedLessonsForSubject(subjectId: string): Promise<Cac
 
             const { data, error } = await supabase
                 .from("lessons")
-                .select("id, title, order, video_url, duration, is_free")
-                .eq("subject_id", subjectId)
-                .order("order", { ascending: true });
+                .select("id, title, order_index, video_url, duration, is_free")
+                .eq("unit_id", subjectId)
+                .order("order_index", { ascending: true });
 
             if (error) {
                 console.error(`[CACHE] Failed to fetch lessons for ${subjectId}:`, error.message);
@@ -136,7 +136,7 @@ export async function getCachedLessonsForSubject(subjectId: string): Promise<Cac
             return data.map((lesson) => ({
                 id: lesson.id,
                 title: lesson.title,
-                order: lesson.order,
+                order: lesson.order_index,
                 videoUrl: lesson.video_url,
                 duration: lesson.duration,
                 isFree: lesson.is_free ?? false,
@@ -205,12 +205,11 @@ export const getCachedCurriculum = unstable_cache(
                 id,
                 name,
                 icon,
-                lesson_count,
                 published,
                 lessons (
                     id,
                     title,
-                    order,
+                    order_index,
                     is_free
                 )
             `)
@@ -224,18 +223,18 @@ export const getCachedCurriculum = unstable_cache(
 
         if (!data) return [];
 
-        interface RawLessonCurr { id: string; title: string; order: number; is_free: boolean }
+        interface RawLessonCurr { id: string; title: string; order_index: number; is_free: boolean }
         return data.map((subject) => ({
             id: subject.id,
             name: subject.name,
             icon: subject.icon,
-            lessonCount: subject.lesson_count || 0,
+            lessonCount: ((subject.lessons || []) as RawLessonCurr[]).length,
             lessons: ((subject.lessons || []) as RawLessonCurr[])
-                .sort((a, b) => a.order - b.order)
+                .sort((a, b) => a.order_index - b.order_index)
                 .map((lesson) => ({
                     id: lesson.id,
                     title: lesson.title,
-                    order: lesson.order,
+                    order: lesson.order_index,
                     isFree: lesson.is_free ?? false,
                 })),
         }));

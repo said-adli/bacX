@@ -352,9 +352,9 @@ export async function toggleResourceStatus(
 
     // نبعثوا المتغيرات مباشرة بلا payload
     const { error } = await supabase.rpc('toggle_resource_status', {
-        res_id: resourceId,
-        res_type: resourceType,
-        res_status: Boolean(newStatus)
+        resource_id: resourceId,
+        resource_type: resourceType,
+        new_status: Boolean(newStatus)
     });
 
     if (error) {

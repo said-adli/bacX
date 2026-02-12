@@ -41,7 +41,7 @@ export async function getHybridLiveSession(): Promise<SecureLiveSession> {
         .select('*, required_plan_id, published')
         .or('status.eq.live,status.eq.scheduled')
         .eq('published', true) // Must be published
-        .order('started_at', { ascending: false })
+        .order('start_time', { ascending: false })
         .limit(1)
         .maybeSingle();
 

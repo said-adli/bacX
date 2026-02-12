@@ -72,7 +72,7 @@ export default function UpdatesPageClient({ updates }: { updates: PlatformUpdate
 
     const togglePublish = async (id: string, current: boolean) => {
         try {
-            await supabase.from('platform_updates').update({ published: !current }).eq('id', id);
+            await supabase.from('platform_updates').update({ is_published: !current }).eq('id', id);
             toast.success(current ? "تم إلغاء النشر" : "تم النشر");
             router.refresh();
         } catch (err) {
@@ -143,9 +143,9 @@ export default function UpdatesPageClient({ updates }: { updates: PlatformUpdate
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                                 <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${update.type === 'feature' ? 'bg-purple-500/20 text-purple-400' :
-                                        update.type === 'bugfix' ? 'bg-orange-500/20 text-orange-400' :
-                                            update.type === 'security' ? 'bg-green-500/20 text-green-400' :
-                                                'bg-blue-500/20 text-blue-400'
+                                    update.type === 'bugfix' ? 'bg-orange-500/20 text-orange-400' :
+                                        update.type === 'security' ? 'bg-green-500/20 text-green-400' :
+                                            'bg-blue-500/20 text-blue-400'
                                     }`}>
                                     {update.type}
                                 </span>

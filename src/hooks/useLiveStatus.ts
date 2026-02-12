@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+
 
 export interface LiveSession {
     id: string;
     title: string;
     status: "scheduled" | "live" | "ended";
-    started_at: string | null;
+    start_time: string | null;
     viewer_count: number;
     youtube_id: string | null;
 }
@@ -28,7 +28,7 @@ export function useLiveStatus() {
                     .from("live_sessions")
                     .select("*")
                     .or("status.eq.live,status.eq.scheduled")
-                    .order("started_at", { ascending: false })
+                    .order("start_time", { ascending: false })
                     .limit(1)
                     .maybeSingle();
 
@@ -50,22 +50,39 @@ export function useLiveStatus() {
 
         fetchLive();
 
-        // 2. Polling (Adaptive: 30s active, 5min background)
-        const poll = async () => {
-            if (!isMounted) return;
+        // 2. Visibility-aware polling (30s active, paused when hidden)
+        let intervalId: ReturnType<typeof setInterval> | null = null;
 
-            // Background check
-            if (document.hidden) {
-                // Slower polling or stop? Req says: "Stop polling on hidden tab" for some, "60-120s" for others.
-                // Scenario A says "60-120s only when visible" (wait, scenario A was admin/system). 
-                // This hook seems generally used. Let's do 60s.
-                return;
-            }
-
-            await fetchLive();
+        const startPolling = () => {
+            if (intervalId) return;
+            intervalId = setInterval(() => {
+                if (!isMounted) return;
+                fetchLive();
+            }, 30000);
         };
 
-        const intervalId = setInterval(poll, 30000); // 30s polling when visible
+        const stopPolling = () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+        };
+
+        const onVisibilityChange = () => {
+            if (document.hidden) {
+                stopPolling();
+            } else {
+                fetchLive(); // Immediate refresh on return
+                startPolling();
+            }
+        };
+
+        // Start polling only if visible
+        if (!document.hidden) {
+            startPolling();
+        }
+
+        document.addEventListener('visibilitychange', onVisibilityChange);
 
         // Re-fetch on focus
         const onFocus = () => fetchLive();
@@ -73,7 +90,8 @@ export function useLiveStatus() {
 
         return () => {
             isMounted = false;
-            clearInterval(intervalId);
+            stopPolling();
+            document.removeEventListener('visibilitychange', onVisibilityChange);
             window.removeEventListener('focus', onFocus);
         };
     }, []);

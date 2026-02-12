@@ -44,15 +44,8 @@ export const getMajors = unstable_cache(
             .order('name');
 
         if (error || !data) {
-            // Fallback for immediate "No broken UI" if table missing
-            return [
-                { id: 'sci', name: 'Science Exp' },
-                { id: 'math', name: 'Math' },
-                { id: 'tm', name: 'Tech Math' },
-                { id: 'gest', name: 'Gestion' },
-                { id: 'let', name: 'Lettres' },
-                { id: 'lang', name: 'Langues' }
-            ];
+            console.error("[CACHE] Failed to fetch majors:", error?.message);
+            return [];
         }
         return data as Major[];
     },

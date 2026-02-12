@@ -50,7 +50,7 @@ export async function createUnit(subjectId: string, data: UnitData) {
         const admin = createAdminClient();
         const { error } = await admin.from('units').insert({
             subject_id: subjectId,
-            name: data.name,
+            title: data.name,
             order_index: data.order_index
         });
         if (error) throw error;
