@@ -65,9 +65,13 @@ export async function manageSubjectRPC(
         revalidatePath('/dashboard');
         revalidatePath('/admin/content');
 
+        if (typeof data !== 'string') {
+            throw new Error('Invalid response from server');
+        }
+
         return {
             success: true,
-            subjectId: data as string,
+            subjectId: data,
         };
     } catch (err) {
         console.error('[manageSubjectRPC] Unexpected Error:', err);

@@ -82,7 +82,11 @@ export async function createAnnouncementRPC(
     revalidatePath("/dashboard");
     revalidatePath("/admin/announcements");
 
-    return { success: true, data: data as string };
+    if (typeof data !== 'string') {
+        return { success: false, error: "Invalid response format" };
+    }
+
+    return { success: true, data: data };
 }
 
 export async function updateAnnouncementRPC(
@@ -110,7 +114,11 @@ export async function updateAnnouncementRPC(
     revalidatePath("/dashboard");
     revalidatePath("/admin/announcements");
 
-    return { success: true, data: data as string };
+    if (typeof data !== 'string') {
+        return { success: false, error: "Invalid response format" };
+    }
+
+    return { success: true, data: data };
 }
 
 export async function deleteAnnouncementRPC(announcementId: string): Promise<RpcResult> {
@@ -130,7 +138,11 @@ export async function deleteAnnouncementRPC(announcementId: string): Promise<Rpc
     revalidatePath("/dashboard");
     revalidatePath("/admin/announcements");
 
-    return { success: true, data: data as string };
+    if (typeof data !== 'string') {
+        return { success: false, error: "Invalid response format" };
+    }
+
+    return { success: true, data: data };
 }
 
 // ============================================
@@ -173,7 +185,11 @@ export async function createPlanRPC(params: CreatePlanParams): Promise<RpcResult
     revalidatePath("/admin/offers");
     revalidatePath("/subscription");
 
-    return { success: true, data: data as string };
+    if (typeof data !== 'string') {
+        return { success: false, error: "Invalid response format" };
+    }
+
+    return { success: true, data: data };
 }
 
 export async function updatePlanRPC(
@@ -204,7 +220,11 @@ export async function updatePlanRPC(
     revalidatePath("/admin/offers");
     revalidatePath("/subscription");
 
-    return { success: true, data: data as string };
+    if (typeof data !== 'string') {
+        return { success: false, error: "Invalid response format" };
+    }
+
+    return { success: true, data: data };
 }
 
 export async function deletePlanRPC(planId: string): Promise<RpcResult> {
@@ -224,7 +244,11 @@ export async function deletePlanRPC(planId: string): Promise<RpcResult> {
     revalidatePath("/admin/offers");
     revalidatePath("/subscription");
 
-    return { success: true, data: data as string };
+    if (typeof data !== 'string') {
+        return { success: false, error: "Invalid response format" };
+    }
+
+    return { success: true, data: data };
 }
 
 // ============================================
@@ -261,7 +285,11 @@ export async function banUserRPC(userId: string): Promise<RpcResult> {
     revalidateTag(CACHE_TAGS.USERS, "max");
     revalidatePath("/admin/students");
 
-    return { success: true, data: data as string };
+    if (typeof data !== 'string') {
+        return { success: false, error: "Invalid response format" };
+    }
+
+    return { success: true, data: data };
 }
 
 export async function unbanUserRPC(userId: string): Promise<RpcResult> {
@@ -291,7 +319,11 @@ export async function unbanUserRPC(userId: string): Promise<RpcResult> {
     revalidateTag(CACHE_TAGS.USERS, "max");
     revalidatePath("/admin/students");
 
-    return { success: true, data: data as string };
+    if (typeof data !== 'string') {
+        return { success: false, error: "Invalid response format" };
+    }
+
+    return { success: true, data: data };
 }
 
 // ============================================
@@ -328,7 +360,11 @@ export async function createPlatformUpdateRPC(
     revalidatePath("/admin/updates");
     revalidatePath("/changelog");
 
-    return { success: true, data: data as string };
+    if (typeof data !== 'string') {
+        return { success: false, error: "Invalid response format" };
+    }
+
+    return { success: true, data: data };
 }
 
 export async function updatePlatformUpdateRPC(
@@ -355,7 +391,11 @@ export async function updatePlatformUpdateRPC(
     revalidatePath("/admin/updates");
     revalidatePath("/changelog");
 
-    return { success: true, data: data as string };
+    if (typeof data !== 'string') {
+        return { success: false, error: "Invalid response format" };
+    }
+
+    return { success: true, data: data };
 }
 
 export async function deletePlatformUpdateRPC(updateId: string): Promise<RpcResult> {
@@ -375,5 +415,9 @@ export async function deletePlatformUpdateRPC(updateId: string): Promise<RpcResu
     revalidatePath("/admin/updates");
     revalidatePath("/changelog");
 
-    return { success: true, data: data as string };
+    if (typeof data !== 'string') {
+        return { success: false, error: "Invalid response format" };
+    }
+
+    return { success: true, data: data };
 }
