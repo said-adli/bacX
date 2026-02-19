@@ -9,7 +9,7 @@ CREATE OR REPLACE FUNCTION manage_subject(
   p_icon TEXT DEFAULT 'Folder',
   p_operation_type TEXT DEFAULT 'create', -- 'create' | 'update'
   p_subject_id UUID DEFAULT NULL,
-  p_order_index INTEGER DEFAULT 0,
+  p_order INTEGER DEFAULT 0,
   p_is_active BOOLEAN DEFAULT TRUE
 )
 RETURNS UUID
@@ -45,7 +45,7 @@ BEGIN
     END IF;
 
     INSERT INTO subjects (name, icon, order_index, is_active, created_at)
-    VALUES (p_name, p_icon, p_order_index, p_is_active, NOW())
+    VALUES (p_name, p_icon, p_order, p_is_active, NOW())
     RETURNING id INTO v_result_id;
 
   -- ============================================
@@ -74,7 +74,7 @@ BEGIN
     SET 
       name = COALESCE(p_name, name),
       icon = COALESCE(p_icon, icon),
-      order_index = COALESCE(p_order_index, order_index),
+      order_index = COALESCE(p_order, order_index),
       is_active = COALESCE(p_is_active, is_active)
     WHERE id = p_subject_id
     RETURNING id INTO v_result_id;

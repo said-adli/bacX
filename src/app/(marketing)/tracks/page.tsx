@@ -37,7 +37,7 @@ export default function TracksPage() {
     return (
         <div className="min-h-screen bg-zinc-950 text-white font-tajawal pt-28 pb-20 relative overflow-hidden" dir="rtl">
             {/* Background Effects */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-blue-500/5 blur-[10px] rounded-full pointer-events-none" />
 
             <div className="max-w-7xl mx-auto px-6 relative z-10">
 

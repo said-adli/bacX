@@ -11,7 +11,7 @@ export default function PlanetHero() {
             {/* 3D Planet Visual */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 {/* Atmosphere Glow */}
-                <div className="absolute w-[400px] h-[400px] bg-blue-500/20 rounded-full blur-[100px] animate-pulse gpu-accelerated" />
+                <div className="absolute w-[400px] h-[400px] bg-blue-500/20 rounded-full blur-[10px] animate-pulse gpu-accelerated" />
 
                 {/* The Planet */}
                 <div className="relative w-64 h-64 rounded-full overflow-hidden shadow-[inset_-20px_-20px_50px_rgba(0,0,0,0.9),0_0_20px_rgba(37,99,235,0.5)] animate-[float_10s_ease-in-out_infinite] gpu-accelerated">

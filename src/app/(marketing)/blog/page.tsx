@@ -10,7 +10,7 @@ export default function BlogPage() {
     return (
         <div className="min-h-screen bg-zinc-950 text-white font-tajawal flex items-center justify-center relative overflow-hidden p-6" dir="rtl">
             {/* Background Effects */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/5 blur-[100px] rounded-full pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/5 blur-[10px] rounded-full pointer-events-none" />
 
             <div className="relative z-10 w-full max-w-2xl">
                 <motion.div

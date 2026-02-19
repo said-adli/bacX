@@ -55,7 +55,7 @@ export async function createPlan(data: Omit<SubscriptionPlan, "id">) {
         .from('subscription_plans')
         .insert([{
             ...data,
-            is_active: data.is_active ?? true
+            is_active: data.is_active
         }]);
 
     if (error) throw error;

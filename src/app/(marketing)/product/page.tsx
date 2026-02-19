@@ -30,8 +30,8 @@ export default function ProductPage() {
     return (
         <div className="min-h-screen bg-zinc-950 text-white font-tajawal pt-28 pb-20 relative overflow-hidden" dir="rtl">
             {/* Background Effects */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full pointer-events-none" />
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 blur-[10px] rounded-full pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/10 blur-[10px] rounded-full pointer-events-none" />
 
             <div className="max-w-7xl mx-auto px-6 relative z-10">
 

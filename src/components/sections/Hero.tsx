@@ -21,8 +21,8 @@ export function Hero({ stats }: HeroProps) {
         <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden bg-background">
             {/* Background Decor */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-primary/5 rounded-full blur-[100px]" />
-                <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-400/5 rounded-full blur-[100px]" />
+                <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-primary/5 rounded-full blur-[10px]" />
+                <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-400/5 rounded-full blur-[10px]" />
             </div>
 
             <div className="container px-4 md:px-6 mx-auto relative z-10 flex flex-col md:flex-row items-center gap-12">
