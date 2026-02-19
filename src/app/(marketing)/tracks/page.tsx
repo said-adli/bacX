@@ -97,7 +97,7 @@ export default function TracksPage() {
                                 transition={{ duration: 0.5 }}
                                 className="flex flex-col items-center justify-center text-center py-20"
                             >
-                                <GlassCard className="p-12 max-w-2xl border-white/5 bg-black/40 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
+                                <GlassCard className="p-12 max-w-2xl border-white/5 bg-black/40 backdrop-blur-md shadow-2xl relative overflow-hidden group">
 
                                     {/* Decoration */}
                                     <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />

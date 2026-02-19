@@ -18,7 +18,7 @@ export default function BlogPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <GlassCard className="p-10 md:p-14 border-white/5 bg-black/40 backdrop-blur-2xl shadow-2xl flex flex-col items-center text-center">
+                    <GlassCard className="p-10 md:p-14 border-white/5 bg-black/40 backdrop-blur-md shadow-2xl flex flex-col items-center text-center">
 
                         {/* Icon */}
                         <div className="w-24 h-24 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(255,255,255,0.05)] relative group">

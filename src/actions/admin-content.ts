@@ -187,18 +187,20 @@ export async function createLesson(data: Partial<Lesson>) {
         await logAdminAction("CREATE_LESSON", newLesson.id, "lesson", { title: data.title });
 
         // [SYNC] Create Live Session if type is 'live_stream'
-        if (data.type === 'live_stream') {
+        if (data.type === 'live_stream' && data.scheduled_at) {
             const payloadSchedule = data.scheduled_at;
-
             let safeStartTime: string;
 
-            if (payloadSchedule) {
+            if (payloadSchedule instanceof Date) {
+                safeStartTime = payloadSchedule.toISOString();
+            } else if (typeof payloadSchedule === 'string' || typeof payloadSchedule === 'number') {
                 const d = new Date(payloadSchedule);
                 if (isNaN(d.getTime())) {
                     throw new Error("Validation Error: Invalid scheduled date format.");
                 }
                 safeStartTime = d.toISOString();
             } else {
+                // Fallback for strictness, though the type guard above covers it
                 safeStartTime = new Date(Date.now() + 3600000).toISOString();
             }
 

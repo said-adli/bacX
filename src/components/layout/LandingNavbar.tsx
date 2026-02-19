@@ -27,7 +27,7 @@ const LandingNavbarComponent = function LandingNavbar({ authButton }: { authButt
             dir="ltr"
             className={cn(
                 "fixed top-0 left-0 right-0 z-50 px-6 py-4 flex items-center justify-between transition-all duration-500",
-                isScrolled ? "bg-[#0A0A0F]/70 backdrop-blur-lg border-b border-white/5 py-3" : "bg-transparent py-5"
+                isScrolled ? "bg-[#0A0A0F]/70 backdrop-blur-md border-b border-white/5 py-3" : "bg-transparent py-5"
             )}
         >
             <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
@@ -41,7 +41,7 @@ const LandingNavbarComponent = function LandingNavbar({ authButton }: { authButt
                 </div>
 
                 {/* Center: Navigation Pill */}
-                <nav className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-1 px-2 py-2 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg">
+                <nav className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-1 px-2 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 shadow-lg">
                     {[
                         { label: "المنتج", href: "/product" },
                         { label: "المسارات", href: "/tracks" },
