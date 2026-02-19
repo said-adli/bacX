@@ -27,7 +27,7 @@ export function PremiumLockScreen({
         <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black/40 border border-white/10 backdrop-blur-sm flex items-center justify-center p-6 group">
             {/* Background Ambience */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-blue-900/20 opacity-50" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-purple-500/10 rounded-full blur-[10px] pointer-events-none" />
 
             <GlassCard className="relative z-10 max-w-md text-center p-8 border-purple-500/30 shadow-[0_0_50px_rgba(168,85,247,0.1)]">
                 <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-6 border border-purple-500/20 shadow-[0_0_20px_rgba(168,85,247,0.2)] animate-pulse">

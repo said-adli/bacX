@@ -16,6 +16,7 @@ export interface LessonDTO {
     created_at?: string;
     is_purchasable?: boolean;
     price?: number | null;
+    scheduled_at?: string | number | Date;
 }
 
 export interface UnitDTO {

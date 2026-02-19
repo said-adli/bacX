@@ -39,7 +39,7 @@ export async function manageSubjectRPC(
             p_icon: params.icon ?? 'Folder',
             p_operation_type: params.operationType,
             p_subject_id: params.subjectId ?? null,
-            p_order_index: params.order_index ?? 0,
+            p_order: params.order_index ?? 0,
             p_is_active: params.is_active ?? true, // Auto-activate default
         });
 

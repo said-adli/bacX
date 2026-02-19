@@ -42,7 +42,7 @@ export async function getAdminPlans() {
     return data as SubscriptionPlan[];
 }
 
-export async function createPlan(data: Omit<SubscriptionPlan, "id" | "is_active">) {
+export async function createPlan(data: Omit<SubscriptionPlan, "id">) {
     const supabase = await createClient();
 
     // Auth Check
@@ -55,7 +55,7 @@ export async function createPlan(data: Omit<SubscriptionPlan, "id" | "is_active"
         .from('subscription_plans')
         .insert([{
             ...data,
-            is_active: true
+            is_active: data.is_active ?? true
         }]);
 
     if (error) throw error;

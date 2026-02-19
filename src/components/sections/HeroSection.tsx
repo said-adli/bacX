@@ -49,12 +49,12 @@ export function HeroSection() {
                     <motion.div
                         animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }}
                         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute top-20 right-20 w-64 h-64 bg-primary/10 rounded-full blur-[100px] transform-gpu translate-z-0 will-change-transform"
+                        className="absolute top-20 right-20 w-64 h-64 bg-primary/10 rounded-full blur-[10px] transform-gpu translate-z-0 will-change-transform"
                     />
                     <motion.div
                         animate={{ y: [0, 30, 0], rotate: [0, -5, 0] }}
                         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute bottom-20 left-20 w-96 h-96 bg-accent/15 rounded-full blur-[120px] transform-gpu translate-z-0 will-change-transform"
+                        className="absolute bottom-20 left-20 w-96 h-96 bg-accent/15 rounded-full blur-[10px] transform-gpu translate-z-0 will-change-transform"
                     />
                 </>
             )}

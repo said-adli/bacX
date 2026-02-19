@@ -188,13 +188,7 @@ export async function createLesson(data: Partial<Lesson>) {
 
         // [SYNC] Create Live Session if type is 'live_stream'
         if (data.type === 'live_stream') {
-            // Fix explicit any: Define the expected payload shape locally
-            interface CreateLessonPayload {
-                scheduled_at?: string | number | Date;
-            }
-            // Safe cast through unknown
-            const payload = data as unknown as CreateLessonPayload;
-            const payloadSchedule = payload.scheduled_at;
+            const payloadSchedule = data.scheduled_at;
 
             let safeStartTime: string;
 

@@ -10,8 +10,8 @@ export function AuthLayoutShell({ children, title }: { children: React.ReactNode
                 <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 pointer-events-none mix-blend-overlay"></div>
 
                 {/* Static Art/Gradient */}
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2"></div>
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] -translate-x-1/2 translate-y-1/2"></div>
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[10px] translate-x-1/2 -translate-y-1/2"></div>
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[10px] -translate-x-1/2 translate-y-1/2"></div>
 
                 <div className="relative z-10 p-12 text-center">
                     <Logo className="h-24 mx-auto mb-8 invert brightness-0" />

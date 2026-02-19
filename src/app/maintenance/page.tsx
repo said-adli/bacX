@@ -6,7 +6,7 @@ export default function MaintenancePage() {
         <main className="min-h-screen bg-[#050505] flex items-center justify-center p-4 overflow-hidden relative">
             {/* Background Ambience */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px]" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[10px]" />
             </div>
 
             <GlassCard className="max-w-lg w-full p-10 text-center relative z-10 border-white/5">

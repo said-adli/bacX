@@ -15,9 +15,9 @@ export default function AuthLayout({
                 <div className="absolute inset-0 bg-[#020617]" />
 
                 {/* 2. Animated Galaxy Blobs (GPU Accelerated) */}
-                <div className="absolute top-[-20%] left-[-20%] w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px] mix-blend-screen animate-[ambient-motion_20s_infinite] transform-gpu will-change-transform" />
-                <div className="absolute bottom-[-20%] right-[-20%] w-[800px] h-[800px] bg-indigo-600/10 rounded-full blur-[120px] mix-blend-screen animate-[ambient-motion_25s_infinite_reverse] transform-gpu will-change-transform" />
-                <div className="absolute top-[40%] left-[30%] w-[600px] h-[600px] bg-purple-900/10 rounded-full blur-[100px] mix-blend-screen animate-[pulse_10s_infinite] transform-gpu will-change-transform" />
+                <div className="absolute top-[-20%] left-[-20%] w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[10px] mix-blend-screen animate-[ambient-motion_20s_infinite] transform-gpu will-change-transform" />
+                <div className="absolute bottom-[-20%] right-[-20%] w-[800px] h-[800px] bg-indigo-600/10 rounded-full blur-[10px] mix-blend-screen animate-[ambient-motion_25s_infinite_reverse] transform-gpu will-change-transform" />
+                <div className="absolute top-[40%] left-[30%] w-[600px] h-[600px] bg-purple-900/10 rounded-full blur-[10px] mix-blend-screen animate-[pulse_10s_infinite] transform-gpu will-change-transform" />
 
                 {/* 3. Cinematic Grain Overlay */}
                 <div className="absolute inset-0 film-grain z-10 opacity-20" />
