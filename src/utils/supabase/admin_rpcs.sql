@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS public.platform_updates (
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     type TEXT DEFAULT 'feature', -- 'feature' | 'bugfix' | 'announcement' | 'maintenance'
-    is_published BOOLEAN DEFAULT false,
-    published_at TIMESTAMP WITH TIME ZONE,
+    is_active BOOLEAN DEFAULT false,
+    activated_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -21,9 +21,9 @@ CREATE TABLE IF NOT EXISTS public.platform_updates (
 ALTER TABLE public.platform_updates ENABLE ROW LEVEL SECURITY;
 
 -- Public read for published updates
-CREATE POLICY IF NOT EXISTS "Anyone can read published updates"
+CREATE POLICY IF NOT EXISTS "Anyone can read active updates"
     ON public.platform_updates FOR SELECT
-    USING (is_published = true);
+    USING (is_active = true);
 
 -- ============================================
 -- 1. MANAGE_ANNOUNCEMENT
@@ -281,7 +281,7 @@ CREATE OR REPLACE FUNCTION manage_platform_update(
     p_title TEXT DEFAULT NULL,
     p_content TEXT DEFAULT NULL,
     p_type TEXT DEFAULT 'feature',
-    p_is_published BOOLEAN DEFAULT false,
+    p_is_active BOOLEAN DEFAULT false,
     p_update_id UUID DEFAULT NULL
 )
 RETURNS UUID
@@ -307,13 +307,13 @@ BEGIN
                 USING ERRCODE = 'invalid_parameter_value';
         END IF;
 
-        INSERT INTO platform_updates (title, content, type, is_published, published_at, created_at)
+        INSERT INTO platform_updates (title, content, type, is_active, activated_at, created_at)
         VALUES (
             p_title, 
             p_content, 
             p_type, 
-            p_is_published, 
-            CASE WHEN p_is_published THEN NOW() ELSE NULL END,
+            p_is_active, 
+            CASE WHEN p_is_active THEN NOW() ELSE NULL END,
             NOW()
         )
         RETURNING id INTO v_result_id;
@@ -330,10 +330,10 @@ BEGIN
             title = COALESCE(p_title, title),
             content = COALESCE(p_content, content),
             type = COALESCE(p_type, type),
-            is_published = COALESCE(p_is_published, is_published),
-            published_at = CASE 
-                WHEN p_is_published = true AND published_at IS NULL THEN NOW()
-                ELSE published_at 
+            is_active = COALESCE(p_is_active, is_active),
+            activated_at = CASE 
+                WHEN p_is_active = true AND activated_at IS NULL THEN NOW()
+                ELSE activated_at 
             END
         WHERE id = p_update_id
         RETURNING id INTO v_result_id;

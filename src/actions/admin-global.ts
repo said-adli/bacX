@@ -303,7 +303,7 @@ export interface CreatePlatformUpdateParams {
     title: string;
     content: string;
     type?: "feature" | "bugfix" | "announcement" | "maintenance";
-    isPublished?: boolean;
+    isActive?: boolean;
 }
 
 export async function createPlatformUpdateRPC(
@@ -317,7 +317,7 @@ export async function createPlatformUpdateRPC(
         p_title: params.title,
         p_content: params.content,
         p_type: params.type ?? "feature",
-        p_is_published: params.isPublished ?? false,
+        p_is_active: params.isActive ?? false,
     });
 
     if (error) {
@@ -344,7 +344,7 @@ export async function updatePlatformUpdateRPC(
         p_title: params.title ?? null,
         p_content: params.content ?? null,
         p_type: params.type ?? null,
-        p_is_published: params.isPublished ?? null,
+        p_is_active: params.isActive ?? null,
     });
 
     if (error) {

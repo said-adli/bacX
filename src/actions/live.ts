@@ -96,7 +96,7 @@ export async function getHybridLiveSession(): Promise<SecureLiveSession> {
     }
 
     // 5. Generate LiveKit Token (Audio Only)
-    const roomName = "class_room_main";
+    const roomName = session.id;
     const participantName = profile.full_name || user.email || "User";
 
     let liveToken = "";

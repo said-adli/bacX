@@ -210,8 +210,8 @@
   /* Glass Panel — Base */
   .glass-panel {
     background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(12px); /* Lighter on mobile */
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(8px); /* Lighter on mobile */
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02), 0 4px 30px rgba(0, 0, 0, 0.5);
   }
@@ -219,8 +219,8 @@
   /* Glass Card — With Hover Effects */
   .glass-card {
     background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(12px); /* Lighter on mobile */
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(8px); /* Lighter on mobile */
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-top: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: var(--radius-3xl);
@@ -231,12 +231,12 @@
   /* Desktop Optimizations (Heavy Blur) */
   @media (min-width: 768px) {
     .glass-panel {
-        backdrop-filter: blur(50px);
-        -webkit-backdrop-filter: blur(50px);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
     }
     .glass-card {
-        backdrop-filter: blur(50px);
-        -webkit-backdrop-filter: blur(50px);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
     }
   }
 
@@ -259,8 +259,8 @@
   /* Glass Navigation */
   .glass-nav {
     background: rgba(10, 10, 15, 0.8);
-    backdrop-filter: blur(32px);
-    -webkit-backdrop-filter: blur(32px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--glass-border);
   }
 
@@ -271,8 +271,8 @@
   /* Panel — Clean Container */
   .panel {
     background: var(--glass-surface);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-2xl);
     overflow: hidden;
@@ -515,8 +515,8 @@ main {
 
   .glass-login {
     background: rgba(255, 255, 255, 0.01);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow:
       0 25px 50px -12px rgba(0, 0, 0, 0.5),

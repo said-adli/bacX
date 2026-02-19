@@ -3,12 +3,12 @@ CREATE OR REPLACE FUNCTION update_live_session_and_lesson(
   p_lesson_id UUID,
   p_title TEXT,
   p_description TEXT,
-  p_start_time TIMESTAMPTZ,
+  p_started_at TIMESTAMPTZ,
   p_youtube_id TEXT,
   p_status TEXT DEFAULT NULL,
   p_is_purchasable BOOLEAN DEFAULT NULL,
   p_price NUMERIC DEFAULT NULL,
-  p_published BOOLEAN DEFAULT NULL,
+  p_is_active BOOLEAN DEFAULT NULL,
   p_required_plan_id UUID DEFAULT NULL
 )
 RETURNS VOID
@@ -21,12 +21,12 @@ BEGIN
   SET
     title = COALESCE(p_title, title),
     description = COALESCE(p_description, description),
-    start_time = COALESCE(p_start_time, start_time),
+    started_at = COALESCE(p_started_at, started_at),
     youtube_id = COALESCE(p_youtube_id, youtube_id),
     status = COALESCE(p_status, status),
     is_purchasable = COALESCE(p_is_purchasable, is_purchasable),
     price = COALESCE(p_price, price),
-    published = COALESCE(p_published, published),
+    is_active = COALESCE(p_is_active, is_active),
     required_plan_id = COALESCE(p_required_plan_id, required_plan_id),
     -- Update lesson_id only if provided explicitly (or keep existing)
     lesson_id = COALESCE(p_lesson_id, lesson_id),

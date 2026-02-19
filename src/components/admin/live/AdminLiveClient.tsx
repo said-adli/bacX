@@ -79,7 +79,7 @@ function AdminLiveContent({ onExit }: { onExit?: () => void }) {
 }
 
 // --- MAIN WRAPPER (Providers) ---
-export default function AdminLiveClient({ roomName = "class_room_main", onExit }: { roomName?: string; onExit?: () => void }) {
+export default function AdminLiveClient({ roomName, onExit }: { roomName: string; onExit?: () => void }) {
     const [token, setToken] = useState("");
 
     useEffect(() => {

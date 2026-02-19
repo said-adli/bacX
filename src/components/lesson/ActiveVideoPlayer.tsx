@@ -63,6 +63,7 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
                     (secureVideoData?.token) ? (
                         <EncodedVideoPlayer
                             encodedVideoId={secureVideoData.token}
+                            lessonId={lesson.id}
                         />
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900">

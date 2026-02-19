@@ -13,7 +13,7 @@ interface PlatformUpdate {
     description: string;
     type: 'feature' | 'improvement' | 'fix' | 'announcement';
     version: string;
-    is_published: boolean;
+    is_active: boolean;
     created_at: string;
 }
 
@@ -59,7 +59,7 @@ export default function AdminPlatformUpdates() {
                 description: currentUpdate.description,
                 type: currentUpdate.type || 'improvement',
                 version: currentUpdate.version || '1.0.0',
-                is_published: currentUpdate.is_published ?? true,
+                is_active: currentUpdate.is_active ?? true,
                 updated_at: new Date().toISOString()
             };
 
@@ -75,7 +75,7 @@ export default function AdminPlatformUpdates() {
                     .from('platform_updates')
                     .insert([payload]);
                 if (error) throw error;
-                toast.success("New update published");
+                toast.success("New update created");
             }
 
             setIsEditing(false);
@@ -114,7 +114,7 @@ export default function AdminPlatformUpdates() {
                 </div>
                 <Button
                     onClick={() => {
-                        setCurrentUpdate({ type: 'feature', is_published: true });
+                        setCurrentUpdate({ type: 'feature', is_active: true });
                         setIsEditing(true);
                     }}
                     className="bg-blue-600 hover:bg-blue-500 text-white"
@@ -187,10 +187,10 @@ export default function AdminPlatformUpdates() {
                                     type="checkbox"
                                     id="publish"
                                     className="rounded border-white/20 bg-black/20 text-blue-600"
-                                    checked={currentUpdate.is_published}
-                                    onChange={(e) => setCurrentUpdate({ ...currentUpdate, is_published: e.target.checked })}
+                                    checked={currentUpdate.is_active}
+                                    onChange={(e) => setCurrentUpdate({ ...currentUpdate, is_active: e.target.checked })}
                                 />
-                                <label htmlFor="publish" className="text-sm text-zinc-300">Publish immediately</label>
+                                <label htmlFor="publish" className="text-sm text-zinc-300">Activate immediately</label>
                             </div>
 
                             <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
@@ -233,7 +233,7 @@ export default function AdminPlatformUpdates() {
                                         <span className="text-xs font-mono text-zinc-500 border border-white/10 px-2 py-0.5 rounded-full">
                                             {update.version}
                                         </span>
-                                        {!update.is_published && (
+                                        {!update.is_active && (
                                             <span className="text-xs font-bold text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full">DRAFT</span>
                                         )}
                                     </div>

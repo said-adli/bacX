@@ -16,8 +16,8 @@ export default function NotFound() {
 
             {/* Ambient Background */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-200/20 blur-[150px] rounded-full" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-200/20 blur-[150px] rounded-full" />
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-200/20 blur-[8px] rounded-full" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-200/20 blur-[8px] rounded-full" />
             </div>
 
             <GlassCard className="max-w-md w-full p-12 text-center border-blue-100 bg-white/80 backdrop-blur-md shadow-2xl shadow-blue-900/5 relative z-10 flex flex-col items-center">
@@ -35,7 +35,7 @@ export default function NotFound() {
                     }}
                     className="mb-8 relative"
                 >
-                    <div className="w-32 h-32 rounded-full bg-blue-100/50 blur-xl absolute inset-0" />
+                    <div className="w-32 h-32 rounded-full bg-blue-100/50 blur-md absolute inset-0" />
                     <Compass className="w-32 h-32 text-blue-600 relative z-10 drop-shadow-xl" strokeWidth={1} />
                 </motion.div>
 

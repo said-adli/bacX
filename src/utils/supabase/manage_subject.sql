@@ -10,7 +10,7 @@ CREATE OR REPLACE FUNCTION manage_subject(
   p_operation_type TEXT DEFAULT 'create', -- 'create' | 'update'
   p_subject_id UUID DEFAULT NULL,
   p_order_index INTEGER DEFAULT 0,
-  p_published BOOLEAN DEFAULT TRUE
+  p_is_active BOOLEAN DEFAULT TRUE
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -44,8 +44,8 @@ BEGIN
         USING ERRCODE = 'unique_violation';
     END IF;
 
-    INSERT INTO subjects (name, icon, order_index, published, created_at)
-    VALUES (p_name, p_icon, p_order_index, p_published, NOW())
+    INSERT INTO subjects (name, icon, order_index, is_active, created_at)
+    VALUES (p_name, p_icon, p_order_index, p_is_active, NOW())
     RETURNING id INTO v_result_id;
 
   -- ============================================
@@ -75,7 +75,7 @@ BEGIN
       name = COALESCE(p_name, name),
       icon = COALESCE(p_icon, icon),
       order_index = COALESCE(p_order_index, order_index),
-      published = COALESCE(p_published, published)
+      is_active = COALESCE(p_is_active, is_active)
     WHERE id = p_subject_id
     RETURNING id INTO v_result_id;
 
@@ -97,4 +97,4 @@ $$;
 GRANT EXECUTE ON FUNCTION manage_subject TO authenticated;
 
 -- Optional: Add a comment for documentation
-COMMENT ON FUNCTION manage_subject IS 'Admin-only RPC to create or update subjects with published status.';
+COMMENT ON FUNCTION manage_subject IS 'Admin-only RPC to create or update subjects with active status.';

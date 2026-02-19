@@ -12,9 +12,10 @@ interface EncodedVideoPlayerProps {
     shouldMute?: boolean;
     onEnded?: () => void;
     isLive?: boolean; // [NEW] Live Mode Flag
+    lessonId?: string; // [NEW] Enforce Lesson ID
 }
 
-export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false, onEnded, isLive = false }: EncodedVideoPlayerProps) {
+export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false, onEnded, isLive = false, lessonId }: EncodedVideoPlayerProps) {
     const [decodedId, setDecodedId] = useState<string | null>(null);
     const [securityWarning, setSecurityWarning] = useState(false);
 
@@ -69,7 +70,7 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
                 const res = await fetch('/api/video/decrypt', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ encodedId: encodedVideoId })
+                    body: JSON.stringify({ encodedId: encodedVideoId, lessonId })
                 });
                 if (!res.ok) throw new Error("Decryption failed");
                 const data = await res.json();
@@ -77,7 +78,7 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
                 else setDecodedId("invalid_token");
             } catch (e) {
                 // Decryption failed, using fallback
-                if (mounted) setDecodedId("M7lc1UVf-VE");
+                if (mounted) setDecodedId(null); // SECURITY FIX: No fallback to demo video
             }
         }
         fetchDecodedId();

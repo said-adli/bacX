@@ -27,12 +27,12 @@ BEGIN
     CASE resource_type
         WHEN 'subject' THEN 
             v_target_table := 'subjects';
-            v_target_column := 'published';
+            v_target_column := 'is_active';
         WHEN 'lesson' THEN 
             v_target_table := 'lessons';
-            -- Check for 'published' first, fallback to 'is_public' logic
-            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'lessons' AND column_name = 'published') THEN
-                v_target_column := 'published';
+            -- Check for 'is_active' first, fallback to 'is_public' logic
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'lessons' AND column_name = 'is_active') THEN
+                v_target_column := 'is_active';
             ELSE
                  v_target_column := 'is_public';
             END IF;

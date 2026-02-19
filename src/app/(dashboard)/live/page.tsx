@@ -22,6 +22,10 @@ interface SecureSession {
     youtubeId?: string;
     liveToken?: string;
     error?: string;
+    user?: {
+        name: string;
+        id: string;
+    };
 }
 
 // --- INNER CONTENT ---
@@ -84,7 +88,7 @@ function LiveSessionContent({ secureSession }: { secureSession: SecureSession })
                     <div className="glass-card p-6 flex flex-col md:flex-row items-start md:items-center gap-6 justify-between">
                         <div>
                             <h2 className="text-2xl font-bold mb-1">{secureSession.title || "بث مباشر"}</h2>
-                            <p className="text-white/50">تقديم: الأستاذ محمد كريم</p>
+                            <p className="text-white/50">تقديم: {secureSession.user?.name || "الأستاذ"}</p>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2 text-white/40 bg-white/5 px-4 py-2 rounded-full text-sm">
@@ -151,7 +155,8 @@ export default function LiveSessionsPage() {
                     title: data.title,
                     youtubeId: data.youtubeId,
                     liveToken: data.liveToken, // Token with publish: false
-                    error: data.error
+                    error: data.error,
+                    user: data.user
                 });
             } catch {
                 setSecureSession(prev => ({ ...prev, loading: false, error: "Connection failed" }));
