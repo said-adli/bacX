@@ -44,7 +44,8 @@ export default function PlansPage({ plans }: { plans: SubscriptionPlan[] }) {
                 price: Number(formData.price),
                 features: formData.features,
                 duration_days: Number(formData.duration_days),
-                type: formData.type
+                type: formData.type,
+                is_active: true
             });
             toast.success("Plan created successfully");
             setIsCreating(false);
