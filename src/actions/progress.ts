@@ -44,6 +44,11 @@ export async function toggleLessonCompletion(lessonId: string, isCompleted: bool
  * Returns { completed, total, percentage }
  */
 export async function getSubjectProgress(subjectId: string) {
+    if (!subjectId || subjectId === "undefined" || typeof subjectId === "object") {
+        console.error("CRITICAL: Blocked Supabase call with invalid ID:", subjectId);
+        return { completed: 0, total: 0, percentage: 0 };
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -156,6 +161,11 @@ export async function getLastAccessedLesson(userId: string): Promise<LastLesson 
  * Optimized with single JOIN query.
  */
 export async function getUserProgress(subjectId: string) {
+    if (!subjectId || subjectId === "undefined" || typeof subjectId === "object") {
+        console.error("CRITICAL: Blocked Supabase call with invalid ID:", subjectId);
+        return [];
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 

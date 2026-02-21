@@ -31,6 +31,13 @@ interface ManageSubjectResult {
 export async function manageSubjectRPC(
     params: ManageSubjectParams
 ): Promise<ManageSubjectResult> {
+    // ID Validation for updates
+    if (params.operationType === 'update' &&
+        (!params.subjectId || params.subjectId === "undefined" || typeof params.subjectId === "object")) {
+        console.error("CRITICAL: Blocked Supabase RPC call with invalid subject ID:", params.subjectId);
+        return { success: false, error: "Invalid subject ID" };
+    }
+
     const supabase = await createClient();
 
     try {

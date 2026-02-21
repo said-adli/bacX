@@ -7,6 +7,11 @@ import { revalidatePath } from "next/cache";
  * Fetches the specific lesson details including video, notes, and completion status.
  */
 export async function getLessonData(lessonId: string) {
+    if (!lessonId || lessonId === "undefined" || typeof lessonId === "object") {
+        console.error("CRITICAL: Blocked Supabase call with invalid ID:", lessonId);
+        return { error: "Invalid lesson ID" };
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -100,6 +105,11 @@ export async function getLessonData(lessonId: string) {
  * Fetches the subject hierarchy (Units -> Lessons)
  */
 export async function getSubjectHierarchy(subjectId: string) {
+    if (!subjectId || subjectId === "undefined" || typeof subjectId === "object") {
+        console.error("CRITICAL: Blocked Supabase call with invalid ID:", subjectId);
+        return { error: "Invalid subject ID" };
+    }
+
     const supabase = await createClient();
 
     try {

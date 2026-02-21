@@ -15,15 +15,19 @@ import { Skeleton } from "@/components/ui/Skeleton";
 export const dynamic = 'force-dynamic';
 
 interface SubjectDetailsPageProps {
-    params: { subjectId: string };
-    searchParams: { lessonId?: string };
+    params: Promise<{ subjectId: string }>;
+    searchParams: Promise<{ lessonId?: string }>;
 }
 
 export default async function SubjectDetailsPage({ params, searchParams }: SubjectDetailsPageProps) {
-    const { subjectId } = params;
-    const { lessonId } = searchParams;
+    const { subjectId } = await params;
+    const { lessonId } = await searchParams;
 
-    // 1. Fetch Basic Subject Metadata (Fast) - Needed for Header
+    if (!subjectId || subjectId === "undefined" || typeof subjectId === "object") {
+        console.error("CRITICAL: Blocked Supabase call with invalid ID:", subjectId);
+        return <div className="p-8 text-white">Invalid subject ID</div>;
+    }
+
     // 1. Fetch Basic Subject Metadata (Fast) & User Check - Parallelized
     const supabase = await createClient();
 
