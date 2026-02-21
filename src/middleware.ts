@@ -1,35 +1,47 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server'
+import { updateSession } from '@/utils/supabase/middleware'
 
-export function middleware(request: NextRequest) {
-    // In a real app with Firebase, validating auth inside middleware is tricky 
-    // because Firebase SDK isn't fully edge-compatible or requires session cookies.
-    // For this "Phase 4" demo, we'll assume client-side protection or a cookie-based approach later.
-    // However, we CAN check for a session cookie if one existed.
-
-    // For now, we pass everything to allow the client AuthContext to handle protection 
-    // to avoid blocking the "Static" build of the dashboard in this phase.
-
-    // --- MAINTENANCE MODE CHECK ---
-    const isMaintenance = process.env.MAINTENANCE_MODE === 'true';
-    if (isMaintenance) {
-        // Allow access to maintenance page and static assets
-        if (!request.nextUrl.pathname.startsWith('/maintenance') &&
-            !request.nextUrl.pathname.startsWith('/_next') &&
-            !request.nextUrl.pathname.startsWith('/static')) {
-            return NextResponse.rewrite(new URL('/maintenance', request.url));
-        }
-    } else {
-        // If NOT in maintenance mode, but user visits /maintenance, redirect home
-        if (request.nextUrl.pathname.startsWith('/maintenance')) {
-            return NextResponse.redirect(new URL('/', request.url));
+export async function middleware(request: NextRequest) {
+    // 1. MAINTENANCE MODE CHECK
+    // Set NEXT_PUBLIC_MAINTENANCE_MODE="true" in Vercel/System Env to activate.
+    if (process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true') {
+        // Allow access to maintenance page itself to avoid loops
+        if (!request.nextUrl.pathname.startsWith('/maintenance')) {
+            return NextResponse.redirect(new URL('/maintenance', request.url));
         }
     }
 
-    return NextResponse.next();
+    // 2. CSP & SECURITY HEADERS (Nonce-based)
+    const nonce = crypto.randomUUID();
+
+    // Strict CSP Policy
+    // Note: 'unsafe-eval' might be needed for some dev tools or specific libraries, keeping for now but 'unsafe-inline' is replaced by nonce.
+    // 'unsafe-inline' for styles is often needed for various UI libraries, keeping strict primarily for scripts.
+    const cspHeader = `
+        default-src 'self';
+        script-src 'self' 'nonce-${nonce}' 'unsafe-eval' https://www.youtube.com https://img.youtube.com;
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' blob: data: https://*.supabase.co https://lh3.googleusercontent.com https://*.googleusercontent.com https://img.youtube.com https://via.placeholder.com;
+        font-src 'self' data:;
+        connect-src 'self' https://*.supabase.co wss://*.supabase.co;
+        frame-src 'self' https://www.youtube.com;
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self';
+        upgrade-insecure-requests;
+    `.replace(/\s{2,}/g, ' ').trim();
+
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-nonce', nonce);
+    requestHeaders.set('Content-Security-Policy', cspHeader);
+
+    // 2. AUTH & SESSION UPDATE
+    // Pass updated headers to the Supabase middleware
+    return await updateSession(request, requestHeaders);
 }
 
 export const config = {
-    // Match all paths except api, static files, images
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
-};
+    matcher: [
+        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    ],
+}

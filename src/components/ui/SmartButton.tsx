@@ -4,25 +4,34 @@ import { forwardRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { motion } from "framer-motion";
-import type { LucideIcon } from "lucide-react";
 
 interface SmartButtonProps extends React.ComponentProps<typeof Button> {
     href?: string;
     external?: boolean;
     activeScale?: number;
+    isLoading?: boolean;
 }
 
 export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(
-    ({ href, external, activeScale = 0.95, onClick, children, ...props }, ref) => {
+    ({ href, external, activeScale = 0.95, isLoading, onClick, children, ...props }, ref) => {
 
         // Internal click handler to add potential haptics or tracking later
         const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+            if (isLoading) {
+                e.preventDefault();
+                return;
+            }
             if (onClick) onClick(e);
         };
 
         const ButtonContent = (
-            <Button ref={ref} onClick={!href ? handleClick : undefined} {...props}>
-                {children}
+            <Button ref={ref} onClick={!href ? handleClick : undefined} disabled={isLoading || props.disabled} {...props}>
+                {isLoading ? (
+                    <span className="flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        {typeof children === 'string' ? "جاري المعالجة..." : children}
+                    </span>
+                ) : children}
             </Button>
         );
 

@@ -20,7 +20,7 @@ export default function Error({
         <main className="min-h-screen bg-[#050505] flex items-center justify-center p-4 relative overflow-hidden">
             {/* Red Tint Background */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-red-900/10 blur-[150px] rounded-full" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-red-900/10 blur-[8px] rounded-full" />
             </div>
 
             <GlassCard className="max-w-md w-full p-8 text-center border-red-500/20 relative z-10">
