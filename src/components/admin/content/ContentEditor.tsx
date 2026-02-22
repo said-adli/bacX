@@ -103,12 +103,10 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
 
             if (isEditing && initialData) {
                 await updateLesson(initialData.id, payload);
-                toast.success("Changes saved");
             } else {
                 // Modified createLesson now returns the new record
                 const newLesson = await createLesson(payload);
                 lessonId = newLesson?.id;
-                toast.success("Lesson created");
             }
 
             // [NEW] Persist Resources
@@ -128,6 +126,7 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
                 }
             }
 
+            toast.success(isEditing ? "Changes saved" : "Lesson created");
             onClose();
         } catch (e) {
             console.error(e);

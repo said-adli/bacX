@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-
 
 export interface LiveSession {
     id: string;
@@ -14,7 +12,6 @@ export interface LiveSession {
 }
 
 export function useLiveStatus() {
-    const supabase = createClient();
     const [liveSession, setLiveSession] = useState<LiveSession | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -24,15 +21,9 @@ export function useLiveStatus() {
         // 1. Initial Fetch
         const fetchLive = async () => {
             try {
-                const { data, error } = await supabase
-                    .from("live_sessions")
-                    .select("*")
-                    .or("status.eq.live,status.eq.scheduled")
-                    .order("started_at", { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
-
-                if (error) throw error; // Now we catch it
+                const response = await fetch('/api/live/status');
+                if (!response.ok) throw new Error("Failed to fetch live API");
+                const { liveSession: data } = await response.json();
 
                 if (isMounted) {
                     if (data) {
