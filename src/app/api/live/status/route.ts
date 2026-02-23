@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic'; // Ensures headers are respected dynamically
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         const supabase = await createClient();
 
@@ -16,13 +16,18 @@ export async function GET() {
             .limit(1)
             .maybeSingle();
 
+        const isFast = request.nextUrl.searchParams.get('fast') === 'true';
+        const headers: HeadersInit = isFast
+            ? { 'Cache-Control': 'private, no-cache, no-store, must-revalidate' }
+            : { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=30' };
+
         if (error) {
             console.error("Live status Edge API error:", error);
             return NextResponse.json(
                 { liveSession: null },
                 {
                     status: 200,
-                    headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=10' }
+                    headers: isFast ? headers : { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=10' }
                 }
             );
         }
@@ -31,10 +36,7 @@ export async function GET() {
             { liveSession: data || null },
             {
                 status: 200,
-                headers: {
-                    // Cache at Vercel Edge for 30 seconds. Serve stale payload for up to 30 additional seconds while revalidating in background.
-                    'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=30'
-                }
+                headers
             }
         );
     } catch (e) {

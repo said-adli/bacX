@@ -11,7 +11,7 @@ export interface LiveSession {
     youtube_id: string | null;
 }
 
-export function useLiveStatus() {
+export function useLiveStatus(isFastPoll: boolean = false) {
     const [liveSession, setLiveSession] = useState<LiveSession | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -21,7 +21,8 @@ export function useLiveStatus() {
         // 1. Initial Fetch
         const fetchLive = async () => {
             try {
-                const response = await fetch('/api/live/status');
+                const url = isFastPoll ? '/api/live/status?fast=true' : '/api/live/status';
+                const response = await fetch(url);
                 if (!response.ok) throw new Error("Failed to fetch live API");
                 const { liveSession: data } = await response.json();
 
@@ -49,7 +50,7 @@ export function useLiveStatus() {
             intervalId = setInterval(() => {
                 if (!isMounted) return;
                 fetchLive();
-            }, 30000);
+            }, isFastPoll ? 10000 : 30000);
         };
 
         const stopPolling = () => {

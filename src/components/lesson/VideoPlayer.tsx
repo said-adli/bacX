@@ -17,6 +17,7 @@ interface EncodedVideoPlayerProps {
 
 export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false, onEnded, isLive = false, lessonId }: EncodedVideoPlayerProps) {
     const [decodedId, setDecodedId] = useState<string | null>(null);
+    const [accessError, setAccessError] = useState<string | null>(null);
     const [securityWarning, setSecurityWarning] = useState(false);
 
     // Player State
@@ -72,13 +73,19 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ encodedId: encodedVideoId, lessonId })
                 });
-                if (!res.ok) throw new Error("Decryption failed");
+                if (!res.ok) {
+                    if (res.status === 400 || res.status === 403) {
+                        if (mounted) setAccessError("Access Denied or Token Expired");
+                        return;
+                    }
+                    throw new Error("Decryption failed");
+                }
                 const data = await res.json();
                 if (mounted && data.videoId) setDecodedId(data.videoId);
-                else setDecodedId("invalid_token");
+                else if (mounted) setAccessError("Invalid Token");
             } catch (e) {
                 // Decryption failed, using fallback
-                if (mounted) setDecodedId(null); // SECURITY FIX: No fallback to demo video
+                if (mounted) setAccessError("Decryption Failed"); // SECURITY FIX: No fallback to demo video
             }
         }
         fetchDecodedId();
@@ -195,6 +202,18 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
             <button onClick={() => setSecurityWarning(false)} className="px-6 py-2 bg-red-600 rounded">Return</button>
         </div>
     );
+
+    if (accessError) {
+        return (
+            <div className="w-full aspect-video flex flex-col items-center justify-center bg-zinc-950 rounded-2xl border border-red-500/20 shadow-2xl overflow-hidden relative text-center p-8">
+                <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6 ring-1 ring-red-500/20">
+                    <ShieldAlert className="w-8 h-8 text-red-400 animate-pulse" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Access Denied</h3>
+                <p className="text-zinc-400 max-w-sm">{accessError}</p>
+            </div>
+        );
+    }
 
     if (!decodedId) return <div className="w-full aspect-video bg-zinc-900 animate-pulse rounded-2xl flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>;
 

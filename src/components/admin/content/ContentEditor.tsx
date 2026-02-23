@@ -110,6 +110,7 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
             }
 
             // [NEW] Persist Resources
+            let hasResourceError = false;
             if (lessonId && resources.length > 0) {
                 // Filter out resources that are already saved (have an ID)
                 const newResources = resources.filter(r => !r.id).map(r => ({
@@ -122,11 +123,18 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
 
                 if (newResources.length > 0) {
                     const { error } = await supabase.from('lesson_resources').insert(newResources);
-                    if (error) console.error("Resource Save Error", error);
+                    if (error) {
+                        console.error("Resource Save Error", error);
+                        hasResourceError = true;
+                    }
                 }
             }
 
-            toast.success(isEditing ? "Changes saved" : "Lesson created");
+            if (hasResourceError) {
+                toast.warning("Lesson saved, but resources failed");
+            } else {
+                toast.success(isEditing ? "Changes saved" : "Lesson created");
+            }
             onClose();
         } catch (e) {
             console.error(e);

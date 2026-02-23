@@ -11,6 +11,7 @@ import { RaiseHandButton } from "@/components/live/RaiseHandButton";
 import LiveChat from "@/components/live/LiveChat";
 import LiveSessionSkeleton from "@/components/ui/skeletons/LiveSessionSkeleton";
 import { getHybridLiveSession } from "@/actions/live";
+import { useLiveStatus } from "@/hooks/useLiveStatus";
 import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react";
 import '@livekit/components-styles';
 
@@ -164,6 +165,16 @@ export default function LiveSessionsPage() {
         }
         initSession();
     }, []);
+
+    // [FAST POLL] To detect when a session starts while waiting
+    const { isLive: isLiveStatusActive } = useLiveStatus(true);
+
+    useEffect(() => {
+        if (!secureSession.loading && secureSession.authorized && !secureSession.isLive && isLiveStatusActive) {
+            // Live just started! Reload to get full session token
+            window.location.reload();
+        }
+    }, [isLiveStatusActive, secureSession]);
 
     if (secureSession.loading) {
         return <LiveSessionSkeleton />;

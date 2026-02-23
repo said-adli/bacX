@@ -3,6 +3,8 @@ import EncodedVideoPlayer from "@/components/lesson/VideoPlayer";
 import MarkCompleteButton from "@/components/lesson/MarkCompleteButton";
 import { PremiumLockScreen } from "@/components/dashboard/PremiumLockScreen";
 import { Lock, Video, FileText, Clock } from "lucide-react";
+import { createClient } from "@/utils/supabase/server";
+import { verifyContentAccess } from "@/lib/access-control";
 
 export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { lessonId: string | undefined, isSubscribed?: boolean }) {
 
@@ -26,13 +28,45 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
     // @ts-expect-error - isOwned is now returned
     const { lesson, isCompleted, isOwned, error } = await getLessonData(lessonId);
 
+    // Resolve Context User Profile
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    let userProfile = { id: "", role: "student", plan_id: undefined, is_subscribed: isSubscribed, owned_content_ids: [] as string[] };
+    if (user) {
+        const { data: dbUser } = await supabase.from('users').select('role, plan_id, is_subscribed').eq('id', user.id).single();
+        if (dbUser) {
+            userProfile = {
+                id: user.id,
+                role: dbUser.role,
+                plan_id: dbUser.plan_id,
+                is_subscribed: dbUser.is_subscribed || isSubscribed,
+                owned_content_ids: isOwned && lesson ? [lesson.id] : []
+            };
+        }
+    }
+
+    let hasAccess = false;
+    let accessErrorReason = "";
+
+    if (lesson) {
+        const accessCheck = await verifyContentAccess(userProfile, {
+            id: lesson.id,
+            required_plan_id: lesson.required_plan_id,
+            is_free: lesson.is_free,
+            is_active: lesson.is_active
+        });
+        hasAccess = accessCheck.allowed;
+        accessErrorReason = accessCheck.reason || "unknown";
+    }
+
     // Fetch Secure Token (Parallel)
     let secureVideoData: { videoId: string, token: string } | null = null;
     let accessError = null;
 
     try {
-        if (lesson && (isSubscribed || lesson.is_free || lesson.required_plan_id || isOwned)) {
-            // Attempt to get token if we think user might have access
+        if (lesson && hasAccess) {
+            // Attempt to get token ONLY since we verified access
             secureVideoData = await getSecureVideoId(lessonId);
         }
     } catch (e) {
@@ -59,14 +93,6 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
             </div>
         );
     }
-
-    // 2. Access Control
-    // [Logic] If lesson requires specific plan (required_plan_id) -> Check if user has it.
-    // For now, simplify: If not free, requires subscription.
-    // Ideally userProfile should be passed down or re-fetched.
-    // Assuming 'isSubscribed' is enough for general access, but specific plan logic needed if 'required_plan_id' exists.
-
-    const hasAccess = isSubscribed || lesson.is_free || isOwned; // Or check specific plan if passed
 
     return (
         <div className="flex flex-col gap-6">
