@@ -64,7 +64,7 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
                 if (encodedVideoId.startsWith("enc_")) {
                     const parts = encodedVideoId.split("_");
                     if (parts.length >= 3 && mounted) {
-                        setDecodedId(parts[2]);
+                        setDecodedId(parts.slice(2).join("_"));
                         return;
                     }
                 }
@@ -215,7 +215,9 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
         );
     }
 
-    if (!decodedId) return <div className="w-full aspect-video bg-zinc-900 animate-pulse rounded-2xl flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>;
+    const finalVideoId = decodedId ? extractYouTubeId(decodedId) : null;
+
+    if (!decodedId || !finalVideoId) return <div className="w-full aspect-video bg-zinc-900 animate-pulse rounded-2xl flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>;
 
     return (
         <div
@@ -227,12 +229,14 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
             {/* 1. THE IFRAME (GHOST MODE) */}
             <iframe
                 ref={iframeRef}
-                src={`https://www.youtube-nocookie.com/embed/${decodedId}?enablejsapi=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+                src={`https://www.youtube.com/embed/${finalVideoId}?origin=${typeof window !== 'undefined' ? window.location.origin : ''}&enablejsapi=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1`}
                 className={cn(
                     "w-full h-full object-cover pointer-events-none scale-[1.01] transition-opacity duration-700 ease-in-out",
                     isReady ? "opacity-100" : "opacity-0"
                 )}
-                allow="autoplay; encrypted-media"
+                allow="autoplay; encrypted-media; fullscreen"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
                 title="Lesson Video"
             />
 
@@ -334,4 +338,11 @@ function formatTime(seconds: number) {
     const min = Math.floor(seconds / 60);
     const sec = Math.floor(seconds % 60);
     return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+}
+
+function extractYouTubeId(urlOrId: string): string | null {
+    if (!urlOrId) return null;
+    if (/^[a-zA-Z0-9_-]{11}$/.test(urlOrId)) return urlOrId;
+    const match = urlOrId.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    return match ? match[1] : urlOrId;
 }
