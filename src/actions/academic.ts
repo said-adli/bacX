@@ -79,8 +79,21 @@ export async function createLesson(unitId: string, data: LessonData) {
     try {
         await requireAdmin();
         const admin = createAdminClient();
+
+        // [MANDATORY FIX]: Fetch subject_id from parent unit
+        const { data: unitRow, error: unitError } = await admin
+            .from('units')
+            .select('subject_id')
+            .eq('id', unitId)
+            .single();
+
+        if (unitError || !unitRow?.subject_id) {
+            throw new Error("Validation Error: Could not find parent subject_id for this unit.");
+        }
+
         const { error } = await admin.from('lessons').insert({
             unit_id: unitId,
+            subject_id: unitRow.subject_id,
             title: data.title,
             video_url: data.videoUrl,
             duration: data.duration,
