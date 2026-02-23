@@ -167,7 +167,7 @@ export default function LiveSessionsPage() {
     }, []);
 
     // [FAST POLL] To detect when a session starts while waiting
-    const { isLive: isLiveStatusActive } = useLiveStatus(true);
+    const { isLive: isLiveStatusActive } = useLiveStatus();
 
     useEffect(() => {
         if (!secureSession.loading && secureSession.authorized && !secureSession.isLive && isLiveStatusActive) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export interface LiveSession {
     id: string;
@@ -11,7 +12,9 @@ export interface LiveSession {
     youtube_id: string | null;
 }
 
-export function useLiveStatus(isFastPoll: boolean = false) {
+export function useLiveStatus() {
+    const pathname = usePathname();
+    const isFastPoll = pathname === '/live' || pathname?.startsWith('/materials');
     const [liveSession, setLiveSession] = useState<LiveSession | null>(null);
     const [loading, setLoading] = useState(true);
 
