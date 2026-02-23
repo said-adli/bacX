@@ -34,7 +34,7 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
 
     let userProfile = { id: "", role: "student", plan_id: undefined, is_subscribed: isSubscribed, owned_content_ids: [] as string[] };
     if (user) {
-        const { data: dbUser } = await supabase.from('users').select('role, plan_id, is_subscribed').eq('id', user.id).single();
+        const { data: dbUser } = await supabase.from('profiles').select('role, plan_id, is_subscribed').eq('id', user.id).single();
         if (dbUser) {
             userProfile = {
                 id: user.id,
