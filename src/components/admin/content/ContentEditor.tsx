@@ -10,6 +10,7 @@ import { createClient } from "@/utils/supabase/client";
 import { GlassCard } from "@/components/ui/GlassCard";
 
 interface ContentEditorProps {
+    subjectId: string;
     unitId: string;
     initialData?: Lesson;
     activePlans: SubscriptionPlan[];
@@ -20,7 +21,7 @@ interface AttachedResource extends ResourceFile {
     id?: string; // Optional because new uploads won't have DB ID immediately
 }
 
-export default function ContentEditor({ unitId, initialData, activePlans, onClose }: ContentEditorProps) {
+export default function ContentEditor({ subjectId, unitId, initialData, activePlans, onClose }: ContentEditorProps) {
     const isEditing = !!initialData;
     const [formData, setFormData] = useState({
         title: initialData?.title || "",
@@ -80,6 +81,7 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
 
     const handleSubmit = async () => {
         if (!formData.title) return toast.error("Title is required");
+        if (!unitId || !subjectId) return toast.error("Unit or Subject ID is missing. Cannot create lesson.");
 
         setIsSaving(true);
         try {
@@ -89,6 +91,7 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
                 video_url: formData.video_url,
                 required_plan_id: formData.required_plan_id || null, // Granular Access Logic
                 unit_id: unitId,
+                subject_id: subjectId,
                 is_free: formData.is_free,
                 is_purchasable: formData.is_purchasable,
                 price: formData.price,

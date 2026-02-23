@@ -175,6 +175,7 @@ export async function createLesson(data: Partial<Lesson>) {
                 video_url: data.video_url,
                 required_plan_id: data.required_plan_id,
                 unit_id: data.unit_id,
+                subject_id: data.subject_id,
                 is_free: data.is_free,
                 is_purchasable: data.is_purchasable ?? false,
                 price: data.price ?? null,

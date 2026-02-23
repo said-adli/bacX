@@ -27,7 +27,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
     const [subjects, setSubjects] = useState<SubjectWithUnitsDTO[]>(initialSubjects);
     const [expandedUnits, setExpandedUnits] = useState<Record<string, boolean>>({});
 
-    const [isCreatingLesson, setIsCreatingLesson] = useState<{ unitId: string } | null>(null);
+    const [isCreatingLesson, setIsCreatingLesson] = useState<{ subjectId: string, unitId: string } | null>(null);
     const [selectedLesson, setSelectedLesson] = useState<LessonDTO | null>(null); // For editor
     const [isCreatingSubject, setIsCreatingSubject] = useState(false); // [NEW] Subject Modal State
     const [newSubjectName, setNewSubjectName] = useState("");
@@ -101,8 +101,8 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
 
     // Lesson Actions
 
-    const openEditor = (unitId: string, lesson?: LessonDTO) => {
-        setIsCreatingLesson({ unitId });
+    const openEditor = (subjectId: string, unitId: string, lesson?: LessonDTO) => {
+        setIsCreatingLesson({ subjectId, unitId });
         setSelectedLesson(lesson || null);
     };
 
@@ -187,7 +187,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
 
                                                     <div className="opacity-0 group-hover:opacity-100 flex gap-1">
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); openEditor(unit.id); }}
+                                                            onClick={(e) => { e.stopPropagation(); openEditor(subject.id, unit.id); }}
                                                             className="p-1 hover:bg-emerald-500/20 text-emerald-500 rounded"
                                                             title="Add Lesson"
                                                         >
@@ -212,7 +212,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
                                                             renderItem={(lesson) => (
                                                                 <SortableItem key={lesson.id} id={lesson.id}>
                                                                     <div
-                                                                        onClick={() => openEditor(unit.id, lesson)}
+                                                                        onClick={() => openEditor(subject.id, unit.id, lesson)}
                                                                         className={cn(
                                                                             "flex items-center gap-3 p-2 rounded-lg cursor-pointer text-sm transition-colors border border-transparent group",
                                                                             selectedLesson?.id === lesson.id
@@ -253,6 +253,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
             <div className="lg:col-span-2">
                 {isCreatingLesson ? (
                     <ContentEditor
+                        subjectId={isCreatingLesson.subjectId}
                         unitId={isCreatingLesson.unitId}
                         initialData={selectedLesson || undefined}
                         activePlans={activePlans} // Dynamic Logic: Granular Access
