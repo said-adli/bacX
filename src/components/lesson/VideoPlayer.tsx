@@ -20,6 +20,12 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
     const [accessError, setAccessError] = useState<string | null>(null);
     const [securityWarning, setSecurityWarning] = useState(false);
 
+    console.log('DEBUG VideoPlayer:', {
+        encodedVideoId,
+        decodedId,
+        isReady: false // will be updated in state naturally, but logging incoming props
+    });
+
     // Player State
     const [isPlaying, setIsPlaying] = useState(false);
     const [isReady, setIsReady] = useState(false); // [NEW] Anti-Red Flash
@@ -109,13 +115,8 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
                         // Player State: 1 = Playing, 2 = Paused, 3 = Buffering, 0 = Ended
                         if (data.info.playerState === 1) {
                             setIsPlaying(true);
-                            // setIsLoading(false);
-                            setIsBuffering(false);
                         } else if (data.info.playerState === 2) {
                             setIsPlaying(false);
-                            setIsBuffering(false);
-                        } else if (data.info.playerState === 3) {
-                            setIsBuffering(true);
                         } else if (data.info.playerState === 0 && onEnded) {
                             setIsPlaying(false);
                             setIsBuffering(false);
@@ -126,7 +127,19 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
             }
         };
         window.addEventListener('message', handleMessage);
-        return () => window.removeEventListener('message', handleMessage);
+
+        // [NEW] 5-Second Timeout to break infinite buffering
+        const fallbackTimeout = setTimeout(() => {
+            if (!isReady) {
+                console.warn("DEBUG VideoPlayer: YouTube Iframe failed to report 'infoDelivery' within 5s.");
+                setAccessError("Video failed to load in time. Please refresh.");
+            }
+        }, 5000);
+
+        return () => {
+            window.removeEventListener('message', handleMessage);
+            clearTimeout(fallbackTimeout);
+        };
     }, [onEnded]);
 
     // 4. Progress Polling 
