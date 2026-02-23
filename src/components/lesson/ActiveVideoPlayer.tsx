@@ -23,58 +23,41 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
     }
 
     // 1. Fetch Data
-    // 1. Fetch Data
-    const { getSecureVideoId } = await import("@/actions/video");
-    // @ts-expect-error - isOwned is now returned
-    const { lesson, isCompleted, isOwned, error } = await getLessonData(lessonId);
-
-    // Resolve Context User Profile
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    let userProfile = { id: "", role: "student", plan_id: undefined, is_subscribed: isSubscribed, owned_content_ids: [] as string[] };
-    if (user) {
-        const { data: dbUser } = await supabase.from('profiles').select('role, plan_id, is_subscribed').eq('id', user.id).single();
-        if (dbUser) {
-            userProfile = {
-                id: user.id,
-                role: dbUser.role,
-                plan_id: dbUser.plan_id,
-                is_subscribed: dbUser.is_subscribed || isSubscribed,
-                owned_content_ids: isOwned && lesson ? [lesson.id] : []
-            };
-        }
-    }
+    // Wiring: Ensure it calls the get_lesson_full_context RPC using the current user's ID and the lesson ID.
+    const { data: rpc_data, error } = await supabase.rpc('get_lesson_full_context', {
+        p_lesson_id: lessonId,
+        p_user_id: user?.id || "00000000-0000-0000-0000-000000000000"
+    });
 
-    let hasAccess = false;
-    let accessErrorReason = "";
-
-    if (lesson) {
-        const accessCheck = await verifyContentAccess(userProfile, {
-            id: lesson.id,
-            required_plan_id: lesson.required_plan_id,
-            is_free: lesson.is_free,
-            is_active: lesson.is_active
-        });
-        hasAccess = accessCheck.allowed;
-        accessErrorReason = accessCheck.reason || "unknown";
-    }
+    const lesson = rpc_data?.lesson;
+    const hasAccess = rpc_data?.user_context?.can_view === true;
 
     // Fetch Secure Token (Parallel)
     let secureVideoData: { videoId: string, token: string } | null = null;
-    let accessError = null;
+    let accessError: Error | null = null;
 
     try {
         if (lesson && hasAccess) {
-            // Attempt to get token ONLY since we verified access
-            secureVideoData = await getSecureVideoId(lessonId);
+            if (lesson.is_free) {
+                // Free Lesson bypass: encode a local fallback token that the EncodedVideoPlayer can natively decrypt
+                secureVideoData = {
+                    videoId: lesson.video_url,
+                    token: `enc_free_${lesson.video_url}`
+                };
+            } else {
+                const { getSecureVideoId } = await import("@/actions/video");
+                secureVideoData = await getSecureVideoId(lessonId);
+            }
         }
     } catch (e) {
         // Access might be denied here, we handle it visually below
-        accessError = e;
+        accessError = e as Error;
     }
 
-    if (error || !lesson || accessError) {
+    if (error || !lesson || (hasAccess && !secureVideoData && !accessError) || accessError) {
         return (
             <div className="w-full aspect-video bg-zinc-950 rounded-2xl border border-red-500/20 shadow-2xl overflow-hidden relative">
                 <div className="absolute inset-0 bg-red-500/5 blur-3xl rounded-full" />

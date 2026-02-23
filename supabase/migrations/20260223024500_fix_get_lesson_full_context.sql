@@ -16,20 +16,7 @@ DECLARE
     v_result jsonb;
 BEGIN
     SELECT jsonb_build_object(
-        'lesson', jsonb_build_object(
-            'id', l.id,
-            'title', l.title,
-            'type', l.type,
-            'video_url', l.video_url,
-            'required_plan_id', l.required_plan_id,
-            'is_free', l.is_free,
-            'pdf_url', l.pdf_url,
-            'duration', l.duration,
-            'is_purchasable', l.is_purchasable,
-            'price', l.price,
-            'subject_id', l.subject_id,
-            'unit_id', l.unit_id
-        ),
+        'lesson', to_jsonb(l),
         'unit', CASE WHEN u.id IS NOT NULL THEN jsonb_build_object(
             'id', u.id,
             'title', u.title
@@ -40,6 +27,19 @@ BEGIN
             'is_active', s.is_active
         ),
         'user_context', jsonb_build_object(
+            'can_view', (
+                l.is_free = true
+                OR (
+                    SELECT EXISTS (
+                        SELECT 1 FROM profiles 
+                        WHERE id = p_user_id 
+                        AND (
+                            role IN ('admin', 'teacher') 
+                            OR (is_subscribed = true AND (plan_id = l.required_plan_id OR l.required_plan_id IS NULL))
+                        )
+                    )
+                )
+            ),
             'has_plan', (
                 SELECT EXISTS (
                     SELECT 1 FROM profiles 
