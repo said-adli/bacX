@@ -20,15 +20,9 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
     const [accessError, setAccessError] = useState<string | null>(null);
     const [securityWarning, setSecurityWarning] = useState(false);
 
-    console.log('DEBUG VideoPlayer:', {
-        encodedVideoId,
-        decodedId,
-        isReady: false // will be updated in state naturally, but logging incoming props
-    });
-
     // Player State
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isReady, setIsReady] = useState(false); // [NEW] Anti-Red Flash
+    const [isReady, setIsReady] = useState(true); // [FIX] Force ready to true immediately to stop infinite spin
     const [isBuffering, setIsBuffering] = useState(false); // [NEW] Custom Buffering
     // const [progress, setProgress] = useState(0); // 0-100
     const [currentTime, setCurrentTime] = useState(0);
@@ -128,17 +122,8 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
         };
         window.addEventListener('message', handleMessage);
 
-        // [NEW] 5-Second Timeout to break infinite buffering
-        const fallbackTimeout = setTimeout(() => {
-            if (!isReady) {
-                console.warn("DEBUG VideoPlayer: YouTube Iframe failed to report 'infoDelivery' within 5s.");
-                setAccessError("Video failed to load in time. Please refresh.");
-            }
-        }, 5000);
-
         return () => {
             window.removeEventListener('message', handleMessage);
-            clearTimeout(fallbackTimeout);
         };
     }, [onEnded]);
 
@@ -338,7 +323,7 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
             )}
 
             {/* [NEW] Buffering / Initial Load Spinner */}
-            {(isBuffering || !isReady) && (
+            {isBuffering && (
                 <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center bg-black">
                     <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
                 </div>
