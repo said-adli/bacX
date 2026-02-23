@@ -27,13 +27,15 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
     const { data: { user } } = await supabase.auth.getUser();
 
     // Wiring: Ensure it calls the get_lesson_full_context RPC using the current user's ID and the lesson ID.
-    const { data: rpc_data, error } = await supabase.rpc('get_lesson_full_context', {
+    const { data, error } = await supabase.rpc('get_lesson_full_context', {
         p_lesson_id: lessonId,
         p_user_id: user?.id || "00000000-0000-0000-0000-000000000000"
     });
 
-    const lesson = rpc_data?.lesson;
-    const hasAccess = rpc_data?.user_context?.can_view === true;
+    console.log('RPC Response:', data);
+
+    const lesson = data?.lesson;
+    const hasAccess = data?.user_context?.can_view === true;
 
     // Fetch Secure Token (Parallel)
     let secureVideoData: { videoId: string, token: string } | null = null;
