@@ -2,17 +2,23 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-// import { GlassCard } from "../ui/GlassCard"; // Unused
-import { ShieldAlert, Play, Pause, Volume2, VolumeX, Maximize, Loader2 } from "lucide-react";
+import { ShieldAlert, Play, Pause, Volume2, VolumeX, Maximize, Loader2, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useLiveSync } from "@/hooks/useLiveSync"; // [NEW] Import Sync Hook
+import { useLiveSync } from "@/hooks/useLiveSync";
+
+declare global {
+    interface Window {
+        YT: any;
+        onYouTubeIframeAPIReady: () => void;
+    }
+}
 
 interface EncodedVideoPlayerProps {
     encodedVideoId: string;
     shouldMute?: boolean;
     onEnded?: () => void;
-    isLive?: boolean; // [NEW] Live Mode Flag
-    lessonId?: string; // [NEW] Enforce Lesson ID
+    isLive?: boolean;
+    lessonId?: string;
 }
 
 export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false, onEnded, isLive = false, lessonId }: EncodedVideoPlayerProps) {
@@ -22,41 +28,35 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
 
     // Player State
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isReady, setIsReady] = useState(true); // [FIX] Force ready to true immediately to stop infinite spin
-    const [isBuffering, setIsBuffering] = useState(false); // [NEW] Custom Buffering
-    // const [progress, setProgress] = useState(0); // 0-100
+    const [isReady, setIsReady] = useState(false);
+    const [isBuffering, setIsBuffering] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [isMuted, setIsMuted] = useState(shouldMute);
-    // const [volume, setVolume] = useState(100);
+    const [playbackRate, setPlaybackRate] = useState(1);
+    const [showSettings, setShowSettings] = useState(false);
     const [isHovering, setIsHovering] = useState(false);
 
     const { user } = useAuth();
-    // const [sessionIp] = useState("192.168.x.x");
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    const playerRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const progressInterval = useRef<NodeJS.Timeout | null>(null);
 
-    // 2. Command Helper
-    const sendCommand = useCallback((func: string, args: unknown[] = []) => {
-        if (!iframeRef.current?.contentWindow) return;
-        iframeRef.current.contentWindow.postMessage(
-            JSON.stringify({ event: 'command', func, args }),
-            '*'
-        );
-    }, []);
-
-    // [NEW] Live Sync Integration
     useLiveSync({
         currentTime,
         duration,
         isLive,
-        onSeek: (time) => sendCommand('seekTo', [time, true]),
-        threshold: 5,   // Alert if >5s behind
-        targetBuffer: 2 // Jump to 2s behind live edge
+        onSeek: (time) => {
+            if (playerRef.current?.seekTo) {
+                playerRef.current.seekTo(time, true);
+            }
+        },
+        threshold: 5,
+        targetBuffer: 2
     });
 
-    // 1. Decryption Logic (Preserved)
+    // 1. Decryption Logic
     useEffect(() => {
         let mounted = true;
         async function fetchDecodedId() {
@@ -84,86 +84,118 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
                 if (mounted && data.videoId) setDecodedId(data.videoId);
                 else if (mounted) setAccessError("Invalid Token");
             } catch (e) {
-                // Decryption failed, using fallback
-                if (mounted) setAccessError("Decryption Failed"); // SECURITY FIX: No fallback to demo video
+                if (mounted) setAccessError("Decryption Failed");
             }
         }
         fetchDecodedId();
         return () => { mounted = false; };
-    }, [encodedVideoId]);
+    }, [encodedVideoId, lessonId]);
 
-    // 3. Status Listener (YouTube API)
+    const finalVideoId = decodedId ? extractYouTubeId(decodedId) : null;
+
+    // 2. Load YouTube Player API natively
     useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
-            if (iframeRef.current && event.source === iframeRef.current.contentWindow) {
-                try {
-                    const data = JSON.parse(event.data);
+        if (!finalVideoId) return;
 
-                    // Initial Load Info
-                    if (data.event === 'infoDelivery' && data.info) {
-                        setIsReady(true); // [NEW] Player is communicating, safe to show
+        const initPlayer = () => {
+            if (!iframeRef.current || playerRef.current) return;
 
-                        if (data.info.duration) setDuration(data.info.duration);
-                        if (data.info.currentTime) setCurrentTime(data.info.currentTime);
-
-                        // Player State: 1 = Playing, 2 = Paused, 3 = Buffering, 0 = Ended
-                        if (data.info.playerState === 1) {
+            playerRef.current = new window.YT.Player(iframeRef.current, {
+                events: {
+                    onReady: (event: any) => {
+                        setIsReady(true);
+                        setDuration(event.target.getDuration());
+                        if (shouldMute) {
+                            event.target.mute();
+                            setIsMuted(true);
+                        }
+                    },
+                    onStateChange: (event: any) => {
+                        const ytState = event.data;
+                        if (ytState === window.YT.PlayerState.PLAYING) {
                             setIsPlaying(true);
-                        } else if (data.info.playerState === 2) {
-                            setIsPlaying(false);
-                        } else if (data.info.playerState === 0 && onEnded) {
+                            setIsBuffering(false);
+                            setDuration(event.target.getDuration());
+                        } else if (ytState === window.YT.PlayerState.PAUSED) {
                             setIsPlaying(false);
                             setIsBuffering(false);
-                            onEnded();
+                        } else if (ytState === window.YT.PlayerState.BUFFERING) {
+                            setIsBuffering(true);
+                        } else if (ytState === window.YT.PlayerState.ENDED) {
+                            setIsPlaying(false);
+                            setIsBuffering(false);
+                            if (onEnded) onEnded();
+                        } else if (ytState === window.YT.PlayerState.UNSTARTED) {
+                            setIsReady(true);
                         }
+                    },
+                    onPlaybackRateChange: (event: any) => {
+                        setPlaybackRate(event.data);
                     }
-                } catch (e) { /* Ignore */ }
-            }
+                }
+            });
         };
-        window.addEventListener('message', handleMessage);
+
+        if (!window.YT) {
+            const tag = document.createElement("script");
+            tag.src = "https://www.youtube.com/iframe_api";
+            const firstScriptTag = document.getElementsByTagName("script")[0];
+            if (firstScriptTag?.parentNode) {
+                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+            }
+            window.onYouTubeIframeAPIReady = () => initPlayer();
+        } else if (window.YT && window.YT.Player) {
+            initPlayer();
+        }
 
         return () => {
-            window.removeEventListener('message', handleMessage);
+            if (progressInterval.current) clearInterval(progressInterval.current);
+            // Wait with destroy for strict mode
         };
-    }, [onEnded]);
+    }, [finalVideoId, shouldMute, onEnded]);
 
-    // 4. Progress Polling 
+    // 3. Precise Progress Polling via API (real-time sync)
     useEffect(() => {
         if (isPlaying || isLive) {
             progressInterval.current = setInterval(() => {
-                // We rely mostly on 'infoDelivery' now, but could poll explicit 'getCurrentTime' if needed
-            }, 1000);
+                if (playerRef.current && playerRef.current.getCurrentTime) {
+                    setCurrentTime(playerRef.current.getCurrentTime());
+                    if (playerRef.current.getDuration) {
+                        const d = playerRef.current.getDuration();
+                        if (d && d !== duration) setDuration(d);
+                    }
+                }
+            }, 500);
         } else {
             if (progressInterval.current) clearInterval(progressInterval.current);
         }
         return () => { if (progressInterval.current) clearInterval(progressInterval.current); };
-    }, [isPlaying, isLive]);
+    }, [isPlaying, isLive, duration]);
 
-    // 5. Controls Logic
+    // 4. Custom Controls Sync Handlers
     const togglePlay = () => {
+        if (!playerRef.current?.playVideo) return;
         if (isPlaying) {
-            sendCommand('pauseVideo');
-            setIsPlaying(false);
+            playerRef.current.pauseVideo();
         } else {
-            sendCommand('playVideo');
-            setIsPlaying(true);
+            playerRef.current.playVideo();
         }
     };
 
     const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // [MOD] If Live, seeking might be restricted or jump to live. 
+        if (!playerRef.current?.seekTo || isLive) return;
         const newTime = (parseFloat(e.target.value) / 100) * duration;
-        // setProgress(parseFloat(e.target.value));
         setCurrentTime(newTime);
-        sendCommand('seekTo', [newTime, true]);
+        playerRef.current.seekTo(newTime, true);
     };
 
     const toggleMute = () => {
+        if (!playerRef.current?.mute) return;
         if (isMuted) {
-            sendCommand('unMute');
+            playerRef.current.unMute();
             setIsMuted(false);
         } else {
-            sendCommand('mute');
+            playerRef.current.mute();
             setIsMuted(true);
         }
     };
@@ -176,7 +208,15 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
         }
     };
 
-    // 6. Security & Anti-Inspect
+    const changeSpeed = (rate: number) => {
+        if (playerRef.current?.setPlaybackRate) {
+            playerRef.current.setPlaybackRate(rate);
+            setPlaybackRate(rate);
+        }
+        setShowSettings(false);
+    };
+
+    // 5. Security & Anti-Inspect
     useEffect(() => {
         const handleContextMenu = (e: MouseEvent) => e.preventDefault();
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -197,7 +237,7 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
         <div className="w-full aspect-video flex flex-col items-center justify-center bg-red-950/20 border-red-500/20 text-center p-8 backdrop-blur-md rounded-2xl">
             <ShieldAlert className="w-16 h-16 text-red-500 mb-4 animate-pulse" />
             <h3 className="text-xl font-bold text-white mb-2">Security Alert</h3>
-            <button onClick={() => setSecurityWarning(false)} className="px-6 py-2 bg-red-600 rounded">Return</button>
+            <button onClick={() => setSecurityWarning(false)} className="px-6 py-2 bg-red-600 rounded mt-4 font-bold text-white shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all hover:bg-red-500">Return</button>
         </div>
     );
 
@@ -213,10 +253,9 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
         );
     }
 
-    const finalVideoId = decodedId ? extractYouTubeId(decodedId) : null;
-
     if (!decodedId || !finalVideoId) return <div className="w-full aspect-video bg-zinc-900 animate-pulse rounded-2xl flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>;
 
+    // We use explicit ID for window.YT targeting
     return (
         <div
             ref={containerRef}
@@ -224,8 +263,9 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
         >
-            {/* 1. THE IFRAME (GHOST MODE) */}
+            {/* 1. THE IFRAME WITH CONTROLS DISABLED (controls=0) */}
             <iframe
+                id="player"
                 ref={iframeRef}
                 src={`https://www.youtube.com/embed/${finalVideoId}?origin=${typeof window !== 'undefined' ? window.location.origin : ''}&enablejsapi=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1`}
                 className={cn(
@@ -251,14 +291,14 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
                 <div className="absolute bottom-1/3 right-1/3 text-[14px] font-bold text-white/5 -rotate-45">BRAINY PROTECTION</div>
             </div>
 
-            {/* 4. CUSTOM CONTROLS UI */}
+            {/* 4. CUSTOM CONTROLS UI - FULL SUITE */}
             <div className={cn(
                 "absolute bottom-0 left-0 right-0 z-20 px-4 py-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent transition-opacity duration-300",
                 ((isPlaying && !isHovering) && !isLive) ? "opacity-0" : "opacity-100"
             )}>
-                {/* Progress Bar */}
+                {/* Progress Bar (Seeker) */}
                 {isLive ? (
-                    <div className="w-full h-1 bg-white/20 rounded-full mb-4 flex justify-end">
+                    <div className="w-full h-1.5 bg-white/20 rounded-full mb-4 flex justify-end">
                         <div className="h-full bg-red-500 w-full animate-pulse shadow-[0_0_10px_red]" />
                     </div>
                 ) : (
@@ -268,18 +308,26 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
                         max="100"
                         value={duration > 0 ? (currentTime / duration) * 100 : 0}
                         onChange={handleSeek}
-                        className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 hover:[&::-webkit-slider-thumb]:scale-125 transition-all mb-4"
+                        className="w-full h-1.5 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 hover:[&::-webkit-slider-thumb]:scale-125 transition-all mb-4 relative z-30 pointer-events-auto"
                     />
                 )}
 
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        {/* Play/Pause */}
+                    <div className="flex items-center gap-5">
+                        {/* Play/Pause Button */}
                         <button
                             onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-                            className="text-white hover:text-blue-400 transition-colors"
+                            className="text-white hover:text-blue-400 transition-colors pointer-events-auto z-30"
                         >
                             {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}
+                        </button>
+
+                        {/* Volume Button */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+                            className="text-white/80 hover:text-white transition-colors pointer-events-auto z-30"
+                        >
+                            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
                         </button>
 
                         {/* Formatting Time or LIVE Badge */}
@@ -289,43 +337,67 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
                                 LIVE
                             </div>
                         ) : (
-                            <div className="text-xs text-white/80 font-mono">
-                                {formatTime(currentTime)} / {formatTime(duration)}
+                            <div className="text-sm font-medium text-white/90 font-mono tracking-wide">
+                                {formatTime(currentTime)} <span className="text-white/40">/</span> {formatTime(duration)}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        {/* Playback Speed Control */}
+                        {!isLive && (
+                            <div className="relative pointer-events-auto z-30">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
+                                    className="flex items-center gap-1.5 text-xs font-bold text-white/80 hover:text-white transition-colors bg-white/10 px-2.5 py-1 rounded-md"
+                                >
+                                    <Settings size={14} className={showSettings ? "animate-spin" : ""} />
+                                    {playbackRate}x
+                                </button>
+
+                                {showSettings && (
+                                    <div className="absolute bottom-full right-0 mb-2 w-28 bg-zinc-900 border border-white/10 rounded-xl overflow-hidden shadow-2xl p-1 flex flex-col gap-0.5 animate-in slide-in-from-bottom-2 fade-in">
+                                        {[0.5, 1, 1.5, 2].map((rate) => (
+                                            <button
+                                                key={rate}
+                                                onClick={(e) => { e.stopPropagation(); changeSpeed(rate); }}
+                                                className={cn(
+                                                    "text-left px-3 py-1.5 text-sm rounded-lg transition-colors font-medium",
+                                                    playbackRate === rate ? "bg-blue-600 text-white" : "text-zinc-300 hover:bg-white/10 hover:text-white"
+                                                )}
+                                            >
+                                                {rate === 1 ? 'Normal' : `${rate}x`}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
 
-                        {/* Volume */}
+                        {/* Fullscreen Toggle */}
                         <button
-                            onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-                            className="text-white/80 hover:text-white transition-colors"
+                            onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+                            className="text-white hover:text-blue-400 transition-colors pointer-events-auto z-30"
                         >
-                            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                            <Maximize size={20} />
                         </button>
                     </div>
-
-                    {/* Fullscreen */}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-                        className="text-white hover:text-blue-400 transition-colors"
-                    >
-                        <Maximize size={20} />
-                    </button>
                 </div>
             </div>
 
             {/* Loading Spinner / Big Play Button Overlay */}
             {(!isPlaying && !isBuffering && isReady) && (
                 <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center animate-in fade-in zoom-in duration-300">
-                        <Play size={32} fill="white" className="text-white ml-1" />
+                    <div className="w-20 h-20 rounded-full bg-blue-600/90 backdrop-blur-md shadow-[0_0_40px_rgba(37,99,235,0.5)] border border-blue-400/30 flex items-center justify-center animate-in fade-in zoom-in duration-300">
+                        <Play size={40} fill="white" className="text-white ml-2" />
                     </div>
                 </div>
             )}
 
-            {/* [NEW] Buffering / Initial Load Spinner */}
+            {/* Buffering Spinner */}
             {isBuffering && (
-                <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center bg-black">
-                    <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+                <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <Loader2 className="w-16 h-16 text-blue-500 animate-spin" />
                 </div>
             )}
         </div>
@@ -333,9 +405,14 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
 }
 
 function formatTime(seconds: number) {
-    const min = Math.floor(seconds / 60);
-    const sec = Math.floor(seconds % 60);
-    return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+    if (!seconds || isNaN(seconds)) return "0:00";
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    if (h > 0) {
+        return `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
 function extractYouTubeId(urlOrId: string): string | null {
