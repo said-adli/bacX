@@ -186,7 +186,7 @@ export async function createLesson(data: Partial<Lesson>) {
             .from('lessons')
             .insert({
                 title: data.title,
-                type: data.type,
+                type: 'lesson',
                 video_url: data.video_url,
                 required_plan_id: data.required_plan_id,
                 unit_id: data.unit_id,
@@ -278,7 +278,7 @@ export async function updateLesson(id: string, data: Partial<Lesson>) {
             .from('lessons')
             .update({
                 title: data.title,
-                type: data.type,
+                type: 'lesson',
                 video_url: data.video_url,
                 required_plan_id: data.required_plan_id,
                 is_free: data.is_free,
