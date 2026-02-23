@@ -6,61 +6,75 @@ import { SubscriptionCard } from "@/components/shared/SubscriptionCard";
 import { createPlan, deletePlan, SubscriptionPlan } from "@/actions/admin-plans";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/AlertDialog";
+
+const planSchema = z.object({
+    name: z.string().min(1, "Plan Name is required"),
+    price: z.number().min(0, "Price must be at least 0"),
+    type: z.enum(["subscription", "course"]),
+    duration_days: z.number().min(1, "Duration must be at least 1 day"),
+    features: z.array(z.string()).min(1, "At least one feature is required")
+});
+
+type PlanFormValues = z.infer<typeof planSchema>;
 
 export default function PlansPage({ plans }: { plans: SubscriptionPlan[] }) {
     const router = useRouter();
     const [isCreating, setIsCreating] = useState(false);
+    const [featureInput, setFeatureInput] = useState("");
+    const [planToDelete, setPlanToDelete] = useState<string | null>(null);
 
-    // Form State
-    const [formData, setFormData] = useState({
-        name: "",
-        price: 0,
-        type: 'subscription' as 'subscription' | 'course',
-        duration_days: 30,
-        features: [] as string[],
-        featureInput: ""
+    const form = useForm<PlanFormValues>({
+        resolver: zodResolver(planSchema),
+        defaultValues: {
+            name: "",
+            price: 0,
+            type: "subscription",
+            duration_days: 30,
+            features: []
+        }
     });
 
+    const watchFeatures = form.watch("features");
+
     const handleAddFeature = () => {
-        if (!formData.featureInput.trim()) return;
-        setFormData(prev => ({
-            ...prev,
-            features: [...prev.features, prev.featureInput],
-            featureInput: ""
-        }));
+        if (!featureInput.trim()) return;
+        form.setValue("features", [...watchFeatures, featureInput.trim()]);
+        setFeatureInput("");
     };
 
     const handleRemoveFeature = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            features: prev.features.filter((_, i) => i !== index)
-        }));
+        form.setValue("features", watchFeatures.filter((_, i) => i !== index));
     };
 
-    const handleSubmit = async () => {
+    const onSubmit = async (values: PlanFormValues) => {
         try {
             await createPlan({
-                name: formData.name,
-                price: Number(formData.price),
-                features: formData.features,
-                duration_days: Number(formData.duration_days),
-                type: formData.type,
+                name: values.name,
+                price: values.price,
+                features: values.features,
+                duration_days: values.duration_days,
+                type: values.type,
                 is_active: true
             });
             toast.success("Plan created successfully");
             setIsCreating(false);
-            setFormData({ name: "", price: 0, type: 'subscription', duration_days: 30, features: [], featureInput: "" });
+            form.reset();
             router.refresh();
         } catch (e) {
             toast.error("Failed to create plan");
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Delete this plan?")) return;
+    const handleDelete = async () => {
+        if (!planToDelete) return;
         try {
-            await deletePlan(id);
+            await deletePlan(planToDelete);
             toast.success("Plan deleted");
+            setPlanToDelete(null);
             router.refresh();
         } catch (e) {
             toast.error("Failed to delete");
@@ -90,48 +104,48 @@ export default function PlansPage({ plans }: { plans: SubscriptionPlan[] }) {
                         <button onClick={() => setIsCreating(false)} className="p-2 hover:bg-white/10 rounded-full"><X size={20} /></button>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         {/* Form Inputs */}
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Plan Name</label>
                                 <input
+                                    {...form.register("name")}
                                     className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
                                     placeholder="e.g. Monthly Premium"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 />
+                                {form.formState.errors.name && <span className="text-xs text-red-500">{form.formState.errors.name.message}</span>}
                             </div>
                             <div className="flex gap-4">
                                 <div className="flex-1">
                                     <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Price (DZD)</label>
                                     <input
                                         type="number"
+                                        {...form.register("price", { valueAsNumber: true })}
                                         className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
-                                        value={formData.price}
-                                        onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
                                     />
+                                    {form.formState.errors.price && <span className="text-xs text-red-500">{form.formState.errors.price.message}</span>}
                                 </div>
                                 <div className="flex-1">
                                     <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Duration (Days)</label>
                                     <input
                                         type="number"
+                                        {...form.register("duration_days", { valueAsNumber: true })}
                                         className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
-                                        value={formData.duration_days}
-                                        onChange={(e) => setFormData({ ...formData, duration_days: Number(e.target.value) })}
                                     />
+                                    {form.formState.errors.duration_days && <span className="text-xs text-red-500">{form.formState.errors.duration_days.message}</span>}
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Plan Type</label>
                                 <select
+                                    {...form.register("type")}
                                     className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
-                                    value={formData.type}
-                                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'subscription' | 'course' })}
                                 >
                                     <option value="subscription">Standard Subscription</option>
                                     <option value="course">Course (Manual Expiry)</option>
                                 </select>
+                                {form.formState.errors.type && <span className="text-xs text-red-500">{form.formState.errors.type.message}</span>}
                             </div>
 
                             {/* Features Input */}
@@ -141,16 +155,22 @@ export default function PlansPage({ plans }: { plans: SubscriptionPlan[] }) {
                                     <input
                                         className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
                                         placeholder="Add a feature..."
-                                        value={formData.featureInput}
-                                        onChange={(e) => setFormData({ ...formData, featureInput: e.target.value })}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleAddFeature()}
+                                        value={featureInput}
+                                        onChange={(e) => setFeatureInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                handleAddFeature();
+                                            }
+                                        }}
                                     />
-                                    <button onClick={handleAddFeature} className="px-4 bg-white/10 rounded-xl hover:bg-white/20"><Plus /></button>
+                                    <button type="button" onClick={handleAddFeature} className="px-4 bg-white/10 rounded-xl hover:bg-white/20"><Plus /></button>
                                 </div>
+                                {form.formState.errors.features && <span className="text-xs text-red-500 block mb-2">{form.formState.errors.features.message}</span>}
                                 <div className="flex flex-wrap gap-2">
-                                    {formData.features.map((f, i) => (
+                                    {watchFeatures.map((f, i) => (
                                         <span key={i} className="flex items-center gap-2 px-3 py-1 bg-blue-900/30 text-blue-300 rounded-full text-xs border border-blue-500/20">
-                                            {f} <button onClick={() => handleRemoveFeature(i)}><X size={12} /></button>
+                                            {f} <button type="button" onClick={() => handleRemoveFeature(i)}><X size={12} /></button>
                                         </span>
                                     ))}
                                 </div>
@@ -160,39 +180,66 @@ export default function PlansPage({ plans }: { plans: SubscriptionPlan[] }) {
                         {/* Live Preview */}
                         <div className="flex flex-col items-center justify-center p-6 bg-black/40 rounded-3xl border border-white/5 border-dashed">
                             <p className="text-zinc-500 mb-4 text-sm font-mono uppercase tracking-widest">Live Preview</p>
-                            <div className="w-full max-w-[320px]">
+                            <div className="w-full max-w-[320px] pointer-events-none">
                                 <SubscriptionCard
                                     id="preview"
-                                    name={formData.name || "Plan Name"}
-                                    price={formData.price || 0}
-                                    features={formData.features.length ? formData.features : ["Feature 1", "Feature 2"]}
-                                    type={formData.type}
-                                    duration_days={formData.duration_days}
+                                    name={form.watch("name") || "Plan Name"}
+                                    price={form.watch("price") || 0}
+                                    features={watchFeatures.length ? watchFeatures : ["Feature 1", "Feature 2"]}
+                                    type={form.watch("type")}
+                                    duration_days={form.watch("duration_days")}
                                     highlight={true}
                                 />
                             </div>
                             <button
-                                onClick={handleSubmit}
-                                className="mt-8 w-full max-w-[320px] py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl transition-all"
+                                type="submit"
+                                disabled={form.formState.isSubmitting}
+                                className="mt-8 w-full max-w-[320px] py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl transition-all disabled:opacity-50"
                             >
-                                Publish Plan
+                                {form.formState.isSubmitting ? "Publishing..." : "Publish Plan"}
                             </button>
                         </div>
-                    </div>
+                    </form>
                 </div>
             )}
 
             {/* List */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {plans.map((plan) => (
-                    <SubscriptionCard
-                        key={plan.id}
-                        {...plan}
-                        isAdmin={true}
-                        onDelete={() => handleDelete(plan.id)}
-                    />
+                    <div key={plan.id} className="relative group">
+                        <div className="pointer-events-none">
+                            <SubscriptionCard
+                                {...plan}
+                                highlight={false}
+                            />
+                        </div>
+                        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                                onClick={() => setPlanToDelete(plan.id)}
+                                className="p-2 bg-red-500/90 text-white rounded-full hover:bg-red-600 shadow-xl"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+                    </div>
                 ))}
             </div>
+
+            {/* Delete Modal */}
+            <AlertDialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Plan?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this subscription plan? This will remove it from the store forever.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setPlanToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete}>Yes, Default</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

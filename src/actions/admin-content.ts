@@ -153,7 +153,7 @@ export async function deleteUnit(id: string) {
 }
 
 // createLesson
-export async function createLesson(data: Partial<Lesson>) {
+export async function createLesson(data: Partial<Lesson>, resources?: any[]) {
     await requireAdmin();
     const supabase = await createClient();
     try {
@@ -258,6 +258,16 @@ export async function createLesson(data: Partial<Lesson>) {
             revalidatePath('/admin/live');
         }
 
+        // [SYNC] Create Lesson Resources atomically
+        if (resources && resources.length > 0) {
+            const mappedResources = resources.map(r => ({
+                ...r,
+                lesson_id: newLesson.id
+            }));
+            const { error: resError } = await supabase.from('lesson_resources').insert(mappedResources);
+            if (resError) console.error("Resource insert error:", resError);
+        }
+
         revalidateLessons(); // Invalidate Next.js cache
         revalidatePath('/admin/content');
         revalidatePath('/dashboard');
@@ -270,7 +280,7 @@ export async function createLesson(data: Partial<Lesson>) {
 }
 
 // updateLesson
-export async function updateLesson(id: string, data: Partial<Lesson>) {
+export async function updateLesson(id: string, data: Partial<Lesson>, newResources?: any[]) {
     await requireAdmin();
     const supabase = await createClient();
     try {
@@ -289,6 +299,17 @@ export async function updateLesson(id: string, data: Partial<Lesson>) {
 
         if (error) throw error;
         await logAdminAction("UPDATE_LESSON", id, "lesson", data);
+
+        // [SYNC] Create new Lesson Resources if any provided
+        if (newResources && newResources.length > 0) {
+            const mappedResources = newResources.map(r => ({
+                ...r,
+                lesson_id: id
+            }));
+            const { error: resError } = await supabase.from('lesson_resources').insert(mappedResources);
+            if (resError) console.error("Resource insert error:", resError);
+        }
+
         revalidateLessons(); // Invalidate Next.js cache
         revalidatePath('/admin/content');
         revalidatePath('/dashboard');
@@ -325,18 +346,24 @@ export async function deleteLessonResource(id: string) {
     revalidatePath('/materials', 'layout');
 }
 
-// Helper to fetch single lesson for editing
+// Helper to fetch single lesson for editing (including resources)
 export async function getLessonById(id: string) {
     await requireAdmin();
     const supabase = await createClient();
-    const { data, error } = await supabase
+    const { data: lesson, error } = await supabase
         .from('lessons')
         .select('*')
         .eq('id', id)
         .single();
 
-    if (error) return null;
-    return data;
+    if (error || !lesson) return null;
+
+    const { data: resources, error: resError } = await supabase
+        .from('lesson_resources')
+        .select('*')
+        .eq('lesson_id', id);
+
+    return { ...lesson, _resources: resError ? [] : resources };
 }
 
 // Helper to ensure subjects exist (Initialization)

@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { CommandPalette } from "@/components/admin/layout/CommandPalette";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
+import { GlobalQuickAdd } from "@/components/admin/GlobalQuickAdd";
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,7 @@ export default async function AdminLayout({
     return (
         <div className="flex h-screen bg-[#050505] overflow-hidden font-sans" dir="rtl">
             <CommandPalette />
+            <GlobalQuickAdd />
             <AdminSidebar />
 
             {/* Main Content Area */}

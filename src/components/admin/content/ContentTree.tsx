@@ -17,6 +17,8 @@ import { SortableList } from "@/components/ui/SortableList";
 import { SortableItem, DragHandle } from "@/components/ui/SortableItem";
 import { reorderItems } from "@/actions/reorder";
 import { StatusToggle } from "@/components/admin/shared/StatusToggle";
+import { Dialog, DialogOverlay, DialogContent, DialogHeader, DialogTitle, DialogPortal } from "@/components/ui/Dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/AlertDialog";
 
 interface ContentTreeProps {
     subjects: SubjectWithUnitsDTO[];
@@ -28,9 +30,15 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
     const [expandedUnits, setExpandedUnits] = useState<Record<string, boolean>>({});
 
     const [isCreatingLesson, setIsCreatingLesson] = useState<{ subjectId: string, unitId: string } | null>(null);
-    const [selectedLesson, setSelectedLesson] = useState<LessonDTO | null>(null); // For editor
-    const [isCreatingSubject, setIsCreatingSubject] = useState(false); // [NEW] Subject Modal State
+    const [selectedLesson, setSelectedLesson] = useState<LessonDTO | null>(null);
+    const [isCreatingSubject, setIsCreatingSubject] = useState(false);
     const [newSubjectName, setNewSubjectName] = useState("");
+
+    // Modal States for Units
+    const [unitToCreateInSubject, setUnitToCreateInSubject] = useState<string | null>(null);
+    const [newUnitTitle, setNewUnitTitle] = useState("");
+
+    const [unitToDelete, setUnitToDelete] = useState<string | null>(null);
 
     // Sync props to state (for initial load and checks, though mostly local mutation matters for drag)
     useEffect(() => {
@@ -49,7 +57,6 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
     };
 
     const handleReorderLessons = async (subjectId: string, unitId: string, newLessons: LessonDTO[]) => {
-        // Find subject and unit to update locally
         const newSubjects = subjects.map(sub => {
             if (sub.id !== subjectId) return sub;
             return {
@@ -78,22 +85,24 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
     };
 
     // Unit Actions
-    const handleAddUnit = async (subjectId: string) => {
-        const title = prompt("Enter Unit Title:");
-        if (!title) return;
+    const handleCreateUnitConfirm = async () => {
+        if (!newUnitTitle.trim() || !unitToCreateInSubject) return;
         try {
-            await createUnit(subjectId, title);
+            await createUnit(unitToCreateInSubject, newUnitTitle);
             toast.success("Unit Added");
+            setUnitToCreateInSubject(null);
+            setNewUnitTitle("");
         } catch {
             toast.error("Failed to add unit");
         }
     };
 
-    const handleDeleteUnit = async (id: string) => {
-        if (!confirm("Delete this unit and all its content?")) return;
+    const handleDeleteUnitConfirm = async () => {
+        if (!unitToDelete) return;
         try {
-            await deleteUnit(id);
+            await deleteUnit(unitToDelete);
             toast.success("Unit Deleted");
+            setUnitToDelete(null);
         } catch (e) {
             toast.error("Failed");
         }
@@ -111,7 +120,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
         setSelectedLesson(null);
     };
 
-    // [NEW] Subject Creation Handler
+    // Subject Creation Handler
     const handleCreateSubject = async () => {
         if (!newSubjectName.trim()) return;
         try {
@@ -164,7 +173,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
                                                 labelInactive="DRAFT"
                                             />
                                             <button
-                                                onClick={() => handleAddUnit(subject.id)}
+                                                onClick={() => setUnitToCreateInSubject(subject.id)}
                                                 className="p-1.5 hover:bg-blue-500 hover:text-white rounded-lg text-blue-500 transition-colors"
                                                 title="Add Unit"
                                             >
@@ -194,7 +203,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
                                                             <Plus size={14} />
                                                         </button>
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); handleDeleteUnit(unit.id); }}
+                                                            onClick={(e) => { e.stopPropagation(); setUnitToDelete(unit.id); }}
                                                             className="p-1 hover:bg-red-500/20 text-red-500 rounded"
                                                             title="Delete Unit"
                                                         >
@@ -266,12 +275,18 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
                     </div>
                 )}
             </div>
-            {/* [NEW] Simple Modal for Subject Creation */}
-            {isCreatingSubject && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-sm p-6 space-y-4">
-                        <h3 className="text-lg font-bold text-white">New Subject</h3>
-                        <div>
+
+            {/* Modals for Native Prompt replacements */}
+
+            {/* New Subject Modal */}
+            <Dialog open={isCreatingSubject} onOpenChange={setIsCreatingSubject}>
+                <DialogPortal>
+                    <DialogOverlay />
+                    <DialogContent className="max-w-sm">
+                        <DialogHeader>
+                            <DialogTitle>New Subject</DialogTitle>
+                        </DialogHeader>
+                        <div className="mt-4">
                             <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Subject Name</label>
                             <input
                                 className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-blue-500 outline-none"
@@ -282,7 +297,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
                                 onKeyDown={(e) => e.key === 'Enter' && handleCreateSubject()}
                             />
                         </div>
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-2 mt-6">
                             <button
                                 onClick={() => setIsCreatingSubject(false)}
                                 className="px-4 py-2 hover:bg-white/10 text-zinc-400 rounded-lg text-sm font-medium transition-colors"
@@ -296,9 +311,63 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
                                 Create
                             </button>
                         </div>
-                    </div>
-                </div>
-            )}
+                    </DialogContent>
+                </DialogPortal>
+            </Dialog>
+
+            {/* New Unit Modal */}
+            <Dialog open={!!unitToCreateInSubject} onOpenChange={(open) => !open && setUnitToCreateInSubject(null)}>
+                <DialogPortal>
+                    <DialogOverlay />
+                    <DialogContent className="max-w-sm">
+                        <DialogHeader>
+                            <DialogTitle>Add New Unit</DialogTitle>
+                        </DialogHeader>
+                        <div className="mt-4">
+                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Unit Title</label>
+                            <input
+                                className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-blue-500 outline-none"
+                                value={newUnitTitle}
+                                onChange={(e) => setNewUnitTitle(e.target.value)}
+                                placeholder="e.g. Algebra I"
+                                autoFocus
+                                onKeyDown={(e) => e.key === 'Enter' && handleCreateUnitConfirm()}
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2 mt-6">
+                            <button
+                                onClick={() => setUnitToCreateInSubject(null)}
+                                className="px-4 py-2 hover:bg-white/10 text-zinc-400 rounded-lg text-sm font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleCreateUnitConfirm}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold transition-colors"
+                            >
+                                Add Unit
+                            </button>
+                        </div>
+                    </DialogContent>
+                </DialogPortal>
+            </Dialog>
+
+            {/* Delete Unit Confirmation */}
+            <AlertDialog open={!!unitToDelete} onOpenChange={(open) => !open && setUnitToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Unit?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you absolutely sure you want to delete this unit and ALL its lessons? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setUnitToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteUnitConfirm}>Yes, delete it</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
         </div>
     );
 }
