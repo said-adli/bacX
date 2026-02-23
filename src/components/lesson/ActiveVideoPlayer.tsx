@@ -40,10 +40,22 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
         accessError = e;
     }
 
-    if (error || !lesson) {
+    if (error || !lesson || accessError) {
         return (
-            <div className="w-full aspect-video bg-red-900/10 rounded-2xl border border-red-500/20 flex items-center justify-center">
-                <p className="text-red-400">فشل تحميل الدرس</p>
+            <div className="w-full aspect-video bg-zinc-950 rounded-2xl border border-red-500/20 shadow-2xl overflow-hidden relative">
+                <div className="absolute inset-0 bg-red-500/5 blur-3xl rounded-full" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center z-10">
+                    <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6 ring-1 ring-red-500/20">
+                        <Lock className="w-10 h-10 text-red-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Access Denied</h3>
+                    <p className="text-zinc-400 max-w-sm mb-6">
+                        {accessError instanceof Error ? accessError.message : "You do not have the required subscription to view this lesson. Please upgrade your plan."}
+                    </p>
+                    <button onClick={() => window.location.reload()} className="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)]">
+                        Refresh Session
+                    </button>
+                </div>
             </div>
         );
     }

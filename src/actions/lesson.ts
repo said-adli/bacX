@@ -18,67 +18,41 @@ export async function getLessonData(lessonId: string) {
     if (!user) return { error: "Unauthorized" };
 
     try {
-        // 1. Fetch User Profile (Required for Access Control)
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('id, role, plan_id, is_subscribed')
-            .eq('id', user.id)
-            .single();
+        // 1. POWER RPC: Fetch Profile, Lesson Metadata, and Ownership in ONE Trip
+        const { data: context, error: rpcError } = await supabase
+            .rpc('get_lesson_full_context', {
+                p_lesson_id: lessonId,
+                p_user_id: user.id
+            });
 
-        if (!profile) return { error: "Profile not found" };
+        if (rpcError || !context || !context.lesson) {
+            return { error: "Content not found or RPC failed" };
+        }
 
-        // 2. Fetch Lesson Metadata
-        const { data: lesson, error: lessonError } = await supabase
-            .from('lessons')
-            .select(`
-                *,
-                subscription_plans(id, name, price),
-                units!inner (
-                    subjects!inner (
-                        is_active
-                    )
-                )
-            `)
-            .eq('id', lessonId)
-            .eq('units.subjects.is_active', true)
-            .single();
+        const { lesson, subject, user_context } = context as any;
 
-        if (lessonError) throw lessonError;
-
-        // 3. UNIFIED ACCESS CONTROL
-        // Use shared utility
+        // 2. UNIFIED ACCESS CONTROL
         const { verifyContentAccess } = await import("@/lib/access-control");
+        const profile = user_context.profile;
+        const activeIds = user_context.owns_content ? [lesson.id] : [];
 
-        // Fetch Ownership
-        const { data: ownership } = await supabase
-            .from('user_content_ownership')
-            .select('content_id')
-            .eq('user_id', user.id)
-            .eq('content_id', lessonId)
-            .maybeSingle();
-
-        const ownedContentIds = ownership ? [ownership.content_id] : [];
-
-        // Match ContentRequirement type
         const contentRequirement = {
             id: lesson.id,
             required_plan_id: lesson.required_plan_id,
             is_free: lesson.is_free,
-            is_active: lesson.units?.subjects?.is_active ?? true
+            is_active: subject.is_active
         };
 
         const access = await verifyContentAccess({
             ...profile,
-            owned_content_ids: ownedContentIds
+            owned_content_ids: activeIds
         }, contentRequirement);
 
         if (!access.allowed) {
-            // Return specific error for client handling if needed, or generic
             return { error: access.reason || "Access Denied" };
         }
 
-        // 4. Fetch Completion Status
-        // SCHEMA FIX: Using 'user_progress' (not 'student_progress') per official schema
+        // 3. Fetch Completion Status
         const { data: progress } = await supabase
             .from('user_progress')
             .select('is_completed, last_accessed_at')

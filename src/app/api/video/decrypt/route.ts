@@ -93,64 +93,46 @@ export async function POST(request: Request) {
         // but we return the Video ID associated with that Lesson ID from the DB.
         // This prevents the user from requesting Lesson A but sending a Token for Video B (if they match).
 
-        // 5. AUTHORIZATION (The Real Fix)
-        // Query DB: Does Lesson exist? Does User have plan?
+        // 5. AUTHORIZATION via POWER RPC
+        // Fetch entirely compiled context in 1 trip
+        const { data: context, error: rpcError } = await supabase
+            .rpc('get_lesson_full_context', {
+                p_lesson_id: lessonId,
+                p_user_id: user.id
+            });
 
-        // Fetch User's Plan (Standardized to plan_id)
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('id, plan_id, role, is_subscribed') // Added 'id'
-            .eq('id', user.id)
-            .single();
-
-        if (!profile) return NextResponse.json({ error: 'Profile error' }, { status: 403 });
-        const isAdmin = profile.role === 'admin';
-
-        // Fetch Lesson Details STRICTLY
-        const { data: lesson } = await supabase
-            .from('lessons')
-            .select('id, required_plan_id, is_free, video_url, units(subjects(is_active))')
-            .eq('id', lessonId)
-            // We could filter by video_url matching the token, but honestly, 
-            // relying on the lessonId as the source of truth is safer.
-            // The CLIENT is asking "Give me video for Lesson X".
-            // We verify "Can User see Lesson X?" -> "Here is video for Lesson X".
-            .single();
-
-        if (!lesson) {
-            // Lesson not found
-            return NextResponse.json({ error: 'Content not found' }, { status: 404 });
+        if (rpcError || !context || !context.lesson) {
+            console.error("RPC Error:", rpcError);
+            return NextResponse.json({ error: 'Content not found or RPC failed' }, { status: 404 });
         }
 
+        const { lesson, subject, user_context } = context as any;
+
         // P0 FIX: Check if Parent Subject is Active
-        interface UnitWithSubject { subjects: { is_active: boolean } | { is_active: boolean }[] | null }
-        const units = (Array.isArray(lesson.units) ? lesson.units[0] : lesson.units) as unknown as UnitWithSubject;
-
-        const subjectData = units?.subjects;
-        const subject = Array.isArray(subjectData) ? subjectData[0] : subjectData;
-        const subjectActive = subject?.is_active;
-
-        // If subjectActive is explicitly FALSE, we block.
-        // Assuming strict "is_active" requirement:
-        if (subjectActive === false && !isAdmin) {
+        if (subject.is_active === false && !user_context.is_admin) {
             return NextResponse.json({ error: 'Content is not active' }, { status: 403 });
         }
 
         // 6. AUTHORIZATION (The Real Fix)
-        // Unified Access Control via Shared Utility
+        // Check Unified Access Rules against what the database reported
+        const { verifyContentAccess } = await import("@/lib/access-control");
+        const profile = user_context.profile;
+        const activeIds = user_context.owns_content ? [lesson.id] : [];
+
         const contentRequirement = {
+            id: lesson.id,
             required_plan_id: lesson.required_plan_id,
             is_free: lesson.is_free,
-            is_active: subjectActive ?? true // Use the resolved value
+            is_active: subject.is_active
         };
 
-        // Use shared utility
-        const { verifyContentAccess } = await import("@/lib/access-control");
-        const access = await verifyContentAccess(profile, contentRequirement);
+        const access = await verifyContentAccess({
+            ...profile,
+            owned_content_ids: activeIds
+        }, contentRequirement);
 
         if (!access.allowed) {
-            // Denied access
-            return NextResponse.json({ error: 'Subscription required' }, { status: 403 });
+            return NextResponse.json({ error: access.reason || 'Subscription required' }, { status: 403 });
         }
 
         // 7. RETURN DECRYPTED ASSET

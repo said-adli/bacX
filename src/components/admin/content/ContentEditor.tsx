@@ -234,7 +234,17 @@ export default function ContentEditor({ unitId, initialData, activePlans, onClos
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Required Plan</label>
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="block text-xs font-bold text-zinc-500 uppercase">Required Plan</label>
+                                    {activePlans.length > 0 && (
+                                        <button
+                                            onClick={() => setFormData({ ...formData, required_plan_id: activePlans[0].id })}
+                                            className="text-[10px] bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 px-2 py-1 rounded-md transition-colors"
+                                        >
+                                            ⚡ Quick-Link Primary
+                                        </button>
+                                    )}
+                                </div>
                                 <select
                                     className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
                                     value={formData.required_plan_id || ""}
