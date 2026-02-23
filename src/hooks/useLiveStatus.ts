@@ -21,6 +21,10 @@ export function useLiveStatus() {
     useEffect(() => {
         let isMounted = true;
 
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`[LiveStatus] Polling mode: ${isFastPoll ? 'FAST' : 'NORMAL'}`);
+        }
+
         // 1. Initial Fetch
         const fetchLive = async () => {
             try {
@@ -45,7 +49,7 @@ export function useLiveStatus() {
 
         fetchLive();
 
-        // 2. Visibility-aware polling (30s active, paused when hidden)
+        // 2. Visibility-aware polling (60s active, paused when hidden)
         let intervalId: ReturnType<typeof setInterval> | null = null;
 
         const startPolling = () => {
@@ -53,7 +57,7 @@ export function useLiveStatus() {
             intervalId = setInterval(() => {
                 if (!isMounted) return;
                 fetchLive();
-            }, isFastPoll ? 10000 : 30000);
+            }, isFastPoll ? 10000 : 60000);
         };
 
         const stopPolling = () => {
@@ -89,7 +93,7 @@ export function useLiveStatus() {
             document.removeEventListener('visibilitychange', onVisibilityChange);
             window.removeEventListener('focus', onFocus);
         };
-    }, []);
+    }, [pathname, isFastPoll]);
 
     const isLive = liveSession?.status === "live";
     const title = liveSession?.title || "";
