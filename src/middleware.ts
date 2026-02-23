@@ -20,11 +20,11 @@ export async function middleware(request: NextRequest) {
     const cspHeader = `
         default-src 'self';
         script-src 'self' 'nonce-${nonce}' 'unsafe-eval' https://www.youtube.com https://img.youtube.com;
-        style-src 'self' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
         img-src 'self' blob: data: https://*.supabase.co https://lh3.googleusercontent.com https://*.googleusercontent.com https://img.youtube.com https://via.placeholder.com;
-        font-src 'self' data:;
+        font-src 'self' data: https://fonts.gstatic.com;
         connect-src 'self' https://*.supabase.co wss://*.supabase.co;
-        frame-src 'self' https://www.youtube.com;
+        frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com;
         object-src 'none';
         base-uri 'self';
         form-action 'self';
