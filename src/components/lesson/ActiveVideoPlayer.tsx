@@ -8,15 +8,14 @@ import { verifyContentAccess } from "@/lib/access-control";
 
 export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { lessonId: string | undefined, isSubscribed?: boolean }) {
 
-    // 0. Empty State
     if (!lessonId) {
         return (
-            <div className="w-full aspect-video bg-black/40 rounded-2xl border border-white/10 overflow-hidden shadow-2xl flex items-center justify-center">
+            <div className="w-full aspect-video bg-gradient-to-br from-slate-900/80 to-blue-950/40 backdrop-blur-md rounded-2xl border border-blue-500/20 overflow-hidden flex items-center justify-center shadow-[0_0_50px_rgba(37,99,235,0.1)]">
                 <div className="text-center p-8">
-                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Video className="w-8 h-8 text-white/30" />
+                    <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
+                        <Video className="w-8 h-8 text-blue-400/50" />
                     </div>
-                    <p className="text-white/50">اختر درساً للبدء</p>
+                    <p className="text-blue-100/50 font-medium">اختر درساً للبدء</p>
                 </div>
             </div>
         );
@@ -61,7 +60,7 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
 
     if (error || !lesson || (hasAccess && !secureVideoData && !accessError) || accessError) {
         return (
-            <div className="w-full aspect-video bg-zinc-950 rounded-2xl border border-red-500/20 shadow-2xl overflow-hidden relative">
+            <div className="w-full aspect-video bg-gradient-to-br from-slate-950 to-red-950/30 backdrop-blur-md rounded-2xl border border-red-500/20 shadow-2xl overflow-hidden relative">
                 <div className="absolute inset-0 bg-red-500/5 blur-3xl rounded-full" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center z-10">
                     <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6 ring-1 ring-red-500/20">
@@ -80,8 +79,8 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
     }
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="relative w-full aspect-video bg-black rounded-2xl border border-white/10 overflow-hidden shadow-2xl group">
+        <div className="flex flex-col gap-6 w-full">
+            <div className="relative w-full aspect-video bg-gradient-to-br from-[#020817] to-[#0f172a] rounded-2xl border border-blue-900/30 overflow-hidden shadow-[0_0_40px_rgba(37,99,235,0.05)] group">
                 {hasAccess ? (
                     (secureVideoData?.token) ? (
                         <EncodedVideoPlayer
@@ -89,11 +88,11 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
                             lessonId={lesson.id}
                         />
                     ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900">
-                            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-                                <Lock className="w-8 h-8 text-white/30" />
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-transparent">
+                            <div className="w-16 h-16 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center justify-center mb-4">
+                                <Lock className="w-8 h-8 text-blue-400/50" />
                             </div>
-                            <p className="text-white/50">لا يوجد فيديو لهذا الدرس</p>
+                            <p className="text-blue-100/50 font-medium">لا يوجد فيديو لهذا الدرس</p>
                         </div>
                     )
                 ) : (
@@ -110,7 +109,7 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
             </div>
 
             {/* Meta & Actions */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-slate-900/40 backdrop-blur-md border border-blue-500/10 shadow-xl rounded-2xl p-6 animate-in slide-in-from-bottom-4 duration-500">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div>
                         <h2 className="text-2xl font-bold mb-2 text-white">{lesson.title}</h2>
