@@ -35,6 +35,7 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
     const [buffered, setBuffered] = useState(0);
     const [isMuted, setIsMuted] = useState(shouldMute);
     const [playbackRate, setPlaybackRate] = useState(1);
+    const [volume, setVolume] = useState(100);
 
     // UI State
     const [showSettings, setShowSettings] = useState(false);
@@ -127,6 +128,11 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
                         if (shouldMute) {
                             event.target.mute();
                             setIsMuted(true);
+                            setVolume(0);
+                        } else {
+                            const currentVol = event.target.getVolume();
+                            if (currentVol !== undefined) setVolume(currentVol);
+                            if (event.target.isMuted()) setIsMuted(true);
                         }
                     },
                     onStateChange: (event: any) => {
@@ -226,16 +232,37 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
         handleMouseMove();
     }, [currentTime, duration, isLive, handleMouseMove]);
 
+    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newVolume = parseInt(e.target.value);
+        setVolume(newVolume);
+        if (playerRef.current?.setVolume) {
+            playerRef.current.setVolume(newVolume);
+            if (newVolume > 0 && isMuted) {
+                setIsMuted(false);
+                if (playerRef.current.unMute) playerRef.current.unMute();
+            } else if (newVolume === 0 && !isMuted) {
+                setIsMuted(true);
+                if (playerRef.current.mute) playerRef.current.mute();
+            }
+        }
+    };
+
     const toggleMute = useCallback(() => {
         if (!playerRef.current?.mute) return;
         if (isMuted) {
             playerRef.current.unMute();
             setIsMuted(false);
+            if (volume === 0) {
+                setVolume(100);
+                if (playerRef.current.setVolume) playerRef.current.setVolume(100);
+            } else {
+                if (playerRef.current.setVolume) playerRef.current.setVolume(volume);
+            }
         } else {
             playerRef.current.mute();
             setIsMuted(true);
         }
-    }, [isMuted]);
+    }, [isMuted, volume]);
 
     const toggleFullscreen = useCallback(() => {
         if (!document.fullscreenElement) {
@@ -385,8 +412,8 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
             <div
                 ref={containerRef}
                 className={cn(
-                    "relative overflow-hidden group select-none shadow-[0_0_50px_rgba(37,99,235,0.25)] border border-blue-500/20 transition-all duration-500 ease-in-out",
-                    (isTheater && !isFullscreen) ? "fixed inset-x-0 top-0 mt-16 z-[60] w-[100vw] h-[calc(100vh-4rem)] rounded-none bg-black" : "w-full aspect-video rounded-2xl bg-gradient-to-br from-[#020817] to-[#0a192f]"
+                    "relative overflow-hidden group select-none shadow-[0_0_50px_rgba(37,99,235,0.25)] border border-blue-500/20 transition-all duration-500 ease-in-out bg-gradient-to-br from-[#020817] to-[#0a192f]",
+                    (isTheater && !isFullscreen) ? "fixed inset-x-0 top-0 mt-16 z-[60] w-[100vw] h-[calc(100vh-4rem)] rounded-none" : "w-full aspect-video rounded-2xl"
                 )}
                 onMouseMove={handleMouseMove}
                 onMouseLeave={handleMouseLeave}
@@ -438,7 +465,7 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
                 <div
                     dir="ltr"
                     className={cn(
-                        "absolute bottom-0 left-0 right-0 z-20 px-4 py-3 bg-gradient-to-t from-blue-950/80 to-transparent backdrop-blur-md border-t border-white/5 transition-all duration-300",
+                        "absolute bottom-0 left-0 right-0 z-20 px-4 py-3 bg-gradient-to-t from-[#020817]/95 via-[#0a192f]/70 to-transparent backdrop-blur-xl border-t border-blue-500/10 transition-all duration-300",
                         (!showControls && isPlaying && !isLive) ? "translate-y-4 opacity-0" : "translate-y-0 opacity-100"
                     )}>
                     {/* Progress Bar (Scrubber) */}
@@ -474,20 +501,37 @@ export default function EncodedVideoPlayer({ encodedVideoId, shouldMute = false,
 
                     <div className="flex items-center justify-between">
                         {/* LEFT CONTROLS */}
-                        <div className="flex items-center gap-5">
+                        <div className="flex items-center gap-4">
                             <button
                                 onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-                                className="text-white hover:text-blue-400 transition-transform hover:scale-110 pointer-events-auto z-30 flex items-center justify-center w-8 h-8"
+                                className="text-white hover:text-blue-400 transition-transform hover:scale-110 pointer-events-auto z-30 flex items-center justify-center w-8 h-8 mr-1"
                             >
                                 {isPlaying ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" className="ml-1" />}
                             </button>
 
-                            <button
-                                onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-                                className="text-white/80 hover:text-white transition-transform hover:scale-110 pointer-events-auto z-30 flex items-center justify-center w-8 h-8"
-                            >
-                                {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                            </button>
+                            <div className="relative group/volume flex items-center pointer-events-auto z-30">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+                                    className="text-white/80 hover:text-white transition-transform hover:scale-110 flex items-center justify-center w-8 h-8"
+                                >
+                                    {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                                </button>
+
+                                {/* Volume Slider */}
+                                <div className="w-0 overflow-hidden group-hover/volume:w-24 transition-all duration-300 ease-in-out flex items-center px-1">
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        value={isMuted ? 0 : volume}
+                                        onChange={handleVolumeChange}
+                                        className="w-full h-1 bg-white/20 appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white hover:[&::-webkit-slider-thumb]:scale-125 transition-all outline-none rounded-full"
+                                        style={{
+                                            background: `linear-gradient(to right, white ${isMuted ? 0 : volume}%, rgba(255,255,255,0.2) ${isMuted ? 0 : volume}%)`
+                                        }}
+                                    />
+                                </div>
+                            </div>
 
                             {isLive ? (
                                 <div className="flex items-center gap-2 px-2.5 py-1 bg-red-500/20 border border-red-500/50 rounded-md text-red-500 text-xs font-bold tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.2)]">
