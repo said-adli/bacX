@@ -82,21 +82,21 @@ export default function LessonNotes({ lessonId, className }: LessonNotesProps) {
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-white/2">
                 <div className="flex items-center gap-2 text-white/60">
                     <FileText className="w-4 h-4" />
-                    <span className="text-sm font-medium">My Notes</span>
+                    <span className="text-sm font-medium">ملاحظاتي</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-white/40">
                     {isSaving ? (
                         <>
                             <Loader2 className="w-3 h-3 animate-spin" />
-                            <span>Saving...</span>
+                            <span>جاري الحفظ...</span>
                         </>
                     ) : lastSaved ? (
                         <>
                             <CheckCircle className="w-3 h-3 text-green-400" />
-                            <span className="text-green-400">Saved</span>
+                            <span className="text-green-400">تم الحفظ</span>
                         </>
                     ) : (
-                        <span>Auto-save enabled</span>
+                        <span>الحفظ التلقائي مفعل</span>
                     )}
                 </div>
             </div>
@@ -105,7 +105,7 @@ export default function LessonNotes({ lessonId, className }: LessonNotesProps) {
             <textarea
                 value={content}
                 onChange={handleChange}
-                placeholder="Write your notes here... They will be saved automatically."
+                placeholder="اكتب ملاحظاتك هنا..."
                 className="w-full h-64 p-4 bg-transparent text-white/90 resize-none focus:outline-none placeholder:text-white/20 text-sm leading-relaxed"
             />
         </div>

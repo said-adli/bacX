@@ -76,7 +76,7 @@ export default async function SubjectDetailsPage({ params, searchParams }: Subje
             </header>
 
             {/* Main Grid with Suspense */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-140px)]">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[calc(100vh-140px)]">
 
                 {/* Left: Video Area (Taking up 8 cols) */}
                 <div className="lg:col-span-8 flex flex-col gap-6">

@@ -60,7 +60,7 @@ export default function MarkCompleteButton({ lessonId, className }: MarkComplete
         return (
             <div className={cn("flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/50", className)}>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="text-sm">Loading...</span>
+                <span className="text-sm">جاري التحميل...</span>
             </div>
         );
     }
@@ -84,7 +84,7 @@ export default function MarkCompleteButton({ lessonId, className }: MarkComplete
                 <Circle className="w-5 h-5" />
             )}
             <span className="text-sm">
-                {isCompleted ? "Completed ✓" : "Mark as Complete"}
+                {isCompleted ? "مكتمل ✓" : "تم إكمال الدرس"}
             </span>
         </button>
     );
