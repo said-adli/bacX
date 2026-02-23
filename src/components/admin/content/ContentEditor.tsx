@@ -107,8 +107,13 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
             if (isEditing && initialData) {
                 await updateLesson(initialData.id, payload);
             } else {
-                // Modified createLesson now returns the new record
+                // Modified createLesson now returns the new record or an error object
                 const newLesson = await createLesson(payload);
+                if (newLesson && 'error' in newLesson) {
+                    toast.error(newLesson.error as string);
+                    setIsSaving(false);
+                    return;
+                }
                 lessonId = newLesson?.id;
             }
 

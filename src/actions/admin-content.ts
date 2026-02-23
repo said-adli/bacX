@@ -157,6 +157,21 @@ export async function createLesson(data: Partial<Lesson>) {
     await requireAdmin();
     const supabase = await createClient();
     try {
+        if (!data.unit_id) {
+            return { error: 'Invalid Hierarchy: Unit not found', code: 404 };
+        }
+
+        // 1. Atomic Server-Side Derivation
+        const { data: unitRow, error: unitError } = await supabase
+            .from('units')
+            .select('subject_id')
+            .eq('id', data.unit_id)
+            .single();
+
+        if (unitError || !unitRow?.subject_id) {
+            return { error: 'Invalid Hierarchy: Unit not found', code: 404 };
+        }
+
         // Calculate Order Index if not provided
         let orderIndex = data.order_index;
         if (orderIndex === undefined && data.unit_id) {
@@ -175,7 +190,7 @@ export async function createLesson(data: Partial<Lesson>) {
                 video_url: data.video_url,
                 required_plan_id: data.required_plan_id,
                 unit_id: data.unit_id,
-                subject_id: data.subject_id,
+                subject_id: unitRow.subject_id, // Server-Side Authority overrides payload
                 is_free: data.is_free,
                 is_purchasable: data.is_purchasable ?? false,
                 price: data.price ?? null,
