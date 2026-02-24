@@ -13,7 +13,8 @@ import {
     LogOut,
     ShieldAlert,
     Radio,
-    Sparkles
+    Sparkles,
+    Ticket
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { createClient } from "@/utils/supabase/client";
@@ -29,6 +30,7 @@ export function AdminSidebar() {
         { name: "Students", href: "/admin/students", icon: Users },
         { name: "Payments", href: "/admin/payments", icon: Receipt },
         { name: "Offers", href: "/admin/offers", icon: CreditCard },
+        { name: "Coupons", href: "/admin/coupons", icon: Ticket },
         { name: "Content", href: "/admin/content", icon: Layers },
         { name: "Updates", href: "/admin/updates", icon: Sparkles },
         { name: "Logs", href: "/admin/logs", icon: ShieldAlert },
