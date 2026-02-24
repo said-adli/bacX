@@ -15,7 +15,7 @@ export async function RecentSignupsList() {
         .limit(5);
 
     if (!students || students.length === 0) {
-        return <div className="p-4 text-center text-zinc-500">No recent signups.</div>;
+        return <div className="p-4 text-center text-zinc-500">لا يوجد منضمين جدد.</div>;
     }
 
     return (
@@ -29,11 +29,11 @@ export async function RecentSignupsList() {
                             className="w-10 h-10 border border-white/10"
                         />
                         <div>
-                            <p className="text-white font-medium text-sm">{student.full_name || "New User"}</p>
+                            <p className="text-white font-medium text-sm">{student.full_name || "مستخدم جديد"}</p>
                             <p className="text-zinc-500 text-xs">{student.email}</p>
                         </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-end">
                         <span className="px-2 py-1 bg-blue-500/10 text-blue-400 text-xs rounded-full border border-blue-500/20 flex items-center gap-1">
                             <Clock size={10} />
                             {new Date(student.created_at).toLocaleDateString()}

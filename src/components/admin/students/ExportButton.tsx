@@ -64,7 +64,7 @@ export function ExportButton() {
             ) : (
                 <>
                     <Download className="w-4 h-4" />
-                    <span>Export CSV</span>
+                    <span>تصدير البيانات</span>
                 </>
             )}
         </button>

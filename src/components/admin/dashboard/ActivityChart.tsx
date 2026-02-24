@@ -3,13 +3,13 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const data = [
-    { name: 'Mon', active: 400 },
-    { name: 'Tue', active: 300 },
-    { name: 'Wed', active: 550 },
-    { name: 'Thu', active: 450 },
-    { name: 'Fri', active: 600 },
-    { name: 'Sat', active: 800 },
-    { name: 'Sun', active: 750 },
+    { name: 'الإثنين', active: 400 },
+    { name: 'الثلاثاء', active: 300 },
+    { name: 'الأربعاء', active: 550 },
+    { name: 'الخميس', active: 450 },
+    { name: 'الجمعة', active: 600 },
+    { name: 'السبت', active: 800 },
+    { name: 'الأحد', active: 750 },
 ];
 
 export function ActivityChart() {
@@ -17,8 +17,8 @@ export function ActivityChart() {
         <div className="w-full h-full p-6 rounded-2xl border border-white/5 bg-black/20 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h3 className="text-lg font-bold text-white">User Activity</h3>
-                    <p className="text-sm text-zinc-500">Active sessions this week</p>
+                    <h3 className="text-lg font-bold text-white">نشاط المستخدمين</h3>
+                    <p className="text-sm text-zinc-500">الجلسات النشطة هذا الأسبوع</p>
                 </div>
             </div>
 

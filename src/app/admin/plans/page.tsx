@@ -20,7 +20,7 @@ export default function PlansPage() {
             const data = await getAdminPlans();
             setPlans(data);
         } catch {
-            toast.error("Failed to load plans");
+            toast.error("فشل تحميل الباقات");
         } finally {
             setIsLoading(false);
         }
@@ -35,10 +35,10 @@ export default function PlansPage() {
         setIsDeleting(true);
         try {
             await deletePlan(planToDelete);
-            toast.success("Plan deleted successfully");
+            toast.success("تم حذف الباقة بنجاح");
             fetchPlans();
         } catch {
-            toast.error("Failed to delete plan");
+            toast.error("فشل حذف الباقة");
         } finally {
             setIsDeleting(false);
             setPlanToDelete(null);
@@ -64,20 +64,20 @@ export default function PlansPage() {
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-white mb-2">Subscription Plans</h1>
-                    <p className="text-zinc-400">Manage pricing tiers and features</p>
+                    <h1 className="text-2xl font-bold text-white mb-2">باقات الاشتراك</h1>
+                    <p className="text-zinc-400">إدارة مستويات التسعير والمميزات</p>
                 </div>
                 <button
                     onClick={handleCreate}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex items-center gap-2 transition-colors"
                 >
                     <Plus size={20} />
-                    Create Plan
+                    إنشاء باقة
                 </button>
             </div>
 
             {isLoading ? (
-                <div className="text-center py-12 text-zinc-500">Loading plans...</div>
+                <div className="text-center py-12 text-zinc-500">جاري تحميل الباقات...</div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {plans.map((plan) => (
@@ -86,8 +86,8 @@ export default function PlansPage() {
                             className={`relative group bg-black/20 border rounded-2xl p-6 transition-all hover:bg-white/5 ${plan.is_active ? 'border-white/10' : 'border-red-900/30 opacity-75'}`}
                         >
                             {!plan.is_active && (
-                                <div className="absolute top-4 right-4 px-2 py-1 bg-red-500/10 text-red-500 text-xs font-bold rounded-lg border border-red-500/20">
-                                    INACTIVE
+                                <div className="absolute top-4 end-4 px-2 py-1 bg-red-500/10 text-red-500 text-xs font-bold rounded-lg border border-red-500/20">
+                                    غير نشطة
                                 </div>
                             )}
 
@@ -104,7 +104,7 @@ export default function PlansPage() {
                                     )}
                                 </div>
                                 <p className="text-zinc-500 text-sm mt-2 line-clamp-2 min-h-[40px]">
-                                    {plan.description || "No description provided."}
+                                    {plan.description || "لم يتم تقديم وصف."}
                                 </p>
                             </div>
 
@@ -116,8 +116,8 @@ export default function PlansPage() {
                                     </div>
                                 ))}
                                 {plan.features.length > 3 && (
-                                    <div className="text-xs text-zinc-500 pl-6">
-                                        +{plan.features.length - 3} more features
+                                    <div className="text-xs text-zinc-500 ps-6">
+                                        +{plan.features.length - 3} ميزات إضافية
                                     </div>
                                 )}
                             </div>
@@ -128,12 +128,12 @@ export default function PlansPage() {
                                     className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                                 >
                                     <Edit2 size={16} />
-                                    Edit
+                                    تعديل
                                 </button>
                                 <button
                                     onClick={() => setPlanToDelete(plan.id)}
                                     className="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors"
-                                    title="Delete Plan"
+                                    title="حذف الباقة"
                                 >
                                     <Trash2 size={16} />
                                 </button>
@@ -145,9 +145,9 @@ export default function PlansPage() {
                     {plans.length === 0 && (
                         <div className="col-span-full py-12 flex flex-col items-center justify-center text-zinc-500 border border-dashed border-white/10 rounded-2xl bg-black/10">
                             <Package size={48} className="mb-4 opacity-20" />
-                            <p>No subscription plans found.</p>
+                            <p>لم يتم العثور على أي باقات اشتراك.</p>
                             <button onClick={handleCreate} className="mt-4 text-blue-400 hover:text-blue-300 font-medium">
-                                Create your first plan
+                                أنشئ باقتك الأولى
                             </button>
                         </div>
                     )}
@@ -170,15 +170,15 @@ export default function PlansPage() {
             <AlertDialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Plan?</AlertDialogTitle>
+                        <AlertDialogTitle>حذف الباقة؟</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete this subscription plan? This action cannot be undone if users are linked to it.
+                            هل أنت متأكد من رغبتك في حذف باقة الاشتراك هذه؟ لا يمكن التراجع عن هذا الإجراء إذا كان هناك مستخدمون مرتبطون بها.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isDeleting} onClick={() => setPlanToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isDeleting} onClick={() => setPlanToDelete(null)}>إلغاء</AlertDialogCancel>
                         <AlertDialogAction disabled={isDeleting} onClick={handleDelete} className="bg-red-600 hover:bg-red-500 text-white">
-                            {isDeleting ? "Deleting..." : "Delete Plan"}
+                            {isDeleting ? "جاري الحذف..." : "حذف الباقة"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

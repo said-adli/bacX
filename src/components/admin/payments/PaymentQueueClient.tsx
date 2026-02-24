@@ -46,19 +46,19 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
     const handleApprove = async () => {
         if (!selectedReceipt) return;
         if (!selectedPlanId) {
-            toast.error("Select a plan first");
+            toast.error("اختر باقة أولاً");
             return;
         }
-        if (!confirm("Confirm activation?")) return;
+        if (!confirm("تأكيد التفعيل؟")) return;
 
         setIsProcessing(true);
         try {
             await approvePayment(selectedReceipt.id, selectedReceipt.user_id, selectedPlanId);
-            toast.success("Activated successfully");
+            toast.success("تم التفعيل بنجاح");
             setSelectedReceipt(null);
             router.refresh();
         } catch (e: unknown) {
-            const message = e instanceof Error ? e.message : "Activation failed";
+            const message = e instanceof Error ? e.message : "فشل التفعيل";
             toast.error(message);
         } finally {
             setIsProcessing(false);
@@ -68,19 +68,19 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
     const handleReject = async () => {
         if (!selectedReceipt) return;
         if (!rejectReason.trim()) {
-            toast.error("Reason is required");
+            toast.error("السبب مطلوب");
             return;
         }
 
         setIsProcessing(true);
         try {
             await rejectPayment(selectedReceipt.id, rejectReason);
-            toast.success("Rejected successfully");
+            toast.success("تم الرفض بنجاح");
             setShowRejectDialog(false);
             setSelectedReceipt(null);
             router.refresh();
         } catch (e: unknown) {
-            const message = e instanceof Error ? e.message : "Rejection failed";
+            const message = e instanceof Error ? e.message : "فشل الرفض";
             toast.error(message);
         } finally {
             setIsProcessing(false);
@@ -92,14 +92,14 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
     return (
         <div className="container mx-auto max-w-7xl h-full flex flex-col p-6">
             <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-2">
-                <Sparkles className="text-yellow-400" /> Payment & Activation
+                <Sparkles className="text-yellow-400" /> المدفوعات والتفعيل
             </h2>
 
             <div className="flex gap-6 h-[calc(100vh-180px)]">
                 {/* 1. QUEUE LIST */}
                 <div className="w-80 bg-zinc-900/50 border border-white/10 rounded-2xl overflow-hidden flex flex-col backdrop-blur-md">
                     <div className="p-4 border-b border-white/5 bg-white/5">
-                        <h3 className="font-bold text-zinc-400 text-xs uppercase tracking-wider">Pending ({payments.length})</h3>
+                        <h3 className="font-bold text-zinc-400 text-xs uppercase tracking-wider">قيد الانتظار ({payments.length})</h3>
                     </div>
                     <div className="flex-1 overflow-y-auto p-2 space-y-2">
                         {payments.map((p) => (
@@ -109,13 +109,13 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
                                 className={`p-3 rounded-lg cursor-pointer border transition-all ${selectedReceipt?.id === p.id ? 'bg-blue-600/20 border-blue-500' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                             >
                                 <div className="flex justify-between items-start">
-                                    <span className="font-bold text-zinc-200 text-sm">{p.profiles?.full_name || "Unknown"}</span>
-                                    <span className="text-[10px] text-zinc-500">{new Date(p.created_at).toLocaleDateString()}</span>
+                                    <span className="font-bold text-zinc-200 text-sm">{p.profiles?.full_name || "مجهول"}</span>
+                                    <span className="text-[10px] text-zinc-500">{new Date(p.created_at).toLocaleDateString('en-GB')}</span>
                                 </div>
                                 <div className="text-xs text-zinc-500 truncate">{p.profiles?.email}</div>
                             </div>
                         ))}
-                        {payments.length === 0 && <div className="p-8 text-center text-zinc-600 text-sm">Empty Queue</div>}
+                        {payments.length === 0 && <div className="p-8 text-center text-zinc-600 text-sm">القائمة فارغة</div>}
                     </div>
                 </div>
 
@@ -125,7 +125,7 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
                         {/* RECEIPT VIEWER */}
                         <div className="flex-1 bg-black/60 border border-white/10 rounded-2xl p-4 flex flex-col relative group">
                             <h4 className="text-xs font-bold text-zinc-500 uppercase mb-2 flex items-center gap-2">
-                                <Eye size={14} /> Official Receipt
+                                <Eye size={14} /> وصل الدفع الرسمي
                             </h4>
                             <div className="flex-1 relative rounded-xl bg-black/40 border border-white/5 flex items-center justify-center overflow-hidden">
                                 {selectedReceipt.receipt_url ? (
@@ -149,7 +149,7 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
                                 ) : (
                                     <div className="text-zinc-500 flex flex-col items-center">
                                         <AlertTriangle size={32} className="mb-2 opacity-50 text-amber-500" />
-                                        <span>No Receipt Image</span>
+                                        <span>لا يوجد صورة للوصل</span>
                                     </div>
                                 )}
                             </div>
@@ -159,24 +159,24 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
                         <div className="w-[380px] bg-zinc-900/80 border border-white/10 rounded-2xl p-6 flex flex-col gap-6">
                             {/* COMPARISON UI */}
                             <div>
-                                <h4 className="text-xs font-bold text-zinc-500 uppercase mb-4">Financial Verification</h4>
+                                <h4 className="text-xs font-bold text-zinc-500 uppercase mb-4">التحقق المالي</h4>
 
                                 <div className="space-y-4">
                                     <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-                                        <label className="text-[10px] text-zinc-400 uppercase">Student Name</label>
+                                        <label className="text-[10px] text-zinc-400 uppercase">اسم الطالب</label>
                                         <div className="text-white font-bold text-lg">{selectedReceipt.profiles?.full_name}</div>
                                         <div className="text-zinc-500 text-xs">{selectedReceipt.profiles?.email}</div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3">
                                         <div className="p-3 rounded-xl bg-black/40 border border-white/5">
-                                            <label className="text-[10px] text-zinc-500 uppercase">Entered Amount</label>
+                                            <label className="text-[10px] text-zinc-500 uppercase">المبلغ المدخل</label>
                                             <div className="text-zinc-300 font-mono font-bold">
-                                                {selectedReceipt.amount ? `${selectedReceipt.amount} DZD` : 'N/A'}
+                                                {selectedReceipt.amount ? `${selectedReceipt.amount} DZD` : 'غير متوفر'}
                                             </div>
                                         </div>
                                         <div className="p-3 rounded-xl bg-blue-900/20 border border-blue-500/30">
-                                            <label className="text-[10px] text-blue-400 uppercase">Plan Price</label>
+                                            <label className="text-[10px] text-blue-400 uppercase">سعر الباقة</label>
                                             <div className="text-blue-300 font-mono font-bold">
                                                 {selectedPlan ? `${selectedPlan.price} DZD` : '-'}
                                             </div>
@@ -184,13 +184,13 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
                                     </div>
 
                                     <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                                        <label className="text-[10px] text-zinc-400 uppercase mb-1 block">Target Plan</label>
+                                        <label className="text-[10px] text-zinc-400 uppercase mb-1 block">الباقة المستهدفة</label>
                                         <select
                                             value={selectedPlanId}
                                             onChange={(e) => setSelectedPlanId(e.target.value)}
                                             className="w-full bg-black border border-white/10 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-blue-500"
                                         >
-                                            <option value="" disabled>Select Plan...</option>
+                                            <option value="" disabled>اختر الباقة...</option>
                                             {activePlans.map(plan => (
                                                 <option key={plan.id} value={plan.id}>
                                                     {plan.name} ({plan.price} DZD)
@@ -207,7 +207,7 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
                                     disabled={isProcessing}
                                     className="w-full py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold border border-red-500/10 transition-all flex items-center justify-center gap-2"
                                 >
-                                    <X size={18} /> Reject
+                                    <X size={18} /> رفض
                                 </button>
                                 <button
                                     onClick={handleApprove}
@@ -215,14 +215,14 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
                                     className="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold shadow-lg transition-all flex items-center justify-center gap-2"
                                 >
                                     {isProcessing ? <Loader2 className="animate-spin" /> : <Check size={18} />}
-                                    Approve & Activate
+                                    تفعيل وموافقة
                                 </button>
                             </div>
                         </div>
                     </div>
                 ) : (
                     <div className="flex-1 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center text-zinc-500">
-                        Select a payment to review
+                        حدد دفعة للمراجعة
                     </div>
                 )}
             </div>
@@ -251,12 +251,12 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
             {showRejectDialog && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
                     <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95">
-                        <h3 className="text-xl font-bold text-white mb-2">Reject Payment</h3>
-                        <p className="text-zinc-400 text-sm mb-4">Please provide a reason for the student.</p>
+                        <h3 className="text-xl font-bold text-white mb-2">رفض الدفعة</h3>
+                        <p className="text-zinc-400 text-sm mb-4">الرجاء كتابة سبب الرفض للطالب.</p>
 
                         <textarea
                             className="w-full h-32 bg-black/50 border border-white/10 rounded-xl p-3 text-white text-sm focus:border-red-500 focus:outline-none resize-none"
-                            placeholder="Reason (e.g. Image blurry, Amount incorrect...)"
+                            placeholder="السبب (مثال: الصورة غير واضحة، المبلغ غير صحيح...)"
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
                         />
@@ -266,14 +266,14 @@ export default function PaymentQueueClient({ payments }: { payments: PaymentQueu
                                 onClick={() => setShowRejectDialog(false)}
                                 className="px-4 py-2 text-zinc-400 text-sm hover:text-white"
                             >
-                                Cancel
+                                إلغاء
                             </button>
                             <button
                                 onClick={handleReject}
                                 disabled={isProcessing}
                                 className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-bold"
                             >
-                                {isProcessing ? "Rejecting..." : "Confirm Rejection"}
+                                {isProcessing ? "جاري الرفض..." : "تأكيد الرفض"}
                             </button>
                         </div>
                     </div>

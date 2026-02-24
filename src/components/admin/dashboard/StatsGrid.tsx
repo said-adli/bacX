@@ -14,7 +14,7 @@ export function StatsGrid({ totalStudents, activeSubscriptions, totalRevenue, ac
 
     const stats = [
         {
-            label: "Total Students",
+            label: "إجمالي الطلبة",
             value: totalStudents.toLocaleString(),
             change: "+12%",
             trend: "up",
@@ -24,7 +24,7 @@ export function StatsGrid({ totalStudents, activeSubscriptions, totalRevenue, ac
             border: "border-blue-400/20"
         },
         {
-            label: "Monthly Revenue",
+            label: "المدخول الشهري",
             value: `${totalRevenue.toLocaleString()} DZD`,
             change: "+8.2%",
             trend: "up",
@@ -34,7 +34,7 @@ export function StatsGrid({ totalStudents, activeSubscriptions, totalRevenue, ac
             border: "border-emerald-400/20"
         },
         {
-            label: "Active Subscriptions",
+            label: "الاشتراكات النشطة",
             value: activeSubscriptions.toLocaleString(),
             change: "-2.5%",
             trend: "down",
@@ -44,7 +44,7 @@ export function StatsGrid({ totalStudents, activeSubscriptions, totalRevenue, ac
             border: "border-purple-400/20"
         },
         {
-            label: "Live Sessions",
+            label: "الجلسات المباشرة",
             value: activeSessions.toString(),
             change: "+0%",
             trend: "neutral",

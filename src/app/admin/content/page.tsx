@@ -8,7 +8,7 @@ export default async function ContentPage() {
 
     return (
         <div className="container mx-auto max-w-[1600px] h-full">
-            <h2 className="text-3xl font-bold text-white mb-6">Content Command Center</h2>
+            <h2 className="text-3xl font-bold text-white mb-6">مركز إدارة المحتوى</h2>
             <ContentTree subjects={subjects} activePlans={activePlans} />
         </div>
     );

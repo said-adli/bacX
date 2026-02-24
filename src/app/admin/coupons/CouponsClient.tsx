@@ -14,10 +14,10 @@ import * as z from "zod";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/AlertDialog";
 
 const couponSchema = z.object({
-    code: z.string().min(3, "Code must be at least 3 characters").max(20, "Code too long").transform(val => val.trim().toUpperCase()),
+    code: z.string().min(3, "يجب أن يتكون الكود من 3 أحرف على الأقل").max(20, "الكود طويل جداً").transform(val => val.trim().toUpperCase()),
     discount_type: z.enum(["percent", "fixed"]),
-    value: z.number().min(0, "Value cannot be negative"),
-    max_uses: z.number().min(1, "Max uses must be at least 1"),
+    value: z.number().min(0, "لا يمكن أن تكون القيمة سالبة"),
+    max_uses: z.number().min(1, "يجب أن يكون الحد الأقصى للاستخدام 1 على الأقل"),
     expires_at: z.string().nullable(),
     is_active: z.boolean(),
     is_lifetime: z.boolean().optional()
@@ -30,7 +30,7 @@ const couponSchema = z.object({
     }
     return true;
 }, {
-    message: "Expiry date cannot be in the past",
+    message: "لا يمكن أن يكون تاريخ الانتهاء في الماضي",
     path: ["expires_at"]
 });
 

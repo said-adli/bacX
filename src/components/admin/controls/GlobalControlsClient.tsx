@@ -24,15 +24,15 @@ export default function GlobalControlsClient({
     const [isLive, setIsLive] = useState(initialSettings.live);
 
     const handleSendNotif = async () => {
-        if (!notifData.title || !notifData.message) return toast.error("Fill all fields");
+        if (!notifData.title || !notifData.message) return toast.error("الرجاء ملء جميع الحقول");
         setIsSending(true);
         try {
             await sendGlobalNotification(notifData.title, notifData.message);
-            toast.success("Notification Broadcasted");
+            toast.success("تم إرسال الإعلان");
             setNotifData({ title: "", message: "" });
             router.refresh();
         } catch (e) {
-            toast.error("Failed to send");
+            toast.error("فشل الإرسال");
         } finally {
             setIsSending(false);
         }
@@ -40,16 +40,16 @@ export default function GlobalControlsClient({
 
     const handleToggleMaintenance = async () => {
         const newState = !isMaintenance;
-        if (!confirm(`Turn Maintenance Mode ${newState ? 'ON' : 'OFF'}?`)) return;
+        if (!confirm(`تشغيل وضع الصيانة ${newState ? '؟' : '؟'}`)) return;
 
         // Optimistic
         setIsMaintenance(newState);
         try {
             await toggleMaintenanceMode(isMaintenance); // Action expects 'currentState' and flips it
-            toast.info(`Maintenance: ${newState ? 'ON' : 'OFF'}`);
+            toast.info(`وضع الصيانة: ${newState ? 'مفعل' : 'معطل'}`);
         } catch (e) {
             setIsMaintenance(!newState); // Revert
-            toast.error("Failed");
+            toast.error("فشل");
         }
     };
 
@@ -59,16 +59,16 @@ export default function GlobalControlsClient({
         setIsLive(newState);
         try {
             await toggleLiveGlobal(isLive);
-            toast.success(`Live Status: ${newState ? 'ON AIR' : 'OFFLINE'}`);
+            toast.success(`حالة البث: ${newState ? 'مباشر' : 'متوقف'}`);
         } catch (e) {
             setIsLive(!newState);
-            toast.error("Failed");
+            toast.error("فشل");
         }
     };
 
     return (
         <div className="container mx-auto max-w-5xl space-y-8">
-            <h2 className="text-3xl font-bold text-white mb-8">System & Global Controls</h2>
+            <h2 className="text-3xl font-bold text-white mb-8">الإعدادات العامة للنظام</h2>
 
             {/* System Status Toggles */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -81,8 +81,8 @@ export default function GlobalControlsClient({
                                 <AlertTriangle className={isMaintenance ? "text-red-500" : "text-zinc-500"} />
                             </div>
                             <div>
-                                <h3 className="font-bold text-white">Maintenance Mode</h3>
-                                <p className="text-xs text-zinc-500">Disable student access</p>
+                                <h3 className="font-bold text-white">وضع الصيانة</h3>
+                                <p className="text-xs text-zinc-500">تعطيل وصول الطلبة</p>
                             </div>
                         </div>
                         <button
@@ -102,8 +102,8 @@ export default function GlobalControlsClient({
                                 <Radio className={isLive ? "text-red-500 animate-pulse" : "text-zinc-500"} />
                             </div>
                             <div>
-                                <h3 className="font-bold text-white">Global Live Alert</h3>
-                                <p className="text-xs text-zinc-500">{`Show 'LIVE NOW' banner`}</p>
+                                <h3 className="font-bold text-white">تنبيه البث المباشر</h3>
+                                <p className="text-xs text-zinc-500">{`إظهار لافتة 'بث مباشر الآن'`}</p>
                             </div>
                         </div>
                         <button
@@ -122,27 +122,27 @@ export default function GlobalControlsClient({
                 <div className="flex items-center gap-4 mb-8">
                     <Megaphone className="text-blue-500" size={28} />
                     <div>
-                        <h3 className="text-xl font-bold text-white">Global Broadcast</h3>
-                        <p className="text-zinc-500">Send alerts to all student dashboards</p>
+                        <h3 className="text-xl font-bold text-white">إعلان شامل</h3>
+                        <p className="text-zinc-500">إرسال تنبيهات لجميع لوحات تحكم الطلبة</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Title</label>
+                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">العنوان</label>
                             <input
                                 className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
-                                placeholder="Important Announcement"
+                                placeholder="إعلان هام"
                                 value={notifData.title}
                                 onChange={(e) => setNotifData({ ...notifData, title: e.target.value })}
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Message Content</label>
+                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">محتوى الرسالة</label>
                             <textarea
                                 className="w-full h-32 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none resize-none"
-                                placeholder="Write your message here..."
+                                placeholder="اكتب رسالتك هنا..."
                                 value={notifData.message}
                                 onChange={(e) => setNotifData({ ...notifData, message: e.target.value })}
                             />
@@ -152,19 +152,19 @@ export default function GlobalControlsClient({
                             disabled={isSending}
                             className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
                         >
-                            <Send size={18} /> Broadcast Now
+                            <Send size={18} /> إرسال الإعلان الآن
                         </button>
                     </div>
 
                     {/* History */}
                     <div className="bg-black/20 rounded-2xl p-6 border border-white/5">
-                        <h4 className="text-zinc-400 font-bold text-sm uppercase mb-4 tracking-wider">Recent Broadcasts</h4>
+                        <h4 className="text-zinc-400 font-bold text-sm uppercase mb-4 tracking-wider">الإعلانات السابقة</h4>
                         <div className="space-y-3">
                             {recentNotifications.map(n => (
                                 <div key={n.id} className="p-4 rounded-xl bg-white/5 border border-white/5">
                                     <div className="flex justify-between items-start">
                                         <h5 className="font-bold text-white text-sm">{n.title}</h5>
-                                        <span className="text-[10px] text-zinc-500">{new Date(n.created_at).toLocaleDateString()}</span>
+                                        <span className="text-[10px] text-zinc-500">{new Date(n.created_at).toLocaleDateString('en-GB')}</span>
                                     </div>
                                     <p className="text-xs text-zinc-400 mt-1 line-clamp-2">{n.message}</p>
                                 </div>

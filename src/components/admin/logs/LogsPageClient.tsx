@@ -22,11 +22,11 @@ export default function LogsPageClient({ initialLogs }: { initialLogs: LogsRespo
     // ... inside component
     const handleExport = async () => {
         try {
-            toast.loading("Preparing CSV export...");
+            toast.loading("جاري التحضير للتصدير...");
             const csvData = await exportLogsAsCSV();
             if (!csvData) {
                 toast.dismiss();
-                toast.error("No logs to export");
+                toast.error("لا توجد سجلات لتصديرها");
                 return;
             }
 
@@ -42,11 +42,11 @@ export default function LogsPageClient({ initialLogs }: { initialLogs: LogsRespo
             document.body.removeChild(a);
 
             toast.dismiss();
-            toast.success("Logs exported successfully");
+            toast.success("تم تصدير السجلات بنجاح");
         } catch (error) {
             console.error(error);
             toast.dismiss();
-            toast.error("Failed to export logs");
+            toast.error("فشل تصدير السجلات");
         }
     };
 
@@ -74,7 +74,7 @@ export default function LogsPageClient({ initialLogs }: { initialLogs: LogsRespo
                         onClick={handleExport}
                         className="px-4 py-2 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-xl text-sm font-bold hover:bg-blue-600/20 transition-colors"
                     >
-                        Export CSV
+                        تصدير البيانات
                     </button>
                 </div>
             </div>
@@ -83,11 +83,11 @@ export default function LogsPageClient({ initialLogs }: { initialLogs: LogsRespo
                 <table className="w-full text-left">
                     <thead className="bg-white/5 text-zinc-400 border-b border-white/5">
                         <tr>
-                            <th className="p-4 font-normal">Timestamp</th>
-                            <th className="p-4 font-normal">Event</th>
-                            <th className="p-4 font-normal">Actor / User</th>
-                            <th className="p-4 font-normal">IP Address</th>
-                            <th className="p-4 font-normal">Details</th>
+                            <th className="p-4 font-normal">الوقت والتاريخ</th>
+                            <th className="p-4 font-normal">الحدث</th>
+                            <th className="p-4 font-normal">الفاعل / المستخدم</th>
+                            <th className="p-4 font-normal">عنوان IP</th>
+                            <th className="p-4 font-normal">التفاصيل</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -113,7 +113,7 @@ export default function LogsPageClient({ initialLogs }: { initialLogs: LogsRespo
                                             </div>
                                         </div>
                                     ) : (
-                                        <span className="text-zinc-600 italic">System / Anon</span>
+                                        <span className="text-zinc-600 italic">النظام / مجهول</span>
                                     )}
                                 </td>
                                 <td className="p-4 text-zinc-500">
@@ -128,7 +128,7 @@ export default function LogsPageClient({ initialLogs }: { initialLogs: LogsRespo
                 </table>
                 {logs.length === 0 && (
                     <div className="p-12 text-center text-zinc-500">
-                        No logs found for this period.
+                        لم يتم العثور على سجلات في هذه الفترة.
                     </div>
                 )}
             </div>

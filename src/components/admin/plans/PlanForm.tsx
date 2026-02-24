@@ -49,7 +49,7 @@ export function PlanForm({ plan, onClose, onSuccess }: PlanFormProps) {
         e.preventDefault();
 
         if (!formData.name || formData.price < 0) {
-            toast.error("Please fill in required fields correctly.");
+            toast.error("الرجاء ملء الحقول المطلوبة بشكل صحيح.");
             return;
         }
 
@@ -58,15 +58,15 @@ export function PlanForm({ plan, onClose, onSuccess }: PlanFormProps) {
         try {
             if (plan) {
                 await updatePlan(plan.id, formData);
-                toast.success("Plan updated successfully");
+                toast.success("تم تحديث الباقة بنجاح");
             } else {
                 await createPlan(formData);
-                toast.success("Plan created successfully");
+                toast.success("تم إنشاء الباقة بنجاح");
             }
             onSuccess();
         } catch (error) {
             console.error(error);
-            toast.error("Operation failed. check console.");
+            toast.error("فشلت العملية. تحقق من وحدة التحكم.");
         } finally {
             setIsLoading(false);
         }
@@ -93,7 +93,7 @@ export function PlanForm({ plan, onClose, onSuccess }: PlanFormProps) {
         <div>
             <div className="flex items-center justify-between p-6 border-b border-white/10 bg-white/5">
                 <h2 className="text-xl font-bold text-white">
-                    {plan ? "Edit Plan" : "Create New Plan"}
+                    {plan ? "تعديل الباقة" : "إنشاء باقة جديدة"}
                 </h2>
                 <button onClick={onClose} className="text-zinc-400 hover:text-white">
                     <X size={24} />
@@ -105,19 +105,19 @@ export function PlanForm({ plan, onClose, onSuccess }: PlanFormProps) {
                 {/* Basic Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="col-span-2">
-                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Plan Name</label>
+                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">اسم الباقة</label>
                         <input
                             type="text"
                             required
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
                             className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500"
-                            placeholder="e.g. VIP Subscription"
+                            placeholder="مثال: الاشتراك الذهبي"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Price (DZD)</label>
+                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">السعر (دج)</label>
                         <input
                             type="number"
                             required
@@ -129,14 +129,14 @@ export function PlanForm({ plan, onClose, onSuccess }: PlanFormProps) {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Discount Price (Optional)</label>
+                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">سعر التخفيض (اختياري)</label>
                         <input
                             type="number"
                             min="0"
                             value={formData.discount_price || ''}
                             onChange={e => setFormData({ ...formData, discount_price: e.target.value ? parseInt(e.target.value) : null })}
                             className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500"
-                            placeholder="Leave empty if none"
+                            placeholder="اتركه فارغاً إذا لم يوجد"
                         />
                     </div>
                 </div>
@@ -144,7 +144,7 @@ export function PlanForm({ plan, onClose, onSuccess }: PlanFormProps) {
                 {/* Duration & Type */}
                 <div className="grid grid-cols-2 gap-4 p-4 bg-white/5 rounded-xl border border-white/5">
                     <div>
-                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Duration (Days)</label>
+                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">المدة (بالأيام)</label>
                         <input
                             type="number"
                             required
@@ -155,21 +155,21 @@ export function PlanForm({ plan, onClose, onSuccess }: PlanFormProps) {
                         />
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Type</label>
+                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">النوع</label>
                         <select
                             value={formData.type}
                             onChange={e => setFormData({ ...formData, type: e.target.value as 'subscription' | 'course' })}
                             className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-white text-sm"
                         >
-                            <option value="subscription">Subscription</option>
-                            <option value="course">Course (One-time)</option>
+                            <option value="subscription">اشتراك</option>
+                            <option value="course">دورة (مرة واحدة)</option>
                         </select>
                     </div>
                 </div>
 
                 {/* Description */}
                 <div>
-                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Description</label>
+                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">الوصف</label>
                     <textarea
                         rows={3}
                         value={formData.description}
@@ -180,7 +180,7 @@ export function PlanForm({ plan, onClose, onSuccess }: PlanFormProps) {
 
                 {/* Features Builder */}
                 <div>
-                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Features List</label>
+                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">قائمة المميزات</label>
                     <div className="flex gap-2 mb-3">
                         <input
                             type="text"
@@ -188,7 +188,7 @@ export function PlanForm({ plan, onClose, onSuccess }: PlanFormProps) {
                             onChange={e => setNewFeature(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addFeature())}
                             className="flex-1 bg-black/20 border border-white/10 rounded-xl p-2 px-4 text-white text-sm focus:outline-none focus:border-blue-500"
-                            placeholder="Add a feature (e.g. 'Access to all courses')"
+                            placeholder="إضافة ميزة (مثال: 'الوصول إلى جميع الدورات')"
                         />
                         <button
                             type="button"
@@ -213,7 +213,7 @@ export function PlanForm({ plan, onClose, onSuccess }: PlanFormProps) {
                             </div>
                         ))}
                         {formData.features.length === 0 && (
-                            <p className="text-zinc-600 text-sm italic">No features added yet.</p>
+                            <p className="text-zinc-600 text-sm italic">لم تتم إضافة أي مميزات بعد.</p>
                         )}
                     </div>
                 </div>
@@ -228,7 +228,7 @@ export function PlanForm({ plan, onClose, onSuccess }: PlanFormProps) {
                         className="w-5 h-5 rounded border-white/20 bg-black/20 text-blue-600 focus:ring-blue-500"
                     />
                     <label htmlFor="isActive" className="text-white font-medium cursor-pointer select-none">
-                        Active (Visible to users)
+                        نشط (مرئي للمستخدمين)
                     </label>
                 </div>
 
@@ -239,7 +239,7 @@ export function PlanForm({ plan, onClose, onSuccess }: PlanFormProps) {
                         onClick={onClose}
                         className="px-6 py-3 text-zinc-400 font-medium hover:text-white transition-colors"
                     >
-                        Cancel
+                        إلغاء
                     </button>
                     <button
                         type="submit"
@@ -251,7 +251,7 @@ export function PlanForm({ plan, onClose, onSuccess }: PlanFormProps) {
                         ) : (
                             <>
                                 <Check size={18} />
-                                {plan ? "Save Changes" : "Create Plan"}
+                                {plan ? "حفظ التغييرات" : "إنشاء الباقة"}
                             </>
                         )}
                     </button>

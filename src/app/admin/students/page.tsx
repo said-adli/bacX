@@ -22,8 +22,8 @@ export default async function AdminStudentsPage(props: {
         <div className="container mx-auto max-w-7xl">
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h2 className="text-3xl font-bold text-white tracking-tight">Student Management</h2>
-                    <p className="text-zinc-500">Manage access, subscriptions, and security.</p>
+                    <h2 className="text-3xl font-bold text-white tracking-tight">إدارة الطلبة</h2>
+                    <p className="text-zinc-500">إدارة الوصول، الاشتراكات، والحماية.</p>
                 </div>
                 <ExportButton />
             </div>

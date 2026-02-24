@@ -14,9 +14,9 @@ import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader,
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 
 const lessonSchema = z.object({
-    subject_id: z.string().min(1, "Subject is required"),
-    unit_id: z.string().min(1, "Unit is required"),
-    title: z.string().min(1, "Title is required"),
+    subject_id: z.string().min(1, "الرجاء اختيار المادة"),
+    unit_id: z.string().min(1, "الرجاء اختيار الوحدة"),
+    title: z.string().min(1, "العنوان مطلوب"),
     type: z.enum(["video", "live_stream", "pdf"]),
     video_url: z.string().optional(),
     required_plan_id: z.string().optional(),
@@ -93,7 +93,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
             try {
                 await deleteLessonResource(resourceId);
             } catch (error) {
-                toast.error("Failed to delete resource");
+                toast.error("فشل حذف الملحق");
                 return;
             }
         }
@@ -120,20 +120,20 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
 
             if (isEditing && initialData) {
                 await updateLesson(initialData.id, payload, unpersistedResources);
-                toast.success("Changes saved");
+                toast.success("تم حفظ التغييرات");
             } else {
                 const res = await createLesson(payload, unpersistedResources);
                 if (res && 'error' in res) {
                     toast.error(res.error as string);
                     return;
                 }
-                toast.success("Lesson created");
+                toast.success("تم إضافة الدرس بنجاح");
             }
 
             onClose();
         } catch (e) {
             console.error(e);
-            toast.error("Failed to save Content");
+            toast.error("فشل حفظ المحتوى");
         } finally {
             setIsSaving(false);
         }
@@ -143,10 +143,10 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
         if (!initialData) return;
         try {
             await deleteLesson(initialData.id);
-            toast.success("Deleted");
+            toast.success("تم الحذف بنجاح");
             onClose();
         } catch (e) {
-            toast.error("Failed to delete");
+            toast.error("فشل الحذف");
         }
     };
 
@@ -159,7 +159,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                         <ArrowLeft size={20} className="text-zinc-400" />
                     </button>
                     <h2 className="text-xl font-bold text-white">
-                        {isEditing ? "Edit Content" : "New Content Item"}
+                        {isEditing ? "تعديل المحتوى" : "إضافة محتوى جديد"}
                     </h2>
                 </div>
                 {isEditing && (
@@ -171,14 +171,14 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Lesson?</AlertDialogTitle>
+                                <AlertDialogTitle>حذف الدرس؟</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This action cannot be undone. This lesson and all its resources will be permanently removed.
+                                    لا يمكن التراجع عن هذا الإجراء. سيتم حذف هذا الدرس وجميع ملحقاته بشكل نهائي.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">حذف نهائي</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
@@ -192,7 +192,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                 {(!subjectId || !unitId) && (
                     <div className="grid grid-cols-2 gap-4 pb-4 border-b border-white/5">
                         <div>
-                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Select Subject</label>
+                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">اختر المادة</label>
                             <Select
                                 value={watchSubjectId || undefined}
                                 onValueChange={(val) => {
@@ -201,7 +201,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                                 }}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="-- Choose Subject --" />
+                                    <SelectValue placeholder="-- اختر المادة --" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
@@ -214,14 +214,14 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                             {form.formState.errors.subject_id && <span className="text-xs text-red-500 mt-1">{form.formState.errors.subject_id.message}</span>}
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Select Unit</label>
+                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">اختر الوحدة</label>
                             <Select
                                 disabled={!watchSubjectId}
                                 value={form.watch("unit_id") || undefined}
                                 onValueChange={(val) => form.setValue("unit_id", val)}
                             >
                                 <SelectTrigger className={!watchSubjectId ? "opacity-50" : ""}>
-                                    <SelectValue placeholder="-- Choose Unit --" />
+                                    <SelectValue placeholder="-- اختر الوحدة --" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
@@ -255,11 +255,11 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                 {/* Main Fields */}
                 <div className="space-y-6">
                     <div>
-                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Title</label>
+                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">العنوان</label>
                         <input
                             {...form.register("title")}
                             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none text-lg font-bold placeholder:font-normal"
-                            placeholder="e.g. Introduction to Calculus"
+                            placeholder="مثال: مقدمة في الرياضيات"
                         />
                         {form.formState.errors.title && <span className="text-xs text-red-500 mt-1">{form.formState.errors.title.message}</span>}
                     </div>
@@ -268,7 +268,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
-                                    {watchType === 'live_stream' ? 'Stream URL / ID' : 'Video Source URL'}
+                                    {watchType === 'live_stream' ? 'رابط / معرف البث المباشر' : 'رابط مصدر الفيديو'}
                                 </label>
                                 <input
                                     {...form.register("video_url")}
@@ -280,7 +280,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                             {watchType === 'live_stream' && (
                                 <div>
                                     <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
-                                        Scheduled Start Time
+                                        موعد البدء المجدول
                                     </label>
                                     <input
                                         type="datetime-local"
@@ -295,19 +295,19 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                     {/* Granular Access Control */}
                     <div className="p-6 rounded-2xl bg-blue-900/10 border border-blue-500/20">
                         <h4 className="text-blue-400 font-bold text-sm mb-4 flex items-center gap-2">
-                            <LockIcon size={14} /> Access Control
+                            <LockIcon size={14} /> صلاحيات الوصول
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="block text-xs font-bold text-zinc-500 uppercase">Required Plan</label>
+                                    <label className="block text-xs font-bold text-zinc-500 uppercase">الباقة المطلوبة</label>
                                     {plans.length > 0 && (
                                         <button
                                             type="button"
                                             onClick={() => form.setValue("required_plan_id", plans[0].id)}
                                             className="text-[10px] bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 px-2 py-1 rounded-md transition-colors"
                                         >
-                                            ⚡ Quick-Link Primary
+                                            ⚡ ربط سريع بالباقة الأساسية
                                         </button>
                                     )}
                                 </div>
@@ -316,11 +316,11 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                                     onValueChange={(val) => form.setValue("required_plan_id", val === "public" ? "" : val)}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Public / Free" />
+                                        <SelectValue placeholder="عام / مجاني" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value="public">Public / Free</SelectItem>
+                                            <SelectItem value="public">عام / مجاني</SelectItem>
                                             {plans.map(plan => (
                                                 <SelectItem key={plan.id} value={plan.id}>
                                                     <div className="flex justify-between items-center w-full min-w-[200px] pr-4">
@@ -335,7 +335,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                                     </SelectContent>
                                 </Select>
                                 <p className="text-[10px] text-zinc-500 mt-2">
-                                    Only students with this specific active subscription can view this content.
+                                    فقط الطلبة الذين يمتلكون اشتراكاً نشطاً في هذه الباقة يمكنهم مشاهدة هذا المحتوى.
                                 </p>
                             </div>
 
@@ -347,7 +347,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                                 >
                                     <div className={`w-5 h-5 rounded-full bg-white transition-transform ${watchIsFree ? 'translate-x-5' : 'translate-x-0'}`} />
                                 </div>
-                                <span className="text-sm font-medium text-zinc-300">Is Free Preview?</span>
+                                <span className="text-sm font-medium text-zinc-300">هل هذا عرض مجاني؟</span>
 
                                 {/* Hidden input to register with hook form */}
                                 <input type="hidden" {...form.register("is_free")} />
@@ -357,7 +357,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                         {/* Lifetime Purchase Toggle */}
                         <div className="mt-6 pt-6 border-t border-blue-500/20">
                             <h5 className="text-xs font-bold text-blue-300 uppercase mb-3 flex items-center gap-2">
-                                Lifetime Ownership
+                                ملكية مدى الحياة
                             </h5>
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-3">
@@ -367,7 +367,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                                     >
                                         <div className={`w-5 h-5 rounded-full bg-white transition-transform ${watchPurchasable ? 'translate-x-5' : 'translate-x-0'}`} />
                                     </div>
-                                    <span className="text-sm font-medium text-zinc-300">Enable Purchase</span>
+                                    <span className="text-sm font-medium text-zinc-300">تفعيل الشراء</span>
                                     {/* Hidden input to register with hook form */}
                                     <input type="hidden" {...form.register("is_purchasable")} />
                                 </div>
@@ -377,7 +377,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                                         <input
                                             type="number"
                                             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-purple-500 outline-none text-sm"
-                                            placeholder="Price (DA)"
+                                            placeholder="السعر (دج)"
                                             {...form.register("price", { valueAsNumber: true })}
                                         />
                                     </div>
@@ -390,7 +390,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                 {/* Attachments Section */}
                 <div className="space-y-4">
                     <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
-                        Attached Resources (PDFs, Images)
+                        الملحقات المرفقة (PDF، صور)
                     </label>
 
                     <ResourceUploader onUploadComplete={handleResourceUpload} />
@@ -419,12 +419,12 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>
-                                                <AlertDialogTitle>Remove Resource?</AlertDialogTitle>
-                                                <AlertDialogDescription>Are you sure you want to remove this resource?</AlertDialogDescription>
+                                                <AlertDialogTitle>إزالة الملحق؟</AlertDialogTitle>
+                                                <AlertDialogDescription>هل أنت متأكد من رغبتك في إزالة هذا الملحق؟</AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleRemoveResource(i, res.id)}>Remove</AlertDialogAction>
+                                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleRemoveResource(i, res.id)}>إزالة</AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
@@ -432,7 +432,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                             </GlassCard>
                         ))}
                         {resources.length === 0 && (
-                            <div className="text-xs text-zinc-600 italic">No resources attached yet.</div>
+                            <div className="text-xs text-zinc-600 italic">لم يتم إرفاق أي ملحقات بعد.</div>
                         )}
                     </div>
                 </div>
@@ -446,7 +446,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                     disabled={isSaving}
                     className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition-all"
                 >
-                    {isSaving ? "Saving..." : <><Save size={18} /> Save Content</>}
+                    {isSaving ? "جاري الحفظ..." : <><Save size={18} /> حفظ المحتوى</>}
                 </button>
             </div>
         </form>

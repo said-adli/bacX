@@ -85,24 +85,24 @@ export default function UpdatesPageClient({ updates }: { updates: PlatformUpdate
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h2 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-                        <Sparkles className="text-blue-500" /> Platform Updates
+                        <Sparkles className="text-blue-500" /> تحديثات النظام
                     </h2>
-                    <p className="text-zinc-500">Manage system changelog and release notes.</p>
+                    <p className="text-zinc-500">إدارة سجل التغييرات وملاحظات الإصدار.</p>
                 </div>
                 <button
                     onClick={() => setIsCreating(!isCreating)}
                     className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition flex items-center gap-2"
                 >
-                    <Plus size={20} /> New Update
+                    <Plus size={20} /> تحديث جديد
                 </button>
             </div>
 
             {isCreating && (
                 <GlassCard className="mb-8 border-blue-500/30 bg-blue-500/5">
-                    <h3 className="text-lg font-bold text-white mb-4">New Update Details</h3>
+                    <h3 className="text-lg font-bold text-white mb-4">تفاصيل التحديث الجديد</h3>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                         <input
-                            placeholder="Version (e.g. v2.1.0)"
+                            placeholder="الإصدار (مثال v2.1.0)"
                             className="bg-black/40 border border-white/10 rounded-lg p-3 text-white"
                             value={version}
                             onChange={(e) => setVersion(e.target.value)}
@@ -112,27 +112,27 @@ export default function UpdatesPageClient({ updates }: { updates: PlatformUpdate
                             value={type}
                             onChange={(e) => setType(e.target.value)}
                         >
-                            <option value="general">General</option>
-                            <option value="feature">New Feature</option>
-                            <option value="bugfix">Bug Fix</option>
-                            <option value="security">Security</option>
+                            <option value="general">عام</option>
+                            <option value="feature">ميزة جديدة</option>
+                            <option value="bugfix">إصلاح خطأ</option>
+                            <option value="security">أمني</option>
                         </select>
                     </div>
                     <input
-                        placeholder="Update Title"
+                        placeholder="عنوان التحديث"
                         className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white mb-4"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                     />
                     <textarea
-                        placeholder="Detailed content..."
+                        placeholder="المحتوى بالتفصيل..."
                         className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white mb-4 min-h-[100px]"
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                     />
                     <div className="flex justify-end gap-2">
-                        <button onClick={() => setIsCreating(false)} className="px-4 py-2 text-zinc-400 hover:text-white">Cancel</button>
-                        <button onClick={handleCreate} className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold">Publish Update</button>
+                        <button onClick={() => setIsCreating(false)} className="px-4 py-2 text-zinc-400 hover:text-white">إلغاء</button>
+                        <button onClick={handleCreate} className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold">نشر التحديث</button>
                     </div>
                 </GlassCard>
             )}
@@ -159,7 +159,7 @@ export default function UpdatesPageClient({ updates }: { updates: PlatformUpdate
                             <button
                                 onClick={() => togglePublish(update.id, update.is_active)}
                                 className={`p-2 rounded-lg transition-colors ${update.is_active ? 'text-green-400 hover:bg-green-500/10' : 'text-zinc-600 hover:bg-white/5'}`}
-                                title={update.is_active ? "Deactivate" : "Activate"}
+                                title={update.is_active ? "إلغاء التفعيل" : "تفعيل"}
                             >
                                 {update.is_active ? <CheckCircle size={18} /> : <XCircle size={18} />}
                             </button>
@@ -175,7 +175,7 @@ export default function UpdatesPageClient({ updates }: { updates: PlatformUpdate
 
                 {updates.length === 0 && (
                     <div className="p-12 text-center text-zinc-500 bg-white/5 rounded-2xl border border-white/5">
-                        No updates found. Start by creating one.
+                        لم يتم العثور على تحديثات. ابدأ بإنشاء واحد.
                     </div>
                 )}
             </div>
