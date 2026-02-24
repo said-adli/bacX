@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Video, Radio, FileText, ArrowLeft, Trash2, Save, Lock as LockIcon, X, Loader2, Download } from "lucide-react";
 import { ResourceUploader, ResourceFile } from "@/components/admin/ResourceUploader";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { Switch } from "@/components/ui/Switch";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/AlertDialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 
@@ -341,12 +342,10 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
 
                             {/* Toggle Public */}
                             <div className="flex items-center gap-3 mt-6">
-                                <div
-                                    className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-colors ${watchIsFree ? 'bg-emerald-500' : 'bg-zinc-700'}`}
-                                    onClick={() => form.setValue("is_free", !watchIsFree)}
-                                >
-                                    <div className={`w-5 h-5 rounded-full bg-white transition-transform ${watchIsFree ? 'translate-x-5' : 'translate-x-0'}`} />
-                                </div>
+                                <Switch
+                                    checked={watchIsFree}
+                                    onCheckedChange={(checked) => form.setValue("is_free", checked)}
+                                />
                                 <span className="text-sm font-medium text-zinc-300">هل هذا عرض مجاني؟</span>
 
                                 {/* Hidden input to register with hook form */}
@@ -361,12 +360,11 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                             </h5>
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-3">
-                                    <div
-                                        className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-colors ${watchPurchasable ? 'bg-purple-500' : 'bg-zinc-700'}`}
-                                        onClick={() => form.setValue("is_purchasable", !watchPurchasable)}
-                                    >
-                                        <div className={`w-5 h-5 rounded-full bg-white transition-transform ${watchPurchasable ? 'translate-x-5' : 'translate-x-0'}`} />
-                                    </div>
+                                    <Switch
+                                        checked={watchPurchasable}
+                                        onCheckedChange={(checked) => form.setValue("is_purchasable", checked)}
+                                        className="data-[state=checked]:bg-purple-600"
+                                    />
                                     <span className="text-sm font-medium text-zinc-300">تفعيل الشراء</span>
                                     {/* Hidden input to register with hook form */}
                                     <input type="hidden" {...form.register("is_purchasable")} />

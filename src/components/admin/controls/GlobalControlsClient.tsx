@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Megaphone, Radio, AlertTriangle, Send } from "lucide-react";
 import { sendGlobalNotification, toggleMaintenanceMode, toggleLiveGlobal } from "@/actions/admin-controls";
+import { Switch } from "@/components/ui/Switch";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -85,12 +86,11 @@ export default function GlobalControlsClient({
                                 <p className="text-xs text-zinc-500">تعطيل وصول الطلبة</p>
                             </div>
                         </div>
-                        <button
-                            onClick={handleToggleMaintenance}
-                            className={`w-14 h-8 rounded-full p-1 transition-colors ${isMaintenance ? 'bg-red-500' : 'bg-zinc-700'}`}
-                        >
-                            <div className={`w-6 h-6 rounded-full bg-white transition-transform ${isMaintenance ? 'translate-x-6' : 'translate-x-0'}`} />
-                        </button>
+                        <Switch
+                            checked={isMaintenance}
+                            onCheckedChange={handleToggleMaintenance}
+                            className="data-[state=checked]:bg-red-500"
+                        />
                     </div>
                 </div>
 
@@ -106,12 +106,11 @@ export default function GlobalControlsClient({
                                 <p className="text-xs text-zinc-500">{`إظهار لافتة 'بث مباشر الآن'`}</p>
                             </div>
                         </div>
-                        <button
-                            onClick={handleToggleLive}
-                            className={`w-14 h-8 rounded-full p-1 transition-colors ${isLive ? 'bg-red-500' : 'bg-zinc-700'}`}
-                        >
-                            <div className={`w-6 h-6 rounded-full bg-white transition-transform ${isLive ? 'translate-x-6' : 'translate-x-0'}`} />
-                        </button>
+                        <Switch
+                            checked={isLive}
+                            onCheckedChange={handleToggleLive}
+                            className="data-[state=checked]:bg-red-500"
+                        />
                     </div>
                 </div>
             </div>

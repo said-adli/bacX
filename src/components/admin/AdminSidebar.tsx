@@ -14,7 +14,12 @@ import {
     ShieldAlert,
     Radio,
     Sparkles,
-    Ticket
+    Ticket,
+    PieChart,
+    Package,
+    ClipboardList,
+    Megaphone,
+    MonitorSmartphone
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { createClient } from "@/utils/supabase/client";
@@ -26,14 +31,19 @@ export function AdminSidebar() {
 
     const links = [
         { name: "ملخص الإحصائيات", href: "/admin", icon: BarChart3 },
+        { name: "التقارير المالية", href: "/admin/dashboard/financial", icon: PieChart },
         { name: "إدارة الطلبة", href: "/admin/students", icon: Users },
+        { name: "الطلبات", href: "/admin/requests", icon: ClipboardList },
         { name: "إدارة المحتوى", href: "/admin/content", icon: Layers },
         { name: "المداخيل / المدفوعات", href: "/admin/payments", icon: Receipt },
         { name: "الباقات والعروض", href: "/admin/offers", icon: CreditCard },
+        { name: "باقات الاشتراك", href: "/admin/plans", icon: Package },
         { name: "قسائم التخفيض", href: "/admin/coupons", icon: Ticket },
         { name: "البث المباشر", href: "/admin/live", icon: Radio },
+        { name: "الإعلانات", href: "/admin/announcements", icon: Megaphone },
         { name: "التحديثات", href: "/admin/updates", icon: Sparkles },
         { name: "السجلات", href: "/admin/logs", icon: ShieldAlert },
+        { name: "أجهزة المستخدمين", href: "/admin/security/devices", icon: MonitorSmartphone },
         { name: "الإعدادات", href: "/admin/controls", icon: Settings },
     ];
 

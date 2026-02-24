@@ -57,12 +57,8 @@ export function StatusToggle({
             <Switch
                 checked={optimisticValue}
                 onCheckedChange={handleToggle}
-                className={cn(
-                    "data-[state=checked]:bg-emerald-500",
-                    "data-[state=unchecked]:bg-zinc-700"
-                )}
             />
-            <span className={cn("text-xs font-mono font-bold w-12", optimisticValue ? "text-emerald-500" : "text-zinc-500")}>
+            <span className={cn("text-xs font-mono font-bold w-12", optimisticValue ? "text-blue-500" : "text-zinc-500")}>
                 {optimisticValue ? labelActive : labelInactive}
             </span>
         </div>

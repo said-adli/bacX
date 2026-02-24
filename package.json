@@ -23,6 +23,7 @@
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-switch": "^1.2.6",
     "@react-hook/media-query": "^1.1.1",
     "@sentry/nextjs": "^10.32.1",
     "@supabase/ssr": "^0.8.0",
