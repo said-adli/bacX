@@ -7,7 +7,7 @@ async function runMigration() {
 
     try {
         await client.connect();
-        const sql = fs.readFileSync('supabase/migrations/20260221145000_add_null_checks_to_rpcs.sql', 'utf8');
+        const sql = fs.readFileSync('supabase/migrations/20260224231900_fix_coupon_leak.sql', 'utf8');
         await client.query(sql);
         console.log("Migration executed successfully.");
     } catch (err) {

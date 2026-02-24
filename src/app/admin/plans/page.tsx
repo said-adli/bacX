@@ -5,12 +5,15 @@ import { Plus, Edit2, Trash2, CheckCircle, Package } from "lucide-react";
 import { getAdminPlans, deletePlan, SubscriptionPlan } from "@/actions/admin-plans";
 import { toast } from "sonner";
 import { PlanForm } from "@/components/admin/plans/PlanForm";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/AlertDialog";
 
 export default function PlansPage() {
     const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
+    const [planToDelete, setPlanToDelete] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchPlans = async () => {
         try {
@@ -27,15 +30,18 @@ export default function PlansPage() {
         fetchPlans();
     }, []);
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this plan? This action cannot be undone if users are linked to it.")) return;
-
+    const handleDelete = async () => {
+        if (!planToDelete) return;
+        setIsDeleting(true);
         try {
-            await deletePlan(id);
+            await deletePlan(planToDelete);
             toast.success("Plan deleted successfully");
             fetchPlans();
         } catch {
             toast.error("Failed to delete plan");
+        } finally {
+            setIsDeleting(false);
+            setPlanToDelete(null);
         }
     };
 
@@ -125,7 +131,7 @@ export default function PlansPage() {
                                     Edit
                                 </button>
                                 <button
-                                    onClick={() => handleDelete(plan.id)}
+                                    onClick={() => setPlanToDelete(plan.id)}
                                     className="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors"
                                     title="Delete Plan"
                                 >
@@ -160,6 +166,23 @@ export default function PlansPage() {
                     </div>
                 </div>
             )}
+
+            <AlertDialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Plan?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this subscription plan? This action cannot be undone if users are linked to it.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting} onClick={() => setPlanToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction disabled={isDeleting} onClick={handleDelete} className="bg-red-600 hover:bg-red-500 text-white">
+                            {isDeleting ? "Deleting..." : "Delete Plan"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

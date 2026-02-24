@@ -11,6 +11,7 @@ import { Video, Radio, FileText, ArrowLeft, Trash2, Save, Lock as LockIcon, X, L
 import { ResourceUploader, ResourceFile } from "@/components/admin/ResourceUploader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/AlertDialog";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 
 const lessonSchema = z.object({
     subject_id: z.string().min(1, "Subject is required"),
@@ -192,25 +193,44 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                     <div className="grid grid-cols-2 gap-4 pb-4 border-b border-white/5">
                         <div>
                             <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Select Subject</label>
-                            <select
-                                {...form.register("subject_id")}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
+                            <Select
+                                value={watchSubjectId || undefined}
+                                onValueChange={(val) => {
+                                    form.setValue("subject_id", val);
+                                    form.setValue("unit_id", ""); // Reset unit when subject changes
+                                }}
                             >
-                                <option value="">-- Choose Subject --</option>
-                                {trees.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                            </select>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="-- Choose Subject --" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        {trees.map(t => (
+                                            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                                        ))}
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
                             {form.formState.errors.subject_id && <span className="text-xs text-red-500 mt-1">{form.formState.errors.subject_id.message}</span>}
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Select Unit</label>
-                            <select
-                                {...form.register("unit_id")}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
+                            <Select
                                 disabled={!watchSubjectId}
+                                value={form.watch("unit_id") || undefined}
+                                onValueChange={(val) => form.setValue("unit_id", val)}
                             >
-                                <option value="">-- Choose Unit --</option>
-                                {activeUnits.map(u => <option key={u.id} value={u.id}>{u.title}</option>)}
-                            </select>
+                                <SelectTrigger className={!watchSubjectId ? "opacity-50" : ""}>
+                                    <SelectValue placeholder="-- Choose Unit --" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        {activeUnits.map(u => (
+                                            <SelectItem key={u.id} value={u.id}>{u.title}</SelectItem>
+                                        ))}
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
                             {form.formState.errors.unit_id && <span className="text-xs text-red-500 mt-1">{form.formState.errors.unit_id.message}</span>}
                         </div>
                     </div>
@@ -291,17 +311,29 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                                         </button>
                                     )}
                                 </div>
-                                <select
-                                    {...form.register("required_plan_id")}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
+                                <Select
+                                    value={form.watch("required_plan_id") || "public"}
+                                    onValueChange={(val) => form.setValue("required_plan_id", val === "public" ? "" : val)}
                                 >
-                                    <option value="">Public / Free</option>
-                                    {plans.map(plan => (
-                                        <option key={plan.id} value={plan.id}>
-                                            {plan.name} ({plan.price}DA)
-                                        </option>
-                                    ))}
-                                </select>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Public / Free" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectItem value="public">Public / Free</SelectItem>
+                                            {plans.map(plan => (
+                                                <SelectItem key={plan.id} value={plan.id}>
+                                                    <div className="flex justify-between items-center w-full min-w-[200px] pr-4">
+                                                        <span className="font-bold">{plan.name}</span>
+                                                        <span className="text-blue-400 text-xs bg-blue-500/10 px-2 py-0.5 rounded-full ml-4">
+                                                            {plan.price.toLocaleString()} DA
+                                                        </span>
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
                                 <p className="text-[10px] text-zinc-500 mt-2">
                                     Only students with this specific active subscription can view this content.
                                 </p>

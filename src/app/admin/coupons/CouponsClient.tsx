@@ -3,11 +3,38 @@
 import { useState } from "react";
 import { Coupon, createCoupon, deleteCoupon } from "@/actions/coupons";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { Plus, Trash2, Tag, Calendar, Users, Percent, DollarSign, Loader2 } from "lucide-react";
+import { Plus, Trash2, Tag, Calendar, Users, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/Dialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { StatusToggle } from "@/components/admin/shared/StatusToggle";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/AlertDialog";
+
+const couponSchema = z.object({
+    code: z.string().min(3, "Code must be at least 3 characters").max(20, "Code too long").transform(val => val.trim().toUpperCase()),
+    discount_type: z.enum(["percent", "fixed"]),
+    value: z.number().min(0, "Value cannot be negative"),
+    max_uses: z.number().min(1, "Max uses must be at least 1"),
+    expires_at: z.string().nullable(),
+    is_active: z.boolean(),
+    is_lifetime: z.boolean().optional()
+}).refine(data => {
+    if (data.expires_at) {
+        const date = new Date(data.expires_at);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Start of today
+        return date >= today;
+    }
+    return true;
+}, {
+    message: "Expiry date cannot be in the past",
+    path: ["expires_at"]
+});
+
+type CouponFormValues = z.infer<typeof couponSchema>;
 
 interface CouponsClientProps {
     initialCoupons: Coupon[];
@@ -16,48 +43,44 @@ interface CouponsClientProps {
 export function CouponsClient({ initialCoupons }: CouponsClientProps) {
     const router = useRouter();
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [isCreating, setIsCreating] = useState(false);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const [couponToDelete, setCouponToDelete] = useState<string | null>(null);
 
-    // Form State
-    const [formData, setFormData] = useState<Partial<Coupon>>({
-        code: "",
-        discount_type: "percent",
-        value: 0,
-        max_uses: 100,
-        expires_at: null,
-        is_active: true
+    const form = useForm<CouponFormValues>({
+        resolver: zodResolver(couponSchema),
+        defaultValues: {
+            code: "",
+            discount_type: "percent",
+            value: 0,
+            max_uses: 100,
+            expires_at: null,
+            is_active: true,
+            is_lifetime: false
+        }
     });
 
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsCreating(true);
+    const onSubmit = async (values: CouponFormValues) => {
         try {
-            await createCoupon(formData);
+            // Need to map values to Partial<Coupon> to match action 
+            await createCoupon({
+                ...values,
+                expires_at: values.expires_at ? new Date(values.expires_at).toISOString() : null
+            });
             toast.success("تم إنشاء القسيمة بنجاح");
             setIsCreateOpen(false);
-            setFormData({
-                code: "",
-                discount_type: "percent",
-                value: 0,
-                max_uses: 100,
-                expires_at: null,
-                is_active: true
-            });
+            form.reset();
             router.refresh();
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             toast.error("فشل إنشاء القسيمة: " + errorMessage);
-        } finally {
-            setIsCreating(false);
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("هل أنت متأكد من حذف هذه القسيمة؟")) return;
-        setIsDeleting(id);
+    const handleDelete = async () => {
+        if (!couponToDelete) return;
+        setIsDeleting(couponToDelete);
         try {
-            await deleteCoupon(id);
+            await deleteCoupon(couponToDelete);
             toast.success("تم حذف القسيمة");
             router.refresh();
         } catch (error: unknown) {
@@ -65,14 +88,20 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
             toast.error("فشل الحذف: " + errorMessage);
         } finally {
             setIsDeleting(null);
+            setCouponToDelete(null);
         }
+    };
+
+    const handleOpenChange = (open: boolean) => {
+        setIsCreateOpen(open);
+        if (!open) form.reset();
     };
 
     return (
         <div className="space-y-6">
             {/* Toolbar */}
             <div className="flex justify-end">
-                <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                <Dialog open={isCreateOpen} onOpenChange={handleOpenChange}>
                     <DialogTrigger asChild>
                         <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-colors font-bold">
                             <Plus size={18} />
@@ -83,40 +112,38 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
                         <DialogHeader>
                             <DialogTitle>إضافة قسيمة جديدة</DialogTitle>
                         </DialogHeader>
-                        <form onSubmit={handleCreate} className="space-y-4 mt-4">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
                             <div>
                                 <label className="block text-xs font-bold text-zinc-400 mb-1">الكود</label>
                                 <input
-                                    required
                                     type="text"
+                                    {...form.register("code")}
                                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/90 focus:outline-none focus:border-blue-500 uppercase font-mono"
                                     placeholder="SUMMER2026"
-                                    value={formData.code}
-                                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                                 />
+                                {form.formState.errors.code && <span className="text-xs text-red-500">{form.formState.errors.code.message}</span>}
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-zinc-400 mb-1">نوع الخصم</label>
                                     <select
+                                        {...form.register("discount_type")}
                                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/90 focus:outline-none focus:border-blue-500"
-                                        value={formData.discount_type}
-                                        onChange={(e) => setFormData({ ...formData, discount_type: e.target.value as 'percent' | 'fixed' })}
                                     >
                                         <option value="percent">نسبة مئوية (%)</option>
                                         <option value="fixed">مبلغ ثابت (DA)</option>
                                     </select>
+                                    {form.formState.errors.discount_type && <span className="text-xs text-red-500">{form.formState.errors.discount_type.message}</span>}
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-zinc-400 mb-1">القيمة</label>
                                     <input
-                                        required
                                         type="number"
+                                        {...form.register("value", { valueAsNumber: true })}
                                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/90 focus:outline-none focus:border-blue-500"
-                                        value={formData.value}
-                                        onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
                                     />
+                                    {form.formState.errors.value && <span className="text-xs text-red-500">{form.formState.errors.value.message}</span>}
                                 </div>
                             </div>
 
@@ -125,18 +152,19 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
                                     <label className="block text-xs font-bold text-zinc-400 mb-1">الحد الأقصى للاستخدام</label>
                                     <input
                                         type="number"
+                                        {...form.register("max_uses", { valueAsNumber: true })}
                                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/90 focus:outline-none focus:border-blue-500"
-                                        value={formData.max_uses}
-                                        onChange={(e) => setFormData({ ...formData, max_uses: Number(e.target.value) })}
                                     />
+                                    {form.formState.errors.max_uses && <span className="text-xs text-red-500">{form.formState.errors.max_uses.message}</span>}
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-zinc-400 mb-1">تاريخ الانتهاء (اختياري)</label>
                                     <input
                                         type="date"
+                                        {...form.register("expires_at")}
                                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white/90 focus:outline-none focus:border-blue-500 icon-white"
-                                        onChange={(e) => setFormData({ ...formData, expires_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
                                     />
+                                    {form.formState.errors.expires_at && <span className="text-xs text-red-500">{form.formState.errors.expires_at.message}</span>}
                                 </div>
                             </div>
 
@@ -144,22 +172,20 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
                                 <input
                                     type="checkbox"
                                     id="is_lifetime"
+                                    {...form.register("is_lifetime")}
                                     className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                    checked={formData.is_lifetime || false}
-                                    onChange={(e) => setFormData({ ...formData, is_lifetime: e.target.checked })}
                                 />
                                 <label htmlFor="is_lifetime" className="text-sm font-bold text-white cursor-pointer select-none">
                                     دخول مدى الحياة (Lifetime Access)
                                 </label>
                             </div>
 
-
                             <button
                                 type="submit"
-                                disabled={isCreating}
+                                disabled={form.formState.isSubmitting}
                                 className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
                             >
-                                {isCreating && <Loader2 className="w-4 h-4 animate-spin" />}
+                                {form.formState.isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                                 إنشاء القسيمة
                             </button>
                         </form>
@@ -171,7 +197,6 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {initialCoupons.map((coupon) => (
                     <GlassCard key={coupon.id} className="p-5 flex flex-col justify-between group relative overflow-hidden">
-                        {/* Status Stripe - Kept for quick visual, though toggle also shows status */}
                         <div className={`absolute top-0 left-0 w-1 h-full ${coupon.is_active ? 'bg-emerald-500' : 'bg-red-500/50'}`} />
 
                         <div>
@@ -192,8 +217,8 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
                                 </div>
                                 <div className="flex flex-col gap-2 items-end">
                                     <button
-                                        onClick={() => handleDelete(coupon.id)}
-                                        disabled={!!isDeleting}
+                                        onClick={() => setCouponToDelete(coupon.id)}
+                                        disabled={isDeleting === coupon.id}
                                         className="p-2 hover:bg-red-500/10 text-zinc-500 hover:text-red-400 rounded-lg transition-colors"
                                     >
                                         {isDeleting === coupon.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 size={16} />}
@@ -236,6 +261,25 @@ export function CouponsClient({ initialCoupons }: CouponsClientProps) {
                     </div>
                 )}
             </div>
+
+            {/* Global Delete Modal */}
+            <AlertDialog open={!!couponToDelete} onOpenChange={(open) => !open && setCouponToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>حذف القسيمة؟</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            هل أنت متأكد من حذف هذه القسيمة؟ لا يمكن التراجع عن هذا الإجراء.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setCouponToDelete(null)}>إلغاء</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-500 text-white">
+                            تأكيد الحذف
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
+
