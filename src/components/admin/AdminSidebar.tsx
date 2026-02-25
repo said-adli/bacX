@@ -19,7 +19,8 @@ import {
     Package,
     ClipboardList,
     Megaphone,
-    MonitorSmartphone
+    MonitorSmartphone,
+    Calendar
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { createClient } from "@/utils/supabase/client";
@@ -40,6 +41,7 @@ export function AdminSidebar() {
         { name: "باقات الاشتراك", href: "/admin/plans", icon: Package },
         { name: "قسائم التخفيض", href: "/admin/coupons", icon: Ticket },
         { name: "البث المباشر", href: "/admin/live", icon: Radio },
+        { name: "جدول المواعيد", href: "/admin/schedule", icon: Calendar },
         { name: "الإعلانات", href: "/admin/announcements", icon: Megaphone },
         { name: "التحديثات", href: "/admin/updates", icon: Sparkles },
         { name: "السجلات", href: "/admin/logs", icon: ShieldAlert },

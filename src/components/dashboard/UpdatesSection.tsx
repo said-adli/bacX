@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { AnnouncementDTO } from "@/services/dashboard.service";
+import { AnnouncementDTO, ScheduleDTO } from "@/services/dashboard.service";
 import { Calendar, Bell, ChevronRight, X, Clock } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { format } from "date-fns";
@@ -13,9 +13,10 @@ import { toast } from "sonner";
 
 interface UpdatesSectionProps {
     announcements: AnnouncementDTO[];
+    schedules?: ScheduleDTO[];
 }
 
-export default function UpdatesSection({ announcements }: UpdatesSectionProps) {
+export default function UpdatesSection({ announcements, schedules = [] }: UpdatesSectionProps) {
     const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementDTO | null>(null);
     const router = useRouter();
     const supabase = createClient();
@@ -62,14 +63,52 @@ export default function UpdatesSection({ announcements }: UpdatesSectionProps) {
                     </div>
                 </div>
 
-                {/* Content Placeholder */}
-                <div className="p-8 flex flex-col items-center justify-center text-center h-[240px]">
-                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
-                        <Clock className="w-8 h-8 text-white/30" />
-                    </div>
-                    <p className="text-white/40 text-sm max-w-[200px] leading-relaxed">
-                        سيتم نشر جدول الحصص المباشرة والاختبارات الأسبوعية قريباً.
-                    </p>
+                {/* List */}
+                <div className="flex flex-col h-[260px] overflow-y-auto custom-scrollbar">
+                    {schedules.length === 0 ? (
+                        <div className="p-8 flex flex-col items-center justify-center text-center h-full">
+                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
+                                <Clock className="w-8 h-8 text-white/30" />
+                            </div>
+                            <p className="text-white/40 text-sm max-w-[200px] leading-relaxed">
+                                لا توجد مواعيد مبرمجة حالياً. سيتم نشر جدول الحصص المباشرة قريباً.
+                            </p>
+                        </div>
+                    ) : (
+                        schedules.map((item, idx) => (
+                            <div
+                                key={item.id}
+                                className={`w-full text-right p-4 hover:bg-white/5 transition-colors flex items-start gap-4 group ${idx !== schedules.length - 1 ? 'border-b border-white/5' : ''}`}
+                            >
+                                {/* Date Box */}
+                                <div className="flex flex-col items-center justify-center min-w-[50px] p-2 rounded-lg bg-white/5 border border-white/5 group-hover:border-purple-500/20 text-center transition-colors">
+                                    <span className="text-xs text-white/40 font-medium">
+                                        {format(new Date(item.event_date), 'MMM', { locale: arMA })}
+                                    </span>
+                                    <span className="text-lg font-bold text-white group-hover:text-purple-400 transition-colors">
+                                        {format(new Date(item.event_date), 'dd')}
+                                    </span>
+                                </div>
+
+                                {/* Content */}
+                                <div className="flex-1 mt-1">
+                                    <div className="flex justify-between items-start mb-1 gap-2">
+                                        <h4 className="text-sm font-bold text-white group-hover:text-purple-400 transition-colors line-clamp-1">
+                                            {item.title}
+                                        </h4>
+                                        <span className="text-xs bg-white/10 px-2 py-0.5 rounded text-white/60 font-mono whitespace-nowrap">
+                                            {format(new Date(item.event_date), 'HH:mm')}
+                                        </span>
+                                    </div>
+                                    {item.description && (
+                                        <p className="text-xs text-white/50 line-clamp-1 leading-relaxed">
+                                            {item.description}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </GlassCard>
 

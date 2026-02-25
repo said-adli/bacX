@@ -109,3 +109,35 @@ export async function getDashboardAnnouncements(): Promise<AnnouncementDTO[]> {
 // We can remove it to enforce the new pattern.
 // export async function getDashboardView... REMOVED
 
+export interface ScheduleDTO {
+    id: string;
+    title: string;
+    description: string | null;
+    event_date: Date;
+    type: string;
+}
+
+export async function getDashboardSchedules(): Promise<ScheduleDTO[]> {
+    const { createClient } = await import("@/utils/supabase/server");
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from('schedules')
+        .select('*')
+        .gte('event_date', new Date().toISOString())
+        .order('event_date', { ascending: true })
+        .limit(5);
+
+    if (error) {
+        console.error("Error fetching schedules:", error);
+        return [];
+    }
+
+    return (data || []).map((s) => ({
+        id: s.id,
+        title: s.title,
+        description: s.description,
+        event_date: new Date(s.event_date),
+        type: s.type
+    }));
+}
