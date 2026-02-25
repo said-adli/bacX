@@ -94,6 +94,6 @@ export async function signupAction(prevState: SignupState, formData: FormData): 
     }
 
     revalidatePath('/', 'layout');
-    redirect('/login?message=Account created successfully');
+    redirect(`/verify-otp?email=${encodeURIComponent(email)}&type=signup`);
 }
 

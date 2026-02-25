@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 interface AuthState { error?: string; success?: string }
 
@@ -18,13 +19,11 @@ export async function forgotPasswordAction(prevState: AuthState | null, formData
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || origin || '';
     const redirectUrl = `${baseUrl}/update-password`;
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl,
-    });
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
 
     if (error) {
         return { error: error.message, success: "" };
     }
 
-    return { success: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني", error: "" };
+    redirect(`/verify-otp?email=${encodeURIComponent(email)}&type=recovery`);
 }
