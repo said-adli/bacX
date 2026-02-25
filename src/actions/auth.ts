@@ -35,10 +35,9 @@ export async function verifyOtpAction(prevState: VerifyOtpState | null, formData
         return { error: "رمز التحقق غير صحيح أو منتهي الصلاحية" };
     }
 
-    // Redirect based on type
-    if (type === "signup") {
-        redirect("/dashboard");
-    } else if (type === "recovery") {
+    // Since we want to show a toast on success, we don't redirect on the server for signup.
+    // Instead we return success, and the client will handle the toast and redirect.
+    if (type === "recovery") {
         redirect("/update-password");
     }
 

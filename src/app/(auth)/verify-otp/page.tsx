@@ -18,6 +18,16 @@ export default function VerifyOtpPage() {
     const [cooldown, setCooldown] = useState(0);
     const [isResending, setIsResending] = useState(false);
 
+    // Handle Signup Success
+    useEffect(() => {
+        if (state?.success && type === "signup") {
+            toast.success('تم تفعيل حسابك بنجاح! مرحباً بك في Brainy');
+            setTimeout(() => {
+                window.location.href = "/dashboard";
+            }, 1000);
+        }
+    }, [state, type]);
+
     useEffect(() => {
         let timer: NodeJS.Timeout;
         if (cooldown > 0) {
@@ -120,7 +130,7 @@ export default function VerifyOtpPage() {
 
                     <div className="text-center mb-8">
                         <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight">
-                            التحقق من الحساب
+                            {type === 'signup' ? 'تفعيل الحساب' : 'استعادة كلمة المرور'}
                         </h2>
                         <p className="text-white/70 text-sm leading-relaxed mt-2 mb-4">
                             {type === "signup"
