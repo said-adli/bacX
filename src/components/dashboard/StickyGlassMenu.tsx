@@ -46,11 +46,13 @@ const StickyGlassMenuComponent = function StickyGlassMenu() {
         setIsLoggingOut(true);
 
         try {
-            await logout();
-            // Force reload to clear all states/cache
-            window.location.href = '/';
+            const supabase = await import("@/utils/supabase/client").then(mod => mod.createClient());
+            await supabase.auth.signOut();
+            router.refresh();
+            router.push('/login');
         } catch (error) {
             console.error("Logout failed", error);
+        } finally {
             setIsLoggingOut(false);
         }
     };
