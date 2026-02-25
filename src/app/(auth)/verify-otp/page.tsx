@@ -95,7 +95,7 @@ export default function VerifyOtpPage() {
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px]"></div>
                 <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-[100px]"></div>
 
-                <div className="relative z-10 text-center px-12">
+                <div className="relative z-10 text-center px-8 sm:px-12">
                     <h1 className="text-4xl xl:text-5xl font-bold text-white mb-6 leading-tight">
                         مرحباً بك في منصتنا التعليمية
                     </h1>
@@ -109,7 +109,7 @@ export default function VerifyOtpPage() {
             <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
                 <div className="w-full max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl p-8 sm:p-10">
                     <Link href="/" className="block text-center flex justify-center">
-                        <img src="/logo.png" alt="Brainy" className="h-16 mb-8 object-contain" />
+                        <img src="/images/logo.png" alt="Brainy" className="h-12 mb-8 object-contain" />
                     </Link>
 
                     <div className="text-center mb-8">
@@ -139,7 +139,7 @@ export default function VerifyOtpPage() {
                         <input type="hidden" name="token" value={combinedOtp} />
 
                         {/* OTP Inputs */}
-                        <div className="flex justify-between gap-2 sm:gap-4 w-full" dir="ltr">
+                        <div className="grid grid-cols-6 gap-2 sm:gap-3 w-full" dir="ltr">
                             {otp.map((digit, index) => (
                                 <input
                                     key={index}
@@ -152,7 +152,7 @@ export default function VerifyOtpPage() {
                                     value={digit}
                                     onChange={(e) => handleChange(index, e.target.value)}
                                     onKeyDown={(e) => handleKeyDown(index, e)}
-                                    className="w-12 h-14 sm:w-14 sm:h-16 text-2xl font-bold text-center text-white bg-white/10 border-2 border-white/20 rounded-xl focus:border-blue-500 focus:bg-white/20 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
+                                    className="w-full max-w-[3.5rem] h-14 sm:h-16 text-2xl font-bold text-center text-white bg-white/10 border-2 border-white/20 rounded-xl focus:border-blue-500 focus:bg-white/20 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
                                 />
                             ))}
                         </div>
