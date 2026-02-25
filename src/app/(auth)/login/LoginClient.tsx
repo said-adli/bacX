@@ -7,23 +7,7 @@ import { toast } from "sonner";
 import { loginAction } from "./actions";
 import { useState, useEffect } from "react";
 
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <button
-            type="submit"
-            disabled={pending}
-            className="w-full h-11 bg-gradient-to-r from-blue-600 via-blue-500 to-purple-600 hover:from-blue-500 hover:via-blue-400 hover:to-purple-500 text-white font-semibold rounded-xl transition-all duration-300 hover:shadow-[0_0_30px_rgba(99,102,241,0.4)] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-            {pending ? (
-                <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>جاري الدخول...</span>
-                </>
-            ) : "تسجيل الدخول"}
-        </button>
-    );
-}
+import { SmartButton } from "@/components/ui/SmartButton";
 
 export default function LoginClient() {
     const [state, formAction] = useFormState(loginAction, { error: "" });
@@ -102,7 +86,7 @@ export default function LoginClient() {
                     </div>
                 </div>
 
-                <SubmitButton />
+                <SmartButton pendingText="جاري الدخول...">تسجيل الدخول</SmartButton>
             </form>
 
             {/* Switch Link */}

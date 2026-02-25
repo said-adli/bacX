@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { verifyOtpAction, resendOtpAction } from "@/actions/auth";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
-import { SubmitButton } from "@/components/ui/SubmitButton";
+import { SmartButton } from "@/components/ui/SmartButton";
 
 interface VerifyOtpFormProps {
     email: string;
@@ -165,13 +165,13 @@ export function VerifyOtpForm({ email, type }: VerifyOtpFormProps) {
                 </div>
 
                 <div className="pt-2">
-                    <SubmitButton
+                    <SmartButton
                         disabled={!isComplete}
                         pendingText="جاري التحقق..."
                         className="w-full h-12 sm:h-14 !text-base sm:!text-lg font-bold !rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] border-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden"
                     >
                         تأكيد الرمز
-                    </SubmitButton>
+                    </SmartButton>
                 </div>
 
                 <div className="text-center mt-6">

@@ -186,6 +186,19 @@
 
 @layer utilities {
 
+  /* Viewport Stability Override */
+  .h-screen {
+    height: 100vh;
+    /* Fallback */
+    height: 100dvh !important;
+  }
+
+  .min-h-screen {
+    min-height: 100vh;
+    /* Fallback */
+    min-height: 100dvh !important;
+  }
+
   /* Text Utilities */
   .text-primary {
     color: var(--primary);
@@ -210,15 +223,17 @@
   /* Glass Panel — Base */
   .glass-panel {
     background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(8px); /* Lighter on mobile */
+    backdrop-filter: blur(8px);
+    /* Lighter on mobile */
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02), 0 4px 30px rgba(0, 0, 0, 0.5);
   }
 
-  /* Glass Card — With Hover Effects */
+  /* Glass Card — Adaptive Architecture (Solid Mobile, Glass Desktop) */
   .glass-card {
-    background: rgba(21, 27, 43, 0.95); /* #151b2b/95 */
+    background: rgba(21, 27, 43, 0.95);
+    /* #151b2b/95 solid fallback for mobile battery life */
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -231,13 +246,15 @@
   /* Desktop Optimizations (Heavy Blur) */
   @media (min-width: 768px) {
     .glass-panel {
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
+
     .glass-card {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px);
+      /* backdrop-blur-md equivalent */
+      -webkit-backdrop-filter: blur(12px);
     }
   }
 
@@ -246,15 +263,29 @@
     background: rgba(10, 10, 10, 0.8) !important;
     backdrop-filter: blur(8px) !important;
     -webkit-backdrop-filter: blur(8px) !important;
-    border: 1px solid rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
   }
 
-  .glass-card:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.25);
-    border-top-color: rgba(255, 255, 255, 0.5);
-    box-shadow: var(--shadow-glow), inset 0 0 30px rgba(255, 255, 255, 0.05);
-    transform: translateY(-4px);
+  /* Desktop hover state keeps glass base */
+  @media (min-width: 768px) {
+    .glass-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.25);
+      border-top-color: rgba(255, 255, 255, 0.5);
+      box-shadow: var(--shadow-glow), inset 0 0 30px rgba(255, 255, 255, 0.05);
+      transform: translateY(-4px);
+    }
+  }
+
+  /* Mobile hover state keeps solid base */
+  @media (max-width: 767px) {
+    .glass-card:hover {
+      background: rgba(25, 32, 50, 0.95);
+      border-color: rgba(255, 255, 255, 0.25);
+      border-top-color: rgba(255, 255, 255, 0.5);
+      box-shadow: var(--shadow-glow), inset 0 0 30px rgba(255, 255, 255, 0.05);
+      transform: translateY(-4px);
+    }
   }
 
   /* Glass Navigation */

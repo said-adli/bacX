@@ -1,9 +1,6 @@
-"use client";
-
 import { SidebarProvider } from "@/context/SidebarContext";
-import dynamic from "next/dynamic";
-const DashboardShell = dynamic(() => import("@/components/dashboard/DashboardShell"), { ssr: false });
-import { usePageVisibility } from "@/hooks/usePageVisibility";
+import DashboardShell from "@/components/dashboard/DashboardShell";
+import { DashboardBackground } from "@/components/dashboard/DashboardBackground";
 
 // ============================================================================
 // BRAINY DASHBOARD LAYOUT V3 - CALM GLASS EDITION (With Collapsible Sidebar)
@@ -14,29 +11,14 @@ import { PlayerProvider } from "@/context/PlayerContext";
 import { RealtimeSystemStatus } from "@/components/dashboard/RealtimeSystemStatus";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-    const isVisible = usePageVisibility();
-
     return (
         <SidebarProvider>
             <NotificationProvider>
                 <PlayerProvider>
                     <RealtimeSystemStatus />
-                    {/* Dark Luxury Mesh Gradient Background (Kept global here) */}
-                    <div className={`fixed inset-0 z-0 pointer-events-none ${!isVisible ? "animations-paused" : ""}`}>
-                        {/* Base Deep Charcoal */}
-                        <div className="absolute inset-0 bg-[#020617]" />
 
-                        {/* Ambient Glowing Blobs - GPU ACCELERATED (Desktop Only) */}
-                        <div className="hidden md:block absolute top-[-20%] left-[-20%] w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[10px] mix-blend-screen animate-[ambient-motion_20s_infinite] gpu-accelerated" />
-                        <div className="hidden md:block absolute bottom-[-20%] right-[-20%] w-[800px] h-[800px] bg-indigo-600/10 rounded-full blur-[10px] mix-blend-screen animate-[ambient-motion_25s_infinite_reverse] gpu-accelerated" />
-                        <div className="hidden md:block absolute top-[40%] left-[30%] w-[600px] h-[600px] bg-purple-900/10 rounded-full blur-[10px] mix-blend-screen animate-[pulse_10s_infinite] gpu-accelerated" />
-
-                        {/* Mobile Optimized Static Gradient (No Blur/Animation) */}
-                        <div className="block md:hidden absolute inset-0 -z-10 h-full w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#020617] via-[#0B0E14] to-black" />
-
-                        {/* Cinematic Grain Overlay */}
-                        <div className="absolute inset-0 film-grain z-10 opacity-30" />
-                    </div>
+                    {/* Dark Luxury Mesh Gradient Background (Extracted to Client Island) */}
+                    <DashboardBackground />
 
                     <DashboardShell>
                         {/* THE SOUL */}
@@ -47,8 +29,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         </div>
                         {children}
                     </DashboardShell>
-                </PlayerProvider>
-            </NotificationProvider>
-        </SidebarProvider>
+                </PlayerProvider >
+            </NotificationProvider >
+        </SidebarProvider >
     );
 }

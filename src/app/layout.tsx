@@ -6,7 +6,7 @@ import { Toaster } from "sonner";
 
 import { GlobalErrorBoundary as ErrorBoundary } from "@/components/GlobalErrorBoundary";
 
-export const dynamic = 'force-dynamic';
+// removed force-dynamic to enable Static-by-Default rendering
 
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic", "latin"],

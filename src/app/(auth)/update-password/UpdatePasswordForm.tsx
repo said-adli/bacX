@@ -5,7 +5,7 @@ import { Lock, AlertCircle } from "lucide-react";
 import { updatePasswordAction } from "./actions";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { SubmitButton } from "@/components/ui/SubmitButton";
+import { SmartButton } from "@/components/ui/SmartButton";
 
 export function UpdatePasswordForm() {
     const [state, formAction] = useFormState(updatePasswordAction, { error: "" });
@@ -54,12 +54,12 @@ export function UpdatePasswordForm() {
                 </div>
             </div>
 
-            <SubmitButton
+            <SmartButton
                 pendingText="جاري التحديث..."
                 className="w-full h-11 !rounded-xl"
             >
                 تحديث كلمة المرور
-            </SubmitButton>
+            </SmartButton>
         </form>
     );
 }

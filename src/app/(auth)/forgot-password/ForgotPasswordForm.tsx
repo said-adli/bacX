@@ -5,7 +5,7 @@ import { Mail, AlertCircle, CheckCircle } from "lucide-react";
 import { forgotPasswordAction } from "./actions";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { SubmitButton } from "@/components/ui/SubmitButton";
+import { SmartButton } from "@/components/ui/SmartButton";
 
 export function ForgotPasswordForm() {
     const [state, formAction] = useFormState(forgotPasswordAction, { error: "", success: "" });
@@ -56,12 +56,12 @@ export function ForgotPasswordForm() {
                         </div>
                     </div>
 
-                    <SubmitButton
+                    <SmartButton
                         pendingText="جاري الإرسال..."
                         className="w-full h-11 !rounded-xl"
                     >
                         إرسال رمز التحقق
-                    </SubmitButton>
+                    </SmartButton>
                 </form>
             )}
         </>

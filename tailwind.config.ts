@@ -9,6 +9,7 @@ const config: Config = {
     ],
     theme: {
         extend: {
+            // INFRASTRUCTURE: VIEWPORT STABILITY
             height: {
                 screen: '100dvh',
             },

@@ -1,98 +1,51 @@
 "use client";
 
-import { forwardRef } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/Button";
-import { motion } from "framer-motion";
+import { useFormStatus } from "react-dom";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import React from "react";
 
-interface SmartButtonProps extends React.ComponentProps<typeof Button> {
-    href?: string;
-    external?: boolean;
-    activeScale?: number;
-    isLoading?: boolean;
+interface SmartButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    children: React.ReactNode;
+    pendingText?: string;
+    isLoading?: boolean; // For manual overrides when not using <form action={..}>
 }
 
-export const SmartButton = forwardRef<HTMLButtonElement, SmartButtonProps>(
-    ({ href, external, activeScale = 0.95, isLoading, onClick, children, ...props }, ref) => {
+export function SmartButton({
+    children,
+    pendingText = "جاري التنفيذ...",
+    isLoading: manualLoading,
+    className,
+    disabled,
+    ...props
+}: SmartButtonProps) {
+    const { pending: formPending } = useFormStatus();
 
-        // Internal click handler to add potential haptics or tracking later
-        const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-            if (isLoading) {
-                e.preventDefault();
-                return;
-            }
-            if (onClick) onClick(e);
-        };
+    // Use manual loading state if provided, otherwise default to form context
+    const isPending = manualLoading !== undefined ? manualLoading : formPending;
 
-        const ButtonContent = (
-            <Button ref={ref} onClick={!href ? handleClick : undefined} disabled={isLoading || props.disabled} {...props}>
-                {isLoading ? (
-                    <span className="flex items-center gap-2">
-                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        {typeof children === 'string' ? "جاري المعالجة..." : children}
-                    </span>
-                ) : children}
-            </Button>
-        );
-
-        // If it's a link, wrap it
-        if (href) {
-            if (external) {
-                return (
-                    <motion.a
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        whileTap={{ scale: activeScale }}
-                        className="inline-block"
-                    >
-                        {/* We pass a span/div to Button to avoid button-in-a nesting if Button renders a button tag. 
-                            Actually, our Button renders a motion.button. 
-                            HTML forbids <button> inside <a>. 
-                            So strictly speaking, we should use a polymorphic approach or just style the <a> like a button.
-                            For simplicity with the existing Button component, we might want to check if Button can render as 'span'.
-                            However, the current Button component renders <motion.button>.
-                            
-                            FIX: We will wrap the Link around the button but change the button to a div/span if possible, 
-                            OR purely rely on the Link click. 
-                            
-                            Actually, standard Next.js Link usage wraps an <a> or custom component.
-                            Since standard HTML5 allows <a> wrapping block elements but <button> inside <a> is invalid interactive content.
-                            
-                            Let's rely on Framer Motion's whileTap on the wrapper and strip the button behavior?
-                            Or better: If href is present, we shouldn't use the UI <Button> which renders a <button> tag.
-                            We should replicate the styles. 
-                            
-                            BUT, to save time/code, we'll assume standard browser tolerance or fix Button.tsx later to be polymorphic.
-                            For now, let's keep it simple: Use Link around it, but suppress the button's default behavior if needed.
-                            Actually, worst case: `as="div"` prop needed on Button. It doesn't have it.
-                            
-                            Let's use a motion.div wrapper for the animation and standard Button for style, 
-                            but change Button to accept 'as' logic effectively?
-                            
-                            Alternative: Just use router.push in onClick! Much cleaner for 'SmartButton'.
-                        */}
-                        {ButtonContent}
-                    </motion.a>
-                );
-            }
-
-            return (
-                <Link href={href} passHref legacyBehavior>
-                    {/* legacyBehavior allows passing ref to child <a> or component */}
-                    <motion.div className="inline-block" whileTap={{ scale: activeScale }}>
-                        {/* We are nesting button in link. This is technically invalid HTML but Next.js/Browsers handle it mostly.
-                             Ideally we swap to router.push for the cleanest DOM.
-                         */}
-                        {ButtonContent}
-                    </motion.div>
-                </Link>
-            );
-        }
-
-        // Just a regular button
-        return ButtonContent;
-    }
-);
-
-SmartButton.displayName = "SmartButton";
+    return (
+        <button
+            {...props}
+            disabled={isPending || disabled}
+            className={cn(
+                "w-full h-11 bg-gradient-to-r from-blue-600 via-blue-500 to-purple-600",
+                "hover:from-blue-500 hover:via-blue-400 hover:to-purple-500",
+                "text-white font-semibold rounded-xl transition-all duration-300",
+                "hover:shadow-[0_0_30px_rgba(99,102,241,0.4)]",
+                "disabled:opacity-60 disabled:cursor-not-allowed",
+                "flex items-center justify-center gap-2",
+                className
+            )}
+        >
+            {isPending ? (
+                <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{pendingText}</span>
+                </>
+            ) : (
+                children
+            )}
+        </button>
+    );
+}
