@@ -70,6 +70,19 @@ export async function approveProfileChange(requestId: string) {
         return { error: "حدث خطأ أثناء تأكيد الموافقة" };
     }
 
+    // 🔔 Send Notification
+    try {
+        const { sendNotification } = await import('@/actions/notifications');
+        await sendNotification(
+            request.user_id,
+            "تمت الموافقة على تعديل الملف الشخصي",
+            "تم تحديث بيانات ملفك الشخصي بنجاح بناءً على طلبك.",
+            "success"
+        );
+    } catch (notifError) {
+        console.error("Failed to send profile approval notification:", notifError);
+    }
+
     revalidatePath("/admin/profile-requests");
     revalidatePath("/profile");
 
@@ -101,7 +114,7 @@ export async function rejectProfileChange(requestId: string, reason?: string) {
     // Fetch the change request to verify it exists and is pending
     const { data: request, error: fetchError } = await supabase
         .from("profile_change_requests")
-        .select("status")
+        .select("status, user_id")
         .eq("id", requestId)
         .single();
 
@@ -127,6 +140,19 @@ export async function rejectProfileChange(requestId: string, reason?: string) {
     if (rejectError) {
         console.error("Error rejecting request:", rejectError);
         return { error: "حدث خطأ أثناء رفض الطلب" };
+    }
+
+    // 🔔 Send Notification
+    try {
+        const { sendNotification } = await import('@/actions/notifications');
+        await sendNotification(
+            request.user_id,
+            "تم رفض تعديل الملف الشخصي",
+            `تم رفض طلب تعديل بياناتك: ${reason || 'يرجى مراجعة الدعم'}.`,
+            "warning"
+        );
+    } catch (notifError) {
+        console.error("Failed to send profile rejection notification:", notifError);
     }
 
     revalidatePath("/admin/profile-requests");

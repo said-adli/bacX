@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
     User, Mail, Phone, Calendar, Shield, CreditCard,
-    Clock, Activity, Eye, Ban, RotateCcw, AlertTriangle, CheckCircle
+    Clock, Activity, Eye, Ban, RotateCcw, AlertTriangle, CheckCircle, Bell, Send
 } from "lucide-react";
 import {
     toggleBanStudent,
@@ -13,6 +13,7 @@ import {
     extendSubscription,
     generateImpersonationLink
 } from "@/actions/admin-students";
+import { sendNotification, NotificationType } from "@/actions/notifications";
 
 interface Student {
     id: string;
@@ -58,6 +59,13 @@ interface StudentDetailProps {
 export default function StudentDetailClient({ student, payments, activityLogs, progress }: StudentDetailProps) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+
+    // Notification State
+    const [isNotifOpen, setIsNotifOpen] = useState(false);
+    const [notifTitle, setNotifTitle] = useState("");
+    const [notifMessage, setNotifMessage] = useState("");
+    const [notifType, setNotifType] = useState<NotificationType>("info");
+    const [isSendingNotif, setIsSendingNotif] = useState(false);
 
     // Identity Data
     const joinDate = new Date(student.created_at).toLocaleDateString(undefined, { dateStyle: 'long' });
@@ -117,6 +125,26 @@ export default function StudentDetailClient({ student, payments, activityLogs, p
         }
     };
 
+    const handleSendNotif = async () => {
+        if (!notifTitle.trim() || !notifMessage.trim()) {
+            toast.error("يرجى ملء جميع الحقول");
+            return;
+        }
+
+        setIsSendingNotif(true);
+        try {
+            await sendNotification(student.id, notifTitle, notifMessage, notifType);
+            toast.success("تم إرسال الإشعار بنجاح");
+            setIsNotifOpen(false);
+            setNotifTitle("");
+            setNotifMessage("");
+        } catch (err) {
+            toast.error("فشل إرسال الإشعار");
+        } finally {
+            setIsSendingNotif(false);
+        }
+    };
+
     return (
         <div className="container mx-auto max-w-7xl pb-20">
             {/* Header */}
@@ -139,6 +167,13 @@ export default function StudentDetailClient({ student, payments, activityLogs, p
 
                 <div className="flex gap-3">
                     <button
+                        onClick={() => setIsNotifOpen(true)}
+                        disabled={isLoading}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600/20 rounded-xl transition-all"
+                    >
+                        <Bell size={18} /> إرسال إشعار
+                    </button>
+                    <button
                         onClick={handleImpersonate}
                         disabled={isLoading}
                         className="flex items-center gap-2 px-4 py-2 bg-purple-600/10 text-purple-400 border border-purple-500/20 hover:bg-purple-600/20 rounded-xl transition-all"
@@ -154,6 +189,68 @@ export default function StudentDetailClient({ student, payments, activityLogs, p
                     </button>
                 </div>
             </div>
+
+            {/* Notification Modal */}
+            {isNotifOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                            <Bell className="text-blue-500" size={24} />
+                            إرسال إشعار مباشر
+                        </h2>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">نوع الإشعار</label>
+                                <select
+                                    value={notifType}
+                                    onChange={(e) => setNotifType(e.target.value as NotificationType)}
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
+                                >
+                                    <option value="info">معلومة (Info)</option>
+                                    <option value="success">نجاح (Success)</option>
+                                    <option value="warning">تحذير (Warning)</option>
+                                    <option value="live">بث مباشر (Live)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">العنوان</label>
+                                <input
+                                    value={notifTitle}
+                                    onChange={(e) => setNotifTitle(e.target.value)}
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
+                                    placeholder="مثال: تبليغ هام"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">الرسالة</label>
+                                <textarea
+                                    value={notifMessage}
+                                    onChange={(e) => setNotifMessage(e.target.value)}
+                                    rows={4}
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none resize-none"
+                                    placeholder="اكتب رسالتك هنا..."
+                                />
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button
+                                onClick={() => setIsNotifOpen(false)}
+                                disabled={isSendingNotif}
+                                className="px-4 py-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+                            >
+                                إلغاء
+                            </button>
+                            <button
+                                onClick={handleSendNotif}
+                                disabled={isSendingNotif}
+                                className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition-all disabled:opacity-50"
+                            >
+                                {isSendingNotif ? "جاري الإرسال..." : <><Send size={18} /> إرسال</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* LEFT COLUMN: Identity & Sub */}

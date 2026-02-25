@@ -24,7 +24,8 @@ const lessonSchema = z.object({
     is_free: z.boolean(),
     is_purchasable: z.boolean(),
     price: z.number().nullable().optional(),
-    scheduled_at: z.string().optional()
+    scheduled_at: z.string().optional(),
+    notify_subscribers: z.boolean().optional()
 });
 
 type LessonFormValues = z.infer<typeof lessonSchema>;
@@ -60,7 +61,8 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
             is_free: initialData?.is_free || false,
             is_purchasable: initialData?.is_purchasable || false,
             price: initialData?.price || null,
-            scheduled_at: "" // Set initial schedule safely?
+            scheduled_at: "", // Set initial schedule safely?
+            notify_subscribers: false
         }
     });
 
@@ -114,7 +116,8 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                 is_free: values.is_free,
                 is_purchasable: values.is_purchasable,
                 price: values.price,
-                scheduled_at: values.scheduled_at
+                scheduled_at: values.scheduled_at,
+                notify_subscribers: values.notify_subscribers,
             };
 
             const unpersistedResources = resources.filter(r => !r.id);
@@ -368,6 +371,16 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                                     <span className="text-sm font-medium text-zinc-300">تفعيل الشراء</span>
                                     {/* Hidden input to register with hook form */}
                                     <input type="hidden" {...form.register("is_purchasable")} />
+                                </div>
+                                <div className="flex items-center gap-3 ml-4">
+                                    <Switch
+                                        checked={form.watch("notify_subscribers") || false}
+                                        onCheckedChange={(checked) => form.setValue("notify_subscribers", checked)}
+                                        className="data-[state=checked]:bg-green-600"
+                                    />
+                                    <span className="text-sm font-medium text-zinc-300">إشعار المشتركين</span>
+                                    {/* Hidden input to register with hook form */}
+                                    <input type="hidden" {...form.register("notify_subscribers")} />
                                 </div>
 
                                 {watchPurchasable && (

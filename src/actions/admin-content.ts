@@ -153,7 +153,7 @@ export async function deleteUnit(id: string) {
 }
 
 // createLesson
-export async function createLesson(data: Partial<Lesson>, resources?: any[]) {
+export async function createLesson(data: Partial<Lesson> & { notify_subscribers?: boolean }, resources?: any[]) {
     await requireAdmin();
     const supabase = await createClient();
     try {
@@ -186,7 +186,7 @@ export async function createLesson(data: Partial<Lesson>, resources?: any[]) {
             .from('lessons')
             .insert({
                 title: data.title,
-                type: 'lesson',
+                type: data.type || 'video',
                 video_url: data.video_url,
                 required_plan_id: data.required_plan_id,
                 unit_id: data.unit_id,
@@ -227,7 +227,7 @@ export async function createLesson(data: Partial<Lesson>, resources?: any[]) {
             // If the user inputs a stream URL here, it goes into `lessons.video_url`.
             // We should probably NULL it out for the lesson insert if it's a live stream and relying on the live session?
             // "Sensitive stream data must ONLY reside in the live_sessions table".
-            // So, for Live Stream lessons, we should NOT save video_url in the lessons table.
+            // So, for Live Stream lessons, we should NOT store it in `lessons`.
 
             // Correction: I cannot easily change the `insert` call above without refactoring the whole function block 
             // since `newLesson` is already created.
@@ -266,6 +266,20 @@ export async function createLesson(data: Partial<Lesson>, resources?: any[]) {
             }));
             const { error: resError } = await supabase.from('lesson_resources').insert(mappedResources);
             if (resError) console.error("Resource insert error:", resError);
+        }
+
+        // 🔔 Send Notification if requested
+        if (data.notify_subscribers) {
+            try {
+                const { sendGlobalNotification } = await import('@/actions/notifications');
+                await sendGlobalNotification(
+                    "محتوى جديد متاح! 📚",
+                    `تم إضافة محتوى جديد: "${data.title}". تصفحه الآن!`,
+                    "info"
+                );
+            } catch (notifError) {
+                console.error("Failed to send global notification for new content:", notifError);
+            }
         }
 
         revalidateLessons(); // Invalidate Next.js cache

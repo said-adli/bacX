@@ -126,6 +126,19 @@ export async function approvePayment(requestId: string, userId: string, planId?:
         }
     }
 
+    // 🔔 Send Notification
+    try {
+        const { sendNotification } = await import('@/actions/notifications');
+        await sendNotification(
+            userId,
+            "تم قبول الدفع بنجاح",
+            "تم تفعيل اشتراكك/المحتوى الخاص بك. يمكنك الآن الاستمتاع بالدروس!",
+            "success"
+        );
+    } catch (notifError) {
+        console.error("Failed to send payment approval notification:", notifError);
+    }
+
     revalidatePath('/admin/payments');
 }
 
@@ -171,6 +184,19 @@ export async function rejectPayment(requestId: string, reason: string) {
     if (profileError) {
         console.error("Critical: Revocation failed", profileError);
         throw profileError;
+    }
+
+    // 🔔 Send Notification
+    try {
+        const { sendNotification } = await import('@/actions/notifications');
+        await sendNotification(
+            request.user_id,
+            "تم رفض عملية الدفع",
+            `السبب: ${reason}. يرجى مراجعة الإيصال أو التواصل مع الدعم.`,
+            "warning"
+        );
+    } catch (notifError) {
+        console.error("Failed to send payment rejection notification:", notifError);
     }
 
     revalidatePath('/admin/payments');

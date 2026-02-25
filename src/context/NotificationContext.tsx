@@ -146,11 +146,30 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const clearAll = () => {
-        // Technically this should probably mark all as read or just clear local view?
-        // Implementation said "setNotifications([])". 
-        // With SWR, we can mutate to empty array locally.
-        mutate([], { revalidate: false });
+    const clearAll = async () => {
+        if (!user) return;
+
+        // Optimistic update locally
+        mutate(
+            (currentData) => {
+                return currentData?.map(n => ({
+                    ...n,
+                    user_notifications: n.user_notifications?.length ? n.user_notifications : [{ id: 'temp-optimistic-id' }]
+                }));
+            },
+            { revalidate: false }
+        );
+
+        try {
+            const { markAllAsReadAction } = await import('@/actions/notifications');
+            await markAllAsReadAction(user.id);
+            // Sync with DB
+            mutate();
+        } catch (err) {
+            console.error("Failed to mark all as read:", err);
+            toast.error("حدث خطأ أثناء تحديث الإشعارات");
+            mutate(); // Revert
+        }
     };
 
     return (
