@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 export interface SignupState {
     error?: string;
     success?: boolean;
+    email?: string;
 }
 
 export async function signupAction(prevState: SignupState, formData: FormData): Promise<SignupState> {
@@ -94,6 +95,8 @@ export async function signupAction(prevState: SignupState, formData: FormData): 
     }
 
     revalidatePath('/', 'layout');
-    redirect(`/verify-otp?email=${encodeURIComponent(email)}&type=signup`);
+
+    // Do NOT redirect on the server. Return success + email so the client can show a toast first.
+    return { success: true, email };
 }
 

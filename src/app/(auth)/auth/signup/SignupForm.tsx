@@ -39,8 +39,11 @@ export default function SignupForm({ wilayas, majors }: SignupFormProps) {
     const [state, formAction] = useFormState(signupAction, initialState);
 
     useEffect(() => {
-        if (state?.success) {
-            toast.success("تم إنشاء الحساب بنجاح!");
+        if (state?.success && state?.email) {
+            toast.success("تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني");
+            setTimeout(() => {
+                window.location.href = `/verify-otp?email=${encodeURIComponent(state.email!)}&type=signup`;
+            }, 1500);
         } else if (state?.error) {
             toast.error(state.error);
         }
