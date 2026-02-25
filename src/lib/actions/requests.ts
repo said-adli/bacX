@@ -150,7 +150,8 @@ export async function handleRequest(
 
     // 2. Reject
     if (decision === "reject") {
-        const { error } = await supabase.from("profile_change_requests").update({
+        const adminClient = createAdminClient();
+        const { error } = await adminClient.from("profile_change_requests").update({
             status: "rejected",
             rejection_reason: adminNote,
             processed_by: user.id
@@ -164,15 +165,13 @@ export async function handleRequest(
     // 3. Approve
     if (decision === "approve") {
         const isDeletion = requestData.new_data?.request_type === "DELETE_ACCOUNT";
+        const adminClient = createAdminClient();
 
         if (isDeletion) {
             // DELETION LOGIC
-            const adminClient = createAdminClient();
             const targetUserId = requestData.user_id;
 
             // Purge related data
-            // We blindly try to delete from related tables. 
-            // If they don't exist, it might throw, but `profile_change_requests` is the master record now.
             await adminClient.from("payments").delete().eq("user_id", targetUserId);
 
             // Delete User
@@ -185,18 +184,27 @@ export async function handleRequest(
             const changes = requestData.new_data;
             const targetUserId = requestData.user_id;
 
-            const { error: updateError } = await supabase.from("profiles").update({
+            // Strict Error Handling: Update Profile via Admin Client to bypass RLS
+            const { error: updateError } = await adminClient.from("profiles").update({
                 ...changes,
                 updated_at: new Date().toISOString()
             }).eq("id", targetUserId);
 
-            if (updateError) return { error: "Failed to update profile" };
+            if (updateError) {
+                console.error("Profile Update Error (Admin):", updateError);
+                return { error: "Failed to update profile: " + updateError.message };
+            }
 
-            // Mark Approved
-            await supabase.from("profile_change_requests").update({
+            // Strict Error Handling: Mark Request Approved via Admin Client
+            const { error: requestUpdateError } = await adminClient.from("profile_change_requests").update({
                 status: "approved",
                 processed_by: user.id
             }).eq("id", requestId);
+
+            if (requestUpdateError) {
+                console.error("Request Status Update Error:", requestUpdateError);
+                return { error: "Profile updated, but failed to mark request as approved." };
+            }
 
             revalidatePath("/admin/requests");
             return { success: "Profile updated" };
