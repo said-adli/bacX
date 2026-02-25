@@ -50,14 +50,17 @@ export async function resendOtpAction(email: string, type: 'signup' | 'recovery'
         return { error: "الرجاء توفير جميع المعلومات المطلوبة" };
     }
 
+    console.log("Resending for:", { email, type });
+
     const supabase = await createClient();
 
     const { error } = await supabase.auth.resend({
-        type: type as any,
-        email,
+        type: (type === 'recovery' ? 'recovery' : 'signup') as any,
+        email: email,
     });
 
     if (error) {
+        console.error("Resend error:", error);
         return { error: error.message || "حدث خطأ أثناء إعادة إرسال الرمز" };
     }
 

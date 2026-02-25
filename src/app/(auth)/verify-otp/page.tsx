@@ -30,8 +30,14 @@ export default function VerifyOtpPage() {
 
     const handleResend = async () => {
         if (!email || !type) return;
+
+        console.log("Client Resend Triggered:", { email, type });
         setIsResending(true);
-        const res = await resendOtpAction(email, type);
+
+        // Ensure type correctly matches what Supabase expects
+        const resendType = type === 'recovery' ? 'recovery' : 'signup';
+        const res = await resendOtpAction(email, resendType);
+
         setIsResending(false);
         if (res?.error) {
             toast.error(res.error);
