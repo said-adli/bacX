@@ -34,7 +34,7 @@ export function HeroSlider({ slides }: { slides: HeroSlideData[] }) {
     const prevSlide = () => setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
 
     return (
-        <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl aspect-[16/9] sm:aspect-[21/9] lg:aspect-[24/9] bg-black/50 group">
+        <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl aspect-[4/5] md:aspect-[21/9] lg:aspect-[24/9] bg-black/50 group">
             <AnimatePresence mode="wait">
                 <motion.div
                     key={currentIndex}

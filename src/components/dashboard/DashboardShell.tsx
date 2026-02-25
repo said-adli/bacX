@@ -33,10 +33,6 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         <div
             className="relative min-h-screen text-white font-sans selection:bg-blue-500/30 bg-[#0B0E14] overflow-hidden"
             dir="rtl"
-            style={{
-                transform: "translateZ(0)",
-                backfaceVisibility: "hidden"
-            }}
         >
             <GlobalVideoPlayer />
 
@@ -60,7 +56,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             {/* Main Content Area - Animating Margin */}
             {/* Main Content Area - CSS Transition for Margin */}
             <main
-                className={`min-h-screen px-4 md:px-12 pb-32 md:pb-10 relative z-10 gpu-accelerated
+                className={`min-h-screen px-4 md:px-12 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-10 relative z-10 gpu-accelerated
                     transition-[margin] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
                     ${isMobile ? "mr-0" : (isCollapsed ? "mr-[90px]" : "mr-[288px]")}
                 `}

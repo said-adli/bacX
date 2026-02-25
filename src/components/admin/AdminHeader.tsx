@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, memo } from "react";
-import { Bell, Search, Radio, LogOut, User, ChevronDown } from "lucide-react";
+import { Bell, Search, Radio, LogOut, User, ChevronDown, Menu } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -61,11 +61,20 @@ function AdminHeaderComponent({ user }: { user: AdminUser | null }) {
     };
 
     return (
-        <header className="h-20 w-full border-b border-white/5 bg-black/10 backdrop-blur-md flex items-center justify-between px-8 z-40">
+        <header className="h-20 w-full border-b border-white/5 bg-black/10 backdrop-blur-md flex items-center justify-between px-4 md:px-8 z-40">
 
-            {/* Search */}
-            <div className="flex-1 max-w-xl">
-                <div className="relative group">
+            {/* Left Section: Mobile Menu Trigger + Search */}
+            <div className="flex items-center gap-3 flex-1 max-w-xl">
+                {/* Mobile Menu Trigger */}
+                <button
+                    onClick={() => window.dispatchEvent(new Event("openAdminSidebar"))}
+                    className="md:hidden p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                    aria-label="Open Sidebar"
+                >
+                    <Menu size={24} />
+                </button>
+
+                <div className="relative group w-full">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-blue-500 transition-colors" size={18} />
                     <input
                         type="text"

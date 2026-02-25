@@ -18,9 +18,9 @@ export default function MobileBottomNav() {
     ];
 
     return (
-        <div className="fixed bottom-4 left-4 right-4 z-[90] md:hidden">
+        <div className="fixed bottom-0 w-full z-50 md:hidden pb-[env(safe-area-inset-bottom)]">
             {/* Glass Container */}
-            <div className="bg-[#020617]/60 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl shadow-black/50 px-2 py-3 transform-gpu">
+            <div className="bg-[#020617]/80 backdrop-blur-2xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] px-4 py-3 transform-gpu relative">
                 <nav className="flex items-center justify-between">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href;
