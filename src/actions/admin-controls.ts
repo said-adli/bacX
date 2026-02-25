@@ -63,6 +63,35 @@ export async function deleteNotification(id: string) {
 
     revalidateAnnouncements();
     revalidatePath('/admin/controls');
+    revalidatePath('/dashboard');
+}
+
+export async function updateNotification(id: string, title: string, message: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
+    // Verify Admin role
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (profile?.role !== 'admin') throw new Error("Forbidden");
+
+    // Use Admin Client for writes
+    const supabaseAdmin = createAdminClient();
+
+    // UNIFIED: Update 'announcements'
+    const { error } = await supabaseAdmin
+        .from('announcements')
+        .update({
+            title,
+            content: message
+        })
+        .eq('id', id);
+
+    if (error) throw error;
+
+    revalidateAnnouncements();
+    revalidatePath('/admin/controls');
+    revalidatePath('/dashboard');
 }
 
 // SYSTEM TOGGLES (DB-Driven)

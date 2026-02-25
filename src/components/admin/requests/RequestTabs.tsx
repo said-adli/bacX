@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -15,7 +15,6 @@ import {
     Loader2
 } from "lucide-react";
 import { StudentRequest, handleRequest } from "@/lib/actions/requests";
-// Deferring this edit until viewing page.tsx
 
 interface RequestTabsProps {
     requests: StudentRequest[];
@@ -24,7 +23,9 @@ interface RequestTabsProps {
 export default function RequestTabs({ requests }: RequestTabsProps) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<"profile" | "deletion">("profile");
-    const [isProcessing, setIsProcessing] = useState(false);
+
+    // Use Transition for Server Actions loading state
+    const [isPending, startTransition] = useTransition();
 
     // Rejection Modal State
     const [showRejectModal, setShowRejectModal] = useState(false);
@@ -38,48 +39,47 @@ export default function RequestTabs({ requests }: RequestTabsProps) {
     const profileRequests = requests.filter(r => r.request_type === "UPDATE_PROFILE");
     const deletionRequests = requests.filter(r => r.request_type === "DELETE_ACCOUNT");
 
-    const handleApprove = async (request: StudentRequest) => {
+    const handleApprove = (request: StudentRequest) => {
         if (request.request_type === "DELETE_ACCOUNT") {
             setSelectedRequest(request);
             setShowDeleteConfirm(true);
             return;
         }
 
-        setIsProcessing(true);
-        try {
-            const result = await handleRequest(request.id, "approve");
-            if (result.success) {
-                toast.success(result.success);
-                router.refresh();
-            } else {
-                toast.error(result.error || "فشلت العملية");
+        startTransition(async () => {
+            try {
+                const result = await handleRequest(request.id, "approve");
+                if (result.success) {
+                    toast.success("تمت الموافقة بنجاح");
+                    router.refresh();
+                } else {
+                    toast.error(result.error || "فشلت العملية");
+                }
+            } catch (e) {
+                toast.error("حدث خطأ غير متوقع");
             }
-        } catch (e) {
-            toast.error("حدث خطأ غير متوقع");
-        } finally {
-            setIsProcessing(false);
-        }
+        });
     };
 
-    const confirmDelete = async () => {
+    const confirmDelete = () => {
         if (!selectedRequest) return;
 
-        setIsProcessing(true);
-        try {
-            const result = await handleRequest(selectedRequest.id, "approve");
-            if (result.success) {
-                toast.success(result.success);
-                router.refresh();
-            } else {
-                toast.error(result.error || "فشل حذف الحساب");
+        startTransition(async () => {
+            try {
+                const result = await handleRequest(selectedRequest.id, "approve");
+                if (result.success) {
+                    toast.success("تم الحذف بنجاح");
+                    router.refresh();
+                } else {
+                    toast.error(result.error || "فشل حذف الحساب");
+                }
+            } catch (e) {
+                toast.error("حدث خطأ غير متوقع");
+            } finally {
+                setShowDeleteConfirm(false);
+                setSelectedRequest(null);
             }
-        } catch (e) {
-            toast.error("حدث خطأ غير متوقع");
-        } finally {
-            setIsProcessing(false);
-            setShowDeleteConfirm(false);
-            setSelectedRequest(null);
-        }
+        });
     };
 
     const openRejectModal = (request: StudentRequest) => {
@@ -88,30 +88,30 @@ export default function RequestTabs({ requests }: RequestTabsProps) {
         setShowRejectModal(true);
     };
 
-    const confirmReject = async () => {
+    const confirmReject = () => {
         if (!selectedRequest) return;
         if (!rejectionReason.trim()) {
             toast.error("يرجى كتابة سبب الرفض");
             return;
         }
 
-        setIsProcessing(true);
-        try {
-            const result = await handleRequest(selectedRequest.id, "reject", rejectionReason);
-            if (result.success) {
-                toast.success(result.success);
-                router.refresh();
-            } else {
-                toast.error(result.error || "فشل رفض الطلب");
+        startTransition(async () => {
+            try {
+                const result = await handleRequest(selectedRequest.id, "reject", rejectionReason);
+                if (result.success) {
+                    toast.success("تم الرفض بنجاح");
+                    router.refresh();
+                } else {
+                    toast.error(result.error || "فشل رفض الطلب");
+                }
+            } catch (e) {
+                toast.error("حدث خطأ غير متوقع");
+            } finally {
+                setShowRejectModal(false);
+                setSelectedRequest(null);
+                setRejectionReason("");
             }
-        } catch (e) {
-            toast.error("حدث خطأ غير متوقع");
-        } finally {
-            setIsProcessing(false);
-            setShowRejectModal(false);
-            setSelectedRequest(null);
-            setRejectionReason("");
-        }
+        });
     };
 
     return (
@@ -165,7 +165,7 @@ export default function RequestTabs({ requests }: RequestTabsProps) {
                                     request={request}
                                     onApprove={() => handleApprove(request)}
                                     onReject={() => openRejectModal(request)}
-                                    isProcessing={isProcessing}
+                                    isProcessing={isPending}
                                 />
                             ))
                         )}
@@ -182,7 +182,7 @@ export default function RequestTabs({ requests }: RequestTabsProps) {
                                     key={request.id}
                                     request={request}
                                     onConfirm={() => handleApprove(request)}
-                                    isProcessing={isProcessing}
+                                    isProcessing={isPending}
                                 />
                             ))
                         )}
@@ -213,11 +213,11 @@ export default function RequestTabs({ requests }: RequestTabsProps) {
                             </button>
                             <button
                                 onClick={confirmReject}
-                                disabled={isProcessing}
+                                disabled={isPending}
                                 className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                             >
-                                {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <X size={18} />}
-                                تأكيد الرفض
+                                {isPending ? <Loader2 size={18} className="animate-spin" /> : <X size={18} />}
+                                {isPending ? "جاري الرفض..." : "تأكيد الرفض"}
                             </button>
                         </div>
                     </div>
@@ -246,11 +246,11 @@ export default function RequestTabs({ requests }: RequestTabsProps) {
                             </button>
                             <button
                                 onClick={confirmDelete}
-                                disabled={isProcessing}
+                                disabled={isPending}
                                 className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                             >
-                                {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
-                                حذف نهائي
+                                {isPending ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                                {isPending ? "جاري الحذف..." : "حذف نهائي"}
                             </button>
                         </div>
                     </div>
@@ -337,16 +337,16 @@ function ProfileRequestCard({
                     disabled={isProcessing}
                     className="flex-1 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold border border-red-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                    <X size={18} />
-                    رفض
+                    {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <X size={18} />}
+                    {isProcessing ? "جاري المعالجة..." : "رفض"}
                 </button>
                 <button
                     onClick={onApprove}
                     disabled={isProcessing}
                     className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                    <Check size={18} />
-                    موافقة
+                    {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+                    {isProcessing ? "جاري المعالجة..." : "موافقة"}
                 </button>
             </div>
         </div>
