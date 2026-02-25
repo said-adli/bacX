@@ -17,6 +17,7 @@ export interface StudentProfile {
     subscription_end_date: string | null;
     is_banned: boolean;     // [NEW]
     avatar_url?: string;    // [NEW]
+    plan_id: string | null;
 }
 
 // FETCH STUDENTS
@@ -37,7 +38,7 @@ export async function getStudents(
     // (God Mode for Read as well)
     let dbQuery = adminClient
         .from('profiles')
-        .select('id, full_name, email, wilaya, study_system, created_at, is_restored, is_subscribed, subscription_end_date, is_banned, avatar_url', { count: 'exact' })
+        .select('id, full_name, email, wilaya, study_system, created_at, is_restored, is_subscribed, subscription_end_date, is_banned, avatar_url, plan_id', { count: 'exact' })
         .eq('role', 'student')
         .order('created_at', { ascending: false })
         .range((page - 1) * 10, ((page - 1) * 10) + 9);
