@@ -213,7 +213,12 @@ export async function getStudentDetails(studentId: string) {
     return {
         profile,
         payments: payments || [],
-        securityLogs: securityLogs || [],
+        // DTO: Map DB 'action' → client 'event' for ActivityLog type compatibility
+        securityLogs: (securityLogs || []).map((log) => ({
+            id: log.id,
+            event: log.action, // DB column → DTO field
+            created_at: log.created_at,
+        })),
         recentProgress: progress || []
     };
 }
