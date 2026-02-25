@@ -16,7 +16,7 @@ export async function getSubscriptionPlan(planId: string): Promise<CheckoutState
         // Try to fetch by ID (UUID)
         let query = supabase
             .from('subscription_plans')
-            .select('*')
+            .select('id, name, price, discount_price, description, features, is_active, duration_days, type')
             .eq('is_active', true);
 
         // Check if planId is a valid UUID

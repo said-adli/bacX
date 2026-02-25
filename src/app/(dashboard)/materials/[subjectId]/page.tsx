@@ -12,7 +12,6 @@ import LessonResourcesTabs from "@/components/lesson/LessonResourcesTabs";
 import { LessonSkeleton } from "@/components/skeletons/LessonSkeleton";
 import { Skeleton } from "@/components/ui/Skeleton";
 
-export const dynamic = 'force-dynamic';
 
 // Inner component to fetch subscription status without blocking the page shell
 async function SubjectContentStreamer({ userId, lessonId }: { userId: string | undefined, lessonId: string | undefined }) {

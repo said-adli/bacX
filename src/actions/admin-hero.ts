@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { requireAdmin } from "@/lib/auth-guard";
 import { revalidatePath } from "next/cache";
 
 export type HeroSlide = {
@@ -14,6 +15,8 @@ export type HeroSlide = {
     updated_at: string;
 };
 
+const HERO_COLUMNS = 'id, image_url, title, cta_link, is_active, display_order, created_at, updated_at';
+
 // ==========================================
 // PUBLIC CACHED FETCH (Zero Latency ISR)
 // ==========================================
@@ -22,7 +25,7 @@ export async function getActiveHeroSlides(): Promise<HeroSlide[]> {
 
     const { data, error } = await supabase
         .from('hero_slides')
-        .select('*')
+        .select(HERO_COLUMNS)
         .eq('is_active', true)
         .order('display_order', { ascending: true })
         .order('created_at', { ascending: false });
@@ -36,17 +39,15 @@ export async function getActiveHeroSlides(): Promise<HeroSlide[]> {
 }
 
 // ==========================================
-// ADMIN ACTIONS
+// ADMIN ACTIONS (All guarded by requireAdmin)
 // ==========================================
 export async function getAllHeroSlides() {
+    await requireAdmin();
     const supabase = await createClient();
-
-    // Check admin role here based on your app's security model
-    // Assuming backend verifyAdmin logic or similar is handled
 
     const { data, error } = await supabase
         .from('hero_slides')
-        .select('*')
+        .select(HERO_COLUMNS)
         .order('display_order', { ascending: true })
         .order('created_at', { ascending: false });
 
@@ -55,6 +56,7 @@ export async function getAllHeroSlides() {
 }
 
 export async function createHeroSlide(data: Partial<HeroSlide>) {
+    await requireAdmin();
     const supabase = await createClient();
 
     const { error } = await supabase
@@ -71,6 +73,7 @@ export async function createHeroSlide(data: Partial<HeroSlide>) {
 }
 
 export async function updateHeroSlide(id: string, data: Partial<HeroSlide>) {
+    await requireAdmin();
     const supabase = await createClient();
 
     const { error } = await supabase
@@ -87,6 +90,7 @@ export async function updateHeroSlide(id: string, data: Partial<HeroSlide>) {
 }
 
 export async function deleteHeroSlide(id: string, imageUrl: string) {
+    await requireAdmin();
     const supabase = await createClient();
 
     // 1. Extract file path from full URL
@@ -110,10 +114,9 @@ export async function deleteHeroSlide(id: string, imageUrl: string) {
 }
 
 export async function reorderHeroSlides(slides: { id: string; display_order: number }[]) {
+    await requireAdmin();
     const supabase = await createClient();
 
-    // Upsert or iterative update depending on Supabase version capabilities.
-    // Simplifying with iterative update for robustness
     for (const slide of slides) {
         await supabase
             .from('hero_slides')

@@ -4,7 +4,6 @@ import SettingsForm from "./SettingsForm";
 import { SettingsSkeleton } from "@/components/skeletons/SettingsSkeleton";
 import { getUserSettings } from "@/services/user.service";
 
-export const dynamic = 'force-dynamic';
 
 async function SettingsPageContent() {
     const supabase = await createClient();

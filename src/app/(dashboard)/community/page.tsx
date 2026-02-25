@@ -1,4 +1,3 @@
-"use client";
 
 import { GlassCard } from "@/components/ui/GlassCard";
 import { MessageSquare, ThumbsUp, Share2 } from "lucide-react";

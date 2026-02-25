@@ -15,7 +15,7 @@ export async function approvePayment(paymentId: string, userId: string, duration
         // 1. Verify Payment Exists
         const { data: payment, error: pError } = await adminClient
             .from('payment_requests')
-            .select('*')
+            .select('id, status, user_id, plan_id, receipt_url, created_at')
             .eq('id', paymentId)
             .single();
 

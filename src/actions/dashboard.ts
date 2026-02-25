@@ -73,7 +73,7 @@ export async function getDashboardData(): Promise<DashboardData> {
 
 export async function getProfileData(userId: string): Promise<DashboardProfile | null> {
     const supabase = await createClient();
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    const { data } = await supabase.from('profiles').select('id, full_name, email, wilaya_id, major_id, role, is_subscribed').eq('id', userId).single();
 
     if (!data) return null;
 

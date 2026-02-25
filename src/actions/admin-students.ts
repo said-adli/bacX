@@ -37,7 +37,7 @@ export async function getStudents(
     // (God Mode for Read as well)
     let dbQuery = adminClient
         .from('profiles')
-        .select('*', { count: 'exact' })
+        .select('id, full_name, email, wilaya, study_system, created_at, is_restored, is_subscribed, subscription_end_date, is_banned, avatar_url', { count: 'exact' })
         .eq('role', 'student')
         .order('created_at', { ascending: false })
         .range((page - 1) * 10, ((page - 1) * 10) + 9);
@@ -171,7 +171,7 @@ export async function getStudentDetails(studentId: string) {
     // 1. Fetch Profile (Identity)
     const { data: profile, error: profileError } = await supabaseAdmin
         .from('profiles')
-        .select('*')
+        .select('id, full_name, email, wilaya, study_system, created_at, is_restored, is_subscribed, subscription_end_date, is_banned, avatar_url, role, bio, major_id, wilaya_id, plan_id')
         .eq('id', studentId)
         .single();
 
@@ -185,14 +185,14 @@ export async function getStudentDetails(studentId: string) {
         // Fetch Payments
         supabaseAdmin
             .from('payment_receipts')
-            .select('*')
+            .select('id, user_id, plan_id, receipt_url, status, amount, created_at')
             .eq('user_id', studentId)
             .order('created_at', { ascending: false }),
 
         // Fetch Security Logs
         supabaseAdmin
             .from('security_logs')
-            .select('*')
+            .select('id, user_id, action, ip_address, user_agent, created_at')
             .eq('user_id', studentId)
             .order('created_at', { ascending: false })
             .limit(5),

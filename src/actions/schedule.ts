@@ -61,7 +61,7 @@ export async function getAdminSchedules() {
 
     const { data, error } = await supabase
         .from("schedules")
-        .select("*")
+        .select("id, title, description, event_date, type, created_at")
         .order("event_date", { ascending: true });
 
     if (error) throw error;

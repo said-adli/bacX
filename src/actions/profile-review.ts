@@ -29,7 +29,7 @@ export async function approveProfileChange(requestId: string) {
     // Fetch the change request
     const { data: request, error: fetchError } = await supabase
         .from("profile_change_requests")
-        .select("*")
+        .select("id, user_id, new_data, status, created_at")
         .eq("id", requestId)
         .single();
 

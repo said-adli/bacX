@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormState } from "react-dom";
 import Link from "next/link";
 import { Mail, Lock, User, MapPin, BookOpen, AlertCircle, ChevronDown, GraduationCap } from "lucide-react";
 import { signupAction } from "./actions";

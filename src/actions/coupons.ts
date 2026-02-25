@@ -38,7 +38,7 @@ export async function validateCoupon(code: string, originalPrice: number): Promi
 
     const { data: coupon, error } = await supabase
         .from('coupons')
-        .select('*')
+        .select('id, code, discount_type, value, max_uses, used_count, expires_at, is_active, created_at, is_lifetime')
         .eq('code', normalizedCode)
         .single();
 
@@ -152,7 +152,7 @@ export async function getCoupons() {
     const adminClient = createAdminClient();
     const { data, error } = await adminClient
         .from('coupons')
-        .select('*')
+        .select('id, code, discount_type, value, max_uses, used_count, expires_at, is_active, created_at, is_lifetime')
         .order('created_at', { ascending: false });
 
     if (error) {

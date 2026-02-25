@@ -366,7 +366,7 @@ export async function getLessonById(id: string) {
     const supabase = await createClient();
     const { data: lesson, error } = await supabase
         .from('lessons')
-        .select('*')
+        .select('id, title, type, video_url, required_plan_id, unit_id, subject_id, is_free, is_purchasable, price, order_index, created_at, duration')
         .eq('id', id)
         .single();
 
@@ -374,7 +374,7 @@ export async function getLessonById(id: string) {
 
     const { data: resources, error: resError } = await supabase
         .from('lesson_resources')
-        .select('*')
+        .select('id, lesson_id, title, url, type, created_at')
         .eq('lesson_id', id);
 
     return { ...lesson, _resources: resError ? [] : resources };

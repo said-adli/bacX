@@ -35,7 +35,7 @@ export async function getAdminPlans() {
 
     const { data, error } = await supabase
         .from('subscription_plans')
-        .select('*')
+        .select('id, name, price, discount_price, description, features, is_active, duration_days, type')
         .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -109,7 +109,7 @@ export async function getActivePlans() {
     const supabase = await createClient();
     const { data, error } = await supabase
         .from('subscription_plans')
-        .select('*')
+        .select('id, name, price, discount_price, description, features, is_active, duration_days, type')
         .eq('is_active', true)
         .order('price', { ascending: true });
 

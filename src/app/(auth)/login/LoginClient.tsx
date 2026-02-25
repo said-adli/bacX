@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormState } from "react-dom";
 import Link from "next/link";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";

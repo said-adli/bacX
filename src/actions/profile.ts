@@ -90,7 +90,7 @@ export async function getPendingChangeRequest() {
 
     const { data, error } = await supabase
         .from("profile_change_requests")
-        .select("*")
+        .select("id, user_id, new_data, status, created_at")
         .eq("user_id", user.id)
         .eq("status", "pending")
         .maybeSingle();

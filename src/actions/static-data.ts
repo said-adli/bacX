@@ -17,7 +17,7 @@ export const getWilayas = unstable_cache(
         // But prompt said "Supabase wilayas table".
         const { data, error } = await supabase
             .from('wilayas')
-            .select('*')
+            .select('id, code, name, ar_name')
             .order('id', { ascending: true }); // or code
 
         if (error) {
@@ -40,7 +40,7 @@ export const getMajors = unstable_cache(
         const supabase = await createClient();
         const { data, error } = await supabase
             .from('majors')
-            .select('*')
+            .select('id, name')
             .order('name');
 
         if (error || !data) {

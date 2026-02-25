@@ -41,7 +41,7 @@ export async function getRecentNotifications() {
     // UNIFIED: Select from 'announcements'
     const { data, error } = await supabase
         .from('announcements')
-        .select('*')
+        .select('id, title, content, is_active, created_at')
         .order('created_at', { ascending: false })
         .limit(10);
 
