@@ -22,6 +22,7 @@ interface NotificationContextType {
     notifications: Notification[];
     unreadCount: number;
     loading: boolean;
+    error: any;
     pushNotification: (title: string, message: string, type?: Notification["type"], isGlobal?: boolean) => Promise<void>;
     markAsRead: (id: string) => void;
     clearAll: () => void;
@@ -36,27 +37,25 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     // Fetcher for SWR
     const fetchNotifications = async () => {
         if (!user) return [];
-        try {
-            const { data, error } = await supabase
-                .from('notifications')
-                .select('*, user_notifications(id)')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false })
-                .limit(20);
+        const { data, error } = await supabase
+            .from('notifications')
+            .select('*, user_notifications(id)')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(20);
 
-            if (error) throw error;
-            return data as Notification[];
-        } catch (err) {
-            console.error("Error fetching notifications:", err);
-            return [];
+        if (error) {
+            console.error("Error fetching notifications (Table missing or RLS block):", error);
+            throw error; // Let SWR catch and expose the error
         }
+        return data as Notification[];
     };
 
     // SWR Hook - Smart Polling
     // Key includes user.id to reset on login switch
     // Interval: 5 minutes (300,000ms)
     // Focus: Revalidates immediately when user comes back to tab
-    const { data: notifications = [], isLoading: loading, mutate } = useSWR(
+    const { data: notifications = [], isLoading: loading, error: fetchError, mutate } = useSWR(
         user ? ['notifications', user.id] : null,
         fetchNotifications,
         {
@@ -173,7 +172,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <NotificationContext.Provider value={{ notifications, unreadCount, loading, pushNotification, markAsRead, clearAll }}>
+        <NotificationContext.Provider value={{ notifications, unreadCount, loading, error: fetchError || null, pushNotification, markAsRead, clearAll }}>
             {children}
         </NotificationContext.Provider>
     );

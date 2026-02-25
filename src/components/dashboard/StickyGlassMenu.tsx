@@ -16,7 +16,7 @@ const StickyGlassMenuComponent = function StickyGlassMenu() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user, profile, logout } = useAuth();
-    const { notifications, unreadCount, markAsRead, clearAll, pushNotification, loading } = useNotifications();
+    const { notifications, unreadCount, markAsRead, clearAll, pushNotification, loading, error } = useNotifications();
 
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -42,9 +42,9 @@ const StickyGlassMenuComponent = function StickyGlassMenu() {
     const handleLogout = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        
+
         setIsLoggingOut(true);
-        
+
         try {
             await logout();
             // Force reload to clear all states/cache
@@ -119,8 +119,12 @@ const StickyGlassMenuComponent = function StickyGlassMenu() {
                                     </div>
 
                                     <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-2 space-y-2">
-                                        {loading ? (
-                                            <div className="text-center py-8 text-white/30 text-xs">جاري التحميل...</div>
+                                        {error ? (
+                                            <div className="text-center py-8 text-red-400/80 text-xs">لا توجد إشعارات حالياً</div>
+                                        ) : loading ? (
+                                            <div className="text-center py-8 text-white/30 text-xs flex justify-center items-center gap-2">
+                                                <Loader2 size={14} className="animate-spin" /> جاري التحميل...
+                                            </div>
                                         ) : notifications.length === 0 ? (
                                             <div className="text-center py-8 text-white/30 text-xs">لا توجد إشعارات جديدة</div>
                                         ) : (
