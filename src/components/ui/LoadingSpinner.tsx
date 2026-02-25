@@ -1,4 +1,4 @@
-"use client";
+// Server Component
 
 import { Loader2 } from "lucide-react";
 

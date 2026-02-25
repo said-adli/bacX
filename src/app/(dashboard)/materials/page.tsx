@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     title: "المواد الدراسية",
 };
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'auto';
 
 export default async function MaterialsPage() {
     // 1. Auth Check

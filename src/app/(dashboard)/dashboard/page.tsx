@@ -18,7 +18,7 @@ import {
     SubjectsSkeleton,
 } from "@/components/skeletons/DashboardSkeletons";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'auto';
 
 export default async function DashboardPage({
     searchParams,

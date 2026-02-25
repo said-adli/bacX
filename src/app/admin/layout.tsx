@@ -6,7 +6,7 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { GlobalQuickAdd } from "@/components/admin/GlobalQuickAdd";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'auto';
 
 export default async function AdminLayout({
     children,

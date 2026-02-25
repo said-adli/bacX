@@ -1,4 +1,4 @@
-"use client";
+// Server Component
 
 import Link from "next/link";
 import { ChevronLeft, Home } from "lucide-react";

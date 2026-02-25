@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect, useRef } from "react";
-import { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
+import { Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { upsertSession } from "@/actions/sessions";
@@ -40,8 +40,13 @@ export interface EnrichedProfile {
 
 export type UserProfile = EnrichedProfile;
 
+export interface SafeUser {
+    id: string;
+    email?: string;
+}
+
 export interface AuthState {
-    user: User | null;
+    user: SafeUser | null;
     profile: EnrichedProfile | null;
     session: Session | null;
     loading: boolean;
@@ -162,7 +167,7 @@ export function AuthProvider({
                                 setState(prev => ({
                                     ...prev,
                                     session,
-                                    user: session.user,
+                                    user: { id: session.user.id, email: session.user.email },
                                     profile: { ...profile, email: session.user.email || profile.email },
                                     loading: false,
                                     error: null,
@@ -174,7 +179,7 @@ export function AuthProvider({
                                 setState(prev => ({
                                     ...prev,
                                     session,
-                                    user: session.user,
+                                    user: { id: session.user.id, email: session.user.email },
                                     profile: null,
                                     loading: false,
                                     connectionError: true
@@ -187,7 +192,7 @@ export function AuthProvider({
                             setState(prev => ({
                                 ...prev,
                                 session,
-                                user: session.user,
+                                user: { id: session.user.id, email: session.user.email },
                                 profile: null,
                                 loading: false,
                                 connectionError: true
@@ -222,7 +227,7 @@ export function AuthProvider({
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
                 if (session?.user) {
                     // Optimistic
-                    setState(prev => ({ ...prev, session, user: session.user }));
+                    setState(prev => ({ ...prev, session, user: { id: session.user.id, email: session.user.email } }));
 
                     // Track session in DB on login (fire-and-forget)
                     if (event === 'SIGNED_IN' && typeof window !== 'undefined') {

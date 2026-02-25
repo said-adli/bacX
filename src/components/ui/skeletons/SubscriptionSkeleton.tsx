@@ -1,4 +1,4 @@
-"use client";
+// Server Component
 
 import { GlassCard } from "@/components/ui/GlassCard";
 

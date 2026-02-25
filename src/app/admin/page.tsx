@@ -6,7 +6,7 @@ import { ActivityChart } from "../../components/admin/dashboard/ActivityChart";
 import { RecentSignupsList } from "@/components/admin/dashboard/RecentSignupsList";
 import { RecentSignupsSkeleton } from "@/components/skeletons/RecentSignupsSkeleton";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'auto';
 
 export const metadata = {
     title: "مركز القيادة",
