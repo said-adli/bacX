@@ -124,8 +124,8 @@ export default function VerifyOtpPage() {
             {/* Right Side (Form Area) */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
                 <div className="w-full max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl p-8 sm:p-10">
-                    <Link href="/" className="block text-center flex justify-center">
-                        <img src="/images/logo.png" alt="Brainy" className="h-12 mb-8 object-contain" />
+                    <Link href="/" className="block text-center flex justify-center mb-8">
+                        <img src="/logo.png" alt="Brainy" className="h-12 object-contain" />
                     </Link>
 
                     <div className="text-center mb-8">
