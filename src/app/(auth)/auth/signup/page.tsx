@@ -27,7 +27,7 @@ export default async function SignupPage() {
     }
 
     return (
-        <div className="w-full max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 p-8 sm:p-10 rounded-3xl shadow-2xl">
+        <div className="w-full max-w-md glass-card p-8 sm:p-10 shadow-2xl">
             <Link href="/">
                 <img src="/images/logo.png" alt="Brainy Logo" className="h-14 w-auto mx-auto mb-8 object-contain drop-shadow-md" />
             </Link>

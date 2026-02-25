@@ -9,6 +9,12 @@ const config: Config = {
     ],
     theme: {
         extend: {
+            height: {
+                screen: '100dvh',
+            },
+            minHeight: {
+                screen: '100dvh',
+            },
             colors: {
                 background: "var(--background)",
                 foreground: "var(--foreground)",
