@@ -15,10 +15,11 @@ export async function forgotPasswordAction(prevState: AuthState | null, formData
         return { error: "الرجاء إدخال البريد الإلكتروني", success: "" };
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin;
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || origin || '';
+    const redirectUrl = `${baseUrl}/update-password`;
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${siteUrl}/update-password`,
+        redirectTo: redirectUrl,
     });
 
     if (error) {
