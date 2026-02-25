@@ -171,7 +171,7 @@ export async function getStudentDetails(studentId: string) {
     // 1. Fetch Profile (Identity)
     const { data: profile, error: profileError } = await supabaseAdmin
         .from('profiles')
-        .select('id, full_name, email, wilaya, study_system, created_at, is_restored, is_subscribed, subscription_end_date, is_banned, avatar_url, role, bio, major_id, wilaya_id, plan_id')
+        .select('id, full_name, email, phone, wilaya, study_system, created_at, is_restored, is_subscribed, subscription_end_date, is_banned, avatar_url, role, bio, major_id, wilaya_id, plan_id')
         .eq('id', studentId)
         .single();
 
