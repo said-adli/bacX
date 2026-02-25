@@ -26,7 +26,7 @@ export default function VerifyOtpPage() {
     const handleChange = (index: number, value: string) => {
         if (value.length > 1) {
             // Handle paste
-            const pastedData = value.slice(0, 6).split("");
+            const pastedData = value.replace(/\D/g, "").slice(0, 6).split("");
             const newOtp = [...otp];
             for (let i = 0; i < pastedData.length; i++) {
                 if (index + i < 6) {
@@ -61,34 +61,40 @@ export default function VerifyOtpPage() {
     const combinedOtp = otp.join("");
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen w-full px-4 sm:px-6 relative z-10 py-12">
+        <div className="min-h-screen flex w-full bg-[#0a0f1c]">
+            {/* Left Side (Desktop Only) */}
+            <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden bg-gradient-to-br from-blue-900 via-indigo-900 to-[#0a0f1c]">
+                {/* Glowing Orbs */}
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px]"></div>
+                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-[100px]"></div>
 
-            <div className="w-full max-w-md mx-auto p-8 rounded-3xl bg-white/5 backdrop-blur-2xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.3)] animate-fade-in-up relative overflow-hidden">
+                <div className="relative z-10 text-center px-12">
+                    <h1 className="text-4xl xl:text-5xl font-bold text-white mb-6 leading-tight">
+                        مرحباً بك في منصتنا التعليمية
+                    </h1>
+                    <p className="text-lg text-blue-100/80 max-w-lg mx-auto leading-relaxed">
+                        نقدم لك أفضل تجربة تعليمية مع أحدث التقنيات وأفضل الخبراء في مختلف المجالات.
+                    </p>
+                </div>
+            </div>
 
-                {/* Decorative Gradients for depth */}
-                <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-                <div className="relative z-10">
-                    {/* Logo exact match */}
-                    <Link href="/" className="block text-center mb-8">
-                        <img
-                            src="/image/logo.png"
-                            alt="Brainy"
-                            className="h-16 mx-auto object-contain drop-shadow-lg"
-                        />
+            {/* Right Side (Form Area) */}
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
+                <div className="w-full max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl p-8 sm:p-10">
+                    <Link href="/" className="block text-center flex justify-center">
+                        <img src="/logo.png" alt="Brainy" className="h-16 mb-8 object-contain" />
                     </Link>
 
                     <div className="text-center mb-8">
                         <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight">
                             التحقق من الحساب
                         </h2>
-                        <p className="text-white/70 text-sm leading-relaxed">
+                        <p className="text-white/70 text-sm leading-relaxed mt-2 mb-4">
                             {type === "signup"
                                 ? "أدخل الرمز المكون من 6 أرقام الذي أرسلناه إلى بريدك الإلكتروني"
                                 : "أدخل الرمز المكون من 6 أرقام لإعادة تعيين كلمة المرور الخاصة بك"}
                         </p>
-                        <div className="mt-4 text-blue-400 font-medium text-sm px-4 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full inline-block">
+                        <div className="text-blue-400 font-medium text-sm px-4 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full inline-block">
                             {email}
                         </div>
                     </div>
@@ -105,8 +111,8 @@ export default function VerifyOtpPage() {
                         <input type="hidden" name="type" value={type} />
                         <input type="hidden" name="token" value={combinedOtp} />
 
-                        {/* OTP Inputs with exact styling match */}
-                        <div className="flex justify-center gap-2 sm:gap-3" dir="ltr">
+                        {/* OTP Inputs */}
+                        <div className="flex justify-between gap-2 sm:gap-4 w-full" dir="ltr">
                             {otp.map((digit, index) => (
                                 <input
                                     key={index}
@@ -119,7 +125,7 @@ export default function VerifyOtpPage() {
                                     value={digit}
                                     onChange={(e) => handleChange(index, e.target.value)}
                                     onKeyDown={(e) => handleKeyDown(index, e)}
-                                    className="w-12 h-14 sm:w-14 sm:h-16 text-2xl sm:text-3xl font-bold text-center text-white bg-white/10 border-2 border-white/20 rounded-xl focus:border-blue-500 focus:bg-white/20 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
+                                    className="w-12 h-14 sm:w-14 sm:h-16 text-2xl font-bold text-center text-white bg-white/10 border-2 border-white/20 rounded-xl focus:border-blue-500 focus:bg-white/20 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
                                 />
                             ))}
                         </div>
