@@ -20,7 +20,7 @@ function SubmitButton() {
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     <span>جاري الإرسال...</span>
                 </>
-            ) : "إرسال رابط الاستعادة"}
+            ) : "إرسال رمز التحقق"}
         </button>
     );
 }
@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
             {/* Heading */}
             <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold text-white mb-2">نسيت كلمة المرور؟</h1>
-                <p className="text-sm text-zinc-400">لا تقلق، أدخل بريدك الإلكتروني وسنرسل لك تعليمات الاستعادة.</p>
+                <p className="text-sm text-zinc-400">أدخل بريدك الإلكتروني وسنرسل لك رمزاً مكوناً من 6 أرقام لإعادة تعيين كلمة المرور</p>
             </div>
 
             {/* Success Message */}

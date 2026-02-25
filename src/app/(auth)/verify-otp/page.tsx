@@ -68,19 +68,16 @@ export default function VerifyOtpPage() {
             <div className="mb-8 animate-fade-in-up">
                 <Link href="/" className="inline-block relative">
                     <div className="absolute -inset-4 bg-primary/20 blur-2xl rounded-full opacity-50"></div>
-                    <Image
-                        src="/assets/bacx-logo.svg"
-                        alt="BACX Logo"
-                        width={140}
-                        height={45}
-                        className="relative z-10 w-auto h-12 lg:h-14 drop-shadow-lg"
-                        priority
+                    <img
+                        src="/image/logo.png"
+                        alt="Brainy"
+                        className="relative z-10 mx-auto h-12 sm:h-16 object-contain drop-shadow-lg"
                     />
                 </Link>
             </div>
 
-            <div className="w-full max-w-md animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-                <div className="backdrop-blur-xl bg-white/5 border border-white/10 p-8 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] relative overflow-hidden">
+            <div className="w-full max-w-[90%] sm:max-w-md mx-auto animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+                <div className="backdrop-blur-xl bg-white/5 border border-white/10 p-6 sm:p-8 rounded-2xl shadow-2xl relative overflow-hidden">
                     {/* Decorative Gradients */}
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
                     <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl"></div>
@@ -88,7 +85,7 @@ export default function VerifyOtpPage() {
 
                     <div className="relative z-10">
                         <div className="text-center mb-8">
-                            <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">
+                            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight">
                                 التحقق من الحساب
                             </h2>
                             <p className="text-white/60 text-sm leading-relaxed">
@@ -126,7 +123,7 @@ export default function VerifyOtpPage() {
                                         value={digit}
                                         onChange={(e) => handleChange(index, e.target.value)}
                                         onKeyDown={(e) => handleKeyDown(index, e)}
-                                        className="w-12 h-14 sm:w-14 sm:h-16 flex-1 text-center text-2xl font-bold bg-white/5 border border-white/10 rounded-xl text-white focus:bg-white/10 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200 outline-none"
+                                        className="w-10 h-12 sm:w-12 sm:h-14 flex-1 text-center text-xl sm:text-2xl font-bold bg-white/5 border border-white/10 rounded-xl text-white focus:bg-white/10 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200 outline-none"
                                     />
                                 ))}
                             </div>
