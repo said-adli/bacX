@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import CinematicHero from "@/components/dashboard/CinematicHero";
+import { HeroSlider } from "@/components/marketing/HeroSlider";
+import { getActiveHeroSlides } from "@/actions/admin-hero";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { toSafeUserDTO } from "@/lib/dto";
@@ -42,25 +43,19 @@ export default async function DashboardPage({
     const params = await searchParams;
     const query = (typeof params.q === 'string' ? params.q : "")?.toLowerCase();
 
-    // No top-level blocking data fetching!
+    // 3. Fetch Data
+    const [slides] = await Promise.all([
+        getActiveHeroSlides()
+    ]);
+
+    // No other top-level blocking data fetching!
 
     return (
         <div className="space-y-16 pb-20">
 
-            {/* 1. HERO SECTION (Static/Client - Loads Instantly) */}
-            <div className="animate-in fade-in zoom-in duration-700">
-                {/* We can't easily pass 'hasNotification' instantly without blocking. 
-                    We can either fetch strictly that boolean fast, or let it load inside.
-                    For now, assuming Hero can live without the red dot or it fetches it itself? 
-                    The previous code calculated 'hasNewAnnouncements'. 
-                    To preserve non-blocking, we might lose the 'red dot' on the Hero OR 
-                    we move that check into the Hero or a wrapper. 
-                    For this pass, we will pass explicit 'false' or remove the prop if optional, 
-                    OR better: fetch just announcements light-weight? 
-                    Actually, let's keep it simple: Hero loads instantly, notification status might update later or be skipped for TTI.
-                    Let's check CinematicHero definition. I don't want to break it.
-                    I will omit the prop if possible or pass false. */}
-                <CinematicHero hasNotification={false} />
+            {/* 1. HERO SECTION (Dynamic Ad-Engine) */}
+            <div className="animate-in fade-in zoom-in duration-700 mb-12">
+                <HeroSlider slides={slides} />
             </div>
 
             {/* 2. STATS (Streams in parallel) */}
