@@ -16,7 +16,7 @@ async function ProfileDataStream({ userId }: { userId: string }) {
         { data: wilayas },
         { data: pendingRequest }
     ] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', userId).single(),
+        supabase.from('profiles').select('id, full_name, wilaya_id, major_id, study_system, bio, avatar_url, role').eq('id', userId).single(),
         supabase.from('branches').select('id, name').order('name'),
         supabase.from('wilayas').select('id, name_ar, name_en').order('id'),
         getPendingChangeRequest()

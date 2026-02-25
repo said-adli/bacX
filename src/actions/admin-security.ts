@@ -2,16 +2,10 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export async function revokeDevice(deviceId: string) {
-    const supabase = await createClient();
-
-    // Check Admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
+    const { supabase } = await requireAdmin();
 
     // Delete device
     const { error } = await supabase
@@ -27,14 +21,7 @@ export async function revokeDevice(deviceId: string) {
 }
 
 export async function getDeviceSessions() {
-    const supabase = await createClient();
-
-    // Check Admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
+    const { supabase } = await requireAdmin();
 
     const { data, error } = await supabase
         .from('user_devices')

@@ -27,7 +27,7 @@ export async function getAllSubjectsRaw(): Promise<DashboardSubject[]> {
     // equivalent to: SELECT * FROM subjects ORDER BY created_at ASC
     const { data, error } = await supabase
         .from('subjects')
-        .select('*')
+        .select('id, name, icon')
         .order('created_at', { ascending: true });
 
     if (error) {

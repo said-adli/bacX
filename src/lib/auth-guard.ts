@@ -25,3 +25,19 @@ export async function requireAdmin() {
 
     return { user, supabase };
 }
+
+/**
+ * P0 SECURITY FIX: Strict Auth Gate for Server Actions.
+ * Throws error if not logged in. Returns user object if successful.
+ * Use for student-facing actions that don't require admin role.
+ */
+export async function requireAuth() {
+    const supabase = await createClient();
+
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+        throw new Error("Unauthorized: No session");
+    }
+
+    return { user, supabase };
+}

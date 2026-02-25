@@ -30,7 +30,7 @@ export default function AdminPlatformUpdates() {
         setIsLoading(true);
         const { data, error } = await supabase
             .from('platform_updates')
-            .select('*')
+            .select('id, title, description, type, version, is_active, created_at')
             .order('created_at', { ascending: false });
 
         if (error) {

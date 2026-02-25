@@ -1,17 +1,13 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { revalidateAnnouncements } from "@/lib/cache/revalidate";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export async function bulkBroadcast(userIds: string[], message: string, title: string = "System Notification") {
-    const supabase = await createClient();
+    const { user } = await requireAdmin();
     const supabaseAdmin = createAdminClient();
-
-    // 1. Verify Admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
 
     // 2. Create Global Announcement (Unified Pipeline)
     // Instead of creating thousands of individual notifications, we create one announcement.

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     // 2. Fetch User Profile for Role
     const { data: profile } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, role, full_name')
         .eq('id', user.id)
         .single();
 

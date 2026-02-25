@@ -1,16 +1,11 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export async function exportLogsAsCSV() {
+    await requireAdmin();
     const supabase = await createClient();
-
-    // Check Admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
 
     // Fetch Logs
     const { data: logs, error } = await supabase

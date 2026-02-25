@@ -9,7 +9,7 @@ export async function RecentSignupsList() {
     const adminClient = createAdminClient();
     const { data: students } = await adminClient
         .from('profiles')
-        .select('*')
+        .select('id, full_name, email, avatar_url, created_at')
         .eq('role', 'student')
         .order('created_at', { ascending: false })
         .limit(5);

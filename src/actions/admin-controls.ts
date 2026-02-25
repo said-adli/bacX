@@ -4,16 +4,11 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { revalidateAnnouncements } from "@/lib/cache/revalidate";
+import { requireAdmin } from "@/lib/auth-guard";
 
 // ANNOUNCEMENTS (Unified Pipeline)
 export async function sendGlobalNotification(title: string, message: string) {
-    const supabase = await createClient();
-
-    // Auth Check
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
+    await requireAdmin();
 
     // Use Admin Client for writes
     const supabaseAdmin = createAdminClient();
@@ -50,9 +45,7 @@ export async function getRecentNotifications() {
 }
 
 export async function deleteNotification(id: string) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
+    await requireAdmin();
 
     // Use Admin Client
     const supabaseAdmin = createAdminClient();
@@ -67,13 +60,7 @@ export async function deleteNotification(id: string) {
 }
 
 export async function updateNotification(id: string, title: string, message: string) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-
-    // Verify Admin role
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
+    await requireAdmin();
 
     // Use Admin Client for writes
     const supabaseAdmin = createAdminClient();
@@ -97,13 +84,7 @@ export async function updateNotification(id: string, title: string, message: str
 // SYSTEM TOGGLES (DB-Driven)
 
 export async function toggleMaintenanceMode(currentState: boolean) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-
-    // Verify Admin role (Double check)
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
+    await requireAdmin();
 
     const newState = !currentState;
 
@@ -124,13 +105,7 @@ export async function toggleMaintenanceMode(currentState: boolean) {
 }
 
 export async function toggleLiveGlobal(currentState: boolean) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-
-    // Verify Admin
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error("Forbidden");
+    await requireAdmin();
 
     const newState = !currentState;
 

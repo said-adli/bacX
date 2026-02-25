@@ -36,7 +36,7 @@ export default function LessonContent({ id, title, description }: LessonContentP
                 // RLS will handle security. If user has no access, this returns empty or error.
                 const { data, error } = await supabase
                     .from('lesson_resources')
-                    .select('*')
+                    .select('id, title, file_url, file_type, file_size')
                     .eq('lesson_id', id)
                     .order('created_at', { ascending: false });
 

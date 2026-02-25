@@ -13,7 +13,7 @@ async function SubscriptionHistoryStream({ userId, activePlans }: { userId: stri
         const supabase = await createClient();
         const { data } = await supabase
             .from('billing_history')
-            .select('*')
+            .select('id, amount, status, date, method, receipt_url')
             .eq('user_id', userId)
             .order('date', { ascending: false });
 

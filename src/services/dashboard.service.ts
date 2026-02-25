@@ -123,7 +123,7 @@ export async function getDashboardSchedules(): Promise<ScheduleDTO[]> {
 
     const { data, error } = await supabase
         .from('schedules')
-        .select('*')
+        .select('id, title, description, event_date, type')
         .gte('event_date', new Date().toISOString())
         .order('event_date', { ascending: true })
         .limit(5);

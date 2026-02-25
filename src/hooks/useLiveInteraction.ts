@@ -116,7 +116,7 @@ export const useLiveInteraction = () => {
         const fetchChat = async () => {
             // ... kept simple
             const { data: msgData } = await supabase.from('live_comments')
-                .select('*')
+                .select('id, user_id, user_name, content, role, is_question, created_at, status')
                 .order('created_at', { ascending: false })
                 .limit(50);
 
