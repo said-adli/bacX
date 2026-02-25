@@ -10,20 +10,12 @@ import { toast } from "sonner";
 import { usePageVisibility } from "@/hooks/usePageVisibility";
 import { useAuth } from "@/context/AuthContext";
 import { SubscriptionPlan } from "@/actions/admin-plans";
+import { SafeBillingHistory } from "@/lib/dto";
 import Link from "next/link";
-
-interface BillingTransaction {
-    id: string;
-    user_id: string;
-    plan_type: string;
-    amount: number;
-    status: 'completed' | 'pending' | 'failed';
-    date: string;
-}
 
 interface SubscriptionClientProps {
     initialPlans: SubscriptionPlan[];
-    initialHistory: BillingTransaction[];
+    initialHistory: SafeBillingHistory[];
 }
 
 export function SubscriptionClient({ initialPlans, initialHistory }: SubscriptionClientProps) {
@@ -236,7 +228,7 @@ export function SubscriptionClient({ initialPlans, initialHistory }: Subscriptio
                                         <tr key={item.id} className="hover:bg-white/5 transition-colors group">
                                             <td className="p-4 text-white/40 font-mono text-sm">#{item.id.slice(0, 8)}</td>
                                             <td className="p-4 text-white/80 text-sm">{new Date(item.date).toLocaleDateString("ar-DZ")}</td>
-                                            <td className="p-4 text-white font-bold text-sm">{item.plan_type}</td>
+                                            <td className="p-4 text-white font-bold text-sm">{item.method || "نظامي"}</td>
                                             <td className="p-4 text-white/80 font-mono">{item.amount}</td>
                                             <td className="p-4">
                                                 <span className={`px-2 py-1 rounded-md text-xs border ${item.status === 'completed' ? 'bg-green-500/10 text-green-400 border-green-500/20' :

@@ -1,9 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { SubscriptionCards } from "./SubscriptionCards";
 
-import { User } from "@supabase/supabase-js";
+import { SafeUser } from "@/lib/dto";
 
-export default async function SmartSubscriptionCards({ user }: { user: User }) {
+export default async function SmartSubscriptionCards({ user }: { user: SafeUser }) {
     const supabase = await createClient();
     // const { data: { user } } = await supabase.auth.getUser(); // ELIMINATED
 

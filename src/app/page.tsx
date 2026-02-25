@@ -3,7 +3,11 @@ import dynamic from "next/dynamic";
 import { LandingNavbar } from "@/components/layout/LandingNavbar";
 import { PricingSection } from "@/components/home/PricingSection";
 import { AuthButton } from "@/components/marketing/AuthButton";
+import { getActiveHeroSlides } from "@/actions/admin-hero";
+import { HeroSlider } from "@/components/marketing/HeroSlider";
 import { SectionSkeleton } from "@/components/ui/SectionSkeleton";
+
+export const revalidate = 3600; // Enforce ISR with 1-hour cache
 
 // --- DYNAMIC IMPORTS (CODE SPLITTING) ---
 
@@ -21,9 +25,12 @@ export const metadata: Metadata = {
   description: "رحلة سينمائية نحو النجاح في البكالوريا. تعلم من أفضل الأساتذة في الجزائر بجودة 4K.",
 };
 
-export default function LandingPage() {
+export default async function LandingPage() {
   // STATIC: No constraints. Plans passed as static data or handled by PricingSection internally if needed.
   const plans: never[] = []; // Empty static array - PricingSection fetches its own data
+
+  // ZERO-LATENCY EDGE FETCH (Revalidated every hour or on Admin Update)
+  const slides = await getActiveHeroSlides();
 
   return (
     <div className="bg-background min-h-screen selection:bg-primary/30 overflow-hidden">
@@ -32,6 +39,13 @@ export default function LandingPage() {
       <LandingNavbar
         authButton={<AuthButton />}
       />
+
+      {/* AD-ENGINE HERO SLIDER */}
+      {slides.length > 0 && (
+        <div className="relative z-20 max-w-7xl mx-auto px-4 mt-24 sm:mt-32 w-full">
+          <HeroSlider slides={slides} />
+        </div>
+      )}
 
       {/* 1. HERO SECTION (The Masterpiece) */}
       <HeroSection />

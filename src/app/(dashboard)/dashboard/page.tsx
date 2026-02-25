@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import CinematicHero from "@/components/dashboard/CinematicHero";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { toSafeUserDTO } from "@/lib/dto";
 
 // Async Components (Streaming)
 import StatsOverview from "@/components/dashboard/StatsOverview";
@@ -32,6 +33,11 @@ export default async function DashboardPage({
         redirect("/login");
     }
 
+    // MAP TO DTO: Strip ALL auth identities, sensitive emails, phones, and internal Supabase metadata
+    // before passing data down to child boundaries.
+    const safeUser = toSafeUserDTO(user);
+    if (!safeUser) redirect("/login");
+
     // 2. Parse Query
     const params = await searchParams;
     const query = (typeof params.q === 'string' ? params.q : "")?.toLowerCase();
@@ -59,12 +65,12 @@ export default async function DashboardPage({
 
             {/* 2. STATS (Streams in parallel) */}
             <Suspense fallback={<StatsSkeleton />}>
-                <StatsOverview user={user} />
+                <StatsOverview user={safeUser} />
             </Suspense>
 
             {/* 3. CONTINUE WATCHING (Streams in parallel) */}
             <Suspense fallback={<ContinueWatchingSkeleton />}>
-                <ContinueWatchingSection user={user} />
+                <ContinueWatchingSection user={safeUser} />
             </Suspense>
 
             {/* 4. CRYSTAL GRID (Subjects) */}
@@ -76,7 +82,7 @@ export default async function DashboardPage({
                 </div>
 
                 <Suspense fallback={<SubjectsSkeleton />}>
-                    <SubjectsGrid query={query} userId={user.id} />
+                    <SubjectsGrid query={query} userId={safeUser.id} />
                 </Suspense>
             </div>
 
@@ -99,7 +105,7 @@ export default async function DashboardPage({
                     <div className="h-64 bg-white/5 rounded-2xl" />
                 </div>
             }>
-                <SmartSubscriptionCards user={user} />
+                <SmartSubscriptionCards user={safeUser} />
             </Suspense>
         </div>
     );

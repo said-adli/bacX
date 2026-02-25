@@ -14,6 +14,30 @@ import { Skeleton } from "@/components/ui/Skeleton";
 
 export const dynamic = 'force-dynamic';
 
+// Inner component to fetch subscription status without blocking the page shell
+async function SubjectContentStreamer({ userId, lessonId }: { userId: string | undefined, lessonId: string | undefined }) {
+    let isSubscribed = false;
+
+    if (userId) {
+        const supabase = await createClient();
+        const { data: profile } = await supabase.from('profiles').select('is_subscribed, role').eq('id', userId).single();
+        isSubscribed = profile?.is_subscribed || profile?.role === 'admin';
+    }
+
+    return (
+        <>
+            <ActiveVideoPlayer
+                lessonId={lessonId}
+                isSubscribed={isSubscribed}
+            />
+            <LessonResourcesTabs
+                lessonId={lessonId}
+                isSubscribed={isSubscribed}
+            />
+        </>
+    );
+}
+
 interface SubjectDetailsPageProps {
     params: Promise<{ subjectId: string }>;
     searchParams: Promise<{ lessonId?: string }>;
@@ -43,10 +67,6 @@ export default async function SubjectDetailsPage({ params, searchParams }: Subje
             .eq('is_active', true) // STRICT: Only active subjects
             .single()
     ]);
-
-    // Check subscription status cheaply (Only depends on User)
-    const { data: profile } = user ? await supabase.from('profiles').select('is_subscribed, role').eq('id', user.id).single() : { data: null };
-    const isSubscribed = profile?.is_subscribed || profile?.role === 'admin';
 
     if (!subject) return <div className="p-8 text-white">Subject not found</div>;
 
@@ -81,22 +101,14 @@ export default async function SubjectDetailsPage({ params, searchParams }: Subje
                 {/* Left: Video Area (Taking up 8 cols) */}
                 <div className="lg:col-span-8 flex flex-col gap-6">
                     <Suspense fallback={
-                        <div className="w-full aspect-video bg-white/5 rounded-2xl animate-pulse flex items-center justify-center">
-                            <Loader2 className="animate-spin text-white/20" />
+                        <div className="space-y-6">
+                            <div className="w-full aspect-video bg-white/5 rounded-2xl animate-pulse flex items-center justify-center">
+                                <Loader2 className="animate-spin text-white/20" />
+                            </div>
+                            <Skeleton className="h-64 rounded-2xl bg-white/5" />
                         </div>
                     }>
-                        <ActiveVideoPlayer
-                            lessonId={lessonId}
-                            isSubscribed={isSubscribed}
-                        />
-                    </Suspense>
-
-                    {/* Resources (Notes, etc) */}
-                    <Suspense fallback={<Skeleton className="h-64 rounded-2xl bg-white/5" />}>
-                        <LessonResourcesTabs
-                            lessonId={lessonId}
-                            isSubscribed={isSubscribed}
-                        />
+                        <SubjectContentStreamer userId={user?.id} lessonId={lessonId} />
                     </Suspense>
                 </div>
 

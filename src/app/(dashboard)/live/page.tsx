@@ -1,6 +1,8 @@
 import { getHybridLiveSession } from "@/actions/live";
 import { LiveSessionClient, SecureSession } from "@/components/live/LiveSessionClient";
 
+export const dynamic = 'force-dynamic';
+
 export default async function LiveSessionsPage() {
     let secureSession: SecureSession = {
         authorized: false,

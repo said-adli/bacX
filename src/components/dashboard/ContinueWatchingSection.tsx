@@ -1,9 +1,9 @@
 import { getLastAccessedLesson } from "@/actions/progress";
 import ContinueWatching from "./ContinueWatching";
 
-import { User } from "@supabase/supabase-js";
+import { SafeUser } from "@/lib/dto";
 
-export default async function ContinueWatchingSection({ user }: { user: User }) {
+export default async function ContinueWatchingSection({ user }: { user: SafeUser }) {
     // Fetch data on server
     const lastLesson = await getLastAccessedLesson(user.id);
 

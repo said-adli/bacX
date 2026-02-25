@@ -1,9 +1,9 @@
 import { getStatsData } from "@/actions/dashboard";
 import { Clock, TrendingUp, Zap } from "lucide-react";
 
-import { User } from "@supabase/supabase-js";
+import { SafeUser } from "@/lib/dto";
 
-export default async function StatsOverview({ user }: { user: User }) {
+export default async function StatsOverview({ user }: { user: SafeUser }) {
     // 1. Fetch Data
     const stats = await getStatsData(user.id);
 

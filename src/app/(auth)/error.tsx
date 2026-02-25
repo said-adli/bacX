@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { logger } from "@/lib/logger";
 
-export default function DashboardError({
+export default function AuthError({
     error,
     reset,
 }: {
@@ -12,15 +12,15 @@ export default function DashboardError({
     reset: () => void;
 }) {
     useEffect(() => {
-        logger.error("Dashboard routing or rendering error caught in (dashboard)/error.tsx", error);
+        logger.error("Auth routing or rendering error caught in (auth)/error.tsx", error);
     }, [error]);
 
     return (
         <ErrorState
             error={error}
             reset={reset}
-            title="حدث خطأ في لوحة التحكم"
-            message="نعتذر، واجهنا مشكلة أثناء تحميل الواجهة. يرجى إعادة المحاولة."
+            title="مشكلة في المصادقة"
+            message="حدث خطأ أثناء معالجة بيانات تسجيل الدخول أو التسجيل. يرجى المحاولة مرة أخرى."
         />
     );
 }

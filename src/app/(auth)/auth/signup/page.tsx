@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import SignupForm from "./SignupForm";
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata = {
     title: "إنشاء حساب | Brainy",
@@ -29,7 +30,16 @@ export default async function SignupPage() {
     return (
         <div className="w-full max-w-md glass-card p-8 sm:p-10 shadow-2xl">
             <Link href="/">
-                <img src="/images/logo.png" alt="Brainy Logo" className="h-14 w-auto mx-auto mb-8 object-contain drop-shadow-md" />
+                <div className="flex justify-center mb-8">
+                    <Image
+                        src="/images/logo.png"
+                        alt="Brainy Logo"
+                        width={180}
+                        height={56}
+                        className="h-14 w-auto object-contain drop-shadow-md"
+                        priority
+                    />
+                </div>
             </Link>
             <SignupForm
                 wilayas={wilayas || []}

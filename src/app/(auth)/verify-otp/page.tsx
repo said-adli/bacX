@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { VerifyOtpForm } from "./VerifyOtpForm";
 
 export default async function VerifyOtpPage({
@@ -32,7 +33,16 @@ export default async function VerifyOtpPage({
             <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
                 <div className="w-full max-w-md glass-card shadow-2xl p-8 sm:p-10">
                     <Link href="/">
-                        <img src="/images/logo.png" alt="Brainy" className="h-14 w-auto mx-auto mb-8 object-contain drop-shadow-md" />
+                        <div className="flex justify-center mb-8">
+                            <Image
+                                src="/images/logo.png"
+                                alt="Brainy"
+                                width={180}
+                                height={56}
+                                className="h-14 w-auto object-contain drop-shadow-md"
+                                priority
+                            />
+                        </div>
                     </Link>
 
                     <VerifyOtpForm email={email} type={type} />

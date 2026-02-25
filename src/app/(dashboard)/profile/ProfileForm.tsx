@@ -12,20 +12,20 @@ import { toast } from "sonner";
 import { submitProfileChangeRequest } from "@/actions/profile";
 import { useRouter } from "next/navigation";
 
-// Profile data from Supabase (use flexible type for compatibility with generated types)
-type ProfileData = Record<string, unknown> & {
+// Profile data for the editor (needs specific fields that global SafeProfile strips)
+export type ProfileEditorDTO = {
     id: string;
-    full_name?: string | null;
-    wilaya_id?: string | null;
-    major_id?: string | null;
-    study_system?: string | null;
-    bio?: string | null;
-    avatar_url?: string | null;
-    role?: string;
+    full_name: string | null;
+    wilaya_id: string | null;
+    major_id: string | null;
+    study_system: string | null;
+    bio: string | null;
+    avatar_url: string | null;
+    role: string | null;
 };
 
-// Pending request from Supabase
-type PendingRequest = Record<string, unknown> & {
+// Pending request DTO
+export type PendingRequestDTO = {
     id: string;
     created_at: string;
     status: string;
@@ -33,10 +33,10 @@ type PendingRequest = Record<string, unknown> & {
 
 // Define the shape of data passed from Server Component
 interface ProfileFormProps {
-    initialProfile: ProfileData | null;
+    initialProfile: ProfileEditorDTO | null;
     branches: { id: string; name: string }[];
     wilayas: { id: number | string; name_ar: string; name_en: string }[];
-    pendingRequest: PendingRequest | null;
+    pendingRequest: PendingRequestDTO | null;
 }
 
 export default function ProfileForm({ initialProfile, branches, wilayas, pendingRequest }: ProfileFormProps) {
@@ -109,7 +109,7 @@ export default function ProfileForm({ initialProfile, branches, wilayas, pending
     // Actually, submitProfileChangeRequest creates a REQUEST, it doesn't update profile immediately.
     // So visual data remains same, but pending banner appears.
 
-    const displayProfile: Partial<ProfileData> = initialProfile || {};
+    const displayProfile: Partial<ProfileEditorDTO> = initialProfile || {};
     // Use the fetched arrays to find names for ID values
     const selectedWilaya = wilayas.find(w => w.id == displayProfile.wilaya_id);
     const selectedBranch = branches.find(b => b.id == displayProfile.major_id);

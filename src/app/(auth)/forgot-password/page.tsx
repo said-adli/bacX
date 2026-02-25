@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { User, Mail, ShieldCheck, ArrowRight } from "lucide-react";
+import Image from "next/image";
 import { ForgotPasswordForm } from "./ForgotPasswordForm";
 
 export const metadata = {
@@ -11,7 +12,16 @@ export default function ForgotPasswordPage() {
     return (
         <div className="w-full max-w-md glass-card p-8 sm:p-10 shadow-2xl" dir="rtl">
             <Link href="/">
-                <img src="/images/logo.png" alt="Brainy Logo" className="h-14 w-auto mx-auto mb-8 object-contain drop-shadow-md" />
+                <div className="flex justify-center mb-8">
+                    <Image
+                        src="/images/logo.png"
+                        alt="Brainy Logo"
+                        width={180}
+                        height={56}
+                        className="h-14 w-auto object-contain drop-shadow-md"
+                        priority
+                    />
+                </div>
             </Link>
 
             {/* Heading */}
