@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import logoImg from "../../../../public/images/logo.png";
+import logoImg from "../../../public/images/logo.png";
 
 interface LogoProps {
   className?: string; // For width/height/invert control
