@@ -41,7 +41,14 @@ export async function getRecentNotifications() {
         .limit(10);
 
     if (error) return [];
-    return data;
+
+    // DTO: Map DB 'content' → client 'message' for BroadcastNotification compatibility
+    return (data || []).map((item) => ({
+        id: item.id,
+        title: item.title,
+        message: item.content, // DB column → DTO field
+        created_at: item.created_at,
+    }));
 }
 
 export async function deleteNotification(id: string) {
