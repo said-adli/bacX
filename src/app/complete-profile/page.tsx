@@ -12,14 +12,14 @@ import { motion } from "framer-motion";
 import { getWilayas, getMajors, Wilaya, Major } from "@/actions/static-data";
 
 export default function CompleteProfilePage() {
-    const { user, completeOnboarding, loading, error } = useAuth();
+    const { user, profile, completeOnboarding, loading, error } = useAuth();
 
     // Dynamic Data State
     const [wilayas, setWilayas] = useState<Wilaya[]>([]);
     const [majors, setMajors] = useState<Major[]>([]);
 
     const [formData, setFormData] = useState(() => ({
-        fullName: user?.user_metadata?.full_name || "",
+        fullName: profile?.full_name || "",
         wilaya: "",
         major: ""
     }));
@@ -68,7 +68,7 @@ export default function CompleteProfilePage() {
                         <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-200 font-amiri mb-2">
                             إكمال الملف الشخصي
                         </h1>
-                        <p className="text-text-muted">مرحباً {user?.user_metadata?.full_name || "بك"}! نحتاج لبعض التفاصيل البسيطة.</p>
+                        <p className="text-text-muted">مرحباً {profile?.full_name || "بك"}! نحتاج لبعض التفاصيل البسيطة.</p>
                     </div>
 
                     {error && (

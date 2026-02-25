@@ -19,11 +19,15 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. Fetch User Profile for Role
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, role, full_name')
+        .select('id, role, full_name, plan_id, is_subscribed')
         .eq('id', user.id)
         .single();
+
+    if (profileError || !profile) {
+        return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    }
 
     const apiKey = process.env.LIVEKIT_API_KEY;
     const apiSecret = process.env.LIVEKIT_API_SECRET;
