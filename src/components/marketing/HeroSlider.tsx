@@ -34,7 +34,7 @@ export function HeroSlider({ slides }: { slides: HeroSlideData[] }) {
     const prevSlide = () => setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
 
     return (
-        <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl aspect-[4/5] md:aspect-[21/9] lg:aspect-[24/9] bg-black/50 group">
+        <div className="flex items-center justify-center bg-slate-950 h-[35vh] min-h-[250px] md:h-[50vh] md:min-h-[400px] relative w-full overflow-hidden rounded-2xl shadow-2xl group">
             <AnimatePresence mode="wait">
                 <motion.div
                     key={currentIndex}
@@ -53,7 +53,7 @@ export function HeroSlider({ slides }: { slides: HeroSlideData[] }) {
                                 fill
                                 priority={currentIndex === 0} // Priority ONLY for the first slide to fix CLS
                                 sizes="100vw"
-                                className="object-cover"
+                                className="object-contain"
                                 unoptimized // Storage URLs
                             />
                         </Link>
@@ -64,7 +64,7 @@ export function HeroSlider({ slides }: { slides: HeroSlideData[] }) {
                             fill
                             priority={currentIndex === 0} // Priority ONLY for the first slide to fix CLS
                             sizes="100vw"
-                            className="object-cover"
+                            className="object-contain"
                             unoptimized // Storage URLs
                         />
                     )}
