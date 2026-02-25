@@ -5,6 +5,7 @@ import { Lock, AlertCircle } from "lucide-react";
 import { updatePasswordAction } from "./actions";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -35,6 +36,9 @@ export default function UpdatePasswordPage() {
 
     return (
         <div dir="rtl">
+            <Link href="/">
+                <img src="/images/logo.png" alt="Brainy Logo" className="h-14 w-auto mx-auto mb-8 object-contain drop-shadow-md" />
+            </Link>
             {/* Heading */}
             <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold text-white mb-2">تعيين كلمة مرور جديدة</h1>

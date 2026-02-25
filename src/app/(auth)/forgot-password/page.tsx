@@ -39,6 +39,9 @@ export default function ForgotPasswordPage() {
 
     return (
         <div dir="rtl">
+            <Link href="/">
+                <img src="/images/logo.png" alt="Brainy Logo" className="h-14 w-auto mx-auto mb-8 object-contain drop-shadow-md" />
+            </Link>
             {/* Heading */}
             <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold text-white mb-2">نسيت كلمة المرور؟</h1>
