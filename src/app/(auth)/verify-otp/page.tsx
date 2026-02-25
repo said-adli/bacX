@@ -1,11 +1,12 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { verifyOtpAction } from "@/actions/auth";
+import { verifyOtpAction, resendOtpAction } from "@/actions/auth";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle, Loader2, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 
 export default function VerifyOtpPage() {
     const searchParams = useSearchParams();
@@ -13,6 +14,32 @@ export default function VerifyOtpPage() {
     const type = searchParams.get("type") as "signup" | "recovery" || "signup";
 
     const [state, formAction, isPending] = useActionState(verifyOtpAction, null);
+
+    const [cooldown, setCooldown] = useState(0);
+    const [isResending, setIsResending] = useState(false);
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (cooldown > 0) {
+            timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+        }
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
+    }, [cooldown]);
+
+    const handleResend = async () => {
+        if (!email || !type) return;
+        setIsResending(true);
+        const res = await resendOtpAction(email, type);
+        setIsResending(false);
+        if (res?.error) {
+            toast.error(res.error);
+        } else {
+            toast.success('تم إعادة إرسال الرمز');
+            setCooldown(60);
+        }
+    };
 
     // OTP Input State
     const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -154,7 +181,14 @@ export default function VerifyOtpPage() {
 
                         <div className="text-center mt-6">
                             <p className="text-white/50 text-sm">
-                                لم تستلم الرمز؟ <button type="button" className="text-blue-400 hover:text-blue-300 hover:underline transition-colors cursor-pointer font-medium bg-transparent border-0 p-0">إعادة الإرسال</button>
+                                لم تستلم الرمز؟ <button
+                                    type="button"
+                                    onClick={handleResend}
+                                    disabled={cooldown > 0 || isResending}
+                                    className="text-blue-400 hover:text-blue-300 transition-colors cursor-pointer font-medium disabled:text-zinc-500 disabled:cursor-not-allowed bg-transparent border-0 p-0"
+                                >
+                                    {isResending ? 'جاري الإرسال...' : cooldown > 0 ? `إعادة الإرسال (${cooldown}ث)` : 'إعادة الإرسال'}
+                                </button>
                             </p>
                         </div>
                     </form>

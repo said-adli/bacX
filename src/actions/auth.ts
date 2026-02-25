@@ -44,3 +44,22 @@ export async function verifyOtpAction(prevState: VerifyOtpState | null, formData
 
     return { success: true };
 }
+
+export async function resendOtpAction(email: string, type: 'signup' | 'recovery') {
+    if (!email || !type) {
+        return { error: "الرجاء توفير جميع المعلومات المطلوبة" };
+    }
+
+    const supabase = await createClient();
+
+    const { error } = await supabase.auth.resend({
+        type: type as any,
+        email,
+    });
+
+    if (error) {
+        return { error: error.message || "حدث خطأ أثناء إعادة إرسال الرمز" };
+    }
+
+    return { success: true };
+}
