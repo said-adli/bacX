@@ -5,7 +5,7 @@ import { verifyOtpAction, resendOtpAction } from "@/actions/auth";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { useSearchParams } from "next/navigation";
-import { AlertCircle, Loader2, ArrowRight } from "lucide-react";
+import { AlertCircle, Loader2, ArrowRight, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function VerifyOtpPage() {
@@ -24,7 +24,7 @@ export default function VerifyOtpPage() {
             toast.success('تم تفعيل حسابك بنجاح! مرحباً بك في Brainy');
             setTimeout(() => {
                 window.location.href = "/dashboard";
-            }, 1000);
+            }, 2000);
         }
     }, [state, type]);
 
@@ -128,86 +128,101 @@ export default function VerifyOtpPage() {
                         <img src="/images/logo.png" alt="Brainy" className="h-14 w-auto mx-auto mb-8 object-contain drop-shadow-md" />
                     </Link>
 
-                    <div className="text-center mb-8">
-                        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight">
-                            {type === 'signup' ? 'تفعيل الحساب' : 'استعادة كلمة المرور'}
-                        </h2>
-                        <p className="text-white/70 text-sm leading-relaxed mt-2 mb-4">
-                            {type === "signup"
-                                ? "أدخل الرمز المكون من 6 أرقام الذي أرسلناه إلى بريدك الإلكتروني"
-                                : "أدخل الرمز المكون من 6 أرقام لإعادة تعيين كلمة المرور الخاصة بك"}
-                        </p>
-                        <div className="text-blue-400 font-medium text-sm px-4 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full inline-block">
-                            {email}
+                    {state?.success ? (
+                        <div className="flex flex-col items-center justify-center py-8 space-y-6 animate-in zoom-in duration-500">
+                            <div className="relative flex items-center justify-center w-24 h-24">
+                                <div className="absolute inset-0 bg-green-500/30 rounded-full blur-xl animate-pulse"></div>
+                                <CheckCircle className="w-16 h-16 text-green-400 relative z-10 animate-bounce" />
+                            </div>
+                            <div className="text-center space-y-2">
+                                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">تم التحقق بنجاح!</h2>
+                                <p className="text-green-200/80 text-sm sm:text-base">جاري نقلك إلى لوحة التحكم...</p>
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="animate-in fade-in duration-500">
+                            <div className="text-center mb-8">
+                                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight">
+                                    {type === 'signup' ? 'تفعيل الحساب' : 'استعادة كلمة المرور'}
+                                </h2>
+                                <p className="text-white/70 text-sm leading-relaxed mt-2 mb-4">
+                                    {type === "signup"
+                                        ? "أدخل الرمز المكون من 6 أرقام الذي أرسلناه إلى بريدك الإلكتروني"
+                                        : "أدخل الرمز المكون من 6 أرقام لإعادة تعيين كلمة المرور الخاصة بك"}
+                                </p>
+                                <div className="text-blue-400 font-medium text-sm px-4 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full inline-block">
+                                    {email}
+                                </div>
+                            </div>
 
-                    {state?.error && (
-                        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start text-red-400 animate-shake">
-                            <AlertCircle className="w-5 h-5 ml-3 flex-shrink-0 mt-0.5" />
-                            <p className="text-sm">{state.error}</p>
+                            {state?.error && (
+                                <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start text-red-400 animate-shake">
+                                    <AlertCircle className="w-5 h-5 ml-3 flex-shrink-0 mt-0.5" />
+                                    <p className="text-sm">{state.error}</p>
+                                </div>
+                            )}
+
+                            <form action={formAction} className="space-y-8">
+                                <input type="hidden" name="email" value={email} />
+                                <input type="hidden" name="type" value={type} />
+                                <input type="hidden" name="token" value={combinedOtp} />
+
+                                {/* OTP Inputs */}
+                                <div className="grid grid-cols-6 gap-2 sm:gap-3 w-full" dir="ltr">
+                                    {otp.map((digit, index) => (
+                                        <input
+                                            key={index}
+                                            ref={(el) => {
+                                                inputRefs.current[index] = el;
+                                            }}
+                                            type="text"
+                                            inputMode="numeric"
+                                            maxLength={1}
+                                            value={digit}
+                                            onChange={(e) => handleChange(index, e.target.value)}
+                                            onKeyDown={(e) => handleKeyDown(index, e)}
+                                            className="w-full max-w-[3.5rem] h-14 sm:h-16 text-2xl font-bold text-center text-white bg-white/10 border-2 border-white/20 rounded-xl focus:border-blue-500 focus:bg-white/20 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
+                                        />
+                                    ))}
+                                </div>
+
+                                <div className="pt-2">
+                                    <Button
+                                        type="submit"
+                                        disabled={!isComplete || isPending}
+                                        className="w-full h-12 sm:h-14 text-base sm:text-lg font-bold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] border-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden"
+                                    >
+                                        <span className="relative flex items-center justify-center gap-2">
+                                            {isPending ? (
+                                                <>
+                                                    <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
+                                                    جاري التحقق...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    تأكيد الرمز
+                                                    <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:-translate-x-1 transition-transform" />
+                                                </>
+                                            )}
+                                        </span>
+                                    </Button>
+                                </div>
+
+                                <div className="text-center mt-6">
+                                    <p className="text-white/50 text-sm">
+                                        لم تستلم الرمز؟ <button
+                                            type="button"
+                                            onClick={handleResend}
+                                            disabled={cooldown > 0 || isResending}
+                                            className="text-blue-400 hover:text-blue-300 transition-colors cursor-pointer font-medium disabled:text-zinc-500 disabled:cursor-not-allowed bg-transparent border-0 p-0"
+                                        >
+                                            {isResending ? 'جاري الإرسال...' : cooldown > 0 ? `إعادة الإرسال (${cooldown}ث)` : 'إعادة الإرسال'}
+                                        </button>
+                                    </p>
+                                </div>
+                            </form>
                         </div>
                     )}
-
-                    <form action={formAction} className="space-y-8">
-                        <input type="hidden" name="email" value={email} />
-                        <input type="hidden" name="type" value={type} />
-                        <input type="hidden" name="token" value={combinedOtp} />
-
-                        {/* OTP Inputs */}
-                        <div className="grid grid-cols-6 gap-2 sm:gap-3 w-full" dir="ltr">
-                            {otp.map((digit, index) => (
-                                <input
-                                    key={index}
-                                    ref={(el) => {
-                                        inputRefs.current[index] = el;
-                                    }}
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength={1}
-                                    value={digit}
-                                    onChange={(e) => handleChange(index, e.target.value)}
-                                    onKeyDown={(e) => handleKeyDown(index, e)}
-                                    className="w-full max-w-[3.5rem] h-14 sm:h-16 text-2xl font-bold text-center text-white bg-white/10 border-2 border-white/20 rounded-xl focus:border-blue-500 focus:bg-white/20 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
-                                />
-                            ))}
-                        </div>
-
-                        <div className="pt-2">
-                            <Button
-                                type="submit"
-                                disabled={!isComplete || isPending}
-                                className="w-full h-12 sm:h-14 text-base sm:text-lg font-bold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] border-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden"
-                            >
-                                <span className="relative flex items-center justify-center gap-2">
-                                    {isPending ? (
-                                        <>
-                                            <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
-                                            جاري التحقق...
-                                        </>
-                                    ) : (
-                                        <>
-                                            تأكيد الرمز
-                                            <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:-translate-x-1 transition-transform" />
-                                        </>
-                                    )}
-                                </span>
-                            </Button>
-                        </div>
-
-                        <div className="text-center mt-6">
-                            <p className="text-white/50 text-sm">
-                                لم تستلم الرمز؟ <button
-                                    type="button"
-                                    onClick={handleResend}
-                                    disabled={cooldown > 0 || isResending}
-                                    className="text-blue-400 hover:text-blue-300 transition-colors cursor-pointer font-medium disabled:text-zinc-500 disabled:cursor-not-allowed bg-transparent border-0 p-0"
-                                >
-                                    {isResending ? 'جاري الإرسال...' : cooldown > 0 ? `إعادة الإرسال (${cooldown}ث)` : 'إعادة الإرسال'}
-                                </button>
-                            </p>
-                        </div>
-                    </form>
                 </div>
             </div>
         </div>
