@@ -2,6 +2,11 @@
 import { getDeviceSessions } from "@/actions/admin-security";
 import DeviceSecurityClient from "@/components/admin/security/DeviceSecurityClient";
 
+export const metadata = {
+  title: "الأجهزة المتصلة",
+};
+
+
 export const dynamic = "force-dynamic";
 
 export default async function DeviceSecurityPage() {

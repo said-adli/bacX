@@ -4,6 +4,11 @@ import { ExportButton } from "@/components/admin/students/ExportButton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { getStudents } from "@/actions/admin-students";
 
+export const metadata = {
+  title: "إدارة الطلبة",
+};
+
+
 export default async function AdminStudentsPage(props: {
     searchParams?: Promise<{
         query?: string;

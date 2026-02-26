@@ -1,6 +1,11 @@
 import { getStudentRequests } from "@/lib/actions/requests";
 import RequestTabs from "@/components/admin/requests/RequestTabs";
 
+export const metadata = {
+  title: "طلبات التعديل",
+};
+
+
 export default async function RequestsPage() {
     const { data: requests, error } = await getStudentRequests();
 

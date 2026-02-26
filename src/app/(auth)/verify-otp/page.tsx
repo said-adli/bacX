@@ -2,6 +2,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { VerifyOtpForm } from "./VerifyOtpForm";
 
+export const metadata = {
+  title: "التحقق من الحساب",
+};
+
+
 export default async function VerifyOtpPage({
     searchParams,
 }: {

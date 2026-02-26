@@ -4,6 +4,11 @@ import { CouponsClient } from "@/app/admin/coupons/CouponsClient";
 
 import { Loader2 } from "lucide-react";
 
+export const metadata = {
+  title: "إدارة الكوبونات",
+};
+
+
 export default async function CouponsPage() {
     const coupons = await getCoupons();
 

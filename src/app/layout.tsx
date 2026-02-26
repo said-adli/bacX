@@ -48,8 +48,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: {
-    default: "BRAINY | رحلة التفوق",
-    template: "%s | BRAINY",
+    template: '%s | BRAINY',
+    default: 'BRAINY | منصة التفوق الأكاديمي',
   },
   icons: {
     icon: '/images/favicon1.png',

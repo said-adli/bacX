@@ -2,6 +2,11 @@ import { getContentTree } from "@/actions/admin-content";
 import { getActivePlans } from "@/actions/admin-plans";
 import ContentTree from "@/components/admin/content/ContentTree";
 
+export const metadata = {
+  title: "إدارة المحتوى",
+};
+
+
 export default async function ContentPage() {
     const subjects = await getContentTree();
     const activePlans = await getActivePlans(); // For access control selector

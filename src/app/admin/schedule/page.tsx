@@ -4,6 +4,11 @@ import { Trash2, Plus, Calendar, Clock, BookOpen, AlertCircle } from "lucide-rea
 import { format } from "date-fns";
 import { arMA } from "date-fns/locale";
 
+export const metadata = {
+  title: "الجدول الدراسي",
+};
+
+
 interface Schedule {
     id: string;
     title: string;

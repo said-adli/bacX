@@ -2,6 +2,11 @@
 import { GlassCard } from "@/components/ui/GlassCard";
 import { MessageSquare, ThumbsUp, Share2 } from "lucide-react";
 
+export const metadata = {
+  title: "مجتمع الطلبة",
+};
+
+
 export default function CommunityPage() {
     return (
         <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">

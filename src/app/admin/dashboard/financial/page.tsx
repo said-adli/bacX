@@ -1,6 +1,11 @@
 import { createClient } from "@/utils/supabase/server";
 import FinancialPageClient from "@/components/admin/dashboard/FinancialPageClient";
 
+export const metadata = {
+  title: "التقارير المالية",
+};
+
+
 export const dynamic = "force-dynamic";
 
 export default async function FinancialDashboardPage() {

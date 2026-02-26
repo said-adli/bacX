@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 export const metadata = {
-    title: "إنشاء حساب | Brainy",
+    title: "إنشاء حساب جديد",
     description: "انضم إلى منصة Brainy التعليمية",
 };
 

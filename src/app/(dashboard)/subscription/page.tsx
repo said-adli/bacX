@@ -5,6 +5,11 @@ import { SubscriptionClient } from "@/components/dashboard/SubscriptionClient";
 import { Loader2 } from "lucide-react";
 import { toSafeBillingHistoryDTO, SafeBillingHistory } from "@/lib/dto";
 
+export const metadata = {
+  title: "تفاصيل الاشتراك",
+};
+
+
 // Inner Server Component that fetches heavy/user-specific data
 async function SubscriptionHistoryStream({ userId, activePlans }: { userId: string | undefined, activePlans: SubscriptionPlan[] }) {
     let history: SafeBillingHistory[] = [];

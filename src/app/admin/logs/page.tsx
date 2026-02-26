@@ -2,7 +2,7 @@ import { getSecurityLogs } from "@/actions/admin-logs";
 import LogsPage from "@/components/admin/logs/LogsPageClient";
 
 export const metadata = {
-    title: "Audit Logs",
+    title: "سجلات الأمان",
 };
 
 export default async function LogsParamsPage(props: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {

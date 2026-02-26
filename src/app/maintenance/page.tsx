@@ -1,6 +1,11 @@
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Construction } from "lucide-react";
 
+export const metadata = {
+  title: "الصيانة الدورية",
+};
+
+
 export default function MaintenancePage() {
     return (
         <main className="min-h-screen bg-[#050505] flex items-center justify-center p-4 overflow-hidden relative">

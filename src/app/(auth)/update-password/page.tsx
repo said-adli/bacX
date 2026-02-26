@@ -3,7 +3,7 @@ import Image from "next/image";
 import { UpdatePasswordForm } from "./UpdatePasswordForm";
 
 export const metadata = {
-    title: "تحديث كلمة المرور | Brainy",
+    title: "تحديث كلمة المرور",
     description: "تحديث كلمة المرور لحسابك في منصة Brainy",
 };
 

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { ForgotPasswordForm } from "./ForgotPasswordForm";
 
 export const metadata = {
-    title: "نسيت كلمة المرور | Brainy",
+    title: "استعادة كلمة المرور",
     description: "استعادة كلمة المرور لحسابك في منصة Brainy",
 };
 

@@ -2,7 +2,7 @@ import { HeroSlideManager } from "@/components/admin/HeroSlideManager";
 import { getAllHeroSlides } from "@/actions/admin-hero";
 
 export const metadata = {
-    title: "إدارة الإعلانات | Admin Panel",
+    title: "إدارة واجهة المنصة",
     description: "لوحة التحكم في إعلانات الواجهة الرئيسية",
 };
 

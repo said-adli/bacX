@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata = {
-    title: "تسجيل الدخول | Brainy",
+    title: "تسجيل الدخول",
     description: "سجل دخولك إلى منصة BRAINY",
 };
 

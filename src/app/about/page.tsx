@@ -1,3 +1,8 @@
+
+export const metadata = {
+  title: "من نحن",
+};
+
 // import { Hero } from "@/components/sections/Hero";
 
 export default function AboutPage() {

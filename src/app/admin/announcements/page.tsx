@@ -4,6 +4,11 @@ import { Trash2, Plus, Bell } from "lucide-react";
 import { format } from "date-fns";
 import { arMA } from "date-fns/locale";
 
+export const metadata = {
+  title: "إدارة الإعلانات",
+};
+
+
 // Announcement shape from database
 interface Announcement {
     id: string;

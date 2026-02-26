@@ -12,6 +12,10 @@ import SubjectsGrid from "@/components/dashboard/SubjectsGrid";
 import SmartSubscriptionCards from "@/components/dashboard/SmartSubscriptionCards";
 import AnnouncementsSection from "@/components/dashboard/AnnouncementsSection";
 
+export const metadata = {
+    title: "لوحة المتابعة",
+};
+
 // Skeletons (Loading States)
 import {
     StatsSkeleton,

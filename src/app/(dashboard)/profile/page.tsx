@@ -4,6 +4,11 @@ import ProfileForm, { ProfileEditorDTO, PendingRequestDTO } from "./ProfileForm"
 import { ProfileSkeleton } from "@/components/skeletons/ProfileSkeleton";
 import { getPendingChangeRequest } from "@/actions/profile";
 
+export const metadata = {
+  title: "الملف الشخصي",
+};
+
+
 
 // 1. A dedicated Async Component for fetching the heavy data
 async function ProfileDataStream({ userId }: { userId: string }) {

@@ -1,5 +1,10 @@
 import { NotFoundState } from "@/components/ui/NotFoundState";
 
+export const metadata = {
+  title: "الصفحة غير موجودة",
+};
+
+
 export default function AuthNotFound() {
     return (
         <NotFoundState

@@ -4,6 +4,11 @@ import SettingsForm from "./SettingsForm";
 import { SettingsSkeleton } from "@/components/skeletons/SettingsSkeleton";
 import { getUserSettings } from "@/services/user.service";
 
+export const metadata = {
+  title: "إعدادات الحساب",
+};
+
+
 
 async function SettingsPageContent() {
     const supabase = await createClient();

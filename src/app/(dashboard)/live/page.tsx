@@ -1,6 +1,11 @@
 import { getHybridLiveSession } from "@/actions/live";
 import { LiveSessionClient, SecureSession } from "@/components/live/LiveSessionClient";
 
+export const metadata = {
+  title: "البث المباشر",
+};
+
+
 export const dynamic = 'force-dynamic';
 
 export default async function LiveSessionsPage() {
