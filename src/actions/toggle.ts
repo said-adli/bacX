@@ -22,7 +22,6 @@ export async function toggleStatusAction(
     const { error } = await supabase.rpc("toggle_resource_status", {
         resource_id: id,
         resource_type: resourceType,
-        p_field: field,
         new_status: newValue
     });
 
