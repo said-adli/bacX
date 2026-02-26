@@ -20,7 +20,6 @@ export type ProfileEditorDTO = {
     major_id: string | null;
     study_system: string | null;
     bio: string | null;
-    avatar_url: string | null;
     role: string | null;
 };
 
@@ -139,7 +138,7 @@ export default function ProfileForm({ initialProfile, branches, wilayas, pending
                 <div className="flex flex-col md:flex-row items-start md:items-center gap-6 pb-8 border-b border-white/10">
                     <div className="w-24 h-24">
                         <UserAvatar
-                            src={displayProfile.avatar_url}
+                            src={undefined}
                             fallback={displayProfile.full_name || undefined}
                             size="xl"
                             className="w-24 h-24 text-3xl"

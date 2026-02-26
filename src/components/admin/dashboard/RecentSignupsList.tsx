@@ -9,7 +9,7 @@ export async function RecentSignupsList() {
     const adminClient = createAdminClient();
     const { data: students } = await adminClient
         .from('profiles')
-        .select('id, full_name, email, avatar_url, created_at')
+        .select('id, full_name, email, created_at')
         .eq('role', 'student')
         .order('created_at', { ascending: false })
         .limit(5);
@@ -24,7 +24,7 @@ export async function RecentSignupsList() {
                 <div key={student.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
                     <div className="flex items-center gap-3">
                         <UserAvatar
-                            src={student.avatar_url}
+                            src={undefined}
                             fallback={student.full_name || "?"}
                             className="w-10 h-10 border border-white/10"
                         />
