@@ -5,13 +5,18 @@ import { verifyOtpAction, resendOtpAction } from "@/actions/auth";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { SmartButton } from "@/components/ui/SmartButton";
+import { useSearchParams } from "next/navigation";
 
 interface VerifyOtpFormProps {
-    email: string;
+    email: string; // Passed from server component, may be empty if not awaited properly in Next 15+
     type: "signup" | "recovery";
 }
 
-export function VerifyOtpForm({ email, type }: VerifyOtpFormProps) {
+export function VerifyOtpForm({ email: initialEmail, type: initialType }: VerifyOtpFormProps) {
+    const searchParams = useSearchParams();
+    const email = searchParams?.get("email") || initialEmail || "";
+    const type = (searchParams?.get("type") as "signup" | "recovery") || initialType || "signup";
+
     const [state, formAction, isPending] = useActionState(verifyOtpAction, null);
 
     const [cooldown, setCooldown] = useState(0);
@@ -67,7 +72,7 @@ export function VerifyOtpForm({ email, type }: VerifyOtpFormProps) {
         if (lower.includes("invalid") || lower.includes("expired") || lower.includes("token")) {
             return "رمز التحقق خاطئ أو منتهي الصلاحية";
         }
-        return errorMsg; 
+        return errorMsg;
     };
 
     const translatedError = getTranslatedError(state?.error);
@@ -116,8 +121,8 @@ export function VerifyOtpForm({ email, type }: VerifyOtpFormProps) {
                 <input type="hidden" name="token" value={otp} />
 
                 {/* OTP Input Container */}
-                <div 
-                    className="relative flex justify-center w-full" 
+                <div
+                    className="relative flex justify-center w-full"
                     dir="ltr"
                     onClick={() => {
                         inputRef.current?.focus();
@@ -142,20 +147,19 @@ export function VerifyOtpForm({ email, type }: VerifyOtpFormProps) {
                         disabled={isPending}
                         autoFocus
                     />
-                    
+
                     {/* The 6 visual boxes */}
                     <div className="flex gap-2 sm:gap-3 w-full justify-center">
                         {[0, 1, 2, 3, 4, 5].map((index) => {
                             // Highlight the current unfilled slot, or the last slot if fully filled
                             const isCurrentSlot = otp.length === index || (otp.length === 6 && index === 5);
                             const highlight = isFocused && isCurrentSlot && !isPending;
-                            
+
                             return (
                                 <div
                                     key={index}
-                                    className={`flex items-center justify-center w-[3rem] h-14 sm:w-[3.5rem] sm:h-16 text-2xl font-bold text-center text-white bg-white/10 border-2 rounded-xl transition-all ${
-                                        highlight ? "border-blue-500 bg-white/20 ring-4 ring-blue-500/20" : "border-white/20"
-                                    }`}
+                                    className={`flex items-center justify-center w-[3rem] h-14 sm:w-[3.5rem] sm:h-16 text-2xl font-bold text-center text-white bg-white/10 border-2 rounded-xl transition-all ${highlight ? "border-blue-500 bg-white/20 ring-4 ring-blue-500/20" : "border-white/20"
+                                        }`}
                                 >
                                     {otp[index] || ""}
                                 </div>

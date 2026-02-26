@@ -1,9 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Suspense } from "react";
 import { VerifyOtpForm } from "./VerifyOtpForm";
-
 export const metadata = {
-  title: "التحقق من الحساب",
+    title: "التحقق من الحساب",
 };
 
 
@@ -50,7 +50,9 @@ export default async function VerifyOtpPage({
                         </div>
                     </Link>
 
-                    <VerifyOtpForm email={email} type={type} />
+                    <Suspense fallback={<div className="text-center text-white">جاري تحميل النموذج...</div>}>
+                        <VerifyOtpForm email={email} type={type} />
+                    </Suspense>
                 </div>
             </div>
         </div>
