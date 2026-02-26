@@ -19,7 +19,7 @@ interface Student {
     id: string;
     full_name: string | null;
     email: string | null;
-    phone: string | null;
+    phone_number: string | null;
     role: string;
     created_at: string;
     is_banned: boolean;
@@ -272,7 +272,7 @@ export default function StudentDetailClient({ student, payments, activityLogs, p
                                 <Phone size={18} className="text-zinc-500" />
                                 <div>
                                     <p className="text-xs text-zinc-500 uppercase">Phone</p>
-                                    <p className="text-white text-sm">{student.phone || "Not Set"}</p>
+                                    <p className="text-white text-sm">{student.phone_number || "Not Set"}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
