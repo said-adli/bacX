@@ -12,7 +12,7 @@ interface VerifyOtpFormProps {
 }
 
 export function VerifyOtpForm({ email, type }: VerifyOtpFormProps) {
-    const [state, formAction] = useActionState(verifyOtpAction, null);
+    const [state, formAction, isPending] = useActionState(verifyOtpAction, null);
 
     const [cooldown, setCooldown] = useState(0);
     const [isResending, setIsResending] = useState(false);
@@ -43,7 +43,6 @@ export function VerifyOtpForm({ email, type }: VerifyOtpFormProps) {
         console.log("Client Resend Triggered:", { email, type });
         setIsResending(true);
 
-        // Ensure type correctly matches what Supabase expects
         const resendType = type === 'recovery' ? 'recovery' : 'signup';
         const res = await resendOtpAction(email, resendType);
 
@@ -56,51 +55,22 @@ export function VerifyOtpForm({ email, type }: VerifyOtpFormProps) {
         }
     };
 
-    // OTP Input State
-    const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+    // OTP String State & Single Input Focus State
+    const [otp, setOtp] = useState("");
+    const [isFocused, setIsFocused] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        // Initialize refs array
-        inputRefs.current = inputRefs.current.slice(0, 6);
-    }, []);
-
-    const handleChange = (index: number, value: string) => {
-        if (value.length > 1) {
-            // Handle paste
-            const pastedData = value.replace(/\D/g, "").slice(0, 6).split("");
-            const newOtp = [...otp];
-            for (let i = 0; i < pastedData.length; i++) {
-                if (index + i < 6) {
-                    newOtp[index + i] = pastedData[i];
-                }
-            }
-            setOtp(newOtp);
-            // Focus last filled input
-            const nextIndex = Math.min(index + pastedData.length, 5);
-            inputRefs.current[nextIndex]?.focus();
-            return;
+    // Error translation
+    const getTranslatedError = (errorMsg: string | undefined) => {
+        if (!errorMsg) return "";
+        const lower = errorMsg.toLowerCase();
+        if (lower.includes("invalid") || lower.includes("expired") || lower.includes("token")) {
+            return "رمز التحقق خاطئ أو منتهي الصلاحية";
         }
-
-        const newOtp = [...otp];
-        newOtp[index] = value;
-        setOtp(newOtp);
-
-        // Move to next input if filled
-        if (value && index < 5) {
-            inputRefs.current[index + 1]?.focus();
-        }
+        return errorMsg; 
     };
 
-    const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Backspace" && !otp[index] && index > 0) {
-            // Move to previous input on backspace if current is empty
-            inputRefs.current[index - 1]?.focus();
-        }
-    };
-
-    const isComplete = otp.every((digit) => digit !== "");
-    const combinedOtp = otp.join("");
+    const translatedError = getTranslatedError(state?.error);
 
     if (state?.success) {
         return (
@@ -133,40 +103,70 @@ export function VerifyOtpForm({ email, type }: VerifyOtpFormProps) {
                 </div>
             </div>
 
-            {state?.error && (
+            {translatedError && (
                 <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start text-red-400 animate-shake">
                     <AlertCircle className="w-5 h-5 ml-3 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm">{state.error}</p>
+                    <p className="text-sm">{translatedError}</p>
                 </div>
             )}
 
             <form action={formAction} className="space-y-8">
                 <input type="hidden" name="email" value={email} />
                 <input type="hidden" name="type" value={type} />
-                <input type="hidden" name="token" value={combinedOtp} />
+                <input type="hidden" name="token" value={otp} />
 
-                {/* OTP Inputs */}
-                <div className="grid grid-cols-6 gap-2 sm:gap-3 w-full" dir="ltr">
-                    {otp.map((digit, index) => (
-                        <input
-                            key={index}
-                            ref={(el) => {
-                                inputRefs.current[index] = el;
-                            }}
-                            type="text"
-                            inputMode="numeric"
-                            maxLength={1}
-                            value={digit}
-                            onChange={(e) => handleChange(index, e.target.value)}
-                            onKeyDown={(e) => handleKeyDown(index, e)}
-                            className="w-full max-w-[3.5rem] h-14 sm:h-16 text-2xl font-bold text-center text-white bg-white/10 border-2 border-white/20 rounded-xl focus:border-blue-500 focus:bg-white/20 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
-                        />
-                    ))}
+                {/* OTP Input Container */}
+                <div 
+                    className="relative flex justify-center w-full" 
+                    dir="ltr"
+                    onClick={() => {
+                        inputRef.current?.focus();
+                        setIsFocused(true);
+                    }}
+                >
+                    {/* The absolute hidden real input */}
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        autoComplete="one-time-code"
+                        value={otp}
+                        onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, "");
+                            setOtp(val);
+                        }}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
+                        disabled={isPending}
+                        autoFocus
+                    />
+                    
+                    {/* The 6 visual boxes */}
+                    <div className="flex gap-2 sm:gap-3 w-full justify-center">
+                        {[0, 1, 2, 3, 4, 5].map((index) => {
+                            // Highlight the current unfilled slot, or the last slot if fully filled
+                            const isCurrentSlot = otp.length === index || (otp.length === 6 && index === 5);
+                            const highlight = isFocused && isCurrentSlot && !isPending;
+                            
+                            return (
+                                <div
+                                    key={index}
+                                    className={`flex items-center justify-center w-[3rem] h-14 sm:w-[3.5rem] sm:h-16 text-2xl font-bold text-center text-white bg-white/10 border-2 rounded-xl transition-all ${
+                                        highlight ? "border-blue-500 bg-white/20 ring-4 ring-blue-500/20" : "border-white/20"
+                                    }`}
+                                >
+                                    {otp[index] || ""}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 <div className="pt-2">
                     <SmartButton
-                        disabled={!isComplete}
+                        disabled={otp.length !== 6 || isPending}
                         pendingText="جاري التحقق..."
                         className="w-full h-12 sm:h-14 !text-base sm:!text-lg font-bold !rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] border-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden"
                     >
