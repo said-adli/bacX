@@ -38,7 +38,7 @@ export async function getStudents(
     // (God Mode for Read as well)
     let dbQuery = adminClient
         .from('profiles')
-        .select('id, full_name, email, wilaya, study_system, created_at, is_restored, is_subscribed, subscription_end_date, is_banned, avatar_url, plan_id', { count: 'exact' })
+        .select('id, full_name, email, wilaya, study_system, created_at, is_subscribed, subscription_end_date, is_banned, plan_id', { count: 'exact' })
         .eq('role', 'student')
         .order('created_at', { ascending: false })
         .range((page - 1) * 10, ((page - 1) * 10) + 9);
@@ -175,7 +175,7 @@ export async function getStudentDetails(studentId: string) {
     // 2. Fetch Profile (Identity)
     const { data: profile, error: profileError } = await supabaseAdmin
         .from('profiles')
-        .select('id, full_name, email, phone, wilaya, study_system, created_at, is_restored, is_subscribed, subscription_end_date, is_banned, avatar_url, role, bio, major_id, wilaya_id, plan_id')
+        .select('id, full_name, email, phone_number, wilaya, study_system, created_at, is_subscribed, subscription_end_date, is_banned, role, bio, major_id, wilaya_id, plan_id')
         .eq('id', studentId)
         .single();
 
