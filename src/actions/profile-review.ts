@@ -186,7 +186,7 @@ export async function getPendingProfileRequests() {
         .from("profile_change_requests")
         .select(`
             *,
-            profiles:user_id (
+            profiles (
                 full_name,
                 email,
                 avatar_url

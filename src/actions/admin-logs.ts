@@ -42,7 +42,7 @@ export async function getSecurityLogs(
             details,
             ip_address,
             created_at,
-            profiles:user_id (
+            profiles (
                 full_name,
                 email,
                 role

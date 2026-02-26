@@ -27,7 +27,7 @@ export async function getDeviceSessions() {
         .from('user_devices')
         .select(`
             *,
-            profiles:user_id (email, full_name, role)
+            profiles (email, full_name, role)
         `)
         .order('last_active', { ascending: false })
         .limit(100);

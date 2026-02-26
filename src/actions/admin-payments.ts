@@ -28,7 +28,7 @@ export async function getPendingPayments() {
         .from('payment_requests')
         .select(`
             *,
-            profiles:user_id ( full_name, email )
+            profiles ( full_name, email )
         `)
         .eq('status', 'pending')
         .order('created_at', { ascending: true });
