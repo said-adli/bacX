@@ -29,6 +29,22 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
     });
 
     if (error) {
+        // Smart Redirect for Unverified Users
+        if (error.message.includes("Email not confirmed")) {
+            // Step A: Automatically trigger a resend of the OTP
+            await supabase.auth.resend({
+                type: 'signup',
+                email: email
+            });
+            // Step B: Redirect to verification screen
+            redirect(`/verify-otp?email=${encodeURIComponent(email)}&type=signup`);
+        }
+
+        // Translate other common errors
+        if (error.message.includes("Invalid login credentials")) {
+            return { error: "البريد الإلكتروني أو كلمة المرور غير صحيحة" };
+        }
+
         return { error: error.message };
     }
 
