@@ -29,7 +29,6 @@ interface Student {
 
 interface Payment {
     id: string;
-    amount: number;
     status: 'approved' | 'pending' | 'rejected';
     created_at: string;
     receipt_url?: string;
@@ -363,7 +362,6 @@ export default function StudentDetailClient({ student, payments, activityLogs, p
                                         <th className="pb-3 pl-4">Date</th>
                                         <th className="pb-3">Proof</th>
                                         <th className="pb-3">Status</th>
-                                        <th className="pb-3 text-right pr-4">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody className="text-sm text-zinc-300">
@@ -379,9 +377,6 @@ export default function StudentDetailClient({ student, payments, activityLogs, p
                                             </td>
                                             <td className="py-4">
                                                 <Badge status={pay.status} />
-                                            </td>
-                                            <td className="py-4 text-right pr-4 font-mono">
-                                                {pay.amount ? `${pay.amount} DA` : '-'}
                                             </td>
                                         </tr>
                                     )) : (

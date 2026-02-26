@@ -189,14 +189,14 @@ export async function getStudentDetails(studentId: string) {
         // Fetch Payments
         supabaseAdmin
             .from('payment_receipts')
-            .select('id, user_id, plan_id, receipt_url, status, amount, created_at')
+            .select('id, user_id, plan_id, receipt_url, status, created_at')
             .eq('user_id', studentId)
             .order('created_at', { ascending: false }),
 
         // Fetch Security Logs
         supabaseAdmin
             .from('security_logs')
-            .select('id, user_id, action, ip_address, user_agent, created_at')
+            .select('id, user_id, reason, ip_address, created_at')
             .eq('user_id', studentId)
             .order('created_at', { ascending: false })
             .limit(5),
@@ -217,10 +217,10 @@ export async function getStudentDetails(studentId: string) {
     return {
         profile,
         payments: payments || [],
-        // DTO: Map DB 'action' → client 'event' for ActivityLog type compatibility
+        // DTO: Map DB 'reason' → client 'event' for ActivityLog type compatibility
         securityLogs: (securityLogs || []).map((log) => ({
             id: log.id,
-            event: log.action, // DB column → DTO field
+            event: log.reason || "Unknown action", // DB column → DTO field
             created_at: log.created_at,
         })),
         recentProgress: progress || []

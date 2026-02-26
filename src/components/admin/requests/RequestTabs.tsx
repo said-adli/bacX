@@ -306,26 +306,54 @@ function ProfileRequestCard({
             </div>
 
             {/* Changes Comparison */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="flex flex-col gap-3 mb-6">
                 {payload.full_name && (
                     <ComparisonRow
-                        label="الاسم"
-                        oldValue={profile?.full_name || "-"}
+                        label="الاسم الشخصي"
+                        oldValue={profile?.full_name || "غير محدد"}
                         newValue={payload.full_name}
+                    />
+                )}
+                {payload.email && (
+                    <ComparisonRow
+                        label="البريد الإلكتروني"
+                        oldValue={profile?.email || "غير محدد"}
+                        newValue={payload.email}
                     />
                 )}
                 {payload.wilaya && (
                     <ComparisonRow
-                        label="الولاية"
-                        oldValue={profile?.wilaya || "-"}
+                        label="ولاية الإقامة"
+                        oldValue={profile?.wilaya || "غير محدد"}
                         newValue={payload.wilaya}
                     />
                 )}
                 {payload.branch_id && (
                     <ComparisonRow
-                        label="الشعبة"
-                        oldValue={profile?.branch_id || "-"}
+                        label="الشعبة الدراسية"
+                        oldValue={profile?.branch_id || "غير محدد"}
                         newValue={payload.branch_id}
+                    />
+                )}
+                {payload.major && (
+                    <ComparisonRow
+                        label="التخصص الدراسي"
+                        oldValue={typeof profile?.major === 'string' ? profile.major : "غير محدد"}
+                        newValue={payload.major}
+                    />
+                )}
+                {payload.study_system && (
+                    <ComparisonRow
+                        label="النظام الدراسي"
+                        oldValue={typeof profile?.study_system === 'string' ? profile.study_system : "غير محدد"}
+                        newValue={payload.study_system}
+                    />
+                )}
+                {payload.bio && (
+                    <ComparisonRow
+                        label="النبذة التعريفية"
+                        oldValue={typeof profile?.bio === 'string' ? profile.bio : "غير محدد"}
+                        newValue={payload.bio}
                     />
                 )}
             </div>
@@ -357,26 +385,24 @@ function ComparisonRow({ label, oldValue, newValue }: { label: string; oldValue:
     const hasChanged = oldValue !== newValue;
 
     return (
-        <div className="bg-white/5 rounded-xl p-4">
-            <p className="text-sm font-bold text-white mb-3 border-b border-white/10 pb-2">{label}</p>
-            <div className="flex flex-col gap-3 relative">
-                
-                {/* Current Value */}
-                <div className="flex items-center justify-between">
-                    <span className="text-xs text-white/40">البيانات الحالية:</span>
-                    <span className={`text-sm ${hasChanged ? "text-white/40 line-through" : "text-white font-medium"}`}>
-                        {oldValue}
-                    </span>
-                </div>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-between gap-4">
+            <div className="flex-shrink-0 w-1/4">
+                <p className="text-sm font-bold text-white/80">{label}:</p>
+            </div>
 
-                {/* Requested Value */}
+            <div className="flex-1 flex items-center justify-start gap-3 bg-black/20 rounded-lg p-2 overflow-hidden">
+                <span className={`text-sm ${hasChanged ? "text-white/40 line-through truncate max-w-[40%]" : "text-white font-medium truncate"}`} title={oldValue}>
+                    {oldValue || "-"}
+                </span>
+
                 {hasChanged && (
-                    <div className="flex items-center justify-between bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20">
-                        <span className="text-xs text-emerald-400/80">التغيير المطلوب:</span>
-                        <span className="text-emerald-400 font-bold">{newValue}</span>
-                    </div>
+                    <>
+                        <span className="text-emerald-500 font-bold text-lg leading-none">➔</span>
+                        <span className="text-emerald-400 font-bold text-sm bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 truncate max-w-[50%]" title={newValue}>
+                            {newValue}
+                        </span>
+                    </>
                 )}
-                
             </div>
         </div>
     );

@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 // Types
 export type UpdateProfilePayload = {
     full_name?: string;
+    email?: string;
     wilaya?: string;
     major?: string;
     study_system?: string;
@@ -30,6 +31,9 @@ export interface StudentRequest {
         email: string;
         wilaya?: string;
         branch_id?: string;
+        major?: string;
+        study_system?: string;
+        bio?: string;
     };
 }
 
@@ -52,12 +56,12 @@ export async function getStudentRequests(): Promise<{ data: StudentRequest[]; er
 
     if (adminProfile?.role !== "admin") return { data: [], error: "Admin only" };
 
-    // Fetch Requests - Single Source of Truth
+    // Fetch Requests - Since no explicit foreign key exists from profile_change_requests -> profiles
+    // We will do a generic join or a two-step fetch to avoid PGRST200 relation errors.
     const { data: requests, error } = await supabase
         .from("profile_change_requests")
         .select(`
-            id, user_id, new_data, status, rejection_reason, created_at,
-            profiles!profile_change_requests_user_id_fkey ( full_name, email, wilaya, branch_id )
+            id, user_id, new_data, status, rejection_reason, created_at
         `)
         .eq("status", "pending")
         .order("created_at", { ascending: true });
@@ -67,40 +71,39 @@ export async function getStudentRequests(): Promise<{ data: StudentRequest[]; er
         return { data: [], error: error.message };
     }
 
-    interface RequestsRow {
-        id: string;
-        user_id: string;
-        new_data: Record<string, unknown> | null;
-        status: "pending" | "approved" | "rejected";
-        rejection_reason: string | null;
-        created_at: string;
-        profiles: {
-            full_name: string;
-            email: string;
-            wilaya?: string;
-            branch_id?: string;
-        } | {
-            full_name: string;
-            email: string;
-            wilaya?: string;
-            branch_id?: string;
-        }[] | null;
+    if (!requests || requests.length === 0) {
+        return { data: [], error: null };
     }
 
-    const mappedRequests: StudentRequest[] = (requests as unknown as RequestsRow[]).map((req) => {
+    // Step 2: Manually fetch profiles for these requests
+    const userIds = requests.map(r => r.user_id);
+    const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, wilaya, branch_id, major, study_system, bio")
+        .in("id", userIds);
+
+    // Create lookup map
+    const profileMap = new Map();
+    if (profilesData) {
+        profilesData.forEach(p => profileMap.set(p.id, p));
+    }
+
+    const mappedRequests: StudentRequest[] = requests.map((req) => {
         // Detect Request Type
-        const isDeletion = req.new_data?.request_type === "DELETE_ACCOUNT";
+        const isDeletion = (req.new_data as Record<string, unknown>)?.request_type === "DELETE_ACCOUNT";
 
         // Safe Profile Access
-        const profileData = req.profiles;
-        const profile = Array.isArray(profileData) ? profileData[0] : profileData;
+        const profile = profileMap.get(req.user_id);
 
         // Construct Typed Profile
         const safeProfile = profile ? {
             full_name: profile.full_name,
             email: profile.email,
             wilaya: profile.wilaya ?? undefined,
-            branch_id: profile.branch_id ?? undefined
+            branch_id: profile.branch_id ?? undefined,
+            major: profile.major ?? undefined,
+            study_system: profile.study_system ?? undefined,
+            bio: profile.bio ?? undefined
         } : undefined;
 
         // Safe Payload Cast
@@ -111,7 +114,7 @@ export async function getStudentRequests(): Promise<{ data: StudentRequest[]; er
             user_id: req.user_id,
             request_type: isDeletion ? "DELETE_ACCOUNT" : "UPDATE_PROFILE",
             payload: payload,
-            status: req.status,
+            status: req.status as "pending" | "approved" | "rejected",
             admin_note: req.rejection_reason,
             created_at: req.created_at,
             profiles: safeProfile
