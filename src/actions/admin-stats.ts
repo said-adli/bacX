@@ -70,7 +70,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
             activeOnline
         };
 
-    } catch (err: unknown) {
+    } catch (err: any) {
+        if (err?.digest === 'DYNAMIC_SERVER_USAGE' || err?.message?.includes('Dynamic server usage')) {
+            throw err;
+        }
         console.error("CRITICAL ADMIN STATS ERROR:", err);
         return {
             totalStudents: 0,
@@ -139,7 +142,10 @@ export async function getRevenueStats(): Promise<RevenueData[]> {
 
         return result;
 
-    } catch (e) {
+    } catch (e: any) {
+        if (e?.digest === 'DYNAMIC_SERVER_USAGE' || e?.message?.includes('Dynamic server usage')) {
+            throw e;
+        }
         console.error("Revenue Stats Error:", e);
         return [];
     }
