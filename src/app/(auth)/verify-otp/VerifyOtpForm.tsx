@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { verifyOtpAction, resendOtpAction } from "@/actions/auth";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -17,7 +17,18 @@ export function VerifyOtpForm({ email: initialEmail, type: initialType }: Verify
     const email = searchParams?.get("email") || initialEmail || "";
     const type = (searchParams?.get("type") as "signup" | "recovery") || initialType || "signup";
 
-    const [state, formAction, isPending] = useActionState(verifyOtpAction, null);
+    const [isPending, startTransition] = useTransition();
+    const [state, setState] = useState<{ error?: string; success?: boolean } | null>(null);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!email || otp.length !== 6) return;
+
+        startTransition(async () => {
+            const result = await verifyOtpAction({ email, token: otp, type });
+            setState(result || {});
+        });
+    };
 
     const [cooldown, setCooldown] = useState(0);
     const [isResending, setIsResending] = useState(false);
@@ -115,10 +126,7 @@ export function VerifyOtpForm({ email: initialEmail, type: initialType }: Verify
                 </div>
             )}
 
-            <form action={formAction} className="space-y-8">
-                <input type="hidden" name="email" value={email} />
-                <input type="hidden" name="type" value={type} />
-                <input type="hidden" name="token" value={otp} />
+            <form onSubmit={handleSubmit} className="space-y-8">
 
                 {/* OTP Input Container */}
                 <div

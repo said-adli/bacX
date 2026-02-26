@@ -14,11 +14,7 @@ export interface VerifyOtpState {
     success?: boolean;
 }
 
-export async function verifyOtpAction(prevState: VerifyOtpState | null, formData: FormData): Promise<VerifyOtpState> {
-    const email = formData.get("email") as string;
-    const token = formData.get("token") as string;
-    const type = formData.get("type") as "signup" | "recovery";
-
+export async function verifyOtpAction({ email, token, type }: { email: string; token: string; type: "signup" | "recovery" }): Promise<VerifyOtpState> {
     if (!email || !token || !type) {
         return { error: "الرجاء توفير جميع المعلومات المطلوبة" };
     }
