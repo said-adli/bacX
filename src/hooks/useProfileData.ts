@@ -17,7 +17,6 @@ interface ProfileData {
     study_system: string;
     bio: string;
     role: string;
-    avatar_url: string;
 }
 
 interface UseProfileDataResult {
@@ -87,7 +86,6 @@ export function useProfileData(): UseProfileDataResult {
                 study_system: data?.study_system || "",
                 bio: data?.bio || "",
                 role: data?.role || "student",
-                avatar_url: data?.avatar_url || "",
                 // Store relationships
                 branches: data?.branches || null,
                 wilayas: data?.wilayas || null

@@ -142,7 +142,7 @@ const StickyGlassMenuComponent = function StickyGlassMenu() {
                             className={`flex items-center gap-2 pl-1 pr-1 py-1 rounded-full border transition-all ${isProfileOpen ? 'bg-white/10 border-white/20' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
                         >
                             <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/20 shadow-[0_0_15px_rgba(37,99,235,0.6)] group-hover:shadow-[0_0_25px_rgba(37,99,235,0.8)] transition-all duration-300">
-                                <UserAvatar src={profile?.avatar_url} fallback={profile?.full_name} size="sm" />
+                                <UserAvatar src={undefined} fallback={profile?.full_name} size="sm" />
                             </div>
                             <ChevronDown size={14} className={`text-white/50 transition-transform duration-300 ml-1 ${isProfileOpen ? 'rotate-180' : ''}`} />
                         </button>

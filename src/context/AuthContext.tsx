@@ -34,8 +34,6 @@ export interface EnrichedProfile {
     wilaya?: string;     // Alias for wilayas.name_ar || wilayas.name_en
     plan_name?: string;  // Alias for subscription_plans.name
 
-    // Legacy / Optional
-    avatar_url?: string;
 }
 
 export type UserProfile = EnrichedProfile;
@@ -135,8 +133,6 @@ export function AuthProvider({
                 major: rawProfile.majors?.label,
                 wilaya: rawProfile.wilayas?.name_ar || rawProfile.wilayas?.name_en,
                 plan_name: rawProfile.subscription_plans?.name,
-
-                avatar_url: rawProfile.avatar_url
             };
 
             return profile;

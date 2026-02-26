@@ -148,7 +148,7 @@ const GlassSidebarComponent = function GlassSidebar() {
                     {!isCollapsed && (
                         <div className="flex items-center gap-3 px-2 animate-in fade-in">
                             <UserAvatar
-                                src={profile?.avatar_url}
+                                src={undefined}
                                 fallback={profile?.full_name}
                                 size="md"
                             />
@@ -163,7 +163,7 @@ const GlassSidebarComponent = function GlassSidebar() {
                     )}
                     {isCollapsed && (
                         <div className="flex justify-center">
-                            <UserAvatar src={profile?.avatar_url} fallback={profile?.full_name} size="sm" />
+                            <UserAvatar src={undefined} fallback={profile?.full_name} size="sm" />
                         </div>
                     )}
                 </div>

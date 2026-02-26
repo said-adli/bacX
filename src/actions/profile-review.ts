@@ -188,8 +188,7 @@ export async function getPendingProfileRequests() {
             *,
             profiles (
                 full_name,
-                email,
-                avatar_url
+                email
             )
         `)
         .eq("status", "pending")

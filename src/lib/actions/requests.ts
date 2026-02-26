@@ -57,7 +57,7 @@ export async function getStudentRequests(): Promise<{ data: StudentRequest[]; er
         .from("profile_change_requests")
         .select(`
             id, user_id, new_data, status, rejection_reason, created_at,
-            profiles:user_id ( full_name, email, wilaya, branch_id )
+            profiles!profile_change_requests_user_id_fkey ( full_name, email, wilaya, branch_id )
         `)
         .eq("status", "pending")
         .order("created_at", { ascending: true });

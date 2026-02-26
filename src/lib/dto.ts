@@ -6,7 +6,6 @@ export type SafeUser = {
 export type SafeProfile = {
     id: string;
     full_name: string | null;
-    avatar_url: string | null;
     role: string | null;
     is_subscribed: boolean;
 };
@@ -34,7 +33,6 @@ export function toSafeProfileDTO(profile: any): SafeProfile | null {
     return {
         id: profile.id,
         full_name: profile.full_name,
-        avatar_url: profile.avatar_url,
         role: profile.role,
         is_subscribed: profile.is_subscribed,
         // intentionally omitting wilaya_id, branch_id, phone, parent_phone, school, birth_date for global contexts

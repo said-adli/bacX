@@ -358,17 +358,25 @@ function ComparisonRow({ label, oldValue, newValue }: { label: string; oldValue:
 
     return (
         <div className="bg-white/5 rounded-xl p-4">
-            <p className="text-xs text-white/40 mb-2">{label}</p>
-            <div className="flex items-center gap-2">
-                <span className={`text-sm ${hasChanged ? "text-white/40 line-through" : "text-white"}`}>
-                    {oldValue}
-                </span>
+            <p className="text-sm font-bold text-white mb-3 border-b border-white/10 pb-2">{label}</p>
+            <div className="flex flex-col gap-3 relative">
+                
+                {/* Current Value */}
+                <div className="flex items-center justify-between">
+                    <span className="text-xs text-white/40">البيانات الحالية:</span>
+                    <span className={`text-sm ${hasChanged ? "text-white/40 line-through" : "text-white font-medium"}`}>
+                        {oldValue}
+                    </span>
+                </div>
+
+                {/* Requested Value */}
                 {hasChanged && (
-                    <>
-                        <span className="text-white/20">→</span>
+                    <div className="flex items-center justify-between bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20">
+                        <span className="text-xs text-emerald-400/80">التغيير المطلوب:</span>
                         <span className="text-emerald-400 font-bold">{newValue}</span>
-                    </>
+                    </div>
                 )}
+                
             </div>
         </div>
     );
