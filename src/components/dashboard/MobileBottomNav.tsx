@@ -12,7 +12,7 @@ export default function MobileBottomNav() {
     const navItems = [
         { name: "الرئيسية", href: "/dashboard", icon: Home },
         { name: "المواد", href: "/materials", icon: BookOpen },
-        { name: "Brainy", href: "/", icon: Brain, isHero: true }, // Updated
+        { name: "BrainyDZ", href: "/", icon: Brain, isHero: true }, // Updated
         { name: "مباشر", href: "/live", icon: Video },
         { name: "حسابي", href: "/profile", icon: User },
     ];
@@ -40,7 +40,7 @@ export default function MobileBottomNav() {
                                         >
                                             <Image
                                                 src="/images/logo.png"
-                                                alt="Brainy"
+                                                alt="BrainyDZ"
                                                 width={32}
                                                 height={32}
                                                 className="object-contain"

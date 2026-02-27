@@ -37,7 +37,7 @@ const LandingNavbarComponent = function LandingNavbar({ authButton }: { authButt
                         {/* Logo is white since the dark background/header requires it (previously inverted black logo) */}
                         <Logo className="h-full w-auto invert brightness-0 drop-shadow-xl" />
                     </div>
-                    <span className="text-2xl font-bold tracking-tight text-white/90">Brainy</span>
+                    <span className="text-2xl font-bold tracking-tight text-white/90">BrainyDZ</span>
                 </div>
 
                 {/* Center: Navigation Pill */}

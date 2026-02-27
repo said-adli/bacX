@@ -17,7 +17,7 @@ export function AuthLayoutShell({ children, title }: { children: React.ReactNode
                     <Logo className="h-24 mx-auto mb-8 invert brightness-0" />
                     <h1 className="text-4xl font-bold text-white mb-4">Master Your Future</h1>
                     <p className="text-zinc-400 text-lg max-w-sm mx-auto">
-                        Join thousands of students achieving excellence with Brainy.
+                        Join thousands of students achieving excellence with BrainyDZ.
                     </p>
                 </div>
             </div>

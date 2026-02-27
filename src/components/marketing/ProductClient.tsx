@@ -45,7 +45,7 @@ export function ProductClient() {
                         <span className="text-blue-500">سابقة لعصرها</span>
                     </h1>
                     <p className="text-lg text-white/50 max-w-2xl mx-auto leading-relaxed">
-                        لقد أعدنا تصميم تجربة التعلم من الصفر. Brainy ليست مجرد منصة دروس،
+                        لقد أعدنا تصميم تجربة التعلم من الصفر. BrainyDZ ليست مجرد منصة دروس،
                         بل هي نظام بيئي متكامل مصمم خصيصاً ليمنحك التفوق.
                     </p>
                 </div>

@@ -19,7 +19,7 @@ const HeroSection = dynamic(
 import { MasterclassLoader as MasterclassSection } from "@/components/home/MasterclassLoader";
 
 export const metadata: Metadata = {
-  title: "BRAINY - منصة التفوق الأكاديمي",
+  title: "BrainyDZ - منصة التفوق الأكاديمي",
   description: "رحلة سينمائية نحو النجاح في البكالوريا. تعلم من أفضل الأساتذة في الجزائر بجودة 4K.",
 };
 
@@ -46,7 +46,7 @@ export default async function LandingPage() {
 
       {/* Footer */}
       <footer className="py-12 text-center text-white/30 border-t border-white/5">
-        <p>&copy; 2026 Brainy. Crafted for Excellence.</p>
+        <p>&copy; 2026 BrainyDZ. Crafted for Excellence.</p>
       </footer>
     </div>
   );

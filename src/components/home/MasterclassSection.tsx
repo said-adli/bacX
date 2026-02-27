@@ -14,7 +14,7 @@ export function MasterclassSection() {
                     viewport={{ once: true }}
                     className="text-center mb-24"
                 >
-                    <h2 className="text-4xl md:text-5xl font-serif text-white mb-6">تجربة Brainy التعليمية</h2>
+                    <h2 className="text-4xl md:text-5xl font-serif text-white mb-6">تجربة BrainyDZ التعليمية</h2>
                     <div className="w-24 h-1 bg-primary mx-auto rounded-full"></div>
                 </motion.div>
 
@@ -22,7 +22,7 @@ export function MasterclassSection() {
                     {[
                         { title: "جودة سينمائية 4K", desc: "استمتع بدروس مصورة بأعلى معايير الجودة العالمية.", icon: Play, delay: 0 },
                         { title: "نخبة الأساتذة", desc: "تعلم على يد أفضل الكفاءات التعليمية في الجزائر.", icon: Star, delay: 0.2 },
-                        { title: "منهجية Brainy", desc: "نظام تعليمي متكامل يضمن لك التفوق في البكالوريا.", icon: BookOpen, delay: 0.4 },
+                        { title: "منهجية BrainyDZ", desc: "نظام تعليمي متكامل يضمن لك التفوق في البكالوريا.", icon: BookOpen, delay: 0.4 },
                     ].map((item, i) => (
                         <GlassCard
                             key={i}

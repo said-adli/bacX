@@ -28,7 +28,7 @@ export default function PlanetHero() {
             {/* Floating Content */}
             <div className="relative z-10 text-center space-y-8 mt-32">
                 <h1 className="text-6xl md:text-7xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-b from-white via-blue-100 to-blue-900/50 drop-shadow-[0_0_30px_rgba(255,255,255,0.3)] animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-                    BRAINY V4.0
+                    BrainyDZ V4.0
                 </h1>
 
                 <p className="text-xl md:text-2xl text-blue-200/60 font-light tracking-wide animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">

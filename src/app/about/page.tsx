@@ -1,6 +1,6 @@
 
 export const metadata = {
-  title: "من نحن",
+    title: "من نحن",
 };
 
 // import { Hero } from "@/components/sections/Hero";
@@ -12,7 +12,7 @@ export default function AboutPage() {
                 <h1 className="text-4xl font-bold mb-8 text-foreground">عن المنصة</h1>
                 <div className="prose prose-lg dark:prose-invert max-w-none">
                     <p className="lead text-xl text-muted-foreground mb-6">
-                        منصة Brainy هي منصتك التعليمية الذكية للتحضير للبكالوريا في الجزائر.
+                        منصة BrainyDZ هي منصتك التعليمية الذكية للتحضير للبكالوريا في الجزائر.
                     </p>
                     <div className="grid md:grid-cols-2 gap-12 my-12">
                         <div>
