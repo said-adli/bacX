@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
     // STRICT CSP: No unsafe-inline, No unsafe-eval
     const cspHeader = `
       default-src 'self';
-      script-src 'self' https://*.supabase.co https://www.youtube.com https://*.google.com;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co https://www.youtube.com https://*.google.com;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       img-src 'self' blob: data: https://*.supabase.co https://lh3.googleusercontent.com https://*.googleusercontent.com https://img.youtube.com https://via.placeholder.com;
       font-src 'self' data: https://fonts.gstatic.com;
