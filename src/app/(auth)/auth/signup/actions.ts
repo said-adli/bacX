@@ -70,29 +70,7 @@ export async function signupAction(prevState: SignupState, formData: FormData): 
         return { error: error.message };
     }
 
-    // 3. MANUAL INSERTION (Anti-Choking Layer)
-    // If the database trigger fails or hangs, this ensures the profile exists.
-    if (data.user) {
-        const { error: profileError } = await supabase.from('profiles').upsert({
-            id: data.user.id,
-            email: email,
-            full_name: fullName,
-            wilaya: wilayaLabel,
-            wilaya_id: wilayaId ? parseInt(wilayaId) : null,
-            major: majorLabel,
-            major_id: majorId,
-            study_system: studySystem,
-            phone_number: phone || "",
-            role: 'student',
-            is_profile_complete: true,
-            updated_at: new Date().toISOString(),
-        });
 
-        if (profileError) {
-            console.error("CRITICAL: Manual Profile Insert Failed", profileError);
-            // We proceed anyway, hoping the trigger worked, but this error log is vital.
-        }
-    }
 
     revalidatePath('/', 'layout');
 
