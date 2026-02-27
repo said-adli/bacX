@@ -1,15 +1,14 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://brainy-dz.vercel.app';
+    // STRICLY HARDCODE THE PRODUCTION DOMAIN:
+    const baseUrl = 'https://brainydz.me';
 
-    // Core public routes
-    const routes = ['', '/about', '/pricing', '/login', '/auth/signup'];
-
-    return routes.map((route) => ({
-        url: `${baseUrl}${route}`,
-        lastModified: new Date(),
-        changeFrequency: 'weekly',
-        priority: route === '' ? 1 : 0.8,
-    }));
+    return [
+        { url: `${baseUrl}`, lastModified: new Date() },
+        { url: `${baseUrl}/about`, lastModified: new Date() },
+        { url: `${baseUrl}/pricing`, lastModified: new Date() },
+        { url: `${baseUrl}/login`, lastModified: new Date() },
+        { url: `${baseUrl}/auth/signup`, lastModified: new Date() },
+    ];
 }

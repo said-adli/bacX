@@ -46,7 +46,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  metadataBase: new URL('https://brainydz.me'),
   title: {
     template: '%s | BrainyDZ',
     default: 'BrainyDZ | منصة التفوق الأكاديمي',
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "ar_DZ",
-    url: "https://brainy-dz.vercel.app",
+    url: "https://brainydz.me",
     siteName: "Brainy",
     title: "Brainy - منصة التفوق الأكاديمي",
     description: "استعد للبكالوريا مع أفضل الأساتذة في بيئة تعليمية ذكية.",
