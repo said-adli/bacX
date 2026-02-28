@@ -14,12 +14,14 @@ export interface SignupState {
 export async function signupAction(prevState: SignupState, formData: FormData): Promise<SignupState> {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
+    const fullName = formData.get("fullName") as string;
+    const studySystem = formData.get("study_system") as string;
+    const wilayaId = formData.get("wilaya_id") as string;
+    const majorId = formData.get("major_id") as string;
 
     const supabase = await createClient();
 
     // 1. Fetch Labels (Human Readable)
-    const wilayaId = formData.get("wilaya_id") as string;
-    const majorId = formData.get("major_id") as string;
     let wilayaLabel = "";
     let majorLabel = "";
 
@@ -42,24 +44,16 @@ export async function signupAction(prevState: SignupState, formData: FormData): 
     }
 
     // 2. Prepare Dynamic Metadata
-    const userMetadata: Record<string, any> = {};
-    formData.forEach((value, key) => {
-        // Exclude sensitive or auth-specific fields
-        if (key !== "email" && key !== "password") {
-            // Map the frontend `fullName` to standard `full_name` for the trigger
-            if (key === "fullName") {
-                userMetadata["full_name"] = value;
-            } else {
-                userMetadata[key] = value;
-            }
-        }
-    });
-
-    // Include the resolved labels and system defaults required to skip onboarding
-    userMetadata["wilaya"] = wilayaLabel || userMetadata["wilaya"];
-    userMetadata["major"] = majorLabel || userMetadata["major"];
-    userMetadata["role"] = "student";
-    userMetadata["is_profile_complete"] = true;
+    const cleanMetadata = {
+        full_name: fullName,
+        study_system: studySystem,
+        wilaya_id: wilayaId,
+        major_id: majorId,
+        wilaya: wilayaLabel || undefined,
+        major: majorLabel || undefined,
+        role: "student",
+        is_profile_complete: true
+    };
 
     // 3. Sign Up with Dynamic Metadata
     // The Database Trigger will handle inserting into the profiles table.
@@ -67,7 +61,7 @@ export async function signupAction(prevState: SignupState, formData: FormData): 
         email,
         password,
         options: {
-            data: userMetadata,
+            data: cleanMetadata,
         },
     });
 
