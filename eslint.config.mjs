@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // CommonJS scripts (use require() which is valid for CJS)
+    "scripts/**/*.cjs",
   ]),
 ]);
 

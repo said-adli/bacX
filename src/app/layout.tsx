@@ -1,62 +1,77 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Tajawal } from "next/font/google";
+import { IBM_Plex_Sans_Arabic, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "sonner";
-import NextTopLoader from "nextjs-toploader";
-import { BackButton } from "@/components/ui/BackButton";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
+import { GlobalErrorBoundary as ErrorBoundary } from "@/components/GlobalErrorBoundary";
+
+// removed force-dynamic to enable Static-by-Default rendering
+
+const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
+  subsets: ["arabic", "latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700"],
+  variable: "--font-sans",
   display: 'swap',
 });
 
-const tajawal = Tajawal({
-  subsets: ["arabic"],
-  weight: ["300", "400", "500", "700"],
-  variable: "--font-tajawal",
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-serif",
   display: 'swap',
+});
+
+import { Amiri, Cinzel } from "next/font/google";
+
+const amiri = Amiri({
+  subsets: ["arabic"],
+  weight: ["400", "700"],
+  variable: "--font-amiri",
+  display: "swap",
+});
+
+const cinzel = Cinzel({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-cinzel",
+  display: "swap",
 });
 
 // --- SEO & VIEWPORT ---
 export const viewport: Viewport = {
-  themeColor: '#050505',
+  themeColor: '#2563EB',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://bacx-dz.vercel.app'), // TODO: Update with real domain
+  metadataBase: new URL('https://brainydz.me'),
   title: {
-    default: "BacX - منصة النخبة التعليمية",
-    template: "%s | BacX",
+    template: '%s | BrainyDZ',
+    default: 'BrainyDZ | منصة التفوق الأكاديمي',
   },
-  description: "المنصة التعليمية الأولى لطلاب البكالوريا في الجزائر. تجربة دراسية سينمائية تجمع بين التقنية المتقدمة والمحتوى الأكاديمي الرصين.",
-  keywords: ["bac dz", "bac algeria", "تعليم", "بكالوريا", "دروس", "منصة تعليمية"],
-  authors: [{ name: "BacX Team" }],
+  icons: {
+    icon: '/images/favicon1.png',
+    shortcut: '/images/favicon1.png',
+    apple: '/images/favicon1.png',
+  },
+  description: "رحلة سينمائية نحو النجاح في البكالوريا.",
+  keywords: ["brainy", "bac dz", "bac algeria", "تعليم", "بكالوريا", "دروس", "منصة تعليمية"],
+  authors: [{ name: "Brainy Team" }],
   openGraph: {
     type: "website",
     locale: "ar_DZ",
-    url: "https://bacx-dz.vercel.app",
-    siteName: "BacX",
-    title: "BacX - منصة النخبة التعليمية",
-    description: "استعد للبكالوريا مع أفضل الأساتذة في بيئة تعليمية متطورة.",
-    images: [
-      {
-        url: "/og-image.jpg", // Needs to be added to public folder
-        width: 1200,
-        height: 630,
-        alt: "BacX Platform Preview",
-      },
-    ],
+    url: "https://brainydz.me",
+    siteName: "Brainy",
+    title: "Brainy - منصة التفوق الأكاديمي",
+    description: "استعد للبكالوريا مع أفضل الأساتذة في بيئة تعليمية ذكية.",
+    images: ["/og-image.jpg"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "BacX - منصة النخبة التعليمية",
-    description: "استعد للبكالوريا مع أفضل الأساتذة في بيئة تعليمية متطورة.",
+    title: "Brainy - منصة التفوق الأكاديمي",
+    description: "استعد للبكالوريا مع أفضل الأساتذة في بيئة تعليمية ذكية.",
     images: ["/og-image.jpg"],
   },
   robots: {
@@ -65,40 +80,36 @@ export const metadata: Metadata = {
   }
 };
 
+// ============================================================================
+// ROOT LAYOUT - NON-BLOCKING
+// ============================================================================
+// CRITICAL FIX: Removed async data fetching from root layout.
+// Auth hydration now happens client-side via AuthProvider's useEffect.
+// This prevents blocking the main thread on every navigation.
+// ============================================================================
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl">
-      <body className={`${inter.variable} ${tajawal.variable} antialiased bg-[#050505] text-[#EDEDED]`}>
-        <NextTopLoader
-          color="#2997FF"
-          initialPosition={0.08}
-          crawlSpeed={200}
-          height={3}
-          crawl={true}
-          showSpinner={false}
-          easing="ease"
-          speed={200}
-          shadow="0 0 10px #2997FF,0 0 5px #2997FF"
-        />
+    <html lang="ar" dir="rtl" className="scroll-smooth" suppressHydrationWarning>
+      <body className={`${ibmPlexSansArabic.variable} ${playfairDisplay.variable} ${amiri.variable} ${cinzel.variable} antialiased bg-background text-foreground font-sans selection:bg-primary/30`}>
         <AuthProvider>
           <ErrorBoundary>
-            <BackButton />
             {children}
             <Toaster
               position="bottom-center"
               richColors
               theme="dark"
               toastOptions={{
+                className: "glass-panel text-foreground font-sans",
                 style: {
-                  background: 'rgba(10, 10, 10, 0.8)',
-                  backdropFilter: 'blur(16px)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: '#EDEDED',
-                  fontFamily: 'var(--font-tajawal)',
+                  fontFamily: 'var(--font-sans)',
+                  background: 'rgba(10, 10, 15, 0.9)',
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                  color: '#FFF'
                 }
               }}
             />

@@ -1,0 +1,10 @@
+{
+  "clientErr": [
+    "(dashboard)/checkout/[planId]/page.tsx",
+    "(dashboard)/checkout/buy/[type]/[id]/page.tsx",
+    "admin/plans/page.tsx",
+    "admin/live/page.tsx",
+    "complete-profile/page.tsx"
+  ],
+  "missing": []
+}

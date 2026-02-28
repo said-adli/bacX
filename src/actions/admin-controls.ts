@@ -1,0 +1,152 @@
+"use server";
+
+import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
+import { revalidatePath } from "next/cache";
+import { revalidateAnnouncements } from "@/lib/cache/revalidate";
+import { requireAdmin } from "@/lib/auth-guard";
+
+// ANNOUNCEMENTS (Unified Pipeline)
+export async function sendGlobalNotification(title: string, message: string) {
+    await requireAdmin();
+
+    // Use Admin Client for writes
+    const supabaseAdmin = createAdminClient();
+
+    // UNIFIED: Insert into 'announcements'
+    const { error } = await supabaseAdmin
+        .from('announcements')
+        .insert([{
+            title,
+            content: message,
+            is_active: true
+        }]);
+
+    if (error) throw error;
+
+    revalidateAnnouncements();
+    revalidatePath('/admin/controls');
+    revalidatePath('/dashboard');
+}
+
+export async function getRecentNotifications() {
+    // Read can be standard client (RLS allows Public/Admin read)
+    const supabase = await createClient();
+
+    // UNIFIED: Select from 'announcements'
+    const { data, error } = await supabase
+        .from('announcements')
+        .select('id, title, content, is_active, created_at')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+    if (error) return [];
+
+    // DTO: Map DB 'content' → client 'message' for BroadcastNotification compatibility
+    return (data || []).map((item) => ({
+        id: item.id,
+        title: item.title,
+        message: item.content, // DB column → DTO field
+        created_at: item.created_at,
+    }));
+}
+
+export async function deleteNotification(id: string) {
+    await requireAdmin();
+
+    // Use Admin Client
+    const supabaseAdmin = createAdminClient();
+
+    // UNIFIED: Delete from 'announcements'
+    const { error } = await supabaseAdmin.from('announcements').delete().eq('id', id);
+    if (error) throw error;
+
+    revalidateAnnouncements();
+    revalidatePath('/admin/controls');
+    revalidatePath('/dashboard');
+}
+
+export async function updateNotification(id: string, title: string, message: string) {
+    await requireAdmin();
+
+    // Use Admin Client for writes
+    const supabaseAdmin = createAdminClient();
+
+    // UNIFIED: Update 'announcements'
+    const { error } = await supabaseAdmin
+        .from('announcements')
+        .update({
+            title,
+            content: message
+        })
+        .eq('id', id);
+
+    if (error) throw error;
+
+    revalidateAnnouncements();
+    revalidatePath('/admin/controls');
+    revalidatePath('/dashboard');
+}
+
+// SYSTEM TOGGLES (DB-Driven)
+
+export async function toggleMaintenanceMode(currentState: boolean) {
+    await requireAdmin();
+
+    const newState = !currentState;
+
+    // CRITICAL: Use Service Role to bypass RLS checks if they are buggy, 
+    // but we fixed RLS in migration 20260130000000_admin_god_mode.sql.
+    // However, for "God Mode" reliability, we ALWAYS use Service Role for system settings.
+    const supabaseAdmin = createAdminClient();
+
+    const { error } = await supabaseAdmin
+        .from('system_settings')
+        .upsert({ key: 'maintenance_mode', value: newState });
+
+    if (error) {
+        console.error("Maintenance toggle fail", error);
+        throw error;
+    }
+    revalidatePath('/');
+}
+
+export async function toggleLiveGlobal(currentState: boolean) {
+    await requireAdmin();
+
+    const newState = !currentState;
+
+    // Use Service Role
+    const supabaseAdmin = createAdminClient();
+
+    const { error } = await supabaseAdmin
+        .from('system_settings')
+        .upsert({ key: 'live_mode', value: newState });
+
+    if (error) {
+        console.error("Live toggle fail", error);
+        throw error;
+    }
+    revalidatePath('/dashboard');
+}
+
+// Fetch helper (for initial state)
+export async function getSystemStatus() {
+    const supabase = await createClient();
+    const { data } = await supabase.from('system_settings').select('key, value');
+
+    const settings = {
+        maintenance: false,
+        live: false
+    };
+
+    if (data) {
+        const m = data.find(d => d.key === 'maintenance_mode');
+        if (m) settings.maintenance = !!m.value;
+
+        const l = data.find(d => d.key === 'live_mode');
+        if (l) settings.live = !!l.value;
+    }
+    return settings;
+}
+

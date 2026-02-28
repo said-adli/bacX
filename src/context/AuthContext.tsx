@@ -1,160 +1,436 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { User, onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { createContext, useContext, useState, ReactNode, useCallback, useEffect, useRef } from "react";
+import { Session, AuthChangeEvent } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { WifiOff, Loader2 } from "lucide-react";
+import { upsertSession } from "@/actions/sessions";
 
-// Stable Fingerprinting
-const getStableDeviceId = () => {
-    if (typeof window === 'undefined') return 'server';
-    const components = [
-        navigator.userAgent,
-        navigator.language,
-        screen.colorDepth,
-        screen.width + 'x' + screen.height,
-        new Date().getTimezoneOffset(),
-        navigator.hardwareConcurrency,
-    ];
-    const raw = components.join('||');
-    let hash = 5381;
-    for (let i = 0; i < raw.length; i++) hash = (hash * 33) ^ raw.charCodeAt(i);
-    return 'device_' + (hash >>> 0).toString(16);
-};
+// --- TYPES ---
 
-interface AuthContextType {
-    user: User | null;
-    loading: boolean;
-    logout: () => Promise<void>;
-    role: 'admin' | 'student' | null;
-    connectionStatus: 'online' | 'reconnecting' | 'offline';
+// Enriched Profile Interface (Strict Schema Sync)
+export interface EnrichedProfile {
+    // Core Profile Fields
+    id: string;
+    email: string;
+    full_name: string;
+    wilaya_id?: number;
+    major_id?: string;
+    role: "admin" | "student";
+    is_profile_complete: boolean;
+    is_subscribed: boolean;
+    subscription_end_date?: string;
+    plan_id?: string;
+    created_at: string;
+
+    // Relational Fields (Hydrated)
+    majors?: { label: string };
+    wilayas?: { name_ar: string; name_en: string };
+    subscription_plans?: { name: string };
+
+    // Flattened / Derived Fields (Frontend Compatibility)
+    name?: string;       // Alias for full_name
+    major?: string;      // Alias for majors.label
+    wilaya?: string;     // Alias for wilayas.name_ar || wilayas.name_en
+    plan_name?: string;  // Alias for subscription_plans.name
+
 }
 
-const AuthContext = createContext<AuthContextType>({
-    user: null,
-    loading: true,
-    logout: async () => { },
-    role: null,
-    connectionStatus: 'online',
-});
+export type UserProfile = EnrichedProfile;
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-    const [role, setRole] = useState<'admin' | 'student' | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [connectionStatus, setConnectionStatus] = useState<'online' | 'reconnecting' | 'offline'>('online');
+export interface SafeUser {
+    id: string;
+    email?: string;
+}
+
+export interface AuthState {
+    user: SafeUser | null;
+    profile: EnrichedProfile | null;
+    session: Session | null;
+    loading: boolean;
+    error: string | null;
+    connectionError: boolean;
+}
+
+export interface AuthContextType extends AuthState {
+    loginWithEmail: (email: string, password: string) => Promise<void>;
+    signupWithEmail: (data: { email: string, password: string, fullName: string, wilaya: string, major: string, studySystem?: string }) => Promise<void>;
+    completeOnboarding: (data: { fullName: string; wilaya: string; major: string }) => Promise<void>;
+    logout: () => Promise<void>;
+    refreshProfile: () => Promise<void>;
+    hydrateProfile: (profile: EnrichedProfile) => void;
+    role: "admin" | "student" | null;
+}
+
+// --- CONTEXT ---
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({
+    children
+}: {
+    children: ReactNode;
+}) {
+    const supabase = createClient();
     const router = useRouter();
 
+    const [state, setState] = useState<AuthState>({
+        user: null,
+        profile: null,
+        session: null,
+        loading: true,
+        error: null,
+        connectionError: false
+    });
+
+    const isMounted = useRef(false);
+
+    // --- FETCH STRATEGY: SINGLE RELATIONAL JOIN ---
+    const fetchProfile = useCallback(async (userId: string): Promise<EnrichedProfile | null> => {
+        try {
+            // RELATIONAL HYDRATION: Single Query
+            const { data: rawProfile, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    majors ( label ),
+                    wilayas ( name_ar, name_en ),
+                    subscription_plans ( name )
+                `)
+                .eq('id', userId)
+                .single();
+
+            if (error) {
+                console.error("❌ Profile Sync Error:", error.message);
+                throw error;
+            }
+
+            if (!rawProfile) {
+                throw new Error("Profile Not Found");
+            }
+
+            // Map to EnrichedProfile (Strict Type Mapping)
+            // Ensure no 'any' is used. We verify properties existence.
+            const profile: EnrichedProfile = {
+                id: rawProfile.id,
+                email: rawProfile.email,
+                full_name: rawProfile.full_name,
+                wilaya_id: rawProfile.wilaya_id,
+                major_id: rawProfile.major_id,
+                role: rawProfile.role,
+                is_profile_complete: rawProfile.is_profile_complete,
+                is_subscribed: rawProfile.is_subscribed,
+                subscription_end_date: rawProfile.subscription_end_date,
+                plan_id: rawProfile.plan_id,
+                created_at: rawProfile.created_at,
+
+                // Relations
+                majors: rawProfile.majors,
+                wilayas: rawProfile.wilayas,
+                subscription_plans: rawProfile.subscription_plans,
+
+                // Mapped Aliases
+                name: rawProfile.full_name,
+                major: rawProfile.majors?.label,
+                wilaya: rawProfile.wilayas?.name_ar || rawProfile.wilayas?.name_en,
+                plan_name: rawProfile.subscription_plans?.name,
+            };
+
+            return profile;
+
+        } catch (err: unknown) {
+            console.error("💥 Auth Connection Failed:", err);
+            return null;
+        }
+    }, [supabase]);
+
+    // --- MAIN INITIALIZATION EFFECT ---
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-            if (currentUser) {
-                const deviceId = getStableDeviceId();
-                const userRef = doc(db, 'users', currentUser.uid);
+        isMounted.current = true;
 
-                // --- RETRY LOGIC FOR NETWORK RESILIENCE ---
-                let retries = 3;
-                let success = false;
+        const initAuth = async () => {
+            try {
+                // 1. Get Session
+                const { data: { session }, error } = await supabase.auth.getSession();
 
-                while (retries > 0 && !success) {
+                if (error) throw error;
+
+                if (session?.user) {
                     try {
-                        const userSnap = await getDoc(userRef);
-                        success = true; // Fetch succeeded
-                        setConnectionStatus('online');
+                        const profile = await fetchProfile(session.user.id);
 
-                        if (userSnap.exists()) {
-                            const data = userSnap.data();
-                            const activeDevices = data.activeDevices || [];
-                            setRole(data.role || 'student');
+                        if (isMounted.current) {
+                            if (profile) {
+                                setState(prev => ({
+                                    ...prev,
+                                    session,
+                                    user: { id: session.user.id, email: session.user.email },
+                                    profile: { ...profile, email: session.user.email || profile.email },
+                                    loading: false,
+                                    error: null,
+                                    connectionError: false
+                                }));
+                            } else {
+                                // Profile NULL = Error State
+                                console.error("⚠️ Profile Null (Init)");
+                                setState(prev => ({
+                                    ...prev,
+                                    session,
+                                    user: { id: session.user.id, email: session.user.email },
+                                    profile: null,
+                                    loading: false,
+                                    connectionError: true
+                                }));
+                            }
+                        }
+                    } catch (fetchErr) {
+                        console.error("⚠️ Init Profile Error:", fetchErr);
+                        if (isMounted.current) {
+                            setState(prev => ({
+                                ...prev,
+                                session,
+                                user: { id: session.user.id, email: session.user.email },
+                                profile: null,
+                                loading: false,
+                                connectionError: true
+                            }));
+                        }
+                    }
+                } else {
+                    if (isMounted.current) {
+                        setState(prev => ({ ...prev, loading: false }));
+                    }
+                }
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : "Auth initialization failed";
+                console.error("💥 Init Crash:", err);
+                if (isMounted.current) {
+                    setState(prev => ({
+                        ...prev,
+                        loading: false,
+                        error: message
+                    }));
+                }
+            }
+        };
 
-                            if (!activeDevices.includes(deviceId)) {
-                                // Check limit before writing (Client check is UX only, Server rules enforce security)
-                                if (activeDevices.length >= 2 && data.role !== 'admin') {
-                                    await firebaseSignOut(auth);
-                                    alert("تم تجاوز حد الأجهزة المسموح به (2).");
-                                    setUser(null);
-                                    setRole(null);
-                                    setLoading(false);
-                                    return;
+        // Run Init
+        initAuth();
+
+        // Listen for changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
+            if (!isMounted.current) return;
+
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+                if (session?.user) {
+                    // Optimistic
+                    setState(prev => ({ ...prev, session, user: { id: session.user.id, email: session.user.email } }));
+
+                    // Track session in DB on login (fire-and-forget)
+                    if (event === 'SIGNED_IN' && typeof window !== 'undefined') {
+                        const ua = window.navigator.userAgent;
+                        let os = 'Unknown OS';
+                        if (ua.includes('Win')) os = 'Windows';
+                        else if (ua.includes('Mac')) os = 'MacOS';
+                        else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+                        else if (ua.includes('Android')) os = 'Android';
+                        else if (ua.includes('Linux')) os = 'Linux';
+
+                        let browser = 'Browser';
+                        if (ua.includes('Edg/')) browser = 'Edge';
+                        else if (ua.includes('Chrome')) browser = 'Chrome';
+                        else if (ua.includes('Firefox')) browser = 'Firefox';
+                        else if (ua.includes('Safari')) browser = 'Safari';
+
+                        upsertSession(`${os} — ${browser}`).catch(console.error);
+                    }
+
+                    if (event === 'SIGNED_IN' || !state.profile || state.profile.id !== session.user.id) {
+                        try {
+                            const profile = await fetchProfile(session.user.id);
+                            if (isMounted.current) {
+                                if (profile) {
+                                    setState(prev => ({
+                                        ...prev,
+                                        profile: { ...profile, email: session.user.email || profile.email },
+                                        loading: false,
+                                        error: null
+                                    }));
                                 } else {
-                                    // Register new device with Atomic ArrayUnion
-                                    await updateDoc(userRef, {
-                                        activeDevices: arrayUnion(deviceId)
-                                    });
+                                    setState(prev => ({
+                                        ...prev,
+                                        profile: null,
+                                        loading: false,
+                                        connectionError: true
+                                    }));
                                 }
                             }
-                        } else {
-                            // First Login
-                            await setDoc(userRef, {
-                                email: currentUser.email,
-                                activeDevices: [deviceId],
-                                role: 'student',
-                                createdAt: new Date(),
-                                isSubscribed: false,
-                                displayName: currentUser.displayName || "",
-                                photoURL: currentUser.photoURL || ""
-                            });
-                            setRole('student');
-                        }
-                        setUser(currentUser);
-
-                    } catch (error: any) {
-                        console.error("Auth Error:", error);
-                        // Only retry if it looks like a network error
-                        if (error.code === 'unavailable' || error.message.includes('offline')) {
-                            setConnectionStatus('reconnecting');
-                            toast("جاري إعادة الاتصال...", { icon: <WifiOff className="w-4 h-4" /> });
-                            retries--;
-                            await new Promise(r => setTimeout(r, 2000)); // Wait 2s
-                        } else {
-                            // Fatal Error (Permission Denied etc)
-                            await firebaseSignOut(auth);
-                            setUser(null);
-                            setRole(null);
-                            setLoading(false);
-                            return;
+                        } catch (err) {
+                            if (isMounted.current) {
+                                setState(prev => ({ ...prev, loading: false, connectionError: true }));
+                            }
                         }
                     }
                 }
-
-                if (!success) {
-                    // Failed after retries
-                    setConnectionStatus('offline');
-                    toast.error("يبدو أن هناك مشكلة في الاتصال بالانترنت");
-                    // We don't force logout here to be nice, just show offline state? 
-                    // Or force logout for security? Let's keep user session but disable features.
+            } else if (event === 'SIGNED_OUT') {
+                if (isMounted.current) {
+                    setState({
+                        user: null,
+                        profile: null,
+                        session: null,
+                        loading: false,
+                        error: null,
+                        connectionError: false
+                    });
+                    router.replace('/');
+                    router.refresh();
                 }
-
-            } else {
-                setUser(null);
-                setRole(null);
             }
-            setLoading(false);
         });
 
-        return () => unsubscribe();
-    }, []);
+        return () => {
+            isMounted.current = false;
+            subscription.unsubscribe();
+        };
+    }, [supabase, fetchProfile, router]); // Removed 'state.profile' from deps to avoid infinite loop if ref diffs
 
-    const logout = async () => {
-        const deviceId = getStableDeviceId();
-        // Optional: Remove device on logout? 
-        // Logic: Usually we keep it until they manually revoke, to prevent "Device Hopping".
-        await firebaseSignOut(auth);
-        router.push('/auth');
+    // --- ACTIONS ---
+
+    const loginWithEmail = async (email: string, password: string) => {
+        if (isMounted.current) setState(prev => ({ ...prev, loading: true, error: null }));
+        try {
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Login failed";
+            console.error("Login Error:", error);
+            if (isMounted.current) {
+                setState(prev => ({ ...prev, loading: false, error: message }));
+            }
+            throw error;
+        }
     };
 
+    interface SignupData {
+        email: string;
+        password: string;
+        fullName: string;
+        wilaya: string;
+        major: string;
+        studySystem?: string;
+    }
+
+    const signupWithEmail = async (data: SignupData) => {
+        if (isMounted.current) setState(prev => ({ ...prev, loading: true, error: null }));
+        try {
+            const { error } = await supabase.auth.signUp({
+                email: data.email,
+                password: data.password,
+                options: {
+                    data: {
+                        full_name: data.fullName,
+                        wilaya: data.wilaya,
+                        major: data.major,
+                        role: "student"
+                    }
+                }
+            });
+            if (error) throw error;
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Signup failed";
+            if (isMounted.current) {
+                setState(prev => ({ ...prev, error: message }));
+            }
+            throw error;
+        } finally {
+            if (isMounted.current) setState(prev => ({ ...prev, loading: false }));
+        }
+    };
+
+    const logout = async () => {
+        try {
+            await supabase.auth.signOut();
+        } finally {
+            if (isMounted.current) {
+                // Clear local state immediately
+                setState({ user: null, profile: null, session: null, loading: false, error: null, connectionError: false });
+                router.replace('/');
+                router.refresh(); // Force cache invalidation
+            }
+        }
+    };
+
+    const refreshProfile = async () => {
+        if (!state.user) return;
+        const profile = await fetchProfile(state.user.id);
+        if (isMounted.current && profile) {
+            setState(prev => ({ ...prev, profile: { ...profile, email: state.user!.email! } }));
+        }
+    };
+
+    const completeOnboarding = async (data: { fullName: string; wilaya: string; major: string }) => {
+        if (!state.user) throw new Error("No user logged in");
+
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+                full_name: data.fullName,
+                wilaya_id: parseInt(data.wilaya),
+                major_id: data.major,
+                is_profile_complete: true,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', state.user.id);
+
+        if (profileError) throw profileError;
+
+        await supabase.auth.updateUser({
+            data: {
+                full_name: data.fullName,
+                wilaya: data.wilaya,
+                major: data.major,
+                is_profile_complete: true
+            }
+        });
+
+        await refreshProfile();
+        router.replace('/dashboard');
+    };
+
+    const hydrateProfile = useCallback((profile: EnrichedProfile) => {
+        if (isMounted.current) {
+            setState(prev => ({
+                ...prev,
+                profile,
+                loading: false
+            }));
+        }
+    }, []);
+
     return (
-        <AuthContext.Provider value={{ user, loading, logout, role, connectionStatus }}>
-            {!loading && children}
-            {loading && (
-                <div className="fixed inset-0 bg-black z-[100] flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <AuthContext.Provider value={{
+            ...state,
+            loginWithEmail,
+            signupWithEmail,
+            logout,
+            refreshProfile,
+            hydrateProfile,
+            completeOnboarding,
+            role: state.profile?.role || null
+        }}>
+            {state.connectionError && (
+                <div className="bg-red-500/10 border-b border-red-500/20 text-red-500 px-4 py-2 text-center text-sm font-bold animate-pulse">
+                    Connection Interrupted. Some data may be unavailable.
                 </div>
             )}
+            {children}
         </AuthContext.Provider>
     );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error("useAuth must be used within an AuthProvider");
+    }
+    return context;
+};
