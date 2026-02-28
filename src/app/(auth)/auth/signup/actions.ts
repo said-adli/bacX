@@ -73,7 +73,8 @@ export async function signupAction(prevState: SignupState, formData: FormData): 
     if (data.user) {
         const { error: profileError } = await supabase
             .from("profiles")
-            .update({
+            .upsert({
+                id: data.user.id,
                 full_name: fullName,
                 wilaya: wilayaLabel,
                 wilaya_id: wilayaId ? parseInt(wilayaId) : null,
@@ -83,8 +84,8 @@ export async function signupAction(prevState: SignupState, formData: FormData): 
                 phone_number: phone || null,
                 role: "student",
                 is_profile_complete: true,
-            })
-            .eq("id", data.user.id);
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'id' });
 
         if (profileError) {
             console.error("Profile update error:", profileError);
