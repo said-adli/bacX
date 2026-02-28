@@ -70,6 +70,27 @@ export async function signupAction(prevState: SignupState, formData: FormData): 
         return { error: error.message };
     }
 
+    if (data.user) {
+        const { error: profileError } = await supabase
+            .from("profiles")
+            .update({
+                full_name: fullName,
+                wilaya: wilayaLabel,
+                wilaya_id: wilayaId ? parseInt(wilayaId) : null,
+                major: majorLabel,
+                major_id: majorId || null,
+                study_system: studySystem || null,
+                phone_number: phone || null,
+                role: "student",
+                is_profile_complete: true,
+            })
+            .eq("id", data.user.id);
+
+        if (profileError) {
+            console.error("Profile update error:", profileError);
+            return { error: "تم إنشاء الحساب لكن حدث خطأ أثناء حفظ الملف الشخصي" };
+        }
+    }
 
 
     revalidatePath('/', 'layout');
