@@ -14,18 +14,12 @@ export interface SignupState {
 export async function signupAction(prevState: SignupState, formData: FormData): Promise<SignupState> {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    const fullName = formData.get("fullName") as string;
-
-    // Extract all fields from form
-    // CRITICAL for Data Save: Capture these fields or they will be NULL
-    const wilayaId = formData.get("wilaya_id") as string;
-    const majorId = formData.get("major_id") as string;
-    const studySystem = formData.get("study_system") as string;
-    const phone = formData.get("phone") as string | null;
 
     const supabase = await createClient();
 
     // 1. Fetch Labels (Human Readable)
+    const wilayaId = formData.get("wilaya_id") as string;
+    const majorId = formData.get("major_id") as string;
     let wilayaLabel = "";
     let majorLabel = "";
 
@@ -47,52 +41,39 @@ export async function signupAction(prevState: SignupState, formData: FormData): 
         majorLabel = majorData?.label || majorId;
     }
 
-    // 2. Sign Up with Metadata
-    const { data, error } = await supabase.auth.signUp({
+    // 2. Prepare Dynamic Metadata
+    const userMetadata: Record<string, any> = {};
+    formData.forEach((value, key) => {
+        // Exclude sensitive or auth-specific fields
+        if (key !== "email" && key !== "password") {
+            // Map the frontend `fullName` to standard `full_name` for the trigger
+            if (key === "fullName") {
+                userMetadata["full_name"] = value;
+            } else {
+                userMetadata[key] = value;
+            }
+        }
+    });
+
+    // Include the resolved labels and system defaults required to skip onboarding
+    userMetadata["wilaya"] = wilayaLabel || userMetadata["wilaya"];
+    userMetadata["major"] = majorLabel || userMetadata["major"];
+    userMetadata["role"] = "student";
+    userMetadata["is_profile_complete"] = true;
+
+    // 3. Sign Up with Dynamic Metadata
+    // The Database Trigger will handle inserting into the profiles table.
+    const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-            data: {
-                full_name: fullName,
-                wilaya: wilayaLabel,
-                wilaya_id: wilayaId,
-                major: majorLabel,
-                major_id: majorId,
-                study_system: studySystem,
-                phone: phone || "",
-                role: "student",
-                is_profile_complete: true,
-            },
+            data: userMetadata,
         },
     });
 
     if (error) {
         return { error: error.message };
     }
-
-    if (data.user) {
-        const { error: profileError } = await supabase
-            .from("profiles")
-            .upsert({
-                id: data.user.id,
-                full_name: fullName,
-                wilaya: wilayaLabel,
-                wilaya_id: wilayaId ? parseInt(wilayaId) : null,
-                major: majorLabel,
-                major_id: majorId || null,
-                study_system: studySystem || null,
-                phone_number: phone || null,
-                role: "student",
-                is_profile_complete: true,
-                updated_at: new Date().toISOString()
-            }, { onConflict: 'id' });
-
-        if (profileError) {
-            console.error("Profile update error:", profileError);
-            return { error: "تم إنشاء الحساب لكن حدث خطأ أثناء حفظ الملف الشخصي" };
-        }
-    }
-
 
     revalidatePath('/', 'layout');
 
