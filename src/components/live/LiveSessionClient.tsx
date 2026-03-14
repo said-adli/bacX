@@ -3,7 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { usePlayer } from "@/context/PlayerContext";
 import { useRef, useEffect, useState } from "react";
-import { Lock, Users, Video } from "lucide-react";
+import { Lock, Users, Video, Headphones } from "lucide-react";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { useLiveInteraction } from "@/hooks/useLiveInteraction";
@@ -24,6 +24,43 @@ export interface SecureSession {
         name: string;
         id: string;
     };
+}
+
+// --- LOADING SKELETON (prevents hydration mismatch) ---
+function LiveSkeleton() {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 animate-pulse">
+            <div className="w-24 h-24 rounded-full bg-white/5" />
+            <div className="h-6 w-48 bg-white/5 rounded-lg" />
+            <div className="h-4 w-64 bg-white/5 rounded-lg" />
+        </div>
+    );
+}
+
+// --- JOIN BUTTON (satisfies AudioContext autoplay policy) ---
+function JoinLiveButton({ title, onClick }: { title?: string; onClick: () => void }) {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-in fade-in zoom-in duration-700">
+            <GlassCard className="p-12 text-center max-w-2xl mx-auto space-y-6 border-white/10 shadow-2xl">
+                <div className="w-24 h-24 rounded-full bg-blue-500/10 mx-auto flex items-center justify-center mb-4 border border-blue-500/20 text-blue-400">
+                    <Headphones className="w-10 h-10" />
+                </div>
+                <h1 className="text-3xl font-serif font-bold text-white mb-2">
+                    {title || "البث المباشر"}
+                </h1>
+                <p className="text-lg text-white/60 font-light">
+                    اضغط للانضمام إلى البث المباشر بالصوت
+                </p>
+                <button
+                    onClick={onClick}
+                    className="inline-flex items-center gap-3 px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20 text-lg"
+                >
+                    <Headphones size={22} />
+                    انضمام
+                </button>
+            </GlassCard>
+        </div>
+    );
 }
 
 // --- INNER CONTENT ---
@@ -150,6 +187,10 @@ function SelfAudioVisualizer() {
 }
 
 export function LiveSessionClient({ initialSession }: { initialSession: SecureSession }) {
+    // [HYDRATION GUARD] — Prevents React Error #419 by deferring render until mounted
+    const [mounted, setMounted] = useState(false);
+    // [AUDIO CONTEXT GATE] — Only connect LiveKit after user click (browser autoplay policy)
+    const [userJoined, setUserJoined] = useState(false);
     // [SECURE STATE]
     const [secureSession, setSecureSession] = useState<SecureSession>(initialSession);
 
@@ -157,11 +198,20 @@ export function LiveSessionClient({ initialSession }: { initialSession: SecureSe
     const { isLive: isLiveStatusActive } = useLiveStatus();
 
     useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
         if (secureSession.authorized && !secureSession.isLive && isLiveStatusActive) {
             // Live just started! Reload to get full session token
             window.location.reload();
         }
     }, [isLiveStatusActive, secureSession.authorized, secureSession.isLive]);
+
+    // SSR skeleton — guarantees server/client output match
+    if (!mounted) {
+        return <LiveSkeleton />;
+    }
 
     // Unauthorized / No Access State
     if (!secureSession.authorized) {
@@ -207,16 +257,22 @@ export function LiveSessionClient({ initialSession }: { initialSession: SecureSe
         );
     }
 
-    // WRAPPER: LiveKitRoom
+    // WRAPPER: LiveKitRoom — connect only after user click
     return (
         <LiveKitRoom
             video={false}
             audio={true}
             token={secureSession.liveToken}
             serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
+            connect={userJoined}
             data-lk-theme="default"
         >
-            <LiveSessionContent secureSession={secureSession} />
+            {!userJoined ? (
+                <JoinLiveButton title={secureSession.title} onClick={() => setUserJoined(true)} />
+            ) : (
+                <LiveSessionContent secureSession={secureSession} />
+            )}
         </LiveKitRoom>
     );
 }
+
