@@ -7,6 +7,26 @@ import { Plus, Edit, Trash2, Video, Calendar, DollarSign, Lock, PlayCircle, Exte
 import { format } from "date-fns";
 import { GlassCard } from "@/components/ui/GlassCard";
 
+/** Format a Date as 'YYYY-MM-DDTHH:mm' in the LOCAL timezone (for datetime-local inputs) */
+function toLocalDatetimeString(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const h = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${y}-${m}-${d}T${h}:${min}`;
+}
+
+/** Format a Date as a full ISO 8601 string WITH the local timezone offset (e.g. +01:00) */
+function toLocalISOString(date: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const off = -date.getTimezoneOffset();
+    const sign = off >= 0 ? '+' : '-';
+    const offH = pad(Math.floor(Math.abs(off) / 60));
+    const offM = pad(Math.abs(off) % 60);
+    return `${toLocalDatetimeString(date)}:${pad(date.getSeconds())}${sign}${offH}:${offM}`;
+}
+
 export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: (session: LiveSession) => void }) {
     const [sessions, setSessions] = useState<(LiveSession & { subscription_plans?: { name: string } })[]>([]);
     const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
@@ -112,7 +132,7 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
                 status: 'scheduled',
                 is_active: true,
                 is_purchasable: false,
-                scheduled_at: new Date().toISOString().slice(0, 16) // Default to now-ish format for datetime-local
+                scheduled_at: toLocalISOString(new Date()) // Default to now in local timezone
             });
         }
         setIsEditing(true);
@@ -258,8 +278,8 @@ export default function LiveSessionManager({ onJoinSession }: { onJoinSession?: 
                                 <input
                                     type="datetime-local"
                                     className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
-                                    value={currentSession.scheduled_at?.slice(0, 16) || ''}
-                                    onChange={e => setCurrentSession({ ...currentSession, scheduled_at: new Date(e.target.value).toISOString() })}
+                                    value={currentSession.scheduled_at ? toLocalDatetimeString(new Date(currentSession.scheduled_at)) : ''}
+                                    onChange={e => setCurrentSession({ ...currentSession, scheduled_at: toLocalISOString(new Date(e.target.value)) })}
                                 />
                             </div>
                         </div>

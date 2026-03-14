@@ -68,7 +68,8 @@ export async function createLiveSession(data: NewLiveSessionPayload) {
     if (isNaN(scheduledDate.getTime())) {
         throw new Error("Validation Error: Invalid scheduled date format.");
     }
-    const safeStartTime = scheduledDate.toISOString();
+    // Preserve the original ISO string with timezone offset for Supabase timestamptz
+    const safeStartTime = data.scheduled_at;
 
 
     const { data: newSession, error } = await supabase
@@ -109,7 +110,8 @@ export async function updateLiveSession(id: string, data: Partial<NewLiveSession
         if (isNaN(d.getTime())) {
             throw new Error("Validation Error: Invalid scheduled date format.");
         }
-        safeStartTime = d.toISOString();
+        // Preserve original offset-aware ISO string
+        safeStartTime = data.scheduled_at;
     }
 
     // 2. Resolve Lesson ID (if not provided but needed for RPC)

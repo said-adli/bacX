@@ -15,10 +15,18 @@ export async function createSchedule(formData: FormData) {
 
     const title = formData.get("title") as string;
     const description = formData.get("description") as string;
-    const event_date = formData.get("event_date") as string;
+    const event_date_raw = formData.get("event_date") as string;
     const type = formData.get("type") as string;
 
-    if (!title || !event_date || !type) throw new Error("Title, Event Date, and Type are required");
+    if (!title || !event_date_raw || !type) throw new Error("Title, Event Date, and Type are required");
+
+    // datetime-local gives 'YYYY-MM-DDTHH:mm' — treat as local time and attach offset
+    const parsedDate = new Date(event_date_raw);
+    if (isNaN(parsedDate.getTime())) throw new Error("Invalid event date format");
+    const tzOffset = -parsedDate.getTimezoneOffset();
+    const sign = tzOffset >= 0 ? '+' : '-';
+    const pad = (n: number) => String(Math.abs(n)).padStart(2, '0');
+    const event_date = `${event_date_raw}:00${sign}${pad(Math.floor(Math.abs(tzOffset) / 60))}:${pad(Math.abs(tzOffset) % 60)}`;
 
     const { error } = await supabase.from("schedules").insert({
         title,
