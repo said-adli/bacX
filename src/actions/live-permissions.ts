@@ -7,6 +7,15 @@ const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL || "";
 const apiKey = process.env.LIVEKIT_API_KEY || "";
 const apiSecret = process.env.LIVEKIT_API_SECRET || "";
 
+// Warn loudly at module load if secrets are missing — prevents silent 401 errors
+if (!apiKey || !apiSecret || !livekitUrl) {
+    console.error("[live-permissions] CRITICAL: LiveKit env vars missing!", {
+        LIVEKIT_API_KEY: apiKey ? "✓ SET" : "✗ EMPTY",
+        LIVEKIT_API_SECRET: apiSecret ? "✓ SET" : "✗ EMPTY",
+        NEXT_PUBLIC_LIVEKIT_URL: livekitUrl ? "✓ SET" : "✗ EMPTY",
+    });
+}
+
 const roomService = new RoomServiceClient(livekitUrl, apiKey, apiSecret);
 
 export async function grantStageAccess(roomName: string, identity: string) {

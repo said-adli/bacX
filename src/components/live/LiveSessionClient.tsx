@@ -3,7 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { usePlayer } from "@/context/PlayerContext";
 import { useRef, useEffect, useState } from "react";
-import { Lock, Users, Video, Headphones } from "lucide-react";
+import { Lock, Users, Video, Headphones, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { useLiveInteraction } from "@/hooks/useLiveInteraction";
@@ -37,41 +37,12 @@ function LiveSkeleton() {
     );
 }
 
-// --- JOIN BUTTON (satisfies AudioContext autoplay policy) ---
-function JoinLiveButton({ title, onClick }: { title?: string; onClick: () => void }) {
-    return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-in fade-in zoom-in duration-700">
-            <GlassCard className="p-12 text-center max-w-2xl mx-auto space-y-6 border-white/10 shadow-2xl">
-                <div className="w-24 h-24 rounded-full bg-blue-500/10 mx-auto flex items-center justify-center mb-4 border border-blue-500/20 text-blue-400">
-                    <Headphones className="w-10 h-10" />
-                </div>
-                <h1 className="text-3xl font-serif font-bold text-white mb-2">
-                    {title || "البث المباشر"}
-                </h1>
-                <p className="text-lg text-white/60 font-light">
-                    اضغط للانضمام إلى البث المباشر بالصوت
-                </p>
-                <button
-                    onClick={onClick}
-                    className="inline-flex items-center gap-3 px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20 text-lg"
-                >
-                    <Headphones size={22} />
-                    انضمام
-                </button>
-            </GlassCard>
-        </div>
-    );
-}
-
-// --- INNER CONTENT ---
-function LiveSessionContent({ secureSession }: { secureSession: SecureSession }) {
+// --- YOUTUBE PLAYER (fully independent from LiveKit) ---
+function YouTubePlayerSection({ secureSession }: { secureSession: SecureSession }) {
     const { profile } = useAuth();
     const { loadVideo, registerHeroTarget } = usePlayer();
     const heroTargetRef = useRef<HTMLDivElement>(null);
 
-    const { status, raiseHand, endCall, currentSpeaker, messages, sendMessage } = useLiveInteraction();
-
-    // 1. Register Hero Player Target
     useEffect(() => {
         if (heroTargetRef.current) {
             registerHeroTarget(heroTargetRef.current);
@@ -79,7 +50,6 @@ function LiveSessionContent({ secureSession }: { secureSession: SecureSession })
         return () => registerHeroTarget(null);
     }, [registerHeroTarget]);
 
-    // 2. Load Video to Global Player
     useEffect(() => {
         if (secureSession.authorized && secureSession.isLive && secureSession.youtubeId) {
             loadVideo(secureSession.youtubeId, secureSession.title || "Live Session", true);
@@ -87,61 +57,113 @@ function LiveSessionContent({ secureSession }: { secureSession: SecureSession })
     }, [secureSession, loadVideo]);
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <RoomAudioRenderer />
+        <div className="lg:col-span-3 space-y-4">
+            <div className="w-full aspect-video rounded-2xl overflow-hidden glass-panel relative border border-white/10 shadow-2xl">
+                <div
+                    ref={heroTargetRef}
+                    className="w-full h-full bg-black/50"
+                />
+            </div>
 
-            {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="glass-card p-6 flex flex-col md:flex-row items-start md:items-center gap-6 justify-between">
                 <div>
-                    <h1 className="text-3xl font-serif font-bold text-white mb-1">الحصص المباشرة</h1>
-                    <div className="flex items-center gap-2 text-red-400 text-sm font-bold animate-pulse">
-                        <span className="w-2 h-2 rounded-full bg-red-500" />
-                        مباشر الآن
+                    <h2 className="text-2xl font-bold mb-1">{secureSession.title || "بث مباشر"}</h2>
+                    <p className="text-white/50">تقديم: {secureSession.user?.name || "الأستاذ"}</p>
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-white/40 bg-white/5 px-4 py-2 rounded-full text-sm">
+                        <Users size={16} />
+                        <span>-- مشاهد</span>
                     </div>
                 </div>
             </div>
+        </div>
+    );
+}
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+// --- LIVEKIT AUDIO SECTION (isolated — errors here do NOT affect YouTube) ---
+function LiveKitAudioSection({ secureSession }: { secureSession: SecureSession }) {
+    const { profile } = useAuth();
+    const [userJoined, setUserJoined] = useState(false);
+    const [lkError, setLkError] = useState<string | null>(null);
+    const { status, raiseHand, endCall, currentSpeaker, messages, sendMessage } = useLiveInteraction();
 
-                {/* Main Player Area */}
-                <div className="lg:col-span-3 space-y-4">
-                    <div className="w-full aspect-video rounded-2xl overflow-hidden glass-panel relative border border-white/10 shadow-2xl">
-                        {/* HERO PLAYER TARGET */}
-                        <div
-                            ref={heroTargetRef}
-                            className="w-full h-full bg-black/50"
-                        />
-                        {/* Notify if someone else is speaking */}
-                        {currentSpeaker && currentSpeaker.user_id !== profile?.id && (
-                            <div className="absolute top-4 left-4 z-30 bg-black/60 hidden md:block md:backdrop-blur-md border border-blue-500/30 rounded-full px-4 py-2 flex items-center gap-2 animate-in slide-in-from-top-2">
-                                <span className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
-                                <span className="text-xs text-white">يتحدث الآن: {currentSpeaker.user_name}</span>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="glass-card p-6 flex flex-col md:flex-row items-start md:items-center gap-6 justify-between">
-                        <div>
-                            <h2 className="text-2xl font-bold mb-1">{secureSession.title || "بث مباشر"}</h2>
-                            <p className="text-white/50">تقديم: {secureSession.user?.name || "الأستاذ"}</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2 text-white/40 bg-white/5 px-4 py-2 rounded-full text-sm">
-                                <Users size={16} />
-                                <span>-- مشاهد</span>
-                            </div>
-                        </div>
-                    </div>
+    // No token available — show degraded state
+    if (!secureSession.liveToken) {
+        return (
+            <div className="space-y-4">
+                <div className="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center gap-3">
+                    <AlertTriangle size={18} className="text-yellow-400 shrink-0" />
+                    <p className="text-sm text-yellow-300">الصوت التفاعلي غير متوفر حالياً. يمكنكم متابعة البث عبر الفيديو.</p>
                 </div>
-
-                {/* Real-Time Live Chat */}
-                <div className="lg:col-span-1 h-[600px] flex flex-col">
+                <div className="h-[600px] flex flex-col">
                     <LiveChat messages={messages} onSendMessage={sendMessage} />
                 </div>
+            </div>
+        );
+    }
 
+    // User hasn't clicked join yet
+    if (!userJoined) {
+        return (
+            <div className="space-y-4">
+                <button
+                    onClick={() => setUserJoined(true)}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20 text-lg"
+                >
+                    <Headphones size={22} />
+                    انضمام بالصوت
+                </button>
+                <div className="h-[600px] flex flex-col">
+                    <LiveChat messages={messages} onSendMessage={sendMessage} />
+                </div>
+            </div>
+        );
+    }
+
+    // LiveKit error state — show warning but keep chat/YouTube alive
+    if (lkError) {
+        return (
+            <div className="space-y-4">
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center gap-3">
+                    <AlertTriangle size={18} className="text-red-400 shrink-0" />
+                    <p className="text-sm text-red-300">فشل الاتصال بالصوت: {lkError}</p>
+                </div>
+                <div className="h-[600px] flex flex-col">
+                    <LiveChat messages={messages} onSendMessage={sendMessage} />
+                </div>
+            </div>
+        );
+    }
+
+    // Connected state
+    return (
+        <LiveKitRoom
+            video={false}
+            audio={true}
+            token={secureSession.liveToken}
+            serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
+            connect={true}
+            data-lk-theme="default"
+            onError={(err) => {
+                console.error("LiveKit connection error:", err);
+                setLkError(err?.message || "Connection failed");
+            }}
+        >
+            <RoomAudioRenderer />
+
+            {/* Speaking indicator */}
+            {currentSpeaker && currentSpeaker.user_id !== profile?.id && (
+                <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center gap-2 mb-2">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
+                    <span className="text-xs text-white">يتحدث الآن: {currentSpeaker.user_name}</span>
+                </div>
+            )}
+
+            <div className="h-[600px] flex flex-col">
+                <LiveChat messages={messages} onSendMessage={sendMessage} />
             </div>
 
-            {/* RAISE HAND BUTTON - Uses Context implicitly via raiseHand -> localParticipant */}
             <RaiseHandButton
                 status={status}
                 onClick={status === 'live' || status === 'waiting' ? endCall : raiseHand}
@@ -160,12 +182,11 @@ function LiveSessionContent({ secureSession }: { secureSession: SecureSession })
                             <h4 className="font-bold text-white text-sm">You are Live!</h4>
                             <p className="text-xs text-green-400">Your microphone is on</p>
                         </div>
-                        {/* Visualizer for self */}
                         <SelfAudioVisualizer />
                     </div>
                 </div>
             )}
-        </div>
+        </LiveKitRoom>
     );
 }
 
@@ -187,23 +208,15 @@ function SelfAudioVisualizer() {
 }
 
 export function LiveSessionClient({ initialSession }: { initialSession: SecureSession }) {
-    // [HYDRATION GUARD] — Prevents React Error #419 by deferring render until mounted
+    // [HYDRATION GUARD] — Prevents React Error #419
     const [mounted, setMounted] = useState(false);
-    // [AUDIO CONTEXT GATE] — Only connect LiveKit after user click (browser autoplay policy)
-    const [userJoined, setUserJoined] = useState(false);
-    // [SECURE STATE]
     const [secureSession, setSecureSession] = useState<SecureSession>(initialSession);
-
-    // [FAST POLL] To detect when a session starts while waiting
     const { isLive: isLiveStatusActive } = useLiveStatus();
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    useEffect(() => { setMounted(true); }, []);
 
     useEffect(() => {
         if (secureSession.authorized && !secureSession.isLive && isLiveStatusActive) {
-            // Live just started! Reload to get full session token
             window.location.reload();
         }
     }, [isLiveStatusActive, secureSession.authorized, secureSession.isLive]);
@@ -213,7 +226,7 @@ export function LiveSessionClient({ initialSession }: { initialSession: SecureSe
         return <LiveSkeleton />;
     }
 
-    // Unauthorized / No Access State
+    // Unauthorized
     if (!secureSession.authorized) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-in fade-in zoom-in duration-700">
@@ -221,9 +234,7 @@ export function LiveSessionClient({ initialSession }: { initialSession: SecureSe
                     <div className="w-24 h-24 rounded-full bg-red-500/10 mx-auto flex items-center justify-center mb-4 border border-red-500/20 text-red-500">
                         <Lock className="w-10 h-10" />
                     </div>
-                    <h1 className="text-4xl font-serif font-bold text-white mb-2">
-                        البث المباشر محمي
-                    </h1>
+                    <h1 className="text-4xl font-serif font-bold text-white mb-2">البث المباشر محمي</h1>
                     <p className="text-xl text-white/60 font-light">
                         {secureSession.error || "عذراً، هذا البث متاح فقط للمشتركين."}
                     </p>
@@ -235,17 +246,15 @@ export function LiveSessionClient({ initialSession }: { initialSession: SecureSe
         );
     }
 
-    // Not Live State
-    if (secureSession.authorized && !secureSession.isLive) {
+    // Not Live
+    if (!secureSession.isLive) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-in fade-in zoom-in duration-700">
                 <GlassCard className="p-12 text-center max-w-2xl mx-auto space-y-6 border-white/10 shadow-2xl">
                     <div className="w-24 h-24 rounded-full bg-white/5 mx-auto flex items-center justify-center mb-4">
                         <Video className="w-10 h-10 text-white/30" />
                     </div>
-                    <h1 className="text-4xl font-serif font-bold text-white mb-2">
-                        انتظرونا في الحصة القادمة
-                    </h1>
+                    <h1 className="text-4xl font-serif font-bold text-white mb-2">انتظرونا في الحصة القادمة</h1>
                     <p className="text-xl text-white/60 font-light">
                         لا يوجد بث مباشر حالياً. سيتم إعلامكم بموعد الحصة القادمة قريباً.
                     </p>
@@ -257,22 +266,30 @@ export function LiveSessionClient({ initialSession }: { initialSession: SecureSe
         );
     }
 
-    // WRAPPER: LiveKitRoom — connect only after user click
+    // LIVE STATE — YouTube and LiveKit are INDEPENDENT
     return (
-        <LiveKitRoom
-            video={false}
-            audio={true}
-            token={secureSession.liveToken}
-            serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
-            connect={userJoined}
-            data-lk-theme="default"
-        >
-            {!userJoined ? (
-                <JoinLiveButton title={secureSession.title} onClick={() => setUserJoined(true)} />
-            ) : (
-                <LiveSessionContent secureSession={secureSession} />
-            )}
-        </LiveKitRoom>
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-serif font-bold text-white mb-1">الحصص المباشرة</h1>
+                    <div className="flex items-center gap-2 text-red-400 text-sm font-bold animate-pulse">
+                        <span className="w-2 h-2 rounded-full bg-red-500" />
+                        مباشر الآن
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                {/* YouTube Player — ALWAYS renders, never blocked by LiveKit */}
+                <YouTubePlayerSection secureSession={secureSession} />
+
+                {/* LiveKit Audio + Chat — ISOLATED, errors stay here */}
+                <div className="lg:col-span-1">
+                    <LiveKitAudioSection secureSession={secureSession} />
+                </div>
+            </div>
+        </div>
     );
 }
 

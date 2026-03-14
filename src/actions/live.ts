@@ -105,6 +105,18 @@ export async function getHybridLiveSession(): Promise<SecureLiveSession> {
         const { generateSecureToken } = await import("@/lib/livekit-token");
         const isAdmin = profile.role === 'admin' || profile.role === 'teacher';
 
+        // SECRET VALIDATION LOGGING — helps diagnose 401 errors
+        const hasKey = !!process.env.LIVEKIT_API_KEY;
+        const hasSecret = !!process.env.LIVEKIT_API_SECRET;
+        const hasUrl = !!process.env.NEXT_PUBLIC_LIVEKIT_URL;
+        if (!hasKey || !hasSecret || !hasUrl) {
+            console.error("[LiveKit Config Audit] MISSING ENV VARS:", {
+                LIVEKIT_API_KEY: hasKey ? "✓ SET" : "✗ UNDEFINED",
+                LIVEKIT_API_SECRET: hasSecret ? "✓ SET" : "✗ UNDEFINED",
+                NEXT_PUBLIC_LIVEKIT_URL: hasUrl ? "✓ SET" : "✗ UNDEFINED",
+            });
+        }
+
         liveToken = await generateSecureToken({
             userId: user.id,
             participantName,
