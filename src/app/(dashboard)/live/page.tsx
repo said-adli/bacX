@@ -1,11 +1,19 @@
 import { getHybridLiveSession } from "@/actions/live";
-import { LiveSessionClient, SecureSession } from "@/components/live/LiveSessionClient";
+import type { SecureSession } from "@/components/live/LiveSessionClient";
+import nextDynamic from "next/dynamic";
+
+const LiveSessionClient = nextDynamic(
+    () => import("@/components/live/LiveSessionClient").then((mod) => mod.LiveSessionClient),
+    { ssr: false }
+);
 
 export const metadata = {
   title: "البث المباشر",
 };
 
 
+export const dynamicParams = true;
+// Keep force-dynamic since it depends on cookies for getHybridLiveSession
 export const dynamic = 'force-dynamic';
 
 export default async function LiveSessionsPage() {

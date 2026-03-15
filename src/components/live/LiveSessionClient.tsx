@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { usePlayer } from "@/context/PlayerContext";
-import { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { Lock, Users, Video, Headphones, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -36,6 +36,31 @@ function LiveSkeleton() {
             <div className="h-4 w-64 bg-white/5 rounded-lg" />
         </div>
     );
+}
+
+// --- ERROR BOUNDARY FOR COMMENTS ---
+class CommentsErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+    constructor(props: { children: React.ReactNode }) {
+        super(props);
+        this.state = { hasError: false };
+    }
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        console.error("Comments Error Boundary Caught:", error, errorInfo);
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
+                    <AlertTriangle className="text-red-400" />
+                    <p className="text-sm text-red-300">الدردشة غير متوفرة حالياً. جاري استعادة الاتصال...</p>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
 }
 
 // --- YOUTUBE PLAYER (fully independent from LiveKit, NO LiveKit hooks here) ---
@@ -97,7 +122,9 @@ function LiveKitAudioUI() {
             )}
 
             <div className="flex-1 max-h-[600px] flex flex-col min-h-[400px]">
-                <LiveChat messages={messages} onSendMessage={sendMessage} />
+                <CommentsErrorBoundary>
+                    <LiveChat messages={messages} onSendMessage={sendMessage} />
+                </CommentsErrorBoundary>
             </div>
 
             <RaiseHandButton
@@ -240,7 +267,17 @@ export function LiveSessionClient({ initialSession }: { initialSession: SecureSe
     const [secureSession] = useState<SecureSession>(initialSession);
     const { isLive: isLiveStatusActive } = useLiveStatus();
 
-    useEffect(() => { setMounted(true); }, []);
+    useEffect(() => {
+        setMounted(true);
+        // Explicit Logging as requested for surgical audit
+        console.table({
+            Token_Status: secureSession.liveToken ? "PRESENT" : "MISSING",
+            LiveKit_URL: secureSession.livekitUrl || process.env.NEXT_PUBLIC_LIVEKIT_URL || "MISSING",
+            Is_Authorized: secureSession.authorized,
+            Is_Live: secureSession.isLive,
+            Mounted: true
+        });
+    }, [secureSession]);
 
     useEffect(() => {
         if (secureSession.authorized && !secureSession.isLive && isLiveStatusActive) {
