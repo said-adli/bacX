@@ -23,7 +23,6 @@ export function GlobalVideoPlayer() {
     const { user } = useAuth();
     // Simple derivation - no need for effect+setState
     const decodedId = useMemo(() => videoId || null, [videoId]);
-    const [isReady, setIsReady] = useState(false);
 
     // Internal Player State (Source of Truth for UI)
     const [currentTime, setCurrentTime] = useState(0);
@@ -65,8 +64,6 @@ export function GlobalVideoPlayer() {
                     const data = JSON.parse(event.data);
 
                     if (data.event === 'infoDelivery' && data.info) {
-                        setIsReady(true);
-
                         // Sync Time (if explicit)
                         if (data.info.currentTime) setCurrentTime(data.info.currentTime);
                         if (data.info.duration) setDuration(data.info.duration);
@@ -351,13 +348,6 @@ export function GlobalVideoPlayer() {
                     </div>
                 </div>
             </div>
-
-            {/* 6. BUFFERING INDICATOR */}
-            {!isReady && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black z-40">
-                    <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-                </div>
-            )}
         </div>
     );
 
