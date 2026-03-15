@@ -76,15 +76,17 @@ function YouTubePlayerSection({ secureSession }: { secureSession: SecureSession 
     }, [registerHeroTarget]);
 
     useEffect(() => {
-        if (secureSession.authorized && secureSession.isLive && secureSession.youtubeId) {
+        // ALWAYS load the video if authorized and youtubeId exists, regardless of isLive!
+        if (secureSession.authorized && secureSession.youtubeId) {
             loadVideo(secureSession.youtubeId, secureSession.title || "Live Session", true);
         }
     }, [secureSession, loadVideo]);
 
     return (
         <div className="lg:col-span-3 space-y-4">
-            <div className="w-full aspect-video rounded-2xl overflow-hidden glass-panel relative border border-white/10 shadow-2xl">
-                <div ref={heroTargetRef} className="w-full h-full bg-black/50" />
+            <div className="w-full aspect-video rounded-2xl overflow-hidden glass-panel relative border border-white/10 shadow-2xl bg-black/10">
+                {/* DO NOT use a heavy black background. Allow transparency. */}
+                <div ref={heroTargetRef} className="w-full h-full relative z-10" />
             </div>
 
             <div className="glass-card p-6 flex flex-col md:flex-row items-start md:items-center gap-6 justify-between">
@@ -242,18 +244,19 @@ function LiveSessionContent({ secureSession }: { secureSession: SecureSession })
                 <div>
                     <h1 className="text-3xl font-serif font-bold text-white mb-1">الحصص المباشرة</h1>
                     <div className="flex items-center gap-2 text-red-400 text-sm font-bold animate-pulse">
-                        <span className="w-2 h-2 rounded-full bg-red-500" />
-                        مباشر الآن
+                        <span className={`w-2 h-2 rounded-full ${secureSession.isLive ? 'bg-red-500' : 'bg-gray-500'}`} />
+                        {secureSession.isLive ? 'مباشر الآن' : 'غير متصل (فيديو فقط)'}
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 relative z-10">
                 {/* YouTube Player — ALWAYS renders, never blocked by LiveKit */}
                 <YouTubePlayerSection secureSession={secureSession} />
 
                 {/* LiveKit Audio + Chat — ISOLATED, errors stay here */}
-                <div className="lg:col-span-1 h-full min-h-[600px] flex flex-col">
+                {/* Removed strict min-heights that might cause invisible bounding box overlaps on mobile */}
+                <div className="lg:col-span-1 flex flex-col relative z-20">
                     <LiveKitAudioSection secureSession={secureSession} />
                 </div>
             </div>
@@ -310,8 +313,8 @@ export function LiveSessionClient({ initialSession }: { initialSession: SecureSe
         );
     }
 
-    // Not Live
-    if (!secureSession.isLive) {
+    // Not Live AND No YouTube ID available
+    if (!secureSession.isLive && !secureSession.youtubeId) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-in fade-in zoom-in duration-700">
                 <GlassCard className="p-12 text-center max-w-2xl mx-auto space-y-6 border-white/10 shadow-2xl">
