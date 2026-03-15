@@ -95,6 +95,16 @@ function YouTubePlayerSection() {
 
     return (
         <div className={`space-y-4 ${isFullscreen ? 'lg:col-span-3' : 'w-full'}`}>
+            {/* --- URGENT DEBUG BLOCK --- */}
+            <pre className="bg-red-900 border-4 border-red-500 text-white p-4 overflow-auto rounded-xl font-mono text-xs w-full mb-4">
+                DEBUG DATA:
+                {JSON.stringify({
+                    status: event?.status,
+                    streamUrl: event?.streamUrl,
+                    type: typeof event?.streamUrl
+                }, null, 2)}
+            </pre>
+            {/* --------------------------- */}
             <div className="w-full aspect-video rounded-2xl overflow-hidden glass-panel relative border border-white/10 shadow-2xl bg-black/10">
                 <div ref={heroTargetRef} className="w-full h-full relative z-10" />
                 
