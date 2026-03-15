@@ -32,6 +32,7 @@ export function GlobalVideoPlayer() {
     const [playbackRate, setPlaybackRate] = useState(1);
     const [isHovering, setIsHovering] = useState(false);
     const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+    const [hasStarted, setHasStarted] = useState(false);
 
     // Refs
     const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -52,9 +53,10 @@ export function GlobalVideoPlayer() {
 
     // 2. Play/Pause Sync
     useEffect(() => {
+        if (!hasStarted) return;
         if (isPlaying) sendCommand('playVideo');
         else sendCommand('pauseVideo');
-    }, [isPlaying, sendCommand]);
+    }, [isPlaying, hasStarted, sendCommand]);
 
     // 3. YouTube Event Listener (Status, Time, Duration)
     useEffect(() => {
@@ -176,15 +178,40 @@ export function GlobalVideoPlayer() {
             ref={containerRef}
             className={cn(
                 "relative w-full h-full bg-black overflow-hidden group shadow-2xl select-none",
-                viewMode === 'mini' ? "rounded-xl border border-white/10" : "rounded-none"
+                viewMode === 'mini' ? "rounded-xl border border-white/10" : "rounded-3xl border border-white/5"
             )}
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => { setIsHovering(false); setShowSpeedMenu(false); }}
         >
+            {/* 0. PREMIUM CUSTOM OVERLAY */}
+            {!hasStarted && (
+                <div 
+                    className="absolute inset-0 z-50 flex items-center justify-center cursor-pointer bg-black/80"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setHasStarted(true);
+                        if (!isPlaying) togglePlay();
+                        sendCommand('playVideo'); // Force play just in case
+                    }}
+                >
+                    <img 
+                        src={`https://img.youtube.com/vi/${decodedId}/maxresdefault.jpg`} 
+                        alt="Video Thumbnail" 
+                        className="absolute inset-0 w-full h-full object-cover opacity-50 transition-opacity duration-500"
+                        onError={(e) => { e.currentTarget.src = `https://img.youtube.com/vi/${decodedId}/hqdefault.jpg`; }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+                    
+                    <div className="relative z-10 w-20 h-20 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center hover:scale-110 hover:bg-white/20 transition-all shadow-[0_0_40px_rgba(0,0,0,0.5)] cursor-pointer">
+                        <Play size={36} fill="currentColor" className="text-white ml-2" />
+                    </div>
+                </div>
+            )}
+
             {/* 1. YOUTUBE IFRAME (Ghost Mode) */}
             <iframe
                 ref={iframeRef}
-                src={`https://www.youtube-nocookie.com/embed/${decodedId}?enablejsapi=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+                src={`https://www.youtube-nocookie.com/embed/${decodedId}?enablejsapi=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1&cc_load_policy=0&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
                 className="w-full h-full object-cover pointer-events-none"
                 allow="autoplay; encrypted-media"
                 title="Ghost Player"
