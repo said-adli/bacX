@@ -157,6 +157,15 @@ export async function updateLiveSession(id: string, data: Partial<NewLiveSession
         throw error;
     }
 
+    // AUTO-ARCHIVE TRIGGER: If the admin marked it as ended, execute the final sync.
+    if (data.status === 'ended') {
+        try {
+            await archiveLiveSession(id);
+        } catch (archiveErr) {
+            console.error("Auto-archive failed during status update:", archiveErr);
+        }
+    }
+
     await logAdminAction("UPDATE_LIVE", id, "live_session", data);
 
     // Comprehensive Revalidation
@@ -176,5 +185,53 @@ export async function deleteLiveSession(id: string) {
     // Comprehensive Revalidation
     revalidatePath('/admin/live');
     revalidatePath('/admin/content');
+    revalidatePath('/dashboard');
+}
+
+export async function archiveLiveSession(id: string) {
+    await requireAdmin();
+    const supabase = await createClient();
+
+    // 1. Fetch Session
+    const { data: session, error: fetchError } = await supabase
+        .from('live_sessions')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (fetchError || !session) {
+        throw new Error("Session not found");
+    }
+
+    // 2. Update Session status
+    const { error: sessionUpdateError } = await supabase
+        .from('live_sessions')
+        .update({ status: 'ended', is_active: false })
+        .eq('id', id);
+
+    if (sessionUpdateError) throw sessionUpdateError;
+
+    // 3. Sync to Lesson if applicable
+    if (session.lesson_id && session.youtube_id) {
+        const { error: lessonUpdateError } = await supabase
+            .from('lessons')
+            .update({
+                video_url: session.youtube_id,
+                type: 'video'
+            })
+            .eq('id', session.lesson_id);
+            
+        if (lessonUpdateError) {
+            console.error("Failed to sync video_url to lesson", lessonUpdateError);
+        }
+    }
+
+    await logAdminAction("ARCHIVE_LIVE", id, "live_session", { lesson_id: session.lesson_id });
+
+    // Comprehensive Revalidation
+    revalidatePath('/admin/live');
+    revalidatePath('/admin/content');
+    revalidatePath('/live');
+    revalidatePath('/materials');
     revalidatePath('/dashboard');
 }

@@ -5,6 +5,8 @@ import { PremiumLockScreen } from "@/components/dashboard/PremiumLockScreen";
 import { Lock, Video, FileText, Clock } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { verifyContentAccess } from "@/lib/access-control";
+import { getUnifiedLiveContext, UnifiedLiveEvent } from "@/actions/live";
+import { UnifiedLiveHub } from "@/components/live/UnifiedLiveHub";
 
 export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { lessonId: string | undefined, isSubscribed?: boolean }) {
 
@@ -39,10 +41,13 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
     // Fetch Secure Token (Parallel)
     let secureVideoData: { videoId: string, token: string } | null = null;
     let accessError: Error | null = null;
+    let unifiedLiveEvent: UnifiedLiveEvent | null = null;
 
     try {
         if (lesson && hasAccess) {
-            if (lesson.is_free) {
+            if (lesson.type === 'live') {
+                unifiedLiveEvent = await getUnifiedLiveContext(lessonId, 'lesson');
+            } else if (lesson.is_free) {
                 // Free Lesson bypass: encode a local fallback token that the EncodedVideoPlayer can natively decrypt
                 secureVideoData = {
                     videoId: lesson.video_url,
@@ -80,15 +85,17 @@ export default async function ActiveVideoPlayer({ lessonId, isSubscribed }: { le
 
     return (
         <div className="flex flex-col gap-6 w-full">
-            <div className="relative w-full aspect-video bg-gradient-to-br from-[#020817] to-[#0f172a] rounded-2xl border border-blue-900/30 overflow-hidden shadow-[0_0_40px_rgba(37,99,235,0.05)] group">
+            <div className={`relative w-full ${lesson.type === 'live' ? '' : 'aspect-video bg-gradient-to-br from-[#020817] to-[#0f172a] rounded-2xl border border-blue-900/30 overflow-hidden shadow-[0_0_40px_rgba(37,99,235,0.05)] group'}`}>
                 {hasAccess ? (
-                    (secureVideoData?.token) ? (
+                    lesson.type === 'live' && unifiedLiveEvent ? (
+                        <UnifiedLiveHub initialEvent={unifiedLiveEvent} layoutVariant="embedded" />
+                    ) : (secureVideoData?.token) ? (
                         <EncodedVideoPlayer
                             encodedVideoId={secureVideoData.token}
                             lessonId={lesson.id}
                         />
                     ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-transparent">
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-transparent aspect-video bg-gradient-to-br from-[#020817] to-[#0f172a] rounded-2xl border border-blue-900/30">
                             <div className="w-16 h-16 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center justify-center mb-4">
                                 <Lock className="w-8 h-8 text-blue-400/50" />
                             </div>

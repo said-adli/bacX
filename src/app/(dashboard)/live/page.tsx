@@ -1,38 +1,17 @@
-import { getHybridLiveSession } from "@/actions/live";
-import { LiveSessionClient } from "@/components/live/LiveSessionClient";
-import type { SecureSession } from "@/components/live/LiveSessionClient";
+import { getUnifiedLiveContext } from "@/actions/live";
+import { UnifiedLiveHub } from "@/components/live/UnifiedLiveHub";
 
 export const metadata = {
   title: "البث المباشر",
 };
 
-
-
 export const dynamicParams = true;
-// Keep force-dynamic since it depends on cookies for getHybridLiveSession
+// Keep force-dynamic since it depends on cookies for getUnifiedLiveContext
 export const dynamic = 'force-dynamic';
 
 export default async function LiveSessionsPage() {
-    let secureSession: SecureSession = {
-        authorized: false,
-        isLive: false,
-        error: "Connection failed"
-    };
+    // No contextId passed = uses fallback to latest active session
+    const event = await getUnifiedLiveContext(undefined, 'session');
 
-    try {
-        const data = await getHybridLiveSession();
-        secureSession = {
-            authorized: data.authorized,
-            isLive: !!data.isLive,
-            title: data.title,
-            youtubeId: data.youtubeId,
-            liveToken: data.liveToken,
-            error: data.error,
-            user: data.user
-        };
-    } catch {
-        // Leave the default error state
-    }
-
-    return <LiveSessionClient initialSession={secureSession} />;
+    return <UnifiedLiveHub initialEvent={event} layoutVariant="fullscreen" />;
 }
