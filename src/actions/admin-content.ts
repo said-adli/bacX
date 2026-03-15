@@ -53,7 +53,7 @@ export async function getContentTree(): Promise<SubjectWithUnitsDTO[]> {
 
     // Transform to strict DTO
     interface RawLesson {
-        id: string; title: string; type: string; required_plan_id: string | null; order_index: number; created_at: string;
+        id: string; title: string; type: string; format?: string; required_plan_id: string | null; order_index: number; created_at: string;
     }
     interface RawUnit {
         id: string; title: string; subject_id: string; order_index: number; lessons: RawLesson[];
@@ -80,7 +80,8 @@ export async function getContentTree(): Promise<SubjectWithUnitsDTO[]> {
                         id: lesson.id,
                         unit_id: unit.id,
                         title: lesson.title,
-                        type: lesson.type as "video" | "live_stream" | "pdf" | "quiz", // Cast to specific union if known
+                        type: (lesson.type === 'exercise' ? 'exercise' : 'lesson') as 'lesson' | 'exercise',
+                        format: (lesson.type === 'video' || lesson.type === 'live_stream' || lesson.type === 'pdf' || lesson.type === 'quiz' ? lesson.type : 'video') as "video" | "live_stream" | "pdf" | "quiz",
                         required_plan_id: lesson.required_plan_id,
                         order_index: lesson.order_index,
                         created_at: lesson.created_at
@@ -377,7 +378,13 @@ export async function getLessonById(id: string) {
         .select('id, lesson_id, title, url, type, created_at')
         .eq('lesson_id', id);
 
-    return { ...lesson, _resources: resError ? [] : resources };
+    // Map `type` field which acts as format historically
+    return { 
+        ...lesson,
+        format: lesson.type, // Map raw db string to format for the UI
+        type: lesson.type === 'exercise' ? 'exercise' : 'lesson',
+        _resources: resError ? [] : resources 
+    };
 }
 
 // Helper to ensure subjects exist (Initialization)
