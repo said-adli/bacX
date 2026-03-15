@@ -127,7 +127,46 @@ export async function toggleLiveGlobal(currentState: boolean) {
         console.error("Live toggle fail", error);
         throw error;
     }
+
+    // --- SYNC WITH LIVE SESSIONS ---
+    if (newState) {
+        // Find latest 'scheduled' session and mark it 'live'
+        const { data: latestScheduled } = await supabaseAdmin
+            .from('live_sessions')
+            .select('id, lesson_id')
+            .eq('status', 'scheduled')
+            .eq('is_active', true)
+            .order('started_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (latestScheduled) {
+            await supabaseAdmin.from('live_sessions').update({ status: 'live' }).eq('id', latestScheduled.id);
+            if (latestScheduled.lesson_id) {
+                await supabaseAdmin.from('lessons').update({ type: 'live' }).eq('id', latestScheduled.lesson_id);
+            }
+        }
+    } else {
+        // If toggled off, end all 'live' sessions safely using our archive hook
+        const { data: activeLive } = await supabaseAdmin
+            .from('live_sessions')
+            .select('id')
+            .eq('status', 'live');
+            
+        if (activeLive && activeLive.length > 0) {
+            try {
+                const { archiveLiveSession } = await import('@/actions/admin-live');
+                for (const session of activeLive) {
+                    await archiveLiveSession(session.id);
+                }
+            } catch (err) {
+                console.error("Failed to auto-archive active sessions on toggle", err);
+            }
+        }
+    }
+
     revalidatePath('/dashboard');
+    revalidatePath('/admin/live');
 }
 
 // Fetch helper (for initial state)

@@ -99,7 +99,7 @@ function YouTubePlayerSection() {
                 <div ref={heroTargetRef} className="w-full h-full relative z-10" />
                 
                 {/* Fallback Overlays */}
-                {event?.status === 'scheduled' && (
+                {event?.status === 'scheduled' && !event.streamUrl && (
                     <div className="absolute inset-0 z-20 bg-black/80 flex flex-col items-center justify-center text-white backdrop-blur-md">
                         <Video size={48} className="text-white/30 mb-4" />
                         <h3 className="text-2xl font-bold mb-2">البث سيبدأ قريباً</h3>
