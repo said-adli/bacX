@@ -91,6 +91,11 @@ export async function createLiveSession(data: NewLiveSessionPayload) {
     if (error) throw error;
     await logAdminAction("CREATE_LIVE", newSession.id, "live_session", { title: data.title });
 
+    // [UNIFIED ENGINE HOOK] Flag the linked lesson as actively 'live'
+    if (data.lesson_id && data.status !== 'ended') {
+        await supabase.from('lessons').update({ type: 'live' }).eq('id', data.lesson_id);
+    }
+
     // Comprehensive Revalidation
     revalidatePath('/admin/live');
     revalidatePath('/admin/content');
@@ -164,6 +169,9 @@ export async function updateLiveSession(id: string, data: Partial<NewLiveSession
         } catch (archiveErr) {
             console.error("Auto-archive failed during status update:", archiveErr);
         }
+    } else if (targetLessonId) {
+        // [UNIFIED ENGINE HOOK] Ensure it is flagged as 'live' if active
+        await supabase.from('lessons').update({ type: 'live' }).eq('id', targetLessonId);
     }
 
     await logAdminAction("UPDATE_LIVE", id, "live_session", data);

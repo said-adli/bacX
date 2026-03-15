@@ -18,13 +18,12 @@ const lessonSchema = z.object({
     subject_id: z.string().min(1, "الرجاء اختيار المادة"),
     unit_id: z.string().min(1, "الرجاء اختيار الوحدة"),
     title: z.string().min(1, "العنوان مطلوب"),
-    format: z.enum(["video", "live_stream", "pdf"]),
+    format: z.enum(["video", "pdf"]),
     video_url: z.string().optional(),
     required_plan_id: z.string().optional(),
     is_free: z.boolean(),
     is_purchasable: z.boolean(),
     price: z.number().nullable().optional(),
-    scheduled_at: z.string().optional(),
     notify_subscribers: z.boolean().optional()
 });
 
@@ -55,13 +54,12 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
             subject_id: subjectId || "",
             unit_id: unitId || "",
             title: initialData?.title || "",
-            format: (initialData?.format || "video") as "video" | "live_stream" | "pdf",
+            format: (initialData?.format || "video") as "video" | "pdf",
             video_url: initialData?.video_url || "",
             required_plan_id: initialData?.required_plan_id || "",
             is_free: initialData?.is_free || false,
             is_purchasable: initialData?.is_purchasable || false,
             price: initialData?.price || null,
-            scheduled_at: "", // Set initial schedule safely?
             notify_subscribers: false
         }
     });
@@ -109,7 +107,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
             const payload = {
                 title: values.title,
                 type: 'lesson' as const, // Force to lesson to satisfy DB checks
-                format: values.format, // Track presentation format (video, live_stream, pdf)
+                format: values.format, // Track presentation format (video, pdf)
                 video_url: values.video_url,
                 required_plan_id: values.required_plan_id || null,
                 unit_id: values.unit_id,
@@ -117,7 +115,6 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                 is_free: values.is_free,
                 is_purchasable: values.is_purchasable,
                 price: values.price,
-                scheduled_at: values.scheduled_at,
                 notify_subscribers: values.notify_subscribers,
             };
 
@@ -243,14 +240,13 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
 
                 {/* Format Selection */}
                 <div className="grid grid-cols-3 gap-4">
-                    {(['video', 'live_stream', 'pdf'] as const).map((t) => (
+                    {(['video', 'pdf'] as const).map((t) => (
                         <div
                             key={t}
                             onClick={() => form.setValue("format", t)}
                             className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col items-center gap-2 ${watchFormat === t ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'bg-black/20 border-white/5 text-zinc-500 hover:bg-white/5'}`}
                         >
                             {t === 'video' && <Video size={24} />}
-                            {t === 'live_stream' && <Radio size={24} />}
                             {t === 'pdf' && <FileText size={24} />}
                             <span className="text-xs font-bold uppercase tracking-wider">{t.replace('_', ' ')}</span>
                         </div>
@@ -273,7 +269,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
-                                    {watchFormat === 'live_stream' ? 'رابط / معرف البث المباشر' : 'رابط مصدر الفيديو'}
+                                    رابط مصدر الفيديو
                                 </label>
                                 <input
                                     {...form.register("video_url")}
@@ -281,19 +277,6 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                                     placeholder="https://..."
                                 />
                             </div>
-
-                            {watchFormat === 'live_stream' && (
-                                <div>
-                                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
-                                        موعد البدء المجدول
-                                    </label>
-                                    <input
-                                        type="datetime-local"
-                                        {...form.register("scheduled_at")}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
-                                    />
-                                </div>
-                            )}
                         </div>
                     )}
 

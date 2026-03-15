@@ -81,7 +81,7 @@ export async function getContentTree(): Promise<SubjectWithUnitsDTO[]> {
                         unit_id: unit.id,
                         title: lesson.title,
                         type: (lesson.type === 'exercise' ? 'exercise' : 'lesson') as 'lesson' | 'exercise',
-                        format: (lesson.type === 'video' || lesson.type === 'live_stream' || lesson.type === 'pdf' || lesson.type === 'quiz' ? lesson.type : 'video') as "video" | "live_stream" | "pdf" | "quiz",
+                        format: (lesson.type === 'video' || lesson.type === 'pdf' || lesson.type === 'quiz' ? lesson.type : 'video') as "video" | "pdf" | "quiz",
                         required_plan_id: lesson.required_plan_id,
                         order_index: lesson.order_index,
                         created_at: lesson.created_at
@@ -203,61 +203,8 @@ export async function createLesson(data: Partial<Lesson> & { notify_subscribers?
         if (error) throw error;
         await logAdminAction("CREATE_LESSON", newLesson.id, "lesson", { title: data.title });
 
-        // [SYNC] Create Live Session if format is 'live_stream'
-        if (data.format === 'live_stream' && data.scheduled_at) {
-            const payloadSchedule = data.scheduled_at;
-            let safeStartTime: string;
+        // No more [SYNC] Create Live Session block here.
 
-            if (payloadSchedule instanceof Date) {
-                safeStartTime = payloadSchedule.toISOString();
-            } else if (typeof payloadSchedule === 'string' || typeof payloadSchedule === 'number') {
-                const d = new Date(payloadSchedule);
-                if (isNaN(d.getTime())) {
-                    throw new Error("Validation Error: Invalid scheduled date format.");
-                }
-                safeStartTime = d.toISOString();
-            } else {
-                // Fallback for strictness, though the type guard above covers it
-                safeStartTime = new Date(Date.now() + 3600000).toISOString();
-            }
-
-            // Note: We deliberately DO NOT put the video_url into the lesson record above if it's sensitive,
-            // but the createLesson call above already put data.video_url into the lesson.
-            // Requirement 1 says: "STOP copying the stream_url to the lessons.video_url field" in admin-live.ts.
-            // But this is admin-content.ts. 
-            // If the user inputs a stream URL here, it goes into `lessons.video_url`.
-            // We should probably NULL it out for the lesson insert if it's a live stream and relying on the live session?
-            // "Sensitive stream data must ONLY reside in the live_sessions table".
-            // So, for Live Stream lessons, we should NOT store it in `lessons`.
-
-            // Correction: I cannot easily change the `insert` call above without refactoring the whole function block 
-            // since `newLesson` is already created.
-            // But I can update it immediately or better yet, intercept it before insert.
-            // However, this replace_file_content targets the block AFTER insert.
-            // Let's assume the provided video_url for a "Live Stream" lesson in the Content Tree *is* the YouTube ID.
-            // If the policy says "Sensitive stream data must ONLY reside in live_sessions", 
-            // then we should indeed NOT store it in `lessons`.
-
-            // NOTE: The user instructions specifically targeted `admin-live.ts` for the "Security Leak".
-            // But consistency suggests we should check here too. 
-            // However, `data.video_url` is passed to `lessons` insert code above this block.
-            // I will strictly follow the date validation instruction here for now.
-
-            await supabase.from('live_sessions').insert({
-                title: data.title,
-                youtube_id: data.video_url || 'pending', // Use video_url as stream ID/URL
-                started_at: safeStartTime,
-                status: 'scheduled',
-                required_plan_id: data.required_plan_id,
-                is_purchasable: data.is_purchasable ?? false,
-                price: data.price ?? null,
-                is_active: true,
-                lesson_id: newLesson.id // Automatic Linking
-            });
-
-            // Revalidate Live Admin too
-            revalidatePath('/admin/live');
-        }
 
         // [SYNC] Create Lesson Resources atomically
         if (resources && resources.length > 0) {
