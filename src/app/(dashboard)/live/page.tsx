@@ -1,15 +1,11 @@
 import { getHybridLiveSession } from "@/actions/live";
+import { LiveSessionClient } from "@/components/live/LiveSessionClient";
 import type { SecureSession } from "@/components/live/LiveSessionClient";
-import nextDynamic from "next/dynamic";
-
-const LiveSessionClient = nextDynamic(
-    () => import("@/components/live/LiveSessionClient").then((mod) => mod.LiveSessionClient),
-    { ssr: false }
-);
 
 export const metadata = {
   title: "البث المباشر",
 };
+
 
 
 export const dynamicParams = true;
