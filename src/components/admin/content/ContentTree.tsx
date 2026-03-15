@@ -232,7 +232,7 @@ export default function ContentTree({ subjects: initialSubjects, activePlans }: 
                                                                         <DragHandle className="opacity-0 group-hover:opacity-100 -ml-2 p-1 text-zinc-600 hover:text-zinc-400">
                                                                             <GripVertical size={14} />
                                                                         </DragHandle>
-                                                                        <FileVideo size={14} className={lesson.type === 'live_stream' ? 'text-red-500' : 'text-blue-400'} />
+                                                                        <FileVideo size={14} className={lesson.format === 'live_stream' ? 'text-red-500' : 'text-blue-400'} />
                                                                         <span className="flex-1 truncate">{lesson.title}</span>
                                                                         {lesson.required_plan_id && (
                                                                             <div title="Restricted Access">

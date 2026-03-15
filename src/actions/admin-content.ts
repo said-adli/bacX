@@ -186,7 +186,7 @@ export async function createLesson(data: Partial<Lesson> & { notify_subscribers?
             .from('lessons')
             .insert({
                 title: data.title,
-                type: data.type || 'video',
+                type: data.type === 'exercise' ? 'exercise' : 'lesson', // MUST satisfy DB constraint
                 video_url: data.video_url,
                 required_plan_id: data.required_plan_id,
                 unit_id: data.unit_id,
@@ -202,8 +202,8 @@ export async function createLesson(data: Partial<Lesson> & { notify_subscribers?
         if (error) throw error;
         await logAdminAction("CREATE_LESSON", newLesson.id, "lesson", { title: data.title });
 
-        // [SYNC] Create Live Session if type is 'live_stream'
-        if (data.type === 'live_stream' && data.scheduled_at) {
+        // [SYNC] Create Live Session if format is 'live_stream'
+        if (data.format === 'live_stream' && data.scheduled_at) {
             const payloadSchedule = data.scheduled_at;
             let safeStartTime: string;
 
@@ -302,7 +302,7 @@ export async function updateLesson(id: string, data: Partial<Lesson>, newResourc
             .from('lessons')
             .update({
                 title: data.title,
-                type: 'lesson',
+                type: data.type === 'exercise' ? 'exercise' : 'lesson', // MUST satisfy DB constraint
                 video_url: data.video_url,
                 required_plan_id: data.required_plan_id,
                 is_free: data.is_free,

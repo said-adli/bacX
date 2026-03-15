@@ -18,7 +18,7 @@ const lessonSchema = z.object({
     subject_id: z.string().min(1, "الرجاء اختيار المادة"),
     unit_id: z.string().min(1, "الرجاء اختيار الوحدة"),
     title: z.string().min(1, "العنوان مطلوب"),
-    type: z.enum(["video", "live_stream", "pdf"]),
+    format: z.enum(["video", "live_stream", "pdf"]),
     video_url: z.string().optional(),
     required_plan_id: z.string().optional(),
     is_free: z.boolean(),
@@ -55,7 +55,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
             subject_id: subjectId || "",
             unit_id: unitId || "",
             title: initialData?.title || "",
-            type: (initialData?.type || "video") as "video" | "live_stream" | "pdf",
+            format: (initialData?.format || "video") as "video" | "live_stream" | "pdf",
             video_url: initialData?.video_url || "",
             required_plan_id: initialData?.required_plan_id || "",
             is_free: initialData?.is_free || false,
@@ -66,7 +66,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
         }
     });
 
-    const watchType = form.watch("type");
+    const watchFormat = form.watch("format");
     const watchPurchasable = form.watch("is_purchasable");
     const watchSubjectId = form.watch("subject_id");
     const watchIsFree = form.watch("is_free");
@@ -108,7 +108,8 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
         try {
             const payload = {
                 title: values.title,
-                type: values.type,
+                type: 'lesson' as const, // Force to lesson to satisfy DB checks
+                format: values.format, // Track presentation format (video, live_stream, pdf)
                 video_url: values.video_url,
                 required_plan_id: values.required_plan_id || null,
                 unit_id: values.unit_id,
@@ -240,13 +241,13 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                     </div>
                 )}
 
-                {/* Type Selection */}
+                {/* Format Selection */}
                 <div className="grid grid-cols-3 gap-4">
                     {(['video', 'live_stream', 'pdf'] as const).map((t) => (
                         <div
                             key={t}
-                            onClick={() => form.setValue("type", t)}
-                            className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col items-center gap-2 ${watchType === t ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'bg-black/20 border-white/5 text-zinc-500 hover:bg-white/5'}`}
+                            onClick={() => form.setValue("format", t)}
+                            className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col items-center gap-2 ${watchFormat === t ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'bg-black/20 border-white/5 text-zinc-500 hover:bg-white/5'}`}
                         >
                             {t === 'video' && <Video size={24} />}
                             {t === 'live_stream' && <Radio size={24} />}
@@ -268,11 +269,11 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                         {form.formState.errors.title && <span className="text-xs text-red-500 mt-1">{form.formState.errors.title.message}</span>}
                     </div>
 
-                    {watchType !== 'pdf' && (
+                    {watchFormat !== 'pdf' && (
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
-                                    {watchType === 'live_stream' ? 'رابط / معرف البث المباشر' : 'رابط مصدر الفيديو'}
+                                    {watchFormat === 'live_stream' ? 'رابط / معرف البث المباشر' : 'رابط مصدر الفيديو'}
                                 </label>
                                 <input
                                     {...form.register("video_url")}
@@ -281,7 +282,7 @@ export default function ContentEditor({ subjectId, unitId, initialData, activePl
                                 />
                             </div>
 
-                            {watchType === 'live_stream' && (
+                            {watchFormat === 'live_stream' && (
                                 <div>
                                     <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
                                         موعد البدء المجدول

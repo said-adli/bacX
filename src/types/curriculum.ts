@@ -8,7 +8,8 @@ export interface LessonDTO {
     title: string;
     unit_id: string;
     subject_id?: string;
-    type: 'video' | 'live_stream' | 'pdf' | 'quiz';
+    type: 'lesson' | 'exercise'; // Enforce DB constraint
+    format?: 'video' | 'live_stream' | 'pdf' | 'quiz'; // Internal UI tracking
     video_url?: string | null;
     required_plan_id?: string | null;
     is_free?: boolean;
