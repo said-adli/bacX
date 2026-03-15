@@ -5,6 +5,12 @@ import React, { createContext, useContext, useState, useCallback, useMemo, useRe
 // Types
 type ViewMode = 'hero' | 'mini' | 'hidden';
 
+export function extractYouTubeId(urlOrId: string): string {
+    if (!urlOrId) return '';
+    const match = urlOrId.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+    return match ? match[1] : urlOrId;
+}
+
 interface PlayerState {
     videoId: string | null;
     isPlaying: boolean;
@@ -60,7 +66,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }, [videoId, heroTarget]);
 
     // Actions
-    const loadVideo = useCallback((id: string, videoTitle?: string, liveMode?: boolean) => {
+    const loadVideo = useCallback((rawId: string, videoTitle?: string, liveMode?: boolean) => {
+        const id = extractYouTubeId(rawId);
         setVideoId(id);
         if (videoTitle) setTitle(videoTitle);
         setIsLive(!!liveMode);
