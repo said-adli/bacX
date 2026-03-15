@@ -19,6 +19,7 @@ export interface SecureSession {
     title?: string;
     youtubeId?: string;
     liveToken?: string;
+    livekitUrl?: string;
     error?: string;
     user?: {
         name: string;
@@ -169,13 +170,12 @@ function LiveKitAudioSection({ secureSession }: { secureSession: SecureSession }
         );
     }
 
-    // Connected state — This provides the Context for useLiveInteraction
     return (
         <LiveKitRoom
             video={false}
             audio={true}
             token={secureSession.liveToken}
-            serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
+            serverUrl={secureSession.livekitUrl || process.env.NEXT_PUBLIC_LIVEKIT_URL}
             connect={true}
             data-lk-theme="default"
             onError={(err) => {

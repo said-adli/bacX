@@ -8,8 +8,8 @@ interface TokenOptions {
 }
 
 export async function generateSecureToken({ userId, participantName, roomName, isAdmin }: TokenOptions) {
-    const apiKey = process.env.LIVEKIT_API_KEY;
-    const apiSecret = process.env.LIVEKIT_API_SECRET;
+    const apiKey = (process.env.LIVEKIT_API_KEY || "").trim();
+    const apiSecret = (process.env.LIVEKIT_API_SECRET || "").trim();
 
     if (!apiKey || !apiSecret) {
         throw new Error("LiveKit Server Misconfigured");
@@ -18,6 +18,7 @@ export async function generateSecureToken({ userId, participantName, roomName, i
     const at = new AccessToken(apiKey, apiSecret, {
         identity: userId,
         name: participantName,
+        ttl: 3600, // 1 hour explicit TTL to avoid clock skew issues
     });
 
     /**
@@ -27,31 +28,18 @@ export async function generateSecureToken({ userId, participantName, roomName, i
      * 3. Video/Audio publishing requires server-side grant (RoomService).
      */
 
+    // Combine all grants into a single addGrant call to avoid overwriting properties
     at.addGrant({
         roomJoin: true,
         room: roomName,
-        canPublish: false, // DEFAULT: FALSE for everyone (even admin starts disconnected? No, Admin should usually publish).
-        // Update: Admin should be able to publish immediately if they are the host.
-        // But for consistency, maybe Admin gets true?
-        // Usage in route.ts had: canPublish: isAdmin
-        // Usage in live.ts had: canPublish: false (my edit).
-        // Let's stick to the rule: "No student should EVER receive a token with publish permissions".
-        // Admin IS allowed.
+        canPublish: isAdmin, // Only admins can publish audio starting out
         canSubscribe: true,
-        canPublishData: true, // For Signals
+        canPublishData: true, // Needed for raising hand
         hidden: false,
+        ...(isAdmin ? {
+            canPublishSources: [TrackSource.CAMERA, TrackSource.MICROPHONE, TrackSource.SCREEN_SHARE]
+        } : {})
     });
-
-    // We augment the grant for Admins specifically if needed, OR we rely on grantStageAccess for everyone?
-    // Usually Admins want to just join and talk.
-    // So if isAdmin, we set canPublish: true.
-
-    if (isAdmin) {
-        at.addGrant({
-            canPublish: true,
-            canPublishSources: [TrackSource.CAMERA, TrackSource.MICROPHONE, TrackSource.SCREEN_SHARE],
-        });
-    }
 
     return await at.toJwt();
 }

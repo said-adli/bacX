@@ -7,6 +7,7 @@ interface SecureLiveSession {
     error?: string;
     youtubeId?: string;
     liveToken?: string;
+    livekitUrl?: string; // ADDED THIS
     isLive?: boolean;
     title?: string;
     user?: {
@@ -134,6 +135,7 @@ export async function getHybridLiveSession(): Promise<SecureLiveSession> {
         isLive: session.status === 'live',
         title: session.title,
         liveToken,
+        livekitUrl: (process.env.NEXT_PUBLIC_LIVEKIT_URL || "").trim(),
         user: {
             id: user.id,
             name: participantName

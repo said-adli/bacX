@@ -115,5 +115,8 @@ export async function GET(request: NextRequest) {
         isAdmin
     });
 
-    return NextResponse.json({ token });
+    return NextResponse.json({ 
+        token,
+        livekitUrl: (process.env.NEXT_PUBLIC_LIVEKIT_URL || "").trim() 
+    });
 }
