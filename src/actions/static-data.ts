@@ -1,0 +1,54 @@
+"use server";
+
+import { createClient } from "@/utils/supabase/server";
+import { unstable_cache } from "next/cache";
+
+export interface Wilaya {
+    id: string;
+    code: string;
+    name: string;
+    ar_name?: string;
+}
+
+export const getWilayas = unstable_cache(
+    async () => {
+        const supabase = await createClient();
+        // Assuming table 'wilayas' exists as per prompt. If not, we might fail.
+        // But prompt said "Supabase wilayas table".
+        const { data, error } = await supabase
+            .from('wilayas')
+            .select('id, code, name, ar_name')
+            .order('id', { ascending: true }); // or code
+
+        if (error) {
+            console.error("Error fetching wilayas:", error);
+            return [];
+        }
+        return data as Wilaya[];
+    },
+    ['static-wilayas'],
+    { revalidate: 86400, tags: ['static-data'] } // Cache for 24h
+);
+
+export interface Major {
+    id: string;
+    name: string;
+}
+
+export const getMajors = unstable_cache(
+    async () => {
+        const supabase = await createClient();
+        const { data, error } = await supabase
+            .from('majors')
+            .select('id, name')
+            .order('name');
+
+        if (error || !data) {
+            console.error("[CACHE] Failed to fetch majors:", error?.message);
+            return [];
+        }
+        return data as Major[];
+    },
+    ['static-majors'],
+    { revalidate: 86400, tags: ['static-data'] }
+);

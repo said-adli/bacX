@@ -1,115 +1,117 @@
 "use client";
 
-import { motion, type Variants } from "framer-motion";
-import { Button } from "@/components/ui/Button";
-import { SmartButton } from "@/components/ui/SmartButton";
-import { CustomCursor } from "@/components/ui/CustomCursor";
-import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, PlayCircle, Users } from "lucide-react";
 
-// Staggered Entrance Variants
-const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.15,
-            delayChildren: 0.2,
-        },
-    },
-};
+interface HeroProps {
+    stats?: {
+        usersCount: number;
+        lessonsCount: number;
+    }
+}
 
-const textRevealVariants: Variants = {
-    hidden: { opacity: 0, y: 30, filter: "blur(8px)" },
-    visible: {
-        opacity: 1,
-        y: 0,
-        filter: "blur(0px)",
-        transition: {
-            duration: 1.0,
-            ease: [0.22, 1, 0.36, 1], // Custom soft heavy ease
-        },
-    },
-};
+export function Hero({ stats }: HeroProps) {
+    // Zero-state handling - show honest message if no users yet
+    const hasUsers = stats?.usersCount && stats.usersCount > 0;
+    const studentsDisplay = hasUsers
+        ? `+${stats.usersCount.toLocaleString()} طالب يثقون بنا`
+        : 'انضم كأول طالب!';
 
-export function Hero() {
     return (
-        <section className="relative min-h-screen w-full flex items-center justify-center bg-[#050505] overflow-hidden">
-            <CustomCursor />
-
-            {/* 1. Background Architecture */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-                {/* Glow Effects (Centered Spotlight) */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] max-w-[800px] max-h-[800px] rounded-full bg-primary/5 blur-[120px]" />
-
-                {/* Deep Mesh Gradients */}
-                <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-[#1e1b4b]/20 blur-[100px] animate-pulse" />
-                <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[#020617]/40 blur-[100px]" />
-
-                {/* Subtle Grid Overlay */}
-                <div
-                    className="absolute inset-0 opacity-[0.04]"
-                    style={{
-                        backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`,
-                        backgroundSize: '3rem 3rem'
-                    }}
-                />
-
-                {/* Radial Fade for Grid */}
-                <div className="absolute inset-0 bg-radial-gradient from-transparent via-[#050505]/40 to-[#050505]" />
+        <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden bg-background">
+            {/* Background Decor */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+                <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-primary/5 rounded-full blur-[10px]" />
+                <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-400/5 rounded-full blur-[10px]" />
             </div>
 
-            {/* 2. Main Content (Centered) */}
-            <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="relative z-10 w-full max-w-4xl mx-auto px-6 text-center flex flex-col items-center justify-center"
-            >
-                {/* H1 Headline */}
-                <motion.h1
-                    variants={textRevealVariants}
-                    className="font-tajawal font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[1.1] mb-8 tracking-tight"
-                >
-                    <span className="block text-white relative inline-block">
-                        أعد تعريف
-                        {/* Subtle Shimmer Overlay for Text */}
-                        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 animate-shimmer pointer-events-none" />
-                    </span>
-                    <br className="hidden sm:block" />
-                    <span className="block text-zinc-500 mt-2 sm:mt-0">حدود طموحك</span>
-                </motion.h1>
-
-                {/* Subheader */}
-                <motion.p
-                    variants={textRevealVariants}
-                    className="font-tajawal text-zinc-400 text-lg sm:text-xl md:text-2xl leading-relaxed max-w-2xl mx-auto mb-10"
-                >
-                    المعيار الذهبي للتحصيل العلمي. تجربة تقنية متقدمة مصممة لنخبة طلاب البكالوريا.
-                </motion.p>
-
-                {/* CTA Button */}
-                <motion.div variants={textRevealVariants} className="relative z-50">
-                    <SmartButton
-                        href="/auth"
-                        variant="secondary"
-                        size="lg"
-                        icon={ArrowLeft}
-                        className="font-tajawal text-lg bg-black border border-white/10 text-white hover:bg-white/5 relative overflow-hidden group px-8 py-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:border-white/20 active:scale-[0.98] cursor-pointer"
-                    >
-                        <span className="relative z-10 flex items-center gap-2">
-                            اكتشف التجربة
+            <div className="container px-4 md:px-6 mx-auto relative z-10 flex flex-col md:flex-row items-center gap-12">
+                {/* Text Content */}
+                <div className="flex-1 text-center md:text-right space-y-8">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-sm font-medium border border-blue-200">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-600 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
                         </span>
-                        {/* Enhanced Button Shimmer - pointer-events-none is CRITICAL here */}
-                        <div className="absolute inset-0 -translate-x-[150%] group-hover:translate-x-[150%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 pointer-events-none" style={{ transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)" }} />
-                    </SmartButton>
-                </motion.div>
-            </motion.div>
+                        المنصة الأولى لطلاب البكالوريا في الجزائر
+                    </div>
 
-            {/* 3. Bottom Fade / Bento Hint */}
-            <div
-                className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none bg-gradient-to-t from-[#050505] to-transparent z-10"
-            />
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.2]">
+                        حقّق حلم <span className="text-blue-600">البكالوريا</span>
+                        <br />
+                        بامتياز وتفوق.
+                    </h1>
 
+                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto md:mx-0 leading-relaxed">
+                        انضم إلى نخبة الطلاب واحصل على أفضل الدروس، التمارين، والمراجعات الشاملة مع أساتذة خبراء. رحلتك نحو النجاح تبدأ هنا.
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
+                        <Link
+                            href="/auth/signup"
+                            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl font-bold text-lg hover:from-blue-700 hover:to-blue-600 transition-all shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 group"
+                        >
+                            ابدأ رحلتك مجاناً
+                            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                        </Link>
+                        <Link
+                            href="#features"
+                            className="w-full sm:w-auto px-8 py-4 bg-white text-foreground border border-input rounded-xl font-bold text-lg hover:bg-muted/50 transition-all flex items-center justify-center gap-2"
+                        >
+                            <PlayCircle className="w-5 h-5 text-blue-600" />
+                            شاهد كيف نعمل
+                        </Link>
+                    </div>
+
+                    {/* Social proof - real data only */}
+                    <div className="pt-6 flex items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                            {hasUsers && (
+                                <div className="flex -space-x-2 space-x-reverse">
+                                    {[1, 2, 3, 4].map((i) => (
+                                        <div key={i} className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px] font-bold overflow-hidden">
+                                            <div className="w-full h-full bg-gray-200" />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <span className="font-medium">{studentsDisplay}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Hero Image/Visual */}
+                <div className="flex-1 w-full max-w-xl relative">
+                    <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/20 bg-white/50 backdrop-blur-sm aspect-video sm:aspect-square md:aspect-[4/3]">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-blue-50 to-white flex items-center justify-center">
+                            <div className="text-center p-8">
+                                <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
+                                    <PlayCircle className="w-10 h-10" />
+                                </div>
+                                <h3 className="text-xl font-bold text-foreground">تجربة تعليمية سينمائية</h3>
+                                <p className="text-muted-foreground mt-2">محتوى عالي الجودة بدقة 4K</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Floating Card - Shows lessons count (real data) */}
+                    <div className="absolute -bottom-6 -right-6 bg-white p-4 rounded-xl shadow-xl border border-border">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                <Users className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <div className="text-sm font-bold text-foreground">مجتمع متنامي</div>
+                                <div className="text-xs text-muted-foreground">
+                                    {stats?.lessonsCount
+                                        ? `${stats.lessonsCount} درس متاح`
+                                        : 'ابدأ معنا اليوم'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
     );
 }

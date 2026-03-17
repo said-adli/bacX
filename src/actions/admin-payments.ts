@@ -1,0 +1,203 @@
+"use server";
+
+import { createClient } from "@/utils/supabase/server";
+import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/auth-guard";
+import { createAdminClient } from "@/utils/supabase/admin";
+
+export interface PaymentProof {
+    id: string;
+    user_id: string;
+    receipt_url: string;
+    status: 'pending' | 'approved' | 'rejected';
+    created_at: string;
+    profiles?: {
+        full_name: string;
+        email: string;
+    };
+}
+
+// Fetch Pending Payments (Manual Review Only)
+export async function getPendingPayments() {
+    await requireAdmin();
+    const supabase = await createClient();
+    const adminSupabase = createAdminClient();
+
+    // STRICT: Only use 'payment_requests' as per mission directive
+    const { data, error } = await supabase
+        .from('payment_requests')
+        .select(`
+            *,
+            profiles ( full_name, email )
+        `)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error("Fetch payments error:", error);
+        return [];
+    }
+
+    // Transform receipts to Signed URLs
+    const paymentsWithSignedUrls = await Promise.all(
+        (data || []).map(async (payment) => {
+            let signedUrl = payment.receipt_url;
+
+            if (payment.receipt_url && !payment.receipt_url.startsWith('http')) {
+                const { data: signedData } = await adminSupabase
+                    .storage
+                    .from('receipts')
+                    .createSignedUrl(payment.receipt_url, 3600);
+
+                if (signedData?.signedUrl) {
+                    signedUrl = signedData.signedUrl;
+                }
+            }
+
+            return {
+                ...payment,
+                receipt_url: signedUrl,
+                profiles: Array.isArray(payment.profiles) ? payment.profiles[0] : payment.profiles
+            };
+        })
+    );
+
+    return paymentsWithSignedUrls;
+}
+
+// Approve Payment (Atomic Transaction)
+export async function approvePayment(requestId: string, userId: string, planId?: string | null, contentId?: string | null) {
+    const { user } = await requireAdmin();
+    const supabase = await createClient();
+
+    let error;
+
+    if (contentId) {
+        // Content Purchase Approval
+        const { error: rpcError } = await supabase.rpc('approve_content_purchase', {
+            p_request_id: requestId,
+            p_admin_id: user.id
+        });
+        error = rpcError;
+    } else {
+        // Plan Subscription Approval
+        const { error: rpcError } = await supabase.rpc('approve_payment_transaction', {
+            p_request_id: requestId,
+            p_admin_id: user.id
+        });
+        error = rpcError;
+    }
+
+    if (error) {
+        console.error("Payment approval transaction failed", error);
+        throw new Error('Transaction failed: ' + error.message);
+    }
+
+    // Check for Lifetime Coupon
+    if (requestId && contentId) {
+        // Fetch Request to check coupon
+        const { data: request } = await supabase
+            .from('payment_requests')
+            .select('coupon_code, content_type')
+            .eq('id', requestId)
+            .single();
+
+        if (request?.coupon_code) {
+            const { data: coupon } = await supabase
+                .from('coupons') // Admin client can read coupons
+                .select('is_lifetime')
+                .eq('code', request.coupon_code)
+                .single();
+
+            if (coupon?.is_lifetime) {
+                console.log(`[LIFETIME] Granting lifetime access for User ${userId} Content ${contentId}`);
+                // Explicitly grant lifetime ownership
+                const { error: ownError } = await supabase
+                    .from('user_content_ownership')
+                    .upsert({
+                        user_id: userId,
+                        content_id: contentId,
+                        content_type: request.content_type || 'lesson',
+                        access_level: 'lifetime'
+                    }, { onConflict: 'user_id, content_id' });
+
+                if (ownError) console.error("Failed to grant lifetime access:", ownError);
+            }
+        }
+    }
+
+    // 🔔 Send Notification
+    try {
+        const { sendNotification } = await import('@/actions/notifications');
+        await sendNotification(
+            userId,
+            "تم قبول الدفع بنجاح",
+            "تم تفعيل اشتراكك/المحتوى الخاص بك. يمكنك الآن الاستمتاع بالدروس!",
+            "success"
+        );
+    } catch (notifError) {
+        console.error("Failed to send payment approval notification:", notifError);
+    }
+
+    revalidatePath('/admin/payments');
+}
+
+// Reject Payment (With Reason)
+export async function rejectPayment(requestId: string, reason: string) {
+    const { user } = await requireAdmin();
+    const supabase = await createClient();
+
+    if (!reason || reason.trim().length === 0) {
+        throw new Error("Rejection reason is mandatory.");
+    }
+
+    // 1. Get Request (Validation)
+    const { data: request, error: fetchError } = await supabase
+        .from('payment_requests')
+        .select('user_id')
+        .eq('id', requestId)
+        .single();
+
+    if (fetchError || !request) throw new Error("Payment request not found");
+
+    // 2. Reject Request
+    const { error } = await supabase
+        .from('payment_requests')
+        .update({
+            status: 'rejected',
+            rejection_reason: reason, // Ensure DB has this column
+            processed_by: user.id
+        })
+        .eq('id', requestId);
+
+    if (error) throw error;
+
+    // 3. Revoke Access (Lockout)
+    const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+            is_subscribed: false,
+            subscription_end_date: new Date().toISOString()
+        })
+        .eq('id', request.user_id);
+
+    if (profileError) {
+        console.error("Critical: Revocation failed", profileError);
+        throw profileError;
+    }
+
+    // 🔔 Send Notification
+    try {
+        const { sendNotification } = await import('@/actions/notifications');
+        await sendNotification(
+            request.user_id,
+            "تم رفض عملية الدفع",
+            `السبب: ${reason}. يرجى مراجعة الإيصال أو التواصل مع الدعم.`,
+            "warning"
+        );
+    } catch (notifError) {
+        console.error("Failed to send payment rejection notification:", notifError);
+    }
+
+    revalidatePath('/admin/payments');
+}

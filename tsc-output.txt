@@ -1,0 +1,9 @@
+﻿src/app/admin/controls/page.tsx(8,34): error TS2322: Type '{ id: any; title: any; content: any; is_active: any; created_at: any; }[]' is not assignable to type 'BroadcastNotification[]'.
+  Property 'message' is missing in type '{ id: any; title: any; content: any; is_active: any; created_at: any; }' but required in type 'BroadcastNotification'.
+src/app/admin/students/[id]/page.tsx(17,13): error TS2741: Property 'phone' is missing in type '{ id: any; full_name: any; email: any; wilaya: any; study_system: any; created_at: any; is_restored: any; is_subscribed: any; subscription_end_date: any; is_banned: any; avatar_url: any; role: any; bio: any; major_id: any; wilaya_id: any; plan_id: any; }' but required in type 'Student'.
+src/app/admin/students/[id]/page.tsx(19,13): error TS2322: Type '{ id: any; user_id: any; action: any; ip_address: any; user_agent: any; created_at: any; }[]' is not assignable to type 'ActivityLog[]'.
+  Property 'event' is missing in type '{ id: any; user_id: any; action: any; ip_address: any; user_agent: any; created_at: any; }' but required in type 'ActivityLog'.
+src/app/admin/students/page.tsx(32,31): error TS2322: Type '{ id: any; full_name: any; email: any; wilaya: any; study_system: any; created_at: any; is_restored: any; is_subscribed: any; subscription_end_date: any; is_banned: any; avatar_url: any; }[]' is not assignable to type 'Student[]'.
+  Property 'plan_id' is missing in type '{ id: any; full_name: any; email: any; wilaya: any; study_system: any; created_at: any; is_restored: any; is_subscribed: any; subscription_end_date: any; is_banned: any; avatar_url: any; }' but required in type 'Student'.
+src/app/complete-profile/page.tsx(22,25): error TS2339: Property 'user_metadata' does not exist on type 'SafeUser'.
+src/app/complete-profile/page.tsx(71,70): error TS2339: Property 'user_metadata' does not exist on type 'SafeUser'.

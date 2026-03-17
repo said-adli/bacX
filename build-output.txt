@@ -1,0 +1,78 @@
+﻿npx : [@sentry/nextjs] 
+DEPRECATION WARNING: 
+disableLogger is 
+deprecated and will be 
+removed in a future 
+version. Use webpack.tr
+eeshake.removeDebugLogg
+ing instead.
+Au caractère Ligne:1 : 
+1
++ npx next build 2>&1 
+| Out-File -Encoding 
+utf8 C:\bacx\build-outp
+ut.tx ...
++ ~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: ([@sentry/next   
+ js...ogging instea    
+d.:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+[@sentry/nextjs] 
+DEPRECATION WARNING: au
+tomaticVercelMonitors 
+is deprecated and will 
+be removed in a future 
+version. Use webpack.au
+tomaticVercelMonitors 
+instead.
+[@sentry/nextjs] 
+DEPRECATION WARNING: re
+actComponentAnnotation 
+is deprecated and will 
+be removed in a future 
+version. Use webpack.re
+actComponentAnnotation 
+instead.
+Γû▓ Next.js 16.1.1 (Turbopack)
+- Environments: .env.local
+- Experiments (use with caution):
+  ┬╖ clientTraceMetadata
+
+ΓÜá The "middleware" 
+file convention is 
+deprecated. Please use 
+"proxy" instead. Learn 
+more: https://nextjs.or
+g/docs/messages/middlew
+are-to-proxy
+  Creating an optimized production build ...
+[@sentry/nextjs] 
+DEPRECATION WARNING: 
+disableLogger is 
+deprecated and will be 
+removed in a future 
+version. Use webpack.tr
+eeshake.removeDebugLogg
+ing instead.
+[@sentry/nextjs] 
+DEPRECATION WARNING: au
+tomaticVercelMonitors 
+is deprecated and will 
+be removed in a future 
+version. Use webpack.au
+tomaticVercelMonitors 
+instead.
+[@sentry/nextjs] 
+DEPRECATION WARNING: re
+actComponentAnnotation 
+is deprecated and will 
+be removed in a future 
+version. Use webpack.re
+actComponentAnnotation 
+instead.

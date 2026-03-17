@@ -1,0 +1,42 @@
+# Expo
+.expo
+dist/
+web-build/
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# macOS
+.DS_Store
+*.pem
+
+# Node
+node_modules/
+
+# TypeScript
+*.tsbuildinfo
+
+# Firebase config (don't commit credentials)
+google-services.json
+GoogleService-Info.plist
+
+# EAS
+.easignore
